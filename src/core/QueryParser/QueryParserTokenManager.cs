@@ -1257,9 +1257,9 @@ namespace Lucene.Net.QueryParsers
 		private int[] jjstateSet = new int[72];
 		protected internal char curChar;
 		/// <summary>Constructor. </summary>
-		public QueryParserTokenManager(ICharStream stream)
+        public QueryParserTokenManager(ICharStream stream, bool initBlock = false)
 		{
-			InitBlock();
+			if (initBlock) InitBlock();
 			input_stream = stream;
 		}
 		
