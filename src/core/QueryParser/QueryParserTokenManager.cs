@@ -23,21 +23,6 @@ namespace Lucene.Net.QueryParsers
 	/// <summary>Token Manager. </summary>
 	public class QueryParserTokenManager : QueryParserConstants
 	{
-		private void  InitBlock()
-		{
-			System.IO.StreamWriter temp_writer;
-			temp_writer = new System.IO.StreamWriter(System.Console.OpenStandardOutput(), System.Console.Out.Encoding);
-			temp_writer.AutoFlush = true;
-			debugStream = temp_writer;
-		}
-		
-		/// <summary>Debug output. </summary>
-		public System.IO.StreamWriter debugStream;
-		/// <summary>Set debug output. </summary>
-		public virtual void  SetDebugStream(System.IO.StreamWriter ds)
-		{
-			debugStream = ds;
-		}
 		private int JjStopStringLiteralDfa_3(int pos, long active0)
 		{
 			switch (pos)
@@ -1257,9 +1242,8 @@ namespace Lucene.Net.QueryParsers
 		private int[] jjstateSet = new int[72];
 		protected internal char curChar;
 		/// <summary>Constructor. </summary>
-        public QueryParserTokenManager(ICharStream stream, bool initBlock = false)
+        public QueryParserTokenManager(ICharStream stream)
 		{
-			if (initBlock) InitBlock();
 			input_stream = stream;
 		}
 		
