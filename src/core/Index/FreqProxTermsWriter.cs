@@ -103,50 +103,54 @@ namespace Lucene.Net.Index
 			-> FormatPostingsPositionsConsumer
 			-> IMPL: FormatPostingsPositionsWriter
 			*/
-			
-			int start = 0;
-			while (start < numAllFields)
-			{
-				FieldInfo fieldInfo = allFields[start].fieldInfo;
-				System.String fieldName = fieldInfo.name;
-				
-				int end = start + 1;
-				while (end < numAllFields && allFields[end].fieldInfo.name.Equals(fieldName))
-					end++;
-				
-				FreqProxTermsWriterPerField[] fields = new FreqProxTermsWriterPerField[end - start];
-				for (int i = start; i < end; i++)
-				{
-					fields[i - start] = allFields[i];
-					
-					// Aggregate the storePayload as seen by the same
-					// field across multiple threads
-					fieldInfo.storePayloads |= fields[i - start].hasPayloads;
-				}
-				
-				// If this field has postings then add them to the
-				// segment
-				AppendPostings(fields, consumer);
-				
-				for (int i = 0; i < fields.Length; i++)
-				{
-					TermsHashPerField perField = fields[i].termsHashPerField;
-					int numPostings = perField.numPostings;
-					perField.Reset();
-					perField.ShrinkHash(numPostings);
-					fields[i].Reset();
-				}
-				
-				start = end;
-			}
+	        try
+	        {
+		        int start = 0;
+		        while (start < numAllFields)
+		        {
+			        FieldInfo fieldInfo = allFields[start].fieldInfo;
+			        System.String fieldName = fieldInfo.name;
 
-            foreach(var entry in threadsAndFields)
-			{
-				FreqProxTermsWriterPerThread perThread = (FreqProxTermsWriterPerThread) entry.Key;
-				perThread.termsHashPerThread.Reset(true);
-			}
-			
-			consumer.Finish();
+			        int end = start + 1;
+			        while (end < numAllFields && allFields[end].fieldInfo.name.Equals(fieldName))
+				        end++;
+
+			        FreqProxTermsWriterPerField[] fields = new FreqProxTermsWriterPerField[end - start];
+			        for (int i = start; i < end; i++)
+			        {
+				        fields[i - start] = allFields[i];
+
+				        // Aggregate the storePayload as seen by the same
+				        // field across multiple threads
+				        fieldInfo.storePayloads |= fields[i - start].hasPayloads;
+			        }
+
+			        // If this field has postings then add them to the
+			        // segment
+			        AppendPostings(fields, consumer);
+
+			        for (int i = 0; i < fields.Length; i++)
+			        {
+				        TermsHashPerField perField = fields[i].termsHashPerField;
+				        int numPostings = perField.numPostings;
+				        perField.Reset();
+				        perField.ShrinkHash(numPostings);
+				        fields[i].Reset();
+			        }
+
+			        start = end;
+		        }
+
+		        foreach (var entry in threadsAndFields)
+		        {
+			        FreqProxTermsWriterPerThread perThread = (FreqProxTermsWriterPerThread) entry.Key;
+			        perThread.termsHashPerThread.Reset(true);
+		        }
+	        }
+	        finally
+	        {
+				consumer.Finish();
+	        }
 		}
 		
 		private byte[] payloadBuffer;

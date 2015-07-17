@@ -23,7 +23,7 @@ using IndexOutput = Lucene.Net.Store.IndexOutput;
 namespace Lucene.Net.Index
 {
 	
-	sealed class FormatPostingsPositionsWriter:FormatPostingsPositionsConsumer
+	sealed class FormatPostingsPositionsWriter : FormatPostingsPositionsConsumer, IDisposable
 	{
 		internal FormatPostingsDocsWriter parent;
 		internal IndexOutput out_Renamed;

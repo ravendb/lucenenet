@@ -234,17 +234,17 @@ namespace Lucene.Net.Index
 		/// <summary>Called to complete TermInfos creation. </summary>
 		public void Dispose()
 		{
-            // Move to protected method if class becomes unsealed
-            if (isDisposed) return;
+			// Move to protected method if class becomes unsealed
+			if (isDisposed) return;
 
-			output.Seek(4); // write size after format
-			output.WriteLong(size);
-            output.Dispose();
-			
-			if (!isIndex)
-				other.Dispose();
+			using (!isIndex ? other : null)
+			using (output)
+			{
+				output.Seek(4); // write size after format	
+				output.WriteLong(size);
+			}
 
-		    isDisposed = true;
+			isDisposed = true;
 		}
 	}
 }
