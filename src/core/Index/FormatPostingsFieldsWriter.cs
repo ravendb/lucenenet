@@ -64,8 +64,11 @@ namespace Lucene.Net.Index
 		/// <summary>Called when we are done adding everything. </summary>
 		internal override void  Finish()
 		{
-			termsOut.Dispose();
-			termsWriter.Dispose();
+			using(termsWriter)
+			using (termsOut)
+			{
+				
+			}
 		}
 	}
 }

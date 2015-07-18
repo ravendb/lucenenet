@@ -126,9 +126,11 @@ namespace Lucene.Net.Index
 
         public void Dispose()
         {
-            // Move to protected method if class becomes unsealed
-            out_Renamed.Dispose();
-            posWriter.Dispose();
+			using (posWriter)
+			using (out_Renamed) // Move to protected method if class becomes unsealed
+	        {
+		        
+	        }
         }
 	}
 }
