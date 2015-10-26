@@ -41,7 +41,7 @@ namespace Lucene.Net.Spatial.Prefix
     {
         protected readonly SpatialPrefixTree grid;
 
-        private readonly IDictionary<String, PointPrefixTreeFieldCacheProvider> provider =
+        private readonly ConcurrentDictionary<string, PointPrefixTreeFieldCacheProvider> provider =
             new ConcurrentDictionary<string, PointPrefixTreeFieldCacheProvider>();
 
         protected int defaultFieldValuesArrayLen = 2;
@@ -147,19 +147,9 @@ namespace Lucene.Net.Spatial.Prefix
 
 		public ShapeFieldCacheProvider<Point> GetCacheProvider()
 		{
-			PointPrefixTreeFieldCacheProvider p;
-			if (!provider.TryGetValue(GetFieldName(), out p) || p == null)
-			{
-				lock (this)
-				{//double checked locking idiom is okay since provider is threadsafe
-					if (!provider.ContainsKey(GetFieldName()))
-					{
-						p = new PointPrefixTreeFieldCacheProvider(grid, GetFieldName(), defaultFieldValuesArrayLen);
-						provider[GetFieldName()] = p;
-					}
-				}
-			}
-			return p;
+			var providerFieldName = GetFieldName();
+			return provider.GetOrAdd(providerFieldName,key => 
+				new PointPrefixTreeFieldCacheProvider(grid, key, defaultFieldValuesArrayLen));
 		}
 
         public override ValueSource MakeDistanceValueSource(Point queryPoint)
