@@ -19,8 +19,9 @@ using System;
 
 namespace Lucene.Net.Index
 {
-	
-	/// <summary> 
+    using System.Runtime.Serialization;
+
+    /// <summary> 
 	/// 
 	/// 
 	/// </summary>
@@ -86,5 +87,10 @@ namespace Lucene.Net.Index
 		public FieldReaderException(System.String message, System.Exception cause):base(message, cause)
 		{
 		}
-	}
+
+        public FieldReaderException(SerializationInfo info, StreamingContext context) 
+            : base(info, context)
+        {
+        }
+    }
 }

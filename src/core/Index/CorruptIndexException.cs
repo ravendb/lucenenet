@@ -19,18 +19,28 @@ using System;
 
 namespace Lucene.Net.Index
 {
-	
-	/// <summary> This exception is thrown when Lucene detects
+    using System.Runtime.Serialization;
+
+    /// <summary> This exception is thrown when Lucene detects
 	/// an inconsistency in the index.
 	/// </summary>
 	[Serializable]
 	public class CorruptIndexException:System.IO.IOException
 	{
+        public CorruptIndexException()
+        {
+        }
+
 		public CorruptIndexException(String message):base(message)
 		{
 		}
 		public CorruptIndexException(String message, Exception exp):base(message, exp)
 		{
 		}
-	}
+
+        public CorruptIndexException(SerializationInfo info, StreamingContext context) 
+            : base(info, context)
+        {
+        }
+    }
 }
