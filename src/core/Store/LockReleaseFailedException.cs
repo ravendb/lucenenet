@@ -19,8 +19,9 @@ using System;
 
 namespace Lucene.Net.Store
 {
-	
-	/// <summary> This exception is thrown when the <c>write.lock</c>
+    using System.Runtime.Serialization;
+
+    /// <summary> This exception is thrown when the <c>write.lock</c>
 	/// could not be released.
 	/// </summary>
 	/// <seealso cref="Lock.Release()">
@@ -28,8 +29,22 @@ namespace Lucene.Net.Store
 	[Serializable]
 	public class LockReleaseFailedException:System.IO.IOException
 	{
+        public LockReleaseFailedException()
+        {
+        }
+
 		public LockReleaseFailedException(System.String message):base(message)
 		{
 		}
-	}
+
+        public LockReleaseFailedException(string message, Exception innerException) 
+            : base(message, innerException)
+        {
+        }
+
+        public LockReleaseFailedException(SerializationInfo info, StreamingContext context) 
+            : base(info, context)
+        {
+        }
+    }
 }

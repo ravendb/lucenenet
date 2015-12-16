@@ -19,8 +19,9 @@ using System;
 
 namespace Lucene.Net.Index
 {
-	
-	/// <summary> This exception is thrown when an <see cref="IndexReader" />
+    using System.Runtime.Serialization;
+
+    /// <summary> This exception is thrown when an <see cref="IndexReader" />
 	/// tries to make changes to the index (via <see cref="IndexReader.DeleteDocument" />
 	///, <see cref="IndexReader.UndeleteAll" />
 	/// or <see cref="IndexReader.SetNorm(int,string,float)" />)
@@ -32,8 +33,22 @@ namespace Lucene.Net.Index
 	[Serializable]
 	public class StaleReaderException:System.IO.IOException
 	{
+        public StaleReaderException()
+        {
+        }
+
 		public StaleReaderException(System.String message):base(message)
 		{
 		}
-	}
+
+        public StaleReaderException(string message, Exception innerException) 
+            : base(message, innerException)
+        {
+        }
+
+        public StaleReaderException(SerializationInfo info, StreamingContext context) 
+            : base(info, context)
+        {
+        }
+    }
 }

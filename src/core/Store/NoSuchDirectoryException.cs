@@ -19,16 +19,31 @@ using System;
 
 namespace Lucene.Net.Store
 {
-	
-	/// <summary> This exception is thrown when you try to list a
+    using System.Runtime.Serialization;
+
+    /// <summary> This exception is thrown when you try to list a
 	/// non-existent directory.
 	/// </summary>
 	
 	[Serializable]
 	public class NoSuchDirectoryException:System.IO.FileNotFoundException
 	{
+        public NoSuchDirectoryException()
+        {
+        }
+
 		public NoSuchDirectoryException(System.String message):base(message)
 		{
 		}
-	}
+
+        public NoSuchDirectoryException(string message, Exception innerException) 
+            : base(message, innerException)
+        {
+        }
+
+        public NoSuchDirectoryException(SerializationInfo info, StreamingContext context) 
+            : base(info, context)
+        {
+        }
+    }
 }

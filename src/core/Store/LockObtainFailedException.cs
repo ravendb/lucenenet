@@ -19,8 +19,9 @@ using System;
 
 namespace Lucene.Net.Store
 {
-	
-	/// <summary> This exception is thrown when the <c>write.lock</c>
+    using System.Runtime.Serialization;
+
+    /// <summary> This exception is thrown when the <c>write.lock</c>
 	/// could not be acquired.  This
 	/// happens when a writer tries to open an index
 	/// that another writer already has open.
@@ -30,11 +31,20 @@ namespace Lucene.Net.Store
 	[Serializable]
 	public class LockObtainFailedException:System.IO.IOException
 	{
+        public LockObtainFailedException()
+        {
+        }
+
 		public LockObtainFailedException(System.String message):base(message)
 		{
 		}
 
         public LockObtainFailedException(System.String message, System.Exception ex) : base(message, ex)
+        {
+        }
+
+        public LockObtainFailedException(SerializationInfo info, StreamingContext context) 
+            : base(info, context)
         {
         }
     }
