@@ -23,22 +23,24 @@ using SpanQuery = Lucene.Net.Search.Spans.SpanQuery;
 
 namespace Lucene.Net.Search
 {
-	
-	/// <summary> Constrains search results to only match those which also match a provided
-	/// query. Also provides position information about where each document matches
-	/// at the cost of extra space compared with the QueryWrapperFilter.
-	/// There is an added cost to this above what is stored in a <see cref="QueryWrapperFilter" />.  Namely,
-	/// the position information for each matching document is stored.
-	/// <p/>
-	/// This filter does not cache.  See the <see cref="Lucene.Net.Search.CachingSpanFilter" /> for a wrapper that
-	/// caches.
-	/// 
-	/// 
-	/// </summary>
-	/// <version>  $Id:$
-	/// </version>
-	[Serializable]
-	public class SpanQueryFilter:SpanFilter
+
+    /// <summary> Constrains search results to only match those which also match a provided
+    /// query. Also provides position information about where each document matches
+    /// at the cost of extra space compared with the QueryWrapperFilter.
+    /// There is an added cost to this above what is stored in a <see cref="QueryWrapperFilter" />.  Namely,
+    /// the position information for each matching document is stored.
+    /// <p/>
+    /// This filter does not cache.  See the <see cref="Lucene.Net.Search.CachingSpanFilter" /> for a wrapper that
+    /// caches.
+    /// 
+    /// 
+    /// </summary>
+    /// <version>  $Id:$
+    /// </version>
+#if !DNXCORE50
+        [Serializable]
+#endif
+    public class SpanQueryFilter:SpanFilter
 	{
 		protected internal SpanQuery internalQuery;
 		

@@ -22,24 +22,28 @@ using ToStringUtils = Lucene.Net.Util.ToStringUtils;
 
 namespace Lucene.Net.Search
 {
-	
-	
-	/// <summary> A query that applies a filter to the results of another query.
-	/// 
-	/// <p/>Note: the bits are retrieved from the filter each time this
-	/// query is used in a search - use a CachingWrapperFilter to avoid
-	/// regenerating the bits every time.
-	/// 
-	/// <p/>Created: Apr 20, 2004 8:58:29 AM
-	/// 
-	/// </summary>
-	/// <since>1.4</since>
-	/// <seealso cref="CachingWrapperFilter"/>
-	[Serializable]
-	public class FilteredQuery:Query
+
+
+    /// <summary> A query that applies a filter to the results of another query.
+    /// 
+    /// <p/>Note: the bits are retrieved from the filter each time this
+    /// query is used in a search - use a CachingWrapperFilter to avoid
+    /// regenerating the bits every time.
+    /// 
+    /// <p/>Created: Apr 20, 2004 8:58:29 AM
+    /// 
+    /// </summary>
+    /// <since>1.4</since>
+    /// <seealso cref="CachingWrapperFilter"/>
+#if !DNXCORE50
+        [Serializable]
+#endif
+    public class FilteredQuery:Query
 	{
-		[Serializable]
-		private class AnonymousClassWeight:Weight
+#if !DNXCORE50
+        [Serializable]
+#endif
+        private class AnonymousClassWeight:Weight
 		{
 			public AnonymousClassWeight(Lucene.Net.Search.Weight weight, Lucene.Net.Search.Similarity similarity, FilteredQuery enclosingInstance)
 			{

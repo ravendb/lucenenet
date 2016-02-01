@@ -79,7 +79,11 @@ namespace Lucene.Net.Util
 
             try
             {
+#if !DNXCORE50
                 LUCENE_VERSION = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString();
+#else
+                LUCENE_VERSION = typeof(Constants).Assembly().GetName().Version.ToString();
+#endif
             }
             catch (System.Security.SecurityException) //Ignore in medium trust.
             {
@@ -87,13 +91,14 @@ namespace Lucene.Net.Util
 
         }
 
-        #region MEDIUM-TRUST Support
+#region MEDIUM-TRUST Support
         static string GetEnvironmentVariable(string variable, string defaultValueOnSecurityException)
         {
             try
             {
+#if !DNXCORE50
                 if (variable == "OS_VERSION") return System.Environment.OSVersion.ToString();
-
+#endif
                 return System.Environment.GetEnvironmentVariable(variable);
             }
             catch (System.Security.SecurityException)
@@ -102,6 +107,6 @@ namespace Lucene.Net.Util
             }
 
         }
-        #endregion
+#endregion
     }
 }

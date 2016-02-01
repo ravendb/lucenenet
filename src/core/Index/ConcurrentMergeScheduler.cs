@@ -21,8 +21,10 @@ using Directory = Lucene.Net.Store.Directory;
 
 namespace Lucene.Net.Index
 {
-	
-	/// <summary>A <see cref="MergeScheduler" /> that runs each merge using a
+    using System.Diagnostics;
+    using System.Threading;
+
+    /// <summary>A <see cref="MergeScheduler" /> that runs each merge using a
 	/// separate thread, up until a maximum number of threads
 	/// (<see cref="MaxThreadCount" />) at which when a merge is
 	/// needed, the thread(s) that are updating the index will
@@ -74,11 +76,12 @@ namespace Lucene.Net.Index
 	        get { return _maxThreadCount; }
         }
 
-	    /// <summary>Return the priority that merge threads run at.  By
-		/// default the priority is 1 plus the priority of (ie,
-		/// slightly higher priority than) the first thread that
-		/// calls merge. 
-		/// </summary>
+#if !DNXCORE50
+        /// <summary>Return the priority that merge threads run at.  By
+        /// default the priority is 1 plus the priority of (ie,
+        /// slightly higher priority than) the first thread that
+        /// calls merge. 
+        /// </summary>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1024:UsePropertiesWhereAppropriate")]
         public virtual int GetMergeThreadPriority()
 		{
@@ -88,9 +91,11 @@ namespace Lucene.Net.Index
 				return mergeThreadPriority;
 			}
 		}
-		
-		/// <summary>Set the priority that merge threads run at. </summary>
-		public virtual void  SetMergeThreadPriority(int pri)
+#endif
+
+#if !DNXCORE50
+        /// <summary>Set the priority that merge threads run at. </summary>
+        public virtual void  SetMergeThreadPriority(int pri)
 		{
 			lock (this)
 			{
@@ -106,6 +111,7 @@ namespace Lucene.Net.Index
 				}
 			}
 		}
+#endif
 		
 		private bool Verbose()
 		{
@@ -117,8 +123,9 @@ namespace Lucene.Net.Index
 			if (Verbose())
 				writer.Message("CMS: " + message);
 		}
-		
-		private void  InitMergeThreadPriority()
+
+#if !DNXCORE50
+        private void  InitMergeThreadPriority()
 		{
 			lock (this)
 			{
@@ -127,11 +134,12 @@ namespace Lucene.Net.Index
 					// Default to slightly higher priority than our
 					// calling thread
 					mergeThreadPriority = 1 + (System.Int32) ThreadClass.Current().Priority;
-					if (mergeThreadPriority > (int) System.Threading.ThreadPriority.Highest)
-						mergeThreadPriority = (int) System.Threading.ThreadPriority.Highest;
+					if (mergeThreadPriority > (int)ThreadPriorityLevel.Highest)
+						mergeThreadPriority = (int)ThreadPriorityLevel.Highest;
 				}
 			}
 		}
+#endif
 		
         protected override void Dispose(bool disposing)
         {
@@ -185,8 +193,10 @@ namespace Lucene.Net.Index
 			// assert !Thread.holdsLock(writer);
 			
 			this.writer = writer;
-			
-			InitMergeThreadPriority();
+
+#if !DNXCORE50
+            InitMergeThreadPriority();
+#endif
 			
 			dir = writer.Directory;
 			
@@ -276,7 +286,9 @@ namespace Lucene.Net.Index
 			lock (this)
 			{
 				var thread = new MergeThread(this, writer, merge);
-				thread.SetThreadPriority(mergeThreadPriority);
+#if !DNXCORE50
+                thread.SetThreadPriority(mergeThreadPriority);
+#endif
 				thread.IsBackground = true;
 				thread.Name = "Lucene Merge Thread #" + mergeThreadCount++;
 				return thread;
@@ -329,11 +341,12 @@ namespace Lucene.Net.Index
 		        }
 		    }
 
-		    public virtual void  SetThreadPriority(int pri)
+#if !DNXCORE50
+            public virtual void  SetThreadPriority(int pri)
 			{
 				try
 				{
-					Priority = (System.Threading.ThreadPriority) pri;
+					Priority = (ThreadPriority) pri;
 				}
 				catch (System.NullReferenceException)
 				{
@@ -346,6 +359,7 @@ namespace Lucene.Net.Index
 					// normal thread priority
 				}
 			}
+#endif
 			
 			override public void  Run()
 			{

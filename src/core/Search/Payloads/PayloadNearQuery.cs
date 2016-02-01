@@ -33,23 +33,25 @@ using SpanWeight = Lucene.Net.Search.Spans.SpanWeight;
 
 namespace Lucene.Net.Search.Payloads
 {
-	
-	/// <summary> This class is very similar to
-	/// <see cref="Lucene.Net.Search.Spans.SpanNearQuery" /> except that it factors
-	/// in the value of the payloads located at each of the positions where the
-	/// <see cref="Lucene.Net.Search.Spans.TermSpans" /> occurs.
-	/// <p/>
-	/// In order to take advantage of this, you must override
-	/// <see cref="Lucene.Net.Search.Similarity.ScorePayload" />
-	/// which returns 1 by default.
-	/// <p/>
-	/// Payload scores are aggregated using a pluggable <see cref="PayloadFunction" />.
-	/// 
-	/// </summary>
-	/// <seealso cref="Lucene.Net.Search.Similarity.ScorePayload">
-	/// </seealso>
-	[Serializable]
-	public class PayloadNearQuery:SpanNearQuery, System.ICloneable
+
+    /// <summary> This class is very similar to
+    /// <see cref="Lucene.Net.Search.Spans.SpanNearQuery" /> except that it factors
+    /// in the value of the payloads located at each of the positions where the
+    /// <see cref="Lucene.Net.Search.Spans.TermSpans" /> occurs.
+    /// <p/>
+    /// In order to take advantage of this, you must override
+    /// <see cref="Lucene.Net.Search.Similarity.ScorePayload" />
+    /// which returns 1 by default.
+    /// <p/>
+    /// Payload scores are aggregated using a pluggable <see cref="PayloadFunction" />.
+    /// 
+    /// </summary>
+    /// <seealso cref="Lucene.Net.Search.Similarity.ScorePayload">
+    /// </seealso>
+#if !DNXCORE50
+        [Serializable]
+#endif
+    public class PayloadNearQuery:SpanNearQuery, System.ICloneable
 	{
 		protected internal System.String fieldName;
 		protected internal PayloadFunction function;
@@ -142,9 +144,11 @@ namespace Lucene.Net.Search.Payloads
 				return false;
 			return true;
 		}
-		
-		[Serializable]
-		public class PayloadNearSpanWeight:SpanWeight
+
+#if !DNXCORE50
+        [Serializable]
+#endif
+        public class PayloadNearSpanWeight:SpanWeight
 		{
 			private void  InitBlock(PayloadNearQuery enclosingInstance)
 			{

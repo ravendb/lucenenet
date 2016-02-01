@@ -25,40 +25,44 @@ using ToStringUtils = Lucene.Net.Util.ToStringUtils;
 
 namespace Lucene.Net.Search
 {
-	
-	/// <summary> An abstract <see cref="Query" /> that matches documents
-	/// containing a subset of terms provided by a <see cref="FilteredTermEnum" />
-	/// enumeration.
-	/// 
-	/// <p/>This query cannot be used directly; you must subclass
-	/// it and define <see cref="GetEnum" /> to provide a <see cref="FilteredTermEnum" />
-	/// that iterates through the terms to be
-	/// matched.
-	/// 
-	/// <p/><b>NOTE</b>: if <see cref="RewriteMethod" /> is either
-	/// <see cref="CONSTANT_SCORE_BOOLEAN_QUERY_REWRITE" /> or <see cref="SCORING_BOOLEAN_QUERY_REWRITE" />
-	///, you may encounter a
-	/// <see cref="BooleanQuery.TooManyClauses" /> exception during
-	/// searching, which happens when the number of terms to be
-	/// searched exceeds <see cref="BooleanQuery.MaxClauseCount" />
-	///.  Setting <see cref="RewriteMethod" />
-	/// to <see cref="CONSTANT_SCORE_FILTER_REWRITE" />
-	/// prevents this.
-	/// 
-	/// <p/>The recommended rewrite method is <see cref="CONSTANT_SCORE_AUTO_REWRITE_DEFAULT" />
-	///: it doesn't spend CPU
-	/// computing unhelpful scores, and it tries to pick the most
-	/// performant rewrite method given the query.
-	/// 
-	/// Note that <see cref="QueryParser" /> produces
-	/// MultiTermQueries using <see cref="CONSTANT_SCORE_AUTO_REWRITE_DEFAULT" />
-	/// by default.
-	/// </summary>
-	[Serializable]
-	public abstract class MultiTermQuery:Query
+
+    /// <summary> An abstract <see cref="Query" /> that matches documents
+    /// containing a subset of terms provided by a <see cref="FilteredTermEnum" />
+    /// enumeration.
+    /// 
+    /// <p/>This query cannot be used directly; you must subclass
+    /// it and define <see cref="GetEnum" /> to provide a <see cref="FilteredTermEnum" />
+    /// that iterates through the terms to be
+    /// matched.
+    /// 
+    /// <p/><b>NOTE</b>: if <see cref="RewriteMethod" /> is either
+    /// <see cref="CONSTANT_SCORE_BOOLEAN_QUERY_REWRITE" /> or <see cref="SCORING_BOOLEAN_QUERY_REWRITE" />
+    ///, you may encounter a
+    /// <see cref="BooleanQuery.TooManyClauses" /> exception during
+    /// searching, which happens when the number of terms to be
+    /// searched exceeds <see cref="BooleanQuery.MaxClauseCount" />
+    ///.  Setting <see cref="RewriteMethod" />
+    /// to <see cref="CONSTANT_SCORE_FILTER_REWRITE" />
+    /// prevents this.
+    /// 
+    /// <p/>The recommended rewrite method is <see cref="CONSTANT_SCORE_AUTO_REWRITE_DEFAULT" />
+    ///: it doesn't spend CPU
+    /// computing unhelpful scores, and it tries to pick the most
+    /// performant rewrite method given the query.
+    /// 
+    /// Note that <see cref="QueryParser" /> produces
+    /// MultiTermQueries using <see cref="CONSTANT_SCORE_AUTO_REWRITE_DEFAULT" />
+    /// by default.
+    /// </summary>
+#if !DNXCORE50
+        [Serializable]
+#endif
+    public abstract class MultiTermQuery:Query
 	{
-		[Serializable]
-		public class AnonymousClassConstantScoreAutoRewrite:ConstantScoreAutoRewrite
+#if !DNXCORE50
+        [Serializable]
+#endif
+        public class AnonymousClassConstantScoreAutoRewrite:ConstantScoreAutoRewrite
 		{
 		    public override int TermCountCutoff
 		    {
@@ -80,8 +84,10 @@ namespace Lucene.Net.Search
 		[NonSerialized]
 		internal int numberOfTerms = 0;
 
-	    [Serializable]
-		private sealed class ConstantScoreFilterRewrite:RewriteMethod
+#if !DNXCORE50
+        [Serializable]
+#endif
+        private sealed class ConstantScoreFilterRewrite:RewriteMethod
 		{
 			public override Query Rewrite(IndexReader reader, MultiTermQuery query)
 			{
@@ -112,9 +118,11 @@ namespace Lucene.Net.Search
 		/// <seealso cref="RewriteMethod">
 		/// </seealso>
 		public static readonly RewriteMethod CONSTANT_SCORE_FILTER_REWRITE = new ConstantScoreFilterRewrite();
-		
-		[Serializable]
-		private class ScoringBooleanQueryRewrite:RewriteMethod
+
+#if !DNXCORE50
+        [Serializable]
+#endif
+        private class ScoringBooleanQueryRewrite:RewriteMethod
 		{
 			public override Query Rewrite(IndexReader reader, MultiTermQuery query)
 			{
@@ -168,9 +176,11 @@ namespace Lucene.Net.Search
 		/// <seealso cref="RewriteMethod">
 		/// </seealso>
 		public static readonly RewriteMethod SCORING_BOOLEAN_QUERY_REWRITE = new ScoringBooleanQueryRewrite();
-		
-		[Serializable]
-		private class ConstantScoreBooleanQueryRewrite:ScoringBooleanQueryRewrite
+
+#if !DNXCORE50
+        [Serializable]
+#endif
+        private class ConstantScoreBooleanQueryRewrite:ScoringBooleanQueryRewrite
 		{
 			public override Query Rewrite(IndexReader reader, MultiTermQuery query)
 			{
@@ -200,18 +210,20 @@ namespace Lucene.Net.Search
 		/// <seealso cref="RewriteMethod">
 		/// </seealso>
 		public static readonly RewriteMethod CONSTANT_SCORE_BOOLEAN_QUERY_REWRITE = new ConstantScoreBooleanQueryRewrite();
-		
-		
-		/// <summary>A rewrite method that tries to pick the best
-		/// constant-score rewrite method based on term and
-		/// document counts from the query.  If both the number of
-		/// terms and documents is small enough, then <see cref="CONSTANT_SCORE_BOOLEAN_QUERY_REWRITE" />
-		/// is used.
-		/// Otherwise, <see cref="CONSTANT_SCORE_FILTER_REWRITE" /> is
-		/// used.
-		/// </summary>
-		[Serializable]
-		public class ConstantScoreAutoRewrite:RewriteMethod
+
+
+        /// <summary>A rewrite method that tries to pick the best
+        /// constant-score rewrite method based on term and
+        /// document counts from the query.  If both the number of
+        /// terms and documents is small enough, then <see cref="CONSTANT_SCORE_BOOLEAN_QUERY_REWRITE" />
+        /// is used.
+        /// Otherwise, <see cref="CONSTANT_SCORE_FILTER_REWRITE" /> is
+        /// used.
+        /// </summary>
+#if !DNXCORE50
+        [Serializable]
+#endif
+        public class ConstantScoreAutoRewrite:RewriteMethod
 		{
 			public ConstantScoreAutoRewrite()
 			{
@@ -457,7 +469,9 @@ namespace Lucene.Net.Search
 	}
 
     /// <summary>Abstract class that defines how the query is rewritten. </summary>
-    [Serializable]
+#if !DNXCORE50
+        [Serializable]
+#endif
     public abstract class RewriteMethod
     {
         public abstract Query Rewrite(IndexReader reader, MultiTermQuery query);

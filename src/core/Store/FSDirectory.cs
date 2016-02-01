@@ -406,8 +406,14 @@ namespace Lucene.Net.Store
 					}
 					finally
 					{
-						if (file != null)
-							file.Close();
+					    if (file != null)
+					    {
+#if !DNXCORE50
+                            file.Close();
+#else
+                            file.Dispose();
+#endif
+                        }
 					}
 				}
 				catch (System.IO.IOException ioe)

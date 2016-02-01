@@ -22,16 +22,18 @@ namespace Lucene.Net.Index
     using System.Runtime.Serialization;
 
     /// <summary> This exception is thrown when an <see cref="IndexReader" />
-	/// tries to make changes to the index (via <see cref="IndexReader.DeleteDocument" />
-	///, <see cref="IndexReader.UndeleteAll" />
-	/// or <see cref="IndexReader.SetNorm(int,string,float)" />)
-	/// but changes have already been committed to the index
-	/// since this reader was instantiated.  When this happens
-	/// you must open a new reader on the current index to make
-	/// the changes.
-	/// </summary>
-	[Serializable]
-	public class StaleReaderException:System.IO.IOException
+    /// tries to make changes to the index (via <see cref="IndexReader.DeleteDocument" />
+    ///, <see cref="IndexReader.UndeleteAll" />
+    /// or <see cref="IndexReader.SetNorm(int,string,float)" />)
+    /// but changes have already been committed to the index
+    /// since this reader was instantiated.  When this happens
+    /// you must open a new reader on the current index to make
+    /// the changes.
+    /// </summary>
+#if !DNXCORE50
+        [Serializable]
+#endif
+    public class StaleReaderException:System.IO.IOException
 	{
         public StaleReaderException()
         {
@@ -46,9 +48,11 @@ namespace Lucene.Net.Index
         {
         }
 
+#if !DNXCORE50
         public StaleReaderException(SerializationInfo info, StreamingContext context) 
             : base(info, context)
         {
         }
+#endif
     }
 }

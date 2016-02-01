@@ -24,10 +24,12 @@ using IDFExplanation = Lucene.Net.Search.Explanation.IDFExplanation;
 
 namespace Lucene.Net.Search.Spans
 {
-	
-	/// <summary> Expert-only.  Public for use by other weight implementations</summary>
-	[Serializable]
-	public class SpanWeight:Weight
+
+    /// <summary> Expert-only.  Public for use by other weight implementations</summary>
+#if !DNXCORE50
+        [Serializable]
+#endif
+    public class SpanWeight:Weight
 	{
 		protected internal Similarity similarity;
 		protected internal float value_Renamed;

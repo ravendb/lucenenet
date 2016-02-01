@@ -267,7 +267,11 @@ namespace Lucene.Net.Store
                             lock_Renamed = false;
                             try
                             {
+#if !DNXCORE50
                                 channel.Lock(0, channel.Length);
+#else
+                                // TODO [ppekrol]
+#endif
                                 lock_Renamed = true;
                             }
                             catch (System.IO.IOException e)
@@ -303,7 +307,11 @@ namespace Lucene.Net.Store
                                 {
                                     try
                                     {
+#if !DNXCORE50
                                         channel.Close();
+#else
+                                        channel.Dispose();
+#endif
                                     }
                                     finally
                                     {
@@ -318,7 +326,11 @@ namespace Lucene.Net.Store
                             {
                                 try
                                 {
+#if !DNXCORE50
                                     f.Close();
+#else
+                                    f.Dispose();
+#endif
                                 }
                                 finally
                                 {
@@ -353,21 +365,33 @@ namespace Lucene.Net.Store
                 {
                     try
                     {
+#if !DNXCORE50
                         channel.Unlock(0, channel.Length);
+#else
+                        // TODO [ppekrol]
+#endif
                     }
                     finally
                     {
                         lock_Renamed = false;
                         try
                         {
+#if !DNXCORE50
                             channel.Close();
+#else
+                            channel.Dispose();
+#endif
                         }
                         finally
                         {
                             channel = null;
                             try
                             {
+#if !DNXCORE50
                                 f.Close();
+#else
+                                f.Dispose();
+#endif
                             }
                             finally
                             {

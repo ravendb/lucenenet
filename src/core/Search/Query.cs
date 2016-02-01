@@ -22,11 +22,11 @@ using IndexReader = Lucene.Net.Index.IndexReader;
 
 namespace Lucene.Net.Search
 {
-	
-	/// <summary>The abstract base class for queries.
-	/// <p/>Instantiable subclasses are:
-	/// <list type="bullet">
-	/// <item> <see cref="TermQuery" /> </item>
+
+    /// <summary>The abstract base class for queries.
+    /// <p/>Instantiable subclasses are:
+    /// <list type="bullet">
+    /// <item> <see cref="TermQuery" /> </item>
     /// <item> <see cref="MultiTermQuery" /> </item>
     /// <item> <see cref="BooleanQuery" /> </item>
     /// <item> <see cref="WildcardQuery" /> </item>
@@ -37,14 +37,16 @@ namespace Lucene.Net.Search
     /// <item> <see cref="TermRangeQuery" /> </item>
     /// <item> <see cref="NumericRangeQuery{T}" /> </item>
     /// <item> <see cref="Lucene.Net.Search.Spans.SpanQuery" /> </item>
-	/// </list>
-	/// <p/>A parser for queries is contained in:
-	/// <list type="bullet">
+    /// </list>
+    /// <p/>A parser for queries is contained in:
+    /// <list type="bullet">
     /// <item><see cref="Lucene.Net.QueryParsers.QueryParser">QueryParser</see> </item>
-	/// </list>
-	/// </summary>
-	[Serializable]
-	public abstract class Query : System.ICloneable
+    /// </list>
+    /// </summary>
+#if !DNXCORE50
+        [Serializable]
+#endif
+    public abstract class Query : System.ICloneable
 	{
 		private float boost = 1.0f; // query boost factor
 

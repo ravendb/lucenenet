@@ -80,9 +80,9 @@ namespace Lucene.Net.Util
 					nextToLast = e;
 				}
 			}
-			
-			// insertion-order cache: add new entry at head
-			s = String.Intern(s);
+
+            // insertion-order cache: add new entry at head
+		    s = s.Intern();  
 			this.cache[slot] = new Entry(s, h, first);
 			if (chainLength >= maxChainLength)
 			{

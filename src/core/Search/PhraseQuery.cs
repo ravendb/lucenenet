@@ -25,14 +25,16 @@ using IDFExplanation = Lucene.Net.Search.Explanation.IDFExplanation;
 
 namespace Lucene.Net.Search
 {
-	
-	/// <summary>A Query that matches documents containing a particular sequence of terms.
-	/// A PhraseQuery is built by QueryParser for input like <c>"new york"</c>.
-	/// 
-	/// <p/>This query may be combined with other terms or queries with a <see cref="BooleanQuery" />.
-	/// </summary>
-	[Serializable]
-	public class PhraseQuery:Query
+
+    /// <summary>A Query that matches documents containing a particular sequence of terms.
+    /// A PhraseQuery is built by QueryParser for input like <c>"new york"</c>.
+    /// 
+    /// <p/>This query may be combined with other terms or queries with a <see cref="BooleanQuery" />.
+    /// </summary>
+#if !DNXCORE50
+        [Serializable]
+#endif
+    public class PhraseQuery:Query
 	{
 		private System.String field;
         private EquatableList<Term> terms = new EquatableList<Term>(4);
@@ -114,9 +116,11 @@ namespace Lucene.Net.Search
 				result[i] = positions[i];
 			return result;
 		}
-		
-		[Serializable]
-		private class PhraseWeight:Weight
+
+#if !DNXCORE50
+        [Serializable]
+#endif
+        private class PhraseWeight:Weight
 		{
 			private void  InitBlock(PhraseQuery enclosingInstance)
 			{

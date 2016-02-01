@@ -25,21 +25,23 @@ using OpenBitSet = Lucene.Net.Util.OpenBitSet;
 
 namespace Lucene.Net.Search
 {
-	
-	/// <summary> A wrapper for <see cref="MultiTermQuery" />, that exposes its
-	/// functionality as a <see cref="Filter" />.
-	/// <p/>
-	/// <c>MultiTermQueryWrapperFilter</c> is not designed to
-	/// be used by itself. Normally you subclass it to provide a Filter
-	/// counterpart for a <see cref="MultiTermQuery" /> subclass.
-	/// <p/>
-	/// For example, <see cref="TermRangeFilter" /> and <see cref="PrefixFilter" /> extend
-	/// <c>MultiTermQueryWrapperFilter</c>.
-	/// This class also provides the functionality behind
-	/// <see cref="MultiTermQuery.CONSTANT_SCORE_FILTER_REWRITE" />;
-	/// this is why it is not abstract.
-	/// </summary>
-	[Serializable]
+
+    /// <summary> A wrapper for <see cref="MultiTermQuery" />, that exposes its
+    /// functionality as a <see cref="Filter" />.
+    /// <p/>
+    /// <c>MultiTermQueryWrapperFilter</c> is not designed to
+    /// be used by itself. Normally you subclass it to provide a Filter
+    /// counterpart for a <see cref="MultiTermQuery" /> subclass.
+    /// <p/>
+    /// For example, <see cref="TermRangeFilter" /> and <see cref="PrefixFilter" /> extend
+    /// <c>MultiTermQueryWrapperFilter</c>.
+    /// This class also provides the functionality behind
+    /// <see cref="MultiTermQuery.CONSTANT_SCORE_FILTER_REWRITE" />;
+    /// this is why it is not abstract.
+    /// </summary>
+#if !DNXCORE50
+        [Serializable]
+#endif
     public class MultiTermQueryWrapperFilter<T> : Filter
         where T : MultiTermQuery
 	{

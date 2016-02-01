@@ -24,12 +24,14 @@ using SpanQuery = Lucene.Net.Search.Spans.SpanQuery;
 
 namespace Lucene.Net.Documents
 {
-	/// <summary> 
-	/// 
-	/// 
-	/// </summary>
-	[Serializable]
-	public abstract class AbstractField : IFieldable
+    /// <summary> 
+    /// 
+    /// 
+    /// </summary>
+#if !DNXCORE50
+        [Serializable]
+#endif
+    public abstract class AbstractField : IFieldable
 	{
 		
 		protected internal System.String internalName = "body";

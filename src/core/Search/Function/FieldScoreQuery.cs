@@ -19,48 +19,50 @@ using System;
 
 namespace Lucene.Net.Search.Function
 {
-	
-	/// <summary> A query that scores each document as the value of the numeric input field.
-	/// <p/> 
-	/// The query matches all documents, and scores each document according to the numeric 
-	/// value of that field. 
-	/// <p/>
-	/// It is assumed, and expected, that:
-	/// <list type="bullet">
-	/// <item>The field used here is indexed, and has exactly 
-	/// one token in every scored document.</item> 
-	/// <item>Best if this field is un_tokenized.</item>
-	/// <item>That token is parsable to the selected type.</item>
-	/// </list>
-	/// <p/>  
-	/// Combining this query in a FunctionQuery allows much freedom in affecting document scores.
-	/// Note, that with this freedom comes responsibility: it is more than likely that the
-	/// default Lucene scoring is superior in quality to scoring modified as explained here.
-	/// However, in some cases, and certainly for research experiments, this capability may turn useful.
-	/// <p/>
-	/// When contructing this query, select the appropriate type. That type should match the data stored in the
-	/// field. So in fact the "right" type should be selected before indexing. Type selection
-	/// has effect on the RAM usage: 
-	/// <list type="bullet">
-	/// <item><see cref="Type.BYTE" /> consumes 1 * maxDocs bytes.</item>
-	/// <item><see cref="Type.SHORT" /> consumes 2 * maxDocs bytes.</item>
-	/// <item><see cref="Type.INT" /> consumes 4 * maxDocs bytes.</item>
-	/// <item><see cref="Type.FLOAT" /> consumes 8 * maxDocs bytes.</item>
-	/// </list>
-	/// <p/>
-	/// <b>Caching:</b>
-	/// Values for the numeric field are loaded once and cached in memory for further use with the same IndexReader. 
-	/// To take advantage of this, it is extremely important to reuse index-readers or index-searchers, 
-	/// otherwise, for instance if for each query a new index reader is opened, large penalties would be 
-	/// paid for loading the field values into memory over and over again!
-	/// 
-	/// <p/><font color="#FF0000">
-	/// WARNING: The status of the <b>Search.Function</b> package is experimental. 
-	/// The APIs introduced here might change in the future and will not be 
-	/// supported anymore in such a case.</font>
-	/// </summary>
-	[Serializable]
-	public class FieldScoreQuery:ValueSourceQuery
+
+    /// <summary> A query that scores each document as the value of the numeric input field.
+    /// <p/> 
+    /// The query matches all documents, and scores each document according to the numeric 
+    /// value of that field. 
+    /// <p/>
+    /// It is assumed, and expected, that:
+    /// <list type="bullet">
+    /// <item>The field used here is indexed, and has exactly 
+    /// one token in every scored document.</item> 
+    /// <item>Best if this field is un_tokenized.</item>
+    /// <item>That token is parsable to the selected type.</item>
+    /// </list>
+    /// <p/>  
+    /// Combining this query in a FunctionQuery allows much freedom in affecting document scores.
+    /// Note, that with this freedom comes responsibility: it is more than likely that the
+    /// default Lucene scoring is superior in quality to scoring modified as explained here.
+    /// However, in some cases, and certainly for research experiments, this capability may turn useful.
+    /// <p/>
+    /// When contructing this query, select the appropriate type. That type should match the data stored in the
+    /// field. So in fact the "right" type should be selected before indexing. Type selection
+    /// has effect on the RAM usage: 
+    /// <list type="bullet">
+    /// <item><see cref="Type.BYTE" /> consumes 1 * maxDocs bytes.</item>
+    /// <item><see cref="Type.SHORT" /> consumes 2 * maxDocs bytes.</item>
+    /// <item><see cref="Type.INT" /> consumes 4 * maxDocs bytes.</item>
+    /// <item><see cref="Type.FLOAT" /> consumes 8 * maxDocs bytes.</item>
+    /// </list>
+    /// <p/>
+    /// <b>Caching:</b>
+    /// Values for the numeric field are loaded once and cached in memory for further use with the same IndexReader. 
+    /// To take advantage of this, it is extremely important to reuse index-readers or index-searchers, 
+    /// otherwise, for instance if for each query a new index reader is opened, large penalties would be 
+    /// paid for loading the field values into memory over and over again!
+    /// 
+    /// <p/><font color="#FF0000">
+    /// WARNING: The status of the <b>Search.Function</b> package is experimental. 
+    /// The APIs introduced here might change in the future and will not be 
+    /// supported anymore in such a case.</font>
+    /// </summary>
+#if !DNXCORE50
+        [Serializable]
+#endif
+    public class FieldScoreQuery:ValueSourceQuery
 	{
 		
 		/// <summary> Type of score field, indicating how field values are interpreted/parsed.  

@@ -24,6 +24,8 @@ using System.Threading;
 
 namespace Lucene.Net.Support
 {
+    using System.Diagnostics;
+
     /// <summary>
     /// Support class used to handle threads
     /// </summary>
@@ -88,6 +90,7 @@ namespace Lucene.Net.Support
             threadField.Start();
         }
 
+#if !DNXCORE50
         /// <summary>
         /// Interrupts a thread that is in the WaitSleepJoin thread state
         /// </summary>
@@ -95,6 +98,7 @@ namespace Lucene.Net.Support
         {
             threadField.Interrupt();
         }
+#endif
 
         /// <summary>
         /// Gets the current thread instance
@@ -132,10 +136,11 @@ namespace Lucene.Net.Support
             threadField.IsBackground = isDaemon;
         }
 
+#if !DNXCORE50
         /// <summary>
         /// Gets or sets a value indicating the scheduling priority of a thread
         /// </summary>
-        public System.Threading.ThreadPriority Priority
+        public ThreadPriority Priority
         {
             get
             {
@@ -158,6 +163,7 @@ namespace Lucene.Net.Support
 
             }
         }
+#endif
 
         /// <summary>
         /// Gets a value indicating the execution status of the current thread
@@ -199,7 +205,12 @@ namespace Lucene.Net.Support
         /// <param name="MiliSeconds">Time of wait in milliseconds</param>
         public void Join(long MiliSeconds)
         {
-            threadField.Join(new System.TimeSpan(MiliSeconds * 10000));
+            var ts = new System.TimeSpan(MiliSeconds * 10000);
+#if !DNXCORE50
+            threadField.Join(ts);
+#else
+            threadField.Join((int)ts.TotalMilliseconds);
+#endif
         }
 
         /// <summary>
@@ -209,7 +220,12 @@ namespace Lucene.Net.Support
         /// <param name="NanoSeconds">Time of wait in nanoseconds</param>
         public void Join(long MiliSeconds, int NanoSeconds)
         {
-            threadField.Join(new System.TimeSpan(MiliSeconds * 10000 + NanoSeconds * 100));
+            var ts = new System.TimeSpan(MiliSeconds * 10000 + NanoSeconds * 100);
+#if !DNXCORE50
+            threadField.Join(ts);
+#else
+            threadField.Join((int)ts.TotalMilliseconds);
+#endif
         }
 
         /// <summary>
@@ -220,6 +236,7 @@ namespace Lucene.Net.Support
             Monitor.PulseAll(threadField);
         }
 
+#if !DNXCORE50
         /// <summary>
         /// Raises a ThreadAbortException in the thread on which it is invoked, 
         /// to begin the process of terminating the thread. Calling this method 
@@ -241,6 +258,7 @@ namespace Lucene.Net.Support
         {
             threadField.Abort(stateInfo);
         }
+#endif
 
         /// <summary>
         /// Suspends the thread, if the thread is already suspended it has no effect
@@ -256,7 +274,11 @@ namespace Lucene.Net.Support
         /// <returns>A String that represents the current object</returns>
         public override System.String ToString()
         {
+#if !DNXCORE50
             return "Thread[" + Name + "," + Priority.ToString() + "]";
+#else
+            return "Thread[" + Name + "]";
+#endif
         }
 
         [ThreadStatic]

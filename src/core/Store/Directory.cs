@@ -21,25 +21,27 @@ using IndexFileNameFilter = Lucene.Net.Index.IndexFileNameFilter;
 
 namespace Lucene.Net.Store
 {
-	
-	/// <summary>A Directory is a flat list of files.  Files may be written once, when they
-	/// are created.  Once a file is created it may only be opened for read, or
-	/// deleted.  Random access is permitted both when reading and writing.
-	/// 
-	/// <p/> Java's i/o APIs not used directly, but rather all i/o is
-	/// through this API.  This permits things such as: <list>
-	/// <item> implementation of RAM-based indices;</item>
-	/// <item> implementation indices stored in a database, via JDBC;</item>
-	/// <item> implementation of an index as a single file;</item>
-	/// </list>
-	/// 
-	/// Directory locking is implemented by an instance of <see cref="LockFactory" />
-	///, and can be changed for each Directory
-	/// instance using <see cref="SetLockFactory" />.
-	/// 
-	/// </summary>
-	[Serializable]
-	public abstract class Directory : System.IDisposable
+
+    /// <summary>A Directory is a flat list of files.  Files may be written once, when they
+    /// are created.  Once a file is created it may only be opened for read, or
+    /// deleted.  Random access is permitted both when reading and writing.
+    /// 
+    /// <p/> Java's i/o APIs not used directly, but rather all i/o is
+    /// through this API.  This permits things such as: <list>
+    /// <item> implementation of RAM-based indices;</item>
+    /// <item> implementation indices stored in a database, via JDBC;</item>
+    /// <item> implementation of an index as a single file;</item>
+    /// </list>
+    /// 
+    /// Directory locking is implemented by an instance of <see cref="LockFactory" />
+    ///, and can be changed for each Directory
+    /// instance using <see cref="SetLockFactory" />.
+    /// 
+    /// </summary>
+#if !DNXCORE50
+        [Serializable]
+#endif
+    public abstract class Directory : System.IDisposable
 	{
 		protected internal volatile bool isOpen = true;
 		

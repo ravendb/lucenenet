@@ -25,16 +25,20 @@ using Occur = Lucene.Net.Search.Occur;
 
 namespace Lucene.Net.Search
 {
-	
-	/// <summary>A Query that matches documents matching boolean combinations of other
-	/// queries, e.g. <see cref="TermQuery" />s, <see cref="PhraseQuery" />s or other
-	/// BooleanQuerys.
-	/// </summary>
-	[Serializable]
-	public class BooleanQuery : Query, System.Collections.Generic.IEnumerable<BooleanClause>, System.ICloneable
+
+    /// <summary>A Query that matches documents matching boolean combinations of other
+    /// queries, e.g. <see cref="TermQuery" />s, <see cref="PhraseQuery" />s or other
+    /// BooleanQuerys.
+    /// </summary>
+#if !DNXCORE50
+        [Serializable]
+#endif
+    public class BooleanQuery : Query, System.Collections.Generic.IEnumerable<BooleanClause>, System.ICloneable
 	{
-		[Serializable]
-		private class AnonymousClassSimilarityDelegator:SimilarityDelegator
+#if !DNXCORE50
+        [Serializable]
+#endif
+        private class AnonymousClassSimilarityDelegator:SimilarityDelegator
 		{
 			private void  InitBlock(BooleanQuery enclosingInstance)
 			{
@@ -60,14 +64,16 @@ namespace Lucene.Net.Search
 		}
 		
 		private static int _maxClauses = 1024;
-		
-		/// <summary>Thrown when an attempt is made to add more than <see cref="MaxClauseCount" />
-		/// clauses. This typically happens if
-		/// a PrefixQuery, FuzzyQuery, WildcardQuery, or TermRangeQuery 
-		/// is expanded to many terms during search. 
-		/// </summary>
-		[Serializable]
-		public class TooManyClauses:System.SystemException
+
+        /// <summary>Thrown when an attempt is made to add more than <see cref="MaxClauseCount" />
+        /// clauses. This typically happens if
+        /// a PrefixQuery, FuzzyQuery, WildcardQuery, or TermRangeQuery 
+        /// is expanded to many terms during search. 
+        /// </summary>
+#if !DNXCORE50
+        [Serializable]
+#endif
+        public class TooManyClauses:System.SystemException
 		{
 			public override System.String Message
 			{
@@ -205,14 +211,16 @@ namespace Lucene.Net.Search
         {
             return clauses.GetEnumerator();
         }
-		/// <summary> Expert: the Weight for BooleanQuery, used to
-		/// normalize, score and explain these queries.
-		/// 
-		/// <p/>NOTE: this API and implementation is subject to
-		/// change suddenly in the next release.<p/>
-		/// </summary>
-		[Serializable]
-		protected internal class BooleanWeight:Weight
+        /// <summary> Expert: the Weight for BooleanQuery, used to
+        /// normalize, score and explain these queries.
+        /// 
+        /// <p/>NOTE: this API and implementation is subject to
+        /// change suddenly in the next release.<p/>
+        /// </summary>
+#if !DNXCORE50
+        [Serializable]
+#endif
+        protected internal class BooleanWeight:Weight
 		{
 			private void  InitBlock(BooleanQuery enclosingInstance)
 			{

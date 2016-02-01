@@ -21,10 +21,12 @@ using Payload = Lucene.Net.Index.Payload;
 
 namespace Lucene.Net.Analysis.Tokenattributes
 {
-	
-	/// <summary> The payload of a Token. See also <see cref="Payload" />.</summary>
-	[Serializable]
-	public class PayloadAttribute:Attribute, IPayloadAttribute, System.ICloneable
+
+    /// <summary> The payload of a Token. See also <see cref="Payload" />.</summary>
+#if !DNXCORE50
+        [Serializable]
+#endif
+    public class PayloadAttribute:Attribute, IPayloadAttribute, System.ICloneable
 	{
 		private Payload payload;
 		

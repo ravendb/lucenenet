@@ -28,15 +28,17 @@ using NoSuchDirectoryException = Lucene.Net.Store.NoSuchDirectoryException;
 
 namespace Lucene.Net.Index
 {
-	
-	/// <summary> A collection of segmentInfo objects with methods for operating on
-	/// those segments in relation to the file system.
-	/// 
-	/// <p/><b>NOTE:</b> This API is new and still experimental
-	/// (subject to change suddenly in the next release)<p/>
-	/// </summary>
-	[Serializable]
-	public sealed class SegmentInfos : List<SegmentInfo>, ICloneable
+
+    /// <summary> A collection of segmentInfo objects with methods for operating on
+    /// those segments in relation to the file system.
+    /// 
+    /// <p/><b>NOTE:</b> This API is new and still experimental
+    /// (subject to change suddenly in the next release)<p/>
+    /// </summary>
+#if !DNXCORE50
+        [Serializable]
+#endif
+    public sealed class SegmentInfos : List<SegmentInfo>, ICloneable
 	{
 		private class AnonymousClassFindSegmentsFile:FindSegmentsFile
 		{

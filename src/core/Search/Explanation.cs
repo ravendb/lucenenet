@@ -20,10 +20,12 @@ using System.Collections.Generic;
 
 namespace Lucene.Net.Search
 {
-	
-	/// <summary>Expert: Describes the score computation for document and query. </summary>
-	[Serializable]
-	public class Explanation
+
+    /// <summary>Expert: Describes the score computation for document and query. </summary>
+#if !DNXCORE50
+        [Serializable]
+#endif
+    public class Explanation
 	{
 		private float value;        // the value of this node
 		private System.String description;  // what it represents
@@ -143,16 +145,18 @@ namespace Lucene.Net.Search
 			
 			return buffer.ToString();
 		}
-		
-		/// <summary> Small Util class used to pass both an idf factor as well as an
-		/// explanation for that factor.
-		/// 
-		/// This class will likely be held on a <see cref="Weight" />, so be aware 
-		/// before storing any large or un-serializable fields.
-		/// 
-		/// </summary>
-		[Serializable]
-		public abstract class IDFExplanation
+
+        /// <summary> Small Util class used to pass both an idf factor as well as an
+        /// explanation for that factor.
+        /// 
+        /// This class will likely be held on a <see cref="Weight" />, so be aware 
+        /// before storing any large or un-serializable fields.
+        /// 
+        /// </summary>
+#if !DNXCORE50
+        [Serializable]
+#endif
+        public abstract class IDFExplanation
 		{
 		    /// <value> the idf factor </value>
 		    public abstract float Idf { get; }

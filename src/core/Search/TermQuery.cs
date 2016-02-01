@@ -25,17 +25,21 @@ using IDFExplanation = Lucene.Net.Search.Explanation.IDFExplanation;
 
 namespace Lucene.Net.Search
 {
-	
-	/// <summary>A Query that matches documents containing a term.
-	/// This may be combined with other terms with a <see cref="BooleanQuery" />.
-	/// </summary>
-	[Serializable]
-	public class TermQuery:Query
+
+    /// <summary>A Query that matches documents containing a term.
+    /// This may be combined with other terms with a <see cref="BooleanQuery" />.
+    /// </summary>
+#if !DNXCORE50
+        [Serializable]
+#endif
+    public class TermQuery:Query
 	{
 		private Term term;
-		
-		[Serializable]
-		private class TermWeight:Weight
+
+#if !DNXCORE50
+        [Serializable]
+#endif
+        private class TermWeight:Weight
 		{
 			private void  InitBlock(TermQuery enclosingInstance)
 			{

@@ -21,9 +21,11 @@ using DocIdSetIterator = Lucene.Net.Search.DocIdSetIterator;
 
 namespace Lucene.Net.Util
 {
-	
-	[Serializable]
-	public class OpenBitSetDISI:OpenBitSet
+
+#if !DNXCORE50
+        [Serializable]
+#endif
+    public class OpenBitSetDISI:OpenBitSet
 	{
 		
 		/// <summary>Construct an OpenBitSetDISI with its bits set

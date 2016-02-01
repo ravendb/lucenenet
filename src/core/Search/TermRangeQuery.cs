@@ -22,22 +22,24 @@ using ToStringUtils = Lucene.Net.Util.ToStringUtils;
 
 namespace Lucene.Net.Search
 {
-	
-	/// <summary> A Query that matches documents within an exclusive range of terms.
-	/// 
-	/// <p/>This query matches the documents looking for terms that fall into the
-	/// supplied range according to <see cref="String.CompareTo(String)" />. It is not intended
-	/// for numerical ranges, use <see cref="NumericRangeQuery{T}" /> instead.
-	/// 
-	/// <p/>This query uses the <see cref="MultiTermQuery.CONSTANT_SCORE_AUTO_REWRITE_DEFAULT" />
-	///
-	/// rewrite method.
-	/// </summary>
-	/// <since> 2.9
-	/// </since>
-	
-	[Serializable]
-	public class TermRangeQuery:MultiTermQuery
+
+    /// <summary> A Query that matches documents within an exclusive range of terms.
+    /// 
+    /// <p/>This query matches the documents looking for terms that fall into the
+    /// supplied range according to <see cref="String.CompareTo(String)" />. It is not intended
+    /// for numerical ranges, use <see cref="NumericRangeQuery{T}" /> instead.
+    /// 
+    /// <p/>This query uses the <see cref="MultiTermQuery.CONSTANT_SCORE_AUTO_REWRITE_DEFAULT" />
+    ///
+    /// rewrite method.
+    /// </summary>
+    /// <since> 2.9
+    /// </since>
+
+#if !DNXCORE50
+        [Serializable]
+#endif
+    public class TermRangeQuery:MultiTermQuery
 	{
 		private System.String lowerTerm;
 		private System.String upperTerm;

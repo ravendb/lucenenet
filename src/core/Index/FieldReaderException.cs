@@ -22,11 +22,13 @@ namespace Lucene.Net.Index
     using System.Runtime.Serialization;
 
     /// <summary> 
-	/// 
-	/// 
-	/// </summary>
-	[Serializable]
-	public class FieldReaderException:System.SystemException
+    /// 
+    /// 
+    /// </summary>
+#if !DNXCORE50
+        [Serializable]
+#endif
+    public class FieldReaderException:System.SystemException
 	{
 		/// <summary> Constructs a new runtime exception with <c>null</c> as its
 		/// detail message.  The cause is not initialized, and may subsequently be
@@ -88,9 +90,11 @@ namespace Lucene.Net.Index
 		{
 		}
 
+#if !DNXCORE50
         public FieldReaderException(SerializationInfo info, StreamingContext context) 
             : base(info, context)
         {
         }
+#endif
     }
 }

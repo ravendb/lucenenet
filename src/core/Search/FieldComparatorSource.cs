@@ -19,15 +19,17 @@ using System;
 
 namespace Lucene.Net.Search
 {
-	
-	/// <summary> Provides a <see cref="FieldComparator" /> for custom field sorting.
-	/// 
-	/// <b>NOTE:</b> This API is experimental and might change in
-	/// incompatible ways in the next release.
-	/// 
-	/// </summary>
-	[Serializable]
-	public abstract class FieldComparatorSource
+
+    /// <summary> Provides a <see cref="FieldComparator" /> for custom field sorting.
+    /// 
+    /// <b>NOTE:</b> This API is experimental and might change in
+    /// incompatible ways in the next release.
+    /// 
+    /// </summary>
+#if !DNXCORE50
+        [Serializable]
+#endif
+    public abstract class FieldComparatorSource
 	{
 		
 		/// <summary> Creates a comparator for the field in the given index.

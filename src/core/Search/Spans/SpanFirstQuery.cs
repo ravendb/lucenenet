@@ -25,10 +25,12 @@ using Query = Lucene.Net.Search.Query;
 
 namespace Lucene.Net.Search.Spans
 {
-	
-	/// <summary>Matches spans near the beginning of a field. </summary>
-	[Serializable]
-	public class SpanFirstQuery : SpanQuery, System.ICloneable
+
+    /// <summary>Matches spans near the beginning of a field. </summary>
+#if !DNXCORE50
+        [Serializable]
+#endif
+    public class SpanFirstQuery : SpanQuery, System.ICloneable
 	{
 		private class AnonymousClassSpans : Spans
 		{

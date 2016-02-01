@@ -90,10 +90,12 @@ namespace Lucene.Net.Search
 		        get { return time; }
 		    }
 		}
-		
-		/// <summary>Thrown when elapsed search time exceeds allowed search time. </summary>
-		[Serializable]
-		public class TimeExceededException:System.SystemException
+
+        /// <summary>Thrown when elapsed search time exceeds allowed search time. </summary>
+#if !DNXCORE50
+        [Serializable]
+#endif
+        public class TimeExceededException:System.SystemException
 		{
 			private long timeAllowed;
 			private long timeElapsed;

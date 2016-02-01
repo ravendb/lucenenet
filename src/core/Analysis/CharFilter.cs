@@ -62,7 +62,11 @@ namespace Lucene.Net.Analysis
             {
                 if (input != null)
                 {
+#if !DNXCORE50
                     input.Close();
+#else
+                    input.Dispose();
+#endif
                 }
             }
 

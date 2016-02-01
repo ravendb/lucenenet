@@ -22,30 +22,32 @@ using FieldCache = Lucene.Net.Search.FieldCache;
 
 namespace Lucene.Net.Search.Function
 {
-	
-	/// <summary> Expert: obtains int field values from the 
-	/// <see cref="Lucene.Net.Search.FieldCache">FieldCache</see>
-	/// using <c>getInts()</c> and makes those values 
-	/// available as other numeric types, casting as needed.
-	/// 
-	/// <p/><font color="#FF0000">
-	/// WARNING: The status of the <b>Search.Function</b> package is experimental. 
-	/// The APIs introduced here might change in the future and will not be 
-	/// supported anymore in such a case.</font>
-	/// 
-	/// </summary>
-	/// <seealso cref="Lucene.Net.Search.Function.FieldCacheSource"> for requirements
-	/// on the field.
-	/// 
-	/// <p/><b>NOTE</b>: with the switch in 2.9 to segment-based
+
+    /// <summary> Expert: obtains int field values from the 
+    /// <see cref="Lucene.Net.Search.FieldCache">FieldCache</see>
+    /// using <c>getInts()</c> and makes those values 
+    /// available as other numeric types, casting as needed.
+    /// 
+    /// <p/><font color="#FF0000">
+    /// WARNING: The status of the <b>Search.Function</b> package is experimental. 
+    /// The APIs introduced here might change in the future and will not be 
+    /// supported anymore in such a case.</font>
+    /// 
+    /// </summary>
+    /// <seealso cref="Lucene.Net.Search.Function.FieldCacheSource"> for requirements
+    /// on the field.
+    /// 
+    /// <p/><b>NOTE</b>: with the switch in 2.9 to segment-based
     /// searching, if <see cref="FieldCacheSource.GetValues" /> is invoked with a
-	/// composite (multi-segment) reader, this can easily cause
-	/// double RAM usage for the values in the FieldCache.  It's
-	/// best to switch your application to pass only atomic
-	/// (single segment) readers to this API.<p/>
-	/// </seealso>
-	[Serializable]
-	public class IntFieldSource:FieldCacheSource
+    /// composite (multi-segment) reader, this can easily cause
+    /// double RAM usage for the values in the FieldCache.  It's
+    /// best to switch your application to pass only atomic
+    /// (single segment) readers to this API.<p/>
+    /// </seealso>
+#if !DNXCORE50
+        [Serializable]
+#endif
+    public class IntFieldSource:FieldCacheSource
 	{
 		private class AnonymousClassDocValues:DocValues
 		{

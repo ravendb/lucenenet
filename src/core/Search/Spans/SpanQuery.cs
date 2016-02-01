@@ -24,10 +24,12 @@ using Weight = Lucene.Net.Search.Weight;
 
 namespace Lucene.Net.Search.Spans
 {
-	
-	/// <summary>Base class for span-based queries. </summary>
-	[Serializable]
-	public abstract class SpanQuery:Query
+
+    /// <summary>Base class for span-based queries. </summary>
+#if !DNXCORE50
+        [Serializable]
+#endif
+    public abstract class SpanQuery:Query
 	{
 		/// <summary>Expert: Returns the matches for this query in an index.  Used internally
 		/// to search for spans. 

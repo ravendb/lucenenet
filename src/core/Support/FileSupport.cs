@@ -20,6 +20,7 @@
 */
 
 using System;
+using System.Collections;
 using System.IO;
 
 namespace Lucene.Net.Support

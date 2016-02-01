@@ -26,95 +26,97 @@ using Attribute = Lucene.Net.Util.Attribute;
 
 namespace Lucene.Net.Analysis
 {
-	
-	/// <summary>A Token is an occurrence of a term from the text of a field.  It consists of
-	/// a term's text, the start and end offset of the term in the text of the field,
-	/// and a type string.
-	/// <p/>
-	/// The start and end offsets permit applications to re-associate a token with
-	/// its source text, e.g., to display highlighted query terms in a document
-	/// browser, or to show matching text fragments in a <abbr
-	/// title="KeyWord In Context">KWIC</abbr> display, etc.
-	/// <p/>
-	/// The type is a string, assigned by a lexical analyzer
-	/// (a.k.a. tokenizer), naming the lexical or syntactic class that the token
-	/// belongs to.  For example an end of sentence marker token might be implemented
-	/// with type "eos".  The default token type is "word".  
-	/// <p/>
-	/// A Token can optionally have metadata (a.k.a. Payload) in the form of a variable
-	/// length byte array. Use <see cref="TermPositions.PayloadLength" /> and 
-	/// <see cref="TermPositions.GetPayload(byte[], int)" /> to retrieve the payloads from the index.
-	/// </summary>
-	/// <summary><br/><br/>
-	/// </summary>
-	/// <summary><p/><b>NOTE:</b> As of 2.9, Token implements all <see cref="IAttribute" /> interfaces
-	/// that are part of core Lucene and can be found in the <see cref="Lucene.Net.Analysis.Tokenattributes"/> namespace.
-	/// Even though it is not necessary to use Token anymore, with the new TokenStream API it can
-	/// be used as convenience class that implements all <see cref="IAttribute" />s, which is especially useful
-	/// to easily switch from the old to the new TokenStream API.
-	/// <br/><br/>
-	/// <p/>Tokenizers and TokenFilters should try to re-use a Token instance when
-	/// possible for best performance, by implementing the
-	/// <see cref="TokenStream.IncrementToken()" /> API.
-	/// Failing that, to create a new Token you should first use
-	/// one of the constructors that starts with null text.  To load
-	/// the token from a char[] use <see cref="SetTermBuffer(char[], int, int)" />.
-	/// To load from a String use <see cref="SetTermBuffer(String)" /> or <see cref="SetTermBuffer(String, int, int)" />.
-	/// Alternatively you can get the Token's termBuffer by calling either <see cref="TermBuffer()" />,
-	/// if you know that your text is shorter than the capacity of the termBuffer
-	/// or <see cref="ResizeTermBuffer(int)" />, if there is any possibility
-	/// that you may need to grow the buffer. Fill in the characters of your term into this
+
+    /// <summary>A Token is an occurrence of a term from the text of a field.  It consists of
+    /// a term's text, the start and end offset of the term in the text of the field,
+    /// and a type string.
+    /// <p/>
+    /// The start and end offsets permit applications to re-associate a token with
+    /// its source text, e.g., to display highlighted query terms in a document
+    /// browser, or to show matching text fragments in a <abbr
+    /// title="KeyWord In Context">KWIC</abbr> display, etc.
+    /// <p/>
+    /// The type is a string, assigned by a lexical analyzer
+    /// (a.k.a. tokenizer), naming the lexical or syntactic class that the token
+    /// belongs to.  For example an end of sentence marker token might be implemented
+    /// with type "eos".  The default token type is "word".  
+    /// <p/>
+    /// A Token can optionally have metadata (a.k.a. Payload) in the form of a variable
+    /// length byte array. Use <see cref="TermPositions.PayloadLength" /> and 
+    /// <see cref="TermPositions.GetPayload(byte[], int)" /> to retrieve the payloads from the index.
+    /// </summary>
+    /// <summary><br/><br/>
+    /// </summary>
+    /// <summary><p/><b>NOTE:</b> As of 2.9, Token implements all <see cref="IAttribute" /> interfaces
+    /// that are part of core Lucene and can be found in the <see cref="Lucene.Net.Analysis.Tokenattributes"/> namespace.
+    /// Even though it is not necessary to use Token anymore, with the new TokenStream API it can
+    /// be used as convenience class that implements all <see cref="IAttribute" />s, which is especially useful
+    /// to easily switch from the old to the new TokenStream API.
+    /// <br/><br/>
+    /// <p/>Tokenizers and TokenFilters should try to re-use a Token instance when
+    /// possible for best performance, by implementing the
+    /// <see cref="TokenStream.IncrementToken()" /> API.
+    /// Failing that, to create a new Token you should first use
+    /// one of the constructors that starts with null text.  To load
+    /// the token from a char[] use <see cref="SetTermBuffer(char[], int, int)" />.
+    /// To load from a String use <see cref="SetTermBuffer(String)" /> or <see cref="SetTermBuffer(String, int, int)" />.
+    /// Alternatively you can get the Token's termBuffer by calling either <see cref="TermBuffer()" />,
+    /// if you know that your text is shorter than the capacity of the termBuffer
+    /// or <see cref="ResizeTermBuffer(int)" />, if there is any possibility
+    /// that you may need to grow the buffer. Fill in the characters of your term into this
     /// buffer, with <see cref="string.ToCharArray(int, int)" /> if loading from a string,
-	/// or with <see cref="Array.Copy(Array, long, Array, long, long)" />, and finally call <see cref="SetTermLength(int)" /> to
-	/// set the length of the term text.  See <a target="_top"
-	/// href="https://issues.apache.org/jira/browse/LUCENE-969">LUCENE-969</a>
-	/// for details.<p/>
-	/// <p/>Typical Token reuse patterns:
-	/// <list type="bullet">
-	/// <item> Copying text from a string (type is reset to <see cref="DEFAULT_TYPE" /> if not
-	/// specified):<br/>
-	/// <code>
-	/// return reusableToken.reinit(string, startOffset, endOffset[, type]);
-	/// </code>
-	/// </item>
-	/// <item> Copying some text from a string (type is reset to <see cref="DEFAULT_TYPE" />
-	/// if not specified):<br/>
+    /// or with <see cref="Array.Copy(Array, long, Array, long, long)" />, and finally call <see cref="SetTermLength(int)" /> to
+    /// set the length of the term text.  See <a target="_top"
+    /// href="https://issues.apache.org/jira/browse/LUCENE-969">LUCENE-969</a>
+    /// for details.<p/>
+    /// <p/>Typical Token reuse patterns:
+    /// <list type="bullet">
+    /// <item> Copying text from a string (type is reset to <see cref="DEFAULT_TYPE" /> if not
+    /// specified):<br/>
     /// <code>
-	/// return reusableToken.reinit(string, 0, string.length(), startOffset, endOffset[, type]);
+    /// return reusableToken.reinit(string, startOffset, endOffset[, type]);
     /// </code>
-	/// </item>
-	/// <item> Copying text from char[] buffer (type is reset to <see cref="DEFAULT_TYPE" />
-	/// if not specified):<br/>
+    /// </item>
+    /// <item> Copying some text from a string (type is reset to <see cref="DEFAULT_TYPE" />
+    /// if not specified):<br/>
     /// <code>
-	/// return reusableToken.reinit(buffer, 0, buffer.length, startOffset, endOffset[, type]);
+    /// return reusableToken.reinit(string, 0, string.length(), startOffset, endOffset[, type]);
     /// </code>
-	/// </item>
-	/// <item> Copying some text from a char[] buffer (type is reset to
-	/// <see cref="DEFAULT_TYPE" /> if not specified):<br/>
+    /// </item>
+    /// <item> Copying text from char[] buffer (type is reset to <see cref="DEFAULT_TYPE" />
+    /// if not specified):<br/>
     /// <code>
-	/// return reusableToken.reinit(buffer, start, end - start, startOffset, endOffset[, type]);
+    /// return reusableToken.reinit(buffer, 0, buffer.length, startOffset, endOffset[, type]);
     /// </code>
-	/// </item>
-	/// <item> Copying from one one Token to another (type is reset to
-	/// <see cref="DEFAULT_TYPE" /> if not specified):<br/>
+    /// </item>
+    /// <item> Copying some text from a char[] buffer (type is reset to
+    /// <see cref="DEFAULT_TYPE" /> if not specified):<br/>
     /// <code>
-	/// return reusableToken.reinit(source.termBuffer(), 0, source.termLength(), source.startOffset(), source.endOffset()[, source.type()]);
+    /// return reusableToken.reinit(buffer, start, end - start, startOffset, endOffset[, type]);
     /// </code>
-	/// </item>
-	/// </list>
-	/// A few things to note:
-	/// <list type="bullet">
-	/// <item>clear() initializes all of the fields to default values. This was changed in contrast to Lucene 2.4, but should affect no one.</item>
-	/// <item>Because <c>TokenStreams</c> can be chained, one cannot assume that the <c>Token's</c> current type is correct.</item>
-	/// <item>The startOffset and endOffset represent the start and offset in the
-	/// source text, so be careful in adjusting them.</item>
-	/// <item>When caching a reusable token, clone it. When injecting a cached token into a stream that can be reset, clone it again.</item>
-	/// </list>
-	/// <p/>
-	/// </summary>
-	/// <seealso cref="Lucene.Net.Index.Payload">
-	/// </seealso>
-	[Serializable]
+    /// </item>
+    /// <item> Copying from one one Token to another (type is reset to
+    /// <see cref="DEFAULT_TYPE" /> if not specified):<br/>
+    /// <code>
+    /// return reusableToken.reinit(source.termBuffer(), 0, source.termLength(), source.startOffset(), source.endOffset()[, source.type()]);
+    /// </code>
+    /// </item>
+    /// </list>
+    /// A few things to note:
+    /// <list type="bullet">
+    /// <item>clear() initializes all of the fields to default values. This was changed in contrast to Lucene 2.4, but should affect no one.</item>
+    /// <item>Because <c>TokenStreams</c> can be chained, one cannot assume that the <c>Token's</c> current type is correct.</item>
+    /// <item>The startOffset and endOffset represent the start and offset in the
+    /// source text, so be careful in adjusting them.</item>
+    /// <item>When caching a reusable token, clone it. When injecting a cached token into a stream that can be reset, clone it again.</item>
+    /// </list>
+    /// <p/>
+    /// </summary>
+    /// <seealso cref="Lucene.Net.Index.Payload">
+    /// </seealso>
+#if !DNXCORE50
+        [Serializable]
+#endif
 	public class Token : Attribute, ITermAttribute, ITypeAttribute, IPositionIncrementAttribute, IFlagsAttribute, IOffsetAttribute, IPayloadAttribute
 	{
 		public const String DEFAULT_TYPE = "word";

@@ -22,20 +22,22 @@ using ArrayUtil = Lucene.Net.Util.ArrayUtil;
 
 namespace Lucene.Net.Index
 {
-	
-	/// <summary>  A Payload is metadata that can be stored together with each occurrence 
-	/// of a term. This metadata is stored inline in the posting list of the
-	/// specific term.  
-	/// <p/>
-	/// To store payloads in the index a <see cref="TokenStream"/> has to be used that
-	/// produces payload data.
-	/// <p/>
+
+    /// <summary>  A Payload is metadata that can be stored together with each occurrence 
+    /// of a term. This metadata is stored inline in the posting list of the
+    /// specific term.  
+    /// <p/>
+    /// To store payloads in the index a <see cref="TokenStream"/> has to be used that
+    /// produces payload data.
+    /// <p/>
     /// Use <see cref="TermPositions.PayloadLength"/> and <see cref="TermPositions.GetPayload(byte[], int)"/>
-	/// to retrieve the payloads from the index.<br/>
-	/// 
-	/// </summary>
-	[Serializable]
-	public class Payload : System.ICloneable
+    /// to retrieve the payloads from the index.<br/>
+    /// 
+    /// </summary>
+#if !DNXCORE50
+        [Serializable]
+#endif
+    public class Payload : System.ICloneable
 	{
 		/// <summary>the byte array containing the payload data </summary>
 		protected internal byte[] data;

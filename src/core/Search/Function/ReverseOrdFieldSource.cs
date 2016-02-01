@@ -22,39 +22,41 @@ using FieldCache = Lucene.Net.Search.FieldCache;
 
 namespace Lucene.Net.Search.Function
 {
-	
-	/// <summary> Expert: obtains the ordinal of the field value from the default Lucene 
-	/// <see cref="Lucene.Net.Search.FieldCache">FieldCache</see> using getStringIndex()
-	/// and reverses the order.
-	/// <p/>
-	/// The native lucene index order is used to assign an ordinal value for each field value.
-	/// <p/>
-	/// Field values (terms) are lexicographically ordered by unicode value, and numbered starting at 1.
-	/// <br/>
-	/// Example of reverse ordinal (rord):
-	/// <br/>If there were only three field values: "apple","banana","pear"
-	/// <br/>then rord("apple")=3, rord("banana")=2, ord("pear")=1
-	/// <p/>
-	/// WARNING: 
-	/// rord() depends on the position in an index and can thus change 
-	/// when other documents are inserted or deleted,
-	/// or if a MultiSearcher is used. 
-	/// 
-	/// <p/><font color="#FF0000">
-	/// WARNING: The status of the <b>Search.Function</b> package is experimental. 
-	/// The APIs introduced here might change in the future and will not be 
-	/// supported anymore in such a case.</font>
-	/// 
-	/// <p/><b>NOTE</b>: with the switch in 2.9 to segment-based
+
+    /// <summary> Expert: obtains the ordinal of the field value from the default Lucene 
+    /// <see cref="Lucene.Net.Search.FieldCache">FieldCache</see> using getStringIndex()
+    /// and reverses the order.
+    /// <p/>
+    /// The native lucene index order is used to assign an ordinal value for each field value.
+    /// <p/>
+    /// Field values (terms) are lexicographically ordered by unicode value, and numbered starting at 1.
+    /// <br/>
+    /// Example of reverse ordinal (rord):
+    /// <br/>If there were only three field values: "apple","banana","pear"
+    /// <br/>then rord("apple")=3, rord("banana")=2, ord("pear")=1
+    /// <p/>
+    /// WARNING: 
+    /// rord() depends on the position in an index and can thus change 
+    /// when other documents are inserted or deleted,
+    /// or if a MultiSearcher is used. 
+    /// 
+    /// <p/><font color="#FF0000">
+    /// WARNING: The status of the <b>Search.Function</b> package is experimental. 
+    /// The APIs introduced here might change in the future and will not be 
+    /// supported anymore in such a case.</font>
+    /// 
+    /// <p/><b>NOTE</b>: with the switch in 2.9 to segment-based
     /// searching, if <see cref="GetValues" /> is invoked with a
-	/// composite (multi-segment) reader, this can easily cause
-	/// double RAM usage for the values in the FieldCache.  It's
-	/// best to switch your application to pass only atomic
-	/// (single segment) readers to this API.<p/>
-	/// </summary>
-	
-	[Serializable]
-	public class ReverseOrdFieldSource:ValueSource
+    /// composite (multi-segment) reader, this can easily cause
+    /// double RAM usage for the values in the FieldCache.  It's
+    /// best to switch your application to pass only atomic
+    /// (single segment) readers to this API.<p/>
+    /// </summary>
+
+#if !DNXCORE50
+        [Serializable]
+#endif
+    public class ReverseOrdFieldSource:ValueSource
 	{
 		private class AnonymousClassDocValues:DocValues
 		{

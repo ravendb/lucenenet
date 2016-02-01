@@ -20,10 +20,12 @@ using Attribute = Lucene.Net.Util.Attribute;
 
 namespace Lucene.Net.Analysis.Tokenattributes
 {
-	
-	/// <summary> The start and end character offset of a Token. </summary>
-	[Serializable]
-	public class OffsetAttribute:Attribute, IOffsetAttribute, System.ICloneable
+
+    /// <summary> The start and end character offset of a Token. </summary>
+#if !DNXCORE50
+        [Serializable]
+#endif
+    public class OffsetAttribute:Attribute, IOffsetAttribute, System.ICloneable
 	{
 		private int startOffset;
 		private int endOffset;

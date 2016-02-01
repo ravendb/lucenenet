@@ -77,7 +77,7 @@ namespace Lucene.Net.Support
         public static int Cardinality(System.Collections.BitArray bits)
         {
             int count = 0;
-            for (int i = 0; i < bits.Count; i++)
+            for (int i = 0; i < bits.Length; i++)
             {
                 if (bits[i])
                     count++;

@@ -23,16 +23,18 @@ using ToStringUtils = Lucene.Net.Util.ToStringUtils;
 
 namespace Lucene.Net.Search
 {
-	
-	/// <summary>A Query that matches documents containing terms with a specified prefix. A PrefixQuery
-	/// is built by QueryParser for input like <c>app*</c>.
-	/// 
-	/// <p/>This query uses the 
+
+    /// <summary>A Query that matches documents containing terms with a specified prefix. A PrefixQuery
+    /// is built by QueryParser for input like <c>app*</c>.
+    /// 
+    /// <p/>This query uses the 
     /// <see cref="MultiTermQuery.CONSTANT_SCORE_AUTO_REWRITE_DEFAULT"/>
-	/// rewrite method. 
-	/// </summary>
-	[Serializable]
-	public class PrefixQuery:MultiTermQuery
+    /// rewrite method. 
+    /// </summary>
+#if !DNXCORE50
+        [Serializable]
+#endif
+    public class PrefixQuery:MultiTermQuery
 	{
 		private Term prefix;
 		

@@ -25,13 +25,15 @@ using Query = Lucene.Net.Search.Query;
 
 namespace Lucene.Net.Search.Spans
 {
-	
-	/// <summary>Matches spans which are near one another.  One can specify <i>slop</i>, the
-	/// maximum number of intervening unmatched positions, as well as whether
-	/// matches are required to be in-order. 
-	/// </summary>
-	[Serializable]
-	public class SpanNearQuery : SpanQuery, System.ICloneable
+
+    /// <summary>Matches spans which are near one another.  One can specify <i>slop</i>, the
+    /// maximum number of intervening unmatched positions, as well as whether
+    /// matches are required to be in-order. 
+    /// </summary>
+#if !DNXCORE50
+        [Serializable]
+#endif
+    public class SpanNearQuery : SpanQuery, System.ICloneable
 	{
 		protected internal System.Collections.Generic.IList<SpanQuery> clauses;
 		protected internal int internalSlop;

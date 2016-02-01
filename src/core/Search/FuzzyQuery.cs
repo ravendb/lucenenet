@@ -28,17 +28,19 @@ using ToStringUtils = Lucene.Net.Util.ToStringUtils;
 
 namespace Lucene.Net.Search
 {
-	
-	/// <summary>Implements the fuzzy search query. The similarity measurement
-	/// is based on the Levenshtein (edit distance) algorithm.
-	/// 
-	/// Warning: this query is not very scalable with its default prefix
-	/// length of 0 - in this case, *every* term will be enumerated and
-	/// cause an edit score calculation.
-	/// 
-	/// </summary>
-	[Serializable]
-	public class FuzzyQuery : MultiTermQuery
+
+    /// <summary>Implements the fuzzy search query. The similarity measurement
+    /// is based on the Levenshtein (edit distance) algorithm.
+    /// 
+    /// Warning: this query is not very scalable with its default prefix
+    /// length of 0 - in this case, *every* term will be enumerated and
+    /// cause an edit score calculation.
+    /// 
+    /// </summary>
+#if !DNXCORE50
+        [Serializable]
+#endif
+    public class FuzzyQuery : MultiTermQuery
 	{
 		
 		public const float defaultMinSimilarity = 0.5f;

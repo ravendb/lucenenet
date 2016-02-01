@@ -20,10 +20,12 @@ using Attribute = Lucene.Net.Util.Attribute;
 
 namespace Lucene.Net.Analysis.Tokenattributes
 {
-	
-	/// <summary> A Token's lexical type. The Default value is "word". </summary>
-	[Serializable]
-	public class TypeAttribute:Attribute, ITypeAttribute, System.ICloneable
+
+    /// <summary> A Token's lexical type. The Default value is "word". </summary>
+#if !DNXCORE50
+        [Serializable]
+#endif
+    public class TypeAttribute:Attribute, ITypeAttribute, System.ICloneable
 	{
 		private System.String type;
 		public const System.String DEFAULT_TYPE = "word";

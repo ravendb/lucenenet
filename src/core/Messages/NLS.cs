@@ -21,8 +21,13 @@ using Lucene.Net.Support;
 
 namespace Lucene.Net.Messages
 {
-	
-	/// <summary> MessageBundles classes extend this class, to implement a bundle.
+    using System.Globalization;
+    using System.Resources;
+    using System.Threading;
+
+    using Lucene.Net.Util;
+
+    /// <summary> MessageBundles classes extend this class, to implement a bundle.
 	/// 
 	/// For Native Language Support (NLS), system of software internationalization.
 	/// 
@@ -73,7 +78,7 @@ namespace Lucene.Net.Messages
 		
 		public static System.String GetLocalizedMessage(System.String key)
 		{
-			return GetLocalizedMessage(key, System.Threading.Thread.CurrentThread.CurrentCulture);
+			return GetLocalizedMessage(key, CultureInfo.CurrentCulture);
 		}
 		
 		public static System.String GetLocalizedMessage(System.String key, System.Globalization.CultureInfo locale)
@@ -100,7 +105,7 @@ namespace Lucene.Net.Messages
 		
 		public static System.String GetLocalizedMessage(System.String key, params System.Object[] args)
 		{
-			return GetLocalizedMessage(key, System.Threading.Thread.CurrentThread.CurrentCulture, args);
+			return GetLocalizedMessage(key, CultureInfo.CurrentCulture, args);
 		}
 		
 		/// <summary> Initialize a given class with the message bundle Keys Should be called from
@@ -135,14 +140,27 @@ namespace Lucene.Net.Messages
 			for (var it = bundles.Keys.GetEnumerator(); it.MoveNext(); )
 			{
 				System.Type clazz = bundles[it.Current];
-				System.Threading.Thread.CurrentThread.CurrentUICulture = locale;
+#if !DNXCORE50
+			    Thread.CurrentThread.CurrentUICulture = locale;
+#else
+                CultureInfo.CurrentUICulture = locale;
+#endif
+
+#if !DNXCORE50
                 System.Resources.ResourceManager resourceBundle = System.Resources.ResourceManager.CreateFileBasedResourceManager(clazz.Name, "Messages", null); //{{Lucene.Net-2.9.1}} Can we make resourceDir "Messages" more general?
+#else
+                System.Resources.ResourceManager resourceBundle = new ResourceManager(clazz.Name, clazz.Assembly());
+#endif
 				if (resourceBundle != null)
 				{
 					try
 					{
-						System.Object obj = resourceBundle.GetObject(messageKey);
-						if (obj != null)
+#if !DNXCORE50
+                        var obj = resourceBundle.GetObject(messageKey);
+#else
+                        var obj = resourceBundle.GetString(messageKey);
+#endif
+                        if (obj != null)
 							return obj;
 					}
 					catch (System.Resources.MissingManifestResourceException)
@@ -160,7 +178,7 @@ namespace Lucene.Net.Messages
             var clazz = typeof (T);
             System.Reflection.FieldInfo[] fieldArray = clazz.GetFields(System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.DeclaredOnly | System.Reflection.BindingFlags.Static);
 			
-			bool isFieldAccessible = clazz.IsPublic;
+			bool isFieldAccessible = clazz.IsPublic();
 			
 			// build a map of field names to Field objects
 			int len = fieldArray.Length;
@@ -212,20 +230,33 @@ namespace Lucene.Net.Messages
 		    var clazz = typeof (T);
 			try
 			{
-				System.Threading.Thread.CurrentThread.CurrentUICulture = System.Threading.Thread.CurrentThread.CurrentCulture;
-				System.Resources.ResourceManager resourceBundle = System.Resources.ResourceManager.CreateFileBasedResourceManager(clazz.FullName, "", null);
+#if !DNXCORE50
+			    Thread.CurrentThread.CurrentUICulture = Thread.CurrentThread.CurrentCulture;
+#else
+                CultureInfo.CurrentUICulture = CultureInfo.CurrentCulture;
+#endif
+
+#if !DNXCORE50
+                System.Resources.ResourceManager resourceBundle = System.Resources.ResourceManager.CreateFileBasedResourceManager(clazz.FullName, "", null); //{{Lucene.Net-2.9.1}} Can we make resourceDir "Messages" more general?
+#else
+                System.Resources.ResourceManager resourceBundle = new ResourceManager(clazz.Name, clazz.Assembly());
+#endif
 				if (resourceBundle != null)
 				{
-					System.Object obj = resourceBundle.GetObject(key);
+#if !DNXCORE50
+                    var obj = resourceBundle.GetObject(key);
+#else
+                    var obj = resourceBundle.GetString(key);
+#endif
 					if (obj == null)
 					{
-						System.Console.Error.WriteLine("WARN: Message with key:" + key + " and locale: " + System.Threading.Thread.CurrentThread.CurrentCulture + " not found.");
+						System.Console.Error.WriteLine("WARN: Message with key:" + key + " and locale: " + CultureInfo.CurrentCulture + " not found.");
 					}
 				}
 			}
 			catch (System.Resources.MissingManifestResourceException)
 			{
-				System.Console.Error.WriteLine("WARN: Message with key:" + key + " and locale: " + System.Threading.Thread.CurrentThread.CurrentCulture + " not found.");
+				System.Console.Error.WriteLine("WARN: Message with key:" + key + " and locale: " + CultureInfo.CurrentCulture + " not found.");
 			}
 			catch (System.Exception)
 			{
@@ -241,7 +272,8 @@ namespace Lucene.Net.Messages
 		//@SuppressWarnings("unchecked")
 		private static void  MakeAccessible(System.Reflection.FieldInfo field)
 		{
-			if (System.Security.SecurityManager.SecurityEnabled)
+#if !DNXCORE50
+            if (System.Security.SecurityManager.SecurityEnabled)
 			{
 				//field.setAccessible(true);   // {{Aroush-2.9}} java.lang.reflect.AccessibleObject.setAccessible
 			}
@@ -249,6 +281,7 @@ namespace Lucene.Net.Messages
 			{
                 //AccessController.doPrivileged(new AnonymousClassPrivilegedAction(field));     // {{Aroush-2.9}} java.security.AccessController.doPrivileged
 			}
+#endif
 		}
 	}
 }

@@ -40,19 +40,25 @@ namespace Lucene.Net.Store
 		}
 		
 		[STAThread]
-		public static void  Main(System.String[] args)
+		public static int Main(System.String[] args)
 		{
 			
 			if (args.Length != 1)
 			{
 				System.Console.Out.WriteLine("\nUsage: java Lucene.Net.Store.LockVerifyServer port\n");
-				System.Environment.Exit(1);
+			    return 1;
 			}
 			
 			int port = System.Int32.Parse(args[0]);
 			
 			System.Net.Sockets.TcpListener temp_tcpListener;
-			temp_tcpListener = new System.Net.Sockets.TcpListener(System.Net.Dns.GetHostEntry(System.Net.Dns.GetHostName()).AddressList[0], port);
+#if !DNXCORE50
+            var address = System.Net.Dns.GetHostEntry(System.Net.Dns.GetHostName()).AddressList[0];
+#else
+            var address = AsyncHelpers.RunSync(() => System.Net.Dns.GetHostEntryAsync(System.Net.Dns.GetHostName())).AddressList[0];
+#endif
+
+            temp_tcpListener = new System.Net.Sockets.TcpListener(address, port);
 			temp_tcpListener.Server.SetSocketOption(System.Net.Sockets.SocketOptionLevel.Socket, System.Net.Sockets.SocketOptionName.ReuseAddress, 1);
 			temp_tcpListener.Start();
 			System.Net.Sockets.TcpListener s = temp_tcpListener;
@@ -63,8 +69,12 @@ namespace Lucene.Net.Store
 			
 			while (true)
 			{
-				System.Net.Sockets.TcpClient cs = s.AcceptTcpClient();
-				System.IO.Stream out_Renamed = cs.GetStream();
+#if !DNXCORE50
+                System.Net.Sockets.TcpClient cs = s.AcceptTcpClient();
+#else
+                System.Net.Sockets.TcpClient cs = AsyncHelpers.RunSync(() => s.AcceptTcpClientAsync());
+#endif
+                System.IO.Stream out_Renamed = cs.GetStream();
 				System.IO.Stream in_Renamed = cs.GetStream();
 				
 				int id = in_Renamed.ReadByte();
@@ -100,11 +110,17 @@ namespace Lucene.Net.Store
 					out_Renamed.WriteByte((System.Byte) 1);
 				else
 					out_Renamed.WriteByte((System.Byte) 0);
-				
-				out_Renamed.Close();
+
+#if !DNXCORE50
+                out_Renamed.Close();
 				in_Renamed.Close();
 				cs.Close();
-			}
+#else
+                out_Renamed.Dispose();
+                in_Renamed.Dispose();
+                cs.Dispose();
+#endif
+            }
 		}
 	}
 }

@@ -905,7 +905,7 @@ namespace Lucene.Net.Index
 		/// corruption, else 0.
 		/// </summary>
 		[STAThread]
-		public static void  Main(System.String[] args)
+		public static int Main(System.String[] args)
 		{
 			
 			bool doFix = false;
@@ -924,7 +924,7 @@ namespace Lucene.Net.Index
 					if (i == args.Length - 1)
 					{
 						System.Console.Out.WriteLine("ERROR: missing name for -segment option");
-						System.Environment.Exit(1);
+					    return 1;
 					}
 					onlySegments.Add(args[i + 1]);
 					i += 2;
@@ -934,8 +934,8 @@ namespace Lucene.Net.Index
 					if (indexPath != null)
 					{
 						System.Console.Out.WriteLine("ERROR: unexpected extra argument '" + args[i] + "'");
-						System.Environment.Exit(1);
-					}
+                        return 1;
+                    }
 					indexPath = args[i];
 					i++;
 				}
@@ -945,8 +945,8 @@ namespace Lucene.Net.Index
 			{
 				System.Console.Out.WriteLine("\nERROR: index path not specified");
 				System.Console.Out.WriteLine("\nUsage: java Lucene.Net.Index.CheckIndex pathToIndex [-fix] [-segment X] [-segment Y]\n" + "\n" + "  -fix: actually write a new segments_N file, removing any problematic segments\n" + "  -segment X: only check the specified segments.  This can be specified multiple\n" + "              times, to check more than one segment, eg '-segment _2 -segment _a'.\n" + "              You can't use this with the -fix option\n" + "\n" + "**WARNING**: -fix should only be used on an emergency basis as it will cause\n" + "documents (perhaps many) to be permanently removed from the index.  Always make\n" + "a backup copy of your index before running this!  Do not run this tool on an index\n" + "that is actively being written to.  You have been warned!\n" + "\n" + "Run without -fix, this tool will open the index, report version information\n" + "and report any exceptions it hits and what action it would take if -fix were\n" + "specified.  With -fix, this tool will remove any segments that have issues and\n" + "write a new segments_N file.  This means all documents contained in the affected\n" + "segments will be removed.\n" + "\n" + "This tool exits with exit code 1 if the index cannot be opened or has any\n" + "corruption, else 0.\n");
-				System.Environment.Exit(1);
-			}
+                return 1;
+            }
 			
 			if (!AssertsOn())
 				System.Console.Out.WriteLine("\nNOTE: testing will be more thorough if you run java with '-ea:Lucene.Net...', so assertions are enabled");
@@ -956,8 +956,8 @@ namespace Lucene.Net.Index
 			else if (doFix)
 			{
 				System.Console.Out.WriteLine("ERROR: cannot specify both -fix and -segment");
-				System.Environment.Exit(1);
-			}
+                return 1;
+            }
 			
 			System.Console.Out.WriteLine("\nOpening index @ " + indexPath + "\n");
 			Directory dir = null;
@@ -969,8 +969,8 @@ namespace Lucene.Net.Index
 			{
 				Console.Out.WriteLine("ERROR: could not open directory \"" + indexPath + "\"; exiting");
 				Console.Out.WriteLine(t.StackTrace);
-				Environment.Exit(1);
-			}
+                return 1;
+            }
 			
 			var checker = new CheckIndex(dir);
 			var tempWriter = new System.IO.StreamWriter(System.Console.OpenStandardOutput(), System.Console.Out.Encoding)
@@ -980,8 +980,8 @@ namespace Lucene.Net.Index
 			Status result = checker.CheckIndex_Renamed_Method(onlySegments);
 			if (result.missingSegments)
 			{
-				System.Environment.Exit(1);
-			}
+                return 1;
+            }
 			
 			if (!result.clean)
 			{
@@ -1011,7 +1011,8 @@ namespace Lucene.Net.Index
 				exitCode = 0;
 			else
 				exitCode = 1;
-			System.Environment.Exit(exitCode);
+
+		    return exitCode;
 		}
 	}
 }

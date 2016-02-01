@@ -20,12 +20,15 @@ using System.Text;
 
 namespace Lucene.Net.Messages
 {
-	
-	/// <summary> Default implementation of Message interface.
-	/// For Native Language Support (NLS), system of software internationalization.
-	/// </summary>
-	[Serializable]
-	public class MessageImpl : Message
+    using System.Globalization;
+
+    /// <summary> Default implementation of Message interface.
+    /// For Native Language Support (NLS), system of software internationalization.
+    /// </summary>
+#if !DNXCORE50
+        [Serializable]
+#endif
+    public class MessageImpl : Message
 	{
 		
 		private const long serialVersionUID = - 3077643314630884523L;
@@ -56,7 +59,7 @@ namespace Lucene.Net.Messages
 
 	    public virtual string GetLocalizedMessage()
 		{
-			return GetLocalizedMessage(System.Threading.Thread.CurrentThread.CurrentCulture);
+			return GetLocalizedMessage(CultureInfo.CurrentCulture);
 		}
 
         public virtual string GetLocalizedMessage(System.Globalization.CultureInfo locale)

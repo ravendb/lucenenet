@@ -23,7 +23,9 @@ namespace Lucene.Net.Store
     /// <summary> This exception is thrown when there is an attempt to
     /// access something that has already been closed.
     /// </summary>
-    [Serializable]
+#if !DNXCORE50
+        [Serializable]
+#endif
     public class AlreadyClosedException : SystemException
     {
         public AlreadyClosedException()
@@ -38,10 +40,12 @@ namespace Lucene.Net.Store
         {
         }
 
+#if !DNXCORE50
         protected AlreadyClosedException(
             SerializationInfo info,
             StreamingContext context) : base(info, context)
         {
         }
+#endif
     }
 }

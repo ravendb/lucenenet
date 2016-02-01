@@ -19,8 +19,7 @@ using System;
 
 namespace Lucene.Net.Util
 {
-	
-	/// <summary> Subclasses of StringInterner are required to
+    /// <summary> Subclasses of StringInterner are required to
 	/// return the same single String object for all equal strings.
 	/// Depending on the implementation, this may not be
 	/// the same object returned as String.intern().
@@ -32,7 +31,7 @@ namespace Lucene.Net.Util
 		/// <summary>Returns a single object instance for each equal string. </summary>
 		public virtual System.String Intern(System.String s)
 		{
-			return String.Intern(s);
+		    return s.Intern();
 		}
 		
 		/// <summary>Returns a single object instance for each equal string. </summary>

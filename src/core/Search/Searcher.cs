@@ -31,7 +31,11 @@ namespace Lucene.Net.Search
 	/// Note that you can only access hits from a Searcher as long as it is not yet
 	/// closed, otherwise an IOException will be thrown.
 	/// </summary>
-	public abstract class Searcher : System.MarshalByRefObject, Searchable, System.IDisposable
+	public abstract class Searcher :
+#if !DNXCORE50
+        System.MarshalByRefObject, 
+#endif
+        Searchable, System.IDisposable
 	{
 	    protected Searcher()
 		{

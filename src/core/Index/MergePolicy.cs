@@ -199,12 +199,14 @@ namespace Lucene.Net.Index
 				return b.ToString();
 			}
 		}
-		
-		/// <summary>Exception thrown if there are any problems while
-		/// executing a merge. 
-		/// </summary>
-		[Serializable]
-		public class MergeException:System.SystemException
+
+        /// <summary>Exception thrown if there are any problems while
+        /// executing a merge. 
+        /// </summary>
+#if !DNXCORE50
+        [Serializable]
+#endif
+        public class MergeException:System.SystemException
 		{
 			private readonly Directory dir;
 
@@ -226,9 +228,11 @@ namespace Lucene.Net.Index
 		        get { return dir; }
 		    }
 		}
-		
-		[Serializable]
-		public class MergeAbortedException:System.IO.IOException
+
+#if !DNXCORE50
+        [Serializable]
+#endif
+        public class MergeAbortedException:System.IO.IOException
 		{
 			public MergeAbortedException():base("merge is aborted")
 			{

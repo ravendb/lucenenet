@@ -1259,9 +1259,13 @@ namespace Lucene.Net.Index
 							f.Write(buffer, 0, bufLen);
 							len -= bufLen;
 						}
-						
-						f.Close();
-						ii.Close();
+
+#if !DNXCORE50
+                        f.Close();
+#else
+                        f.Dispose();
+#endif
+                        ii.Close();
 					}
 					else
 						System.Console.Out.WriteLine(t + ": " + len + " bytes");

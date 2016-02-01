@@ -34,13 +34,13 @@ namespace Lucene.Net.Store
 	{
 		
 		[STAThread]
-		public static void  Main(System.String[] args)
+		public static int Main(System.String[] args)
 		{
 			
 			if (args.Length != 6)
 			{
 				System.Console.Out.WriteLine("\nUsage: java Lucene.Net.Store.LockStressTest myID verifierHostOrIP verifierPort lockFactoryClassName lockDirName sleepTime\n" + "\n" + "  myID = int from 0 .. 255 (should be unique for test process)\n" + "  verifierHostOrIP = host name or IP address where LockVerifyServer is running\n" + "  verifierPort = port that LockVerifyServer is listening on\n" + "  lockFactoryClassName = primary LockFactory class that we will use\n" + "  lockDirName = path to the lock directory (only set for Simple/NativeFSLockFactory\n" + "  sleepTimeMS = milliseconds to pause betweeen each lock obtain/release\n" + "\n" + "You should run multiple instances of this process, each with its own\n" + "unique ID, and each pointing to the same lock directory, to verify\n" + "that locking is working correctly.\n" + "\n" + "Make sure you are first running LockVerifyServer.\n" + "\n");
-				System.Environment.Exit(1);
+			    return 1;
 			}
 			
 			int myID = System.Int32.Parse(args[0]);
@@ -48,8 +48,8 @@ namespace Lucene.Net.Store
 			if (myID < 0 || myID > 255)
 			{
 				System.Console.Out.WriteLine("myID must be a unique int 0..255");
-				System.Environment.Exit(1);
-			}
+                return 1;
+            }
 			
 			System.String verifierHost = args[1];
 			int verifierPort = System.Int32.Parse(args[2]);

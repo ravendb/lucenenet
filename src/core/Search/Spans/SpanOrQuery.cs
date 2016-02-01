@@ -26,10 +26,12 @@ using Query = Lucene.Net.Search.Query;
 
 namespace Lucene.Net.Search.Spans
 {
-	
-	/// <summary>Matches the union of its clauses.</summary>
-	[Serializable]
-	public class SpanOrQuery : SpanQuery, System.ICloneable
+
+    /// <summary>Matches the union of its clauses.</summary>
+#if !DNXCORE50
+        [Serializable]
+#endif
+    public class SpanOrQuery : SpanQuery, System.ICloneable
 	{
 		private class AnonymousClassSpans : Spans
 		{

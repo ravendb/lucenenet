@@ -20,21 +20,23 @@ using System.Globalization;
 
 namespace Lucene.Net.Search
 {
-	
-	/// <summary> A Filter that restricts search results to a range of values in a given
-	/// field.
-	/// 
-	/// <p/>This filter matches the documents looking for terms that fall into the
-	/// supplied range according to <see cref="String.CompareTo(String)" />. It is not intended
-	/// for numerical ranges, use <see cref="NumericRangeFilter{T}" /> instead.
-	/// 
-	/// <p/>If you construct a large number of range filters with different ranges but on the 
-	/// same field, <see cref="FieldCacheRangeFilter" /> may have significantly better performance. 
-	/// </summary>
-	/// <since> 2.9
-	/// </since>
-	[Serializable]
-	public class TermRangeFilter:MultiTermQueryWrapperFilter<TermRangeQuery>
+
+    /// <summary> A Filter that restricts search results to a range of values in a given
+    /// field.
+    /// 
+    /// <p/>This filter matches the documents looking for terms that fall into the
+    /// supplied range according to <see cref="String.CompareTo(String)" />. It is not intended
+    /// for numerical ranges, use <see cref="NumericRangeFilter{T}" /> instead.
+    /// 
+    /// <p/>If you construct a large number of range filters with different ranges but on the 
+    /// same field, <see cref="FieldCacheRangeFilter" /> may have significantly better performance. 
+    /// </summary>
+    /// <since> 2.9
+    /// </since>
+#if !DNXCORE50
+        [Serializable]
+#endif
+    public class TermRangeFilter:MultiTermQueryWrapperFilter<TermRangeQuery>
 	{
 		
 		/// <param name="fieldName">The field this range applies to

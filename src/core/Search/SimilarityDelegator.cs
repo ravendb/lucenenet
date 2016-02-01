@@ -21,12 +21,14 @@ using FieldInvertState = Lucene.Net.Index.FieldInvertState;
 
 namespace Lucene.Net.Search
 {
-	/// <summary>Expert: Delegating scoring implementation.  Useful in <see cref="Query.GetSimilarity(Searcher)" />
-	/// implementations, to override only certain
-	/// methods of a Searcher's Similiarty implementation.. 
-	/// </summary>
-	[Serializable]
-	public class SimilarityDelegator:Similarity
+    /// <summary>Expert: Delegating scoring implementation.  Useful in <see cref="Query.GetSimilarity(Searcher)" />
+    /// implementations, to override only certain
+    /// methods of a Searcher's Similiarty implementation.. 
+    /// </summary>
+#if !DNXCORE50
+        [Serializable]
+#endif
+    public class SimilarityDelegator:Similarity
 	{
 		private Similarity delegee;
 		

@@ -193,7 +193,9 @@ namespace Lucene.Net.Search
         }
     }
 
-    [Serializable]
+#if !DNXCORE50
+        [Serializable]
+#endif
     class AnonymousClassByteParser : ByteParser
     {
         public virtual sbyte ParseByte(System.String value_Renamed)
@@ -209,7 +211,9 @@ namespace Lucene.Net.Search
             return typeof(FieldCache).FullName + ".DEFAULT_BYTE_PARSER";
         }
     }
-    [Serializable]
+#if !DNXCORE50
+        [Serializable]
+#endif
     class AnonymousClassShortParser : ShortParser
     {
         public virtual short ParseShort(System.String value_Renamed)
@@ -225,7 +229,9 @@ namespace Lucene.Net.Search
             return typeof(FieldCache).FullName + ".DEFAULT_SHORT_PARSER";
         }
     }
-    [Serializable]
+#if !DNXCORE50
+        [Serializable]
+#endif
     class AnonymousClassIntParser : IntParser
     {
         public virtual int ParseInt(System.String value_Renamed)
@@ -241,7 +247,9 @@ namespace Lucene.Net.Search
             return typeof(FieldCache).FullName + ".DEFAULT_INT_PARSER";
         }
     }
-    [Serializable]
+#if !DNXCORE50
+        [Serializable]
+#endif
     class AnonymousClassFloatParser : FloatParser
     {
         public virtual float ParseFloat(System.String value_Renamed)
@@ -264,7 +272,9 @@ namespace Lucene.Net.Search
             return typeof(FieldCache).FullName + ".DEFAULT_FLOAT_PARSER";
         }
     }
-    [Serializable]
+#if !DNXCORE50
+        [Serializable]
+#endif
     class AnonymousClassLongParser : LongParser
     {
         public virtual long ParseLong(System.String value_Renamed)
@@ -280,7 +290,9 @@ namespace Lucene.Net.Search
             return typeof(FieldCache).FullName + ".DEFAULT_LONG_PARSER";
         }
     }
-    [Serializable]
+#if !DNXCORE50
+        [Serializable]
+#endif
     class AnonymousClassDoubleParser : DoubleParser
     {
         public virtual double ParseDouble(System.String value_Renamed)
@@ -296,7 +308,9 @@ namespace Lucene.Net.Search
             return typeof(FieldCache).FullName + ".DEFAULT_DOUBLE_PARSER";
         }
     }
-    [Serializable]
+#if !DNXCORE50
+        [Serializable]
+#endif
     class AnonymousClassIntParser1 : IntParser
     {
         public virtual int ParseInt(System.String val)
@@ -315,7 +329,9 @@ namespace Lucene.Net.Search
             return typeof(FieldCache).FullName + ".NUMERIC_UTILS_INT_PARSER";
         }
     }
-    [Serializable]
+#if !DNXCORE50
+        [Serializable]
+#endif
     class AnonymousClassFloatParser1 : FloatParser
     {
         public virtual float ParseFloat(System.String val)
@@ -334,7 +350,9 @@ namespace Lucene.Net.Search
             return typeof(FieldCache).FullName + ".NUMERIC_UTILS_FLOAT_PARSER";
         }
     }
-    [Serializable]
+#if !DNXCORE50
+        [Serializable]
+#endif
     class AnonymousClassLongParser1 : LongParser
     {
         public virtual long ParseLong(System.String val)
@@ -353,7 +371,9 @@ namespace Lucene.Net.Search
             return typeof(FieldCache).FullName + ".NUMERIC_UTILS_LONG_PARSER";
         }
     }
-    [Serializable]
+#if !DNXCORE50
+        [Serializable]
+#endif
     class AnonymousClassDoubleParser1 : DoubleParser
     {
         public virtual double ParseDouble(System.String val)

@@ -28,132 +28,134 @@ using ToStringUtils = Lucene.Net.Util.ToStringUtils;
 
 namespace Lucene.Net.Search
 {
-	
-	/// <summary> <p/>A <see cref="Query" /> that matches numeric values within a
-	/// specified range.  To use this, you must first index the
-	/// numeric values using <see cref="NumericField" /> (expert: <see cref="NumericTokenStream" />
-	///).  If your terms are instead textual,
-	/// you should use <see cref="TermRangeQuery" />.  <see cref="NumericRangeFilter{T}" />
-	/// is the filter equivalent of this
-	/// query.<p/>
-	/// 
-	/// <p/>You create a new NumericRangeQuery with the static
-	/// factory methods, eg:
-	/// 
+
+    /// <summary> <p/>A <see cref="Query" /> that matches numeric values within a
+    /// specified range.  To use this, you must first index the
+    /// numeric values using <see cref="NumericField" /> (expert: <see cref="NumericTokenStream" />
+    ///).  If your terms are instead textual,
+    /// you should use <see cref="TermRangeQuery" />.  <see cref="NumericRangeFilter{T}" />
+    /// is the filter equivalent of this
+    /// query.<p/>
+    /// 
+    /// <p/>You create a new NumericRangeQuery with the static
+    /// factory methods, eg:
+    /// 
     /// <code>
-	/// Query q = NumericRangeQuery.newFloatRange("weight",
-	/// new Float(0.3f), new Float(0.10f),
-	/// true, true);
+    /// Query q = NumericRangeQuery.newFloatRange("weight",
+    /// new Float(0.3f), new Float(0.10f),
+    /// true, true);
     /// </code>
-	/// 
-	/// matches all documents whose float valued "weight" field
-	/// ranges from 0.3 to 0.10, inclusive.
-	/// 
-	/// <p/>The performance of NumericRangeQuery is much better
-	/// than the corresponding <see cref="TermRangeQuery" /> because the
-	/// number of terms that must be searched is usually far
-	/// fewer, thanks to trie indexing, described below.<p/>
-	/// 
-	/// <p/>You can optionally specify a <a
-	/// href="#precisionStepDesc"><c>precisionStep</c></a>
-	/// when creating this query.  This is necessary if you've
-	/// changed this configuration from its default (4) during
-	/// indexing.  Lower values consume more disk space but speed
-	/// up searching.  Suitable values are between <b>1</b> and
-	/// <b>8</b>. A good starting point to test is <b>4</b>,
-	/// which is the default value for all <c>Numeric*</c>
-	/// classes.  See <a href="#precisionStepDesc">below</a> for
-	/// details.
-	/// 
-	/// <p/>This query defaults to
+    /// 
+    /// matches all documents whose float valued "weight" field
+    /// ranges from 0.3 to 0.10, inclusive.
+    /// 
+    /// <p/>The performance of NumericRangeQuery is much better
+    /// than the corresponding <see cref="TermRangeQuery" /> because the
+    /// number of terms that must be searched is usually far
+    /// fewer, thanks to trie indexing, described below.<p/>
+    /// 
+    /// <p/>You can optionally specify a <a
+    /// href="#precisionStepDesc"><c>precisionStep</c></a>
+    /// when creating this query.  This is necessary if you've
+    /// changed this configuration from its default (4) during
+    /// indexing.  Lower values consume more disk space but speed
+    /// up searching.  Suitable values are between <b>1</b> and
+    /// <b>8</b>. A good starting point to test is <b>4</b>,
+    /// which is the default value for all <c>Numeric*</c>
+    /// classes.  See <a href="#precisionStepDesc">below</a> for
+    /// details.
+    /// 
+    /// <p/>This query defaults to
     /// <see cref="MultiTermQuery.CONSTANT_SCORE_AUTO_REWRITE_DEFAULT"/> for
-	/// 32 bit (int/float) ranges with precisionStep &lt;8 and 64
-	/// bit (long/double) ranges with precisionStep &lt;6.
-	/// Otherwise it uses 
+    /// 32 bit (int/float) ranges with precisionStep &lt;8 and 64
+    /// bit (long/double) ranges with precisionStep &lt;6.
+    /// Otherwise it uses 
     /// <see cref="MultiTermQuery.CONSTANT_SCORE_FILTER_REWRITE"/> as the
-	/// number of terms is likely to be high.  With precision
-	/// steps of &lt;4, this query can be run with one of the
-	/// BooleanQuery rewrite methods without changing
-	/// BooleanQuery's default max clause count.
-	/// 
-	/// <p/><font color="red"><b>NOTE:</b> This API is experimental and
-	/// might change in incompatible ways in the next release.</font>
-	/// 
-	/// <br/><h3>How it works</h3>
-	/// 
-	/// <p/>See the publication about <a target="_blank" href="http://www.panfmp.org">panFMP</a>,
-	/// where this algorithm was described (referred to as <c>TrieRangeQuery</c>):
-	/// 
-	/// <blockquote><strong>Schindler, U, Diepenbroek, M</strong>, 2008.
-	/// <em>Generic XML-based Framework for Metadata Portals.</em>
-	/// Computers &amp; Geosciences 34 (12), 1947-1955.
-	/// <a href="http://dx.doi.org/10.1016/j.cageo.2008.02.023"
-	/// target="_blank">doi:10.1016/j.cageo.2008.02.023</a></blockquote>
-	/// 
-	/// <p/><em>A quote from this paper:</em> Because Apache Lucene is a full-text
-	/// search engine and not a conventional database, it cannot handle numerical ranges
-	/// (e.g., field value is inside user defined bounds, even dates are numerical values).
-	/// We have developed an extension to Apache Lucene that stores
-	/// the numerical values in a special string-encoded format with variable precision
-	/// (all numerical values like doubles, longs, floats, and ints are converted to
-	/// lexicographic sortable string representations and stored with different precisions
-	/// (for a more detailed description of how the values are stored,
-	/// see <see cref="NumericUtils" />). A range is then divided recursively into multiple intervals for searching:
-	/// The center of the range is searched only with the lowest possible precision in the <em>trie</em>,
-	/// while the boundaries are matched more exactly. This reduces the number of terms dramatically.<p/>
-	/// 
-	/// <p/>For the variant that stores long values in 8 different precisions (each reduced by 8 bits) that
-	/// uses a lowest precision of 1 byte, the index contains only a maximum of 256 distinct values in the
-	/// lowest precision. Overall, a range could consist of a theoretical maximum of
-	/// <c>7*255*2 + 255 = 3825</c> distinct terms (when there is a term for every distinct value of an
-	/// 8-byte-number in the index and the range covers almost all of them; a maximum of 255 distinct values is used
-	/// because it would always be possible to reduce the full 256 values to one term with degraded precision).
-	/// In practice, we have seen up to 300 terms in most cases (index with 500,000 metadata records
-	/// and a uniform value distribution).<p/>
-	/// 
-	/// <a name="precisionStepDesc"/><h3>Precision Step</h3>
-	/// <p/>You can choose any <c>precisionStep</c> when encoding values.
-	/// Lower step values mean more precisions and so more terms in index (and index gets larger).
-	/// On the other hand, the maximum number of terms to match reduces, which optimized query speed.
-	/// The formula to calculate the maximum term count is:
+    /// number of terms is likely to be high.  With precision
+    /// steps of &lt;4, this query can be run with one of the
+    /// BooleanQuery rewrite methods without changing
+    /// BooleanQuery's default max clause count.
+    /// 
+    /// <p/><font color="red"><b>NOTE:</b> This API is experimental and
+    /// might change in incompatible ways in the next release.</font>
+    /// 
+    /// <br/><h3>How it works</h3>
+    /// 
+    /// <p/>See the publication about <a target="_blank" href="http://www.panfmp.org">panFMP</a>,
+    /// where this algorithm was described (referred to as <c>TrieRangeQuery</c>):
+    /// 
+    /// <blockquote><strong>Schindler, U, Diepenbroek, M</strong>, 2008.
+    /// <em>Generic XML-based Framework for Metadata Portals.</em>
+    /// Computers &amp; Geosciences 34 (12), 1947-1955.
+    /// <a href="http://dx.doi.org/10.1016/j.cageo.2008.02.023"
+    /// target="_blank">doi:10.1016/j.cageo.2008.02.023</a></blockquote>
+    /// 
+    /// <p/><em>A quote from this paper:</em> Because Apache Lucene is a full-text
+    /// search engine and not a conventional database, it cannot handle numerical ranges
+    /// (e.g., field value is inside user defined bounds, even dates are numerical values).
+    /// We have developed an extension to Apache Lucene that stores
+    /// the numerical values in a special string-encoded format with variable precision
+    /// (all numerical values like doubles, longs, floats, and ints are converted to
+    /// lexicographic sortable string representations and stored with different precisions
+    /// (for a more detailed description of how the values are stored,
+    /// see <see cref="NumericUtils" />). A range is then divided recursively into multiple intervals for searching:
+    /// The center of the range is searched only with the lowest possible precision in the <em>trie</em>,
+    /// while the boundaries are matched more exactly. This reduces the number of terms dramatically.<p/>
+    /// 
+    /// <p/>For the variant that stores long values in 8 different precisions (each reduced by 8 bits) that
+    /// uses a lowest precision of 1 byte, the index contains only a maximum of 256 distinct values in the
+    /// lowest precision. Overall, a range could consist of a theoretical maximum of
+    /// <c>7*255*2 + 255 = 3825</c> distinct terms (when there is a term for every distinct value of an
+    /// 8-byte-number in the index and the range covers almost all of them; a maximum of 255 distinct values is used
+    /// because it would always be possible to reduce the full 256 values to one term with degraded precision).
+    /// In practice, we have seen up to 300 terms in most cases (index with 500,000 metadata records
+    /// and a uniform value distribution).<p/>
+    /// 
+    /// <a name="precisionStepDesc"/><h3>Precision Step</h3>
+    /// <p/>You can choose any <c>precisionStep</c> when encoding values.
+    /// Lower step values mean more precisions and so more terms in index (and index gets larger).
+    /// On the other hand, the maximum number of terms to match reduces, which optimized query speed.
+    /// The formula to calculate the maximum term count is:
     /// <code>
-	/// n = [ (bitsPerValue/precisionStep - 1) * (2^precisionStep - 1 ) * 2 ] + (2^precisionStep - 1 )
+    /// n = [ (bitsPerValue/precisionStep - 1) * (2^precisionStep - 1 ) * 2 ] + (2^precisionStep - 1 )
     /// </code>
-	/// <p/><em>(this formula is only correct, when <c>bitsPerValue/precisionStep</c> is an integer;
-	/// in other cases, the value must be rounded up and the last summand must contain the modulo of the division as
-	/// precision step)</em>.
-	/// For longs stored using a precision step of 4, <c>n = 15*15*2 + 15 = 465</c>, and for a precision
-	/// step of 2, <c>n = 31*3*2 + 3 = 189</c>. But the faster search speed is reduced by more seeking
-	/// in the term enum of the index. Because of this, the ideal <c>precisionStep</c> value can only
-	/// be found out by testing. <b>Important:</b> You can index with a lower precision step value and test search speed
-	/// using a multiple of the original step value.<p/>
-	/// 
-	/// <p/>Good values for <c>precisionStep</c> are depending on usage and data type:
-	/// <list type="bullet">
-	/// <item>The default for all data types is <b>4</b>, which is used, when no <c>precisionStep</c> is given.</item>
-	/// <item>Ideal value in most cases for <em>64 bit</em> data types <em>(long, double)</em> is <b>6</b> or <b>8</b>.</item>
-	/// <item>Ideal value in most cases for <em>32 bit</em> data types <em>(int, float)</em> is <b>4</b>.</item>
-	/// <item>Steps <b>&gt;64</b> for <em>long/double</em> and <b>&gt;32</b> for <em>int/float</em> produces one token
-	/// per value in the index and querying is as slow as a conventional <see cref="TermRangeQuery" />. But it can be used
-	/// to produce fields, that are solely used for sorting (in this case simply use <see cref="int.MaxValue" /> as
-	/// <c>precisionStep</c>). Using <see cref="NumericField">NumericFields</see> for sorting
-	/// is ideal, because building the field cache is much faster than with text-only numbers.
-	/// Sorting is also possible with range query optimized fields using one of the above <c>precisionSteps</c>.</item>
-	/// </list>
-	/// 
-	/// <p/>Comparisons of the different types of RangeQueries on an index with about 500,000 docs showed
-	/// that <see cref="TermRangeQuery" /> in boolean rewrite mode (with raised <see cref="BooleanQuery" /> clause count)
-	/// took about 30-40 secs to complete, <see cref="TermRangeQuery" /> in constant score filter rewrite mode took 5 secs
-	/// and executing this class took &lt;100ms to complete (on an Opteron64 machine, Java 1.5, 8 bit
-	/// precision step). This query type was developed for a geographic portal, where the performance for
-	/// e.g. bounding boxes or exact date/time stamps is important.<p/>
-	/// 
-	/// </summary>
-	/// <since> 2.9
-	/// 
-	/// </since>
-	[Serializable]
-	public sealed class NumericRangeQuery<T> : MultiTermQuery
+    /// <p/><em>(this formula is only correct, when <c>bitsPerValue/precisionStep</c> is an integer;
+    /// in other cases, the value must be rounded up and the last summand must contain the modulo of the division as
+    /// precision step)</em>.
+    /// For longs stored using a precision step of 4, <c>n = 15*15*2 + 15 = 465</c>, and for a precision
+    /// step of 2, <c>n = 31*3*2 + 3 = 189</c>. But the faster search speed is reduced by more seeking
+    /// in the term enum of the index. Because of this, the ideal <c>precisionStep</c> value can only
+    /// be found out by testing. <b>Important:</b> You can index with a lower precision step value and test search speed
+    /// using a multiple of the original step value.<p/>
+    /// 
+    /// <p/>Good values for <c>precisionStep</c> are depending on usage and data type:
+    /// <list type="bullet">
+    /// <item>The default for all data types is <b>4</b>, which is used, when no <c>precisionStep</c> is given.</item>
+    /// <item>Ideal value in most cases for <em>64 bit</em> data types <em>(long, double)</em> is <b>6</b> or <b>8</b>.</item>
+    /// <item>Ideal value in most cases for <em>32 bit</em> data types <em>(int, float)</em> is <b>4</b>.</item>
+    /// <item>Steps <b>&gt;64</b> for <em>long/double</em> and <b>&gt;32</b> for <em>int/float</em> produces one token
+    /// per value in the index and querying is as slow as a conventional <see cref="TermRangeQuery" />. But it can be used
+    /// to produce fields, that are solely used for sorting (in this case simply use <see cref="int.MaxValue" /> as
+    /// <c>precisionStep</c>). Using <see cref="NumericField">NumericFields</see> for sorting
+    /// is ideal, because building the field cache is much faster than with text-only numbers.
+    /// Sorting is also possible with range query optimized fields using one of the above <c>precisionSteps</c>.</item>
+    /// </list>
+    /// 
+    /// <p/>Comparisons of the different types of RangeQueries on an index with about 500,000 docs showed
+    /// that <see cref="TermRangeQuery" /> in boolean rewrite mode (with raised <see cref="BooleanQuery" /> clause count)
+    /// took about 30-40 secs to complete, <see cref="TermRangeQuery" /> in constant score filter rewrite mode took 5 secs
+    /// and executing this class took &lt;100ms to complete (on an Opteron64 machine, Java 1.5, 8 bit
+    /// precision step). This query type was developed for a geographic portal, where the performance for
+    /// e.g. bounding boxes or exact date/time stamps is important.<p/>
+    /// 
+    /// </summary>
+    /// <since> 2.9
+    /// 
+    /// </since>
+#if !DNXCORE50
+        [Serializable]
+#endif
+    public sealed class NumericRangeQuery<T> : MultiTermQuery
         where T : struct, IComparable<T> // best equiv constraint for java's number class
 	{
 		internal NumericRangeQuery(System.String field, int precisionStep, int valSize, T? min, T? max, bool minInclusive, bool maxInclusive)

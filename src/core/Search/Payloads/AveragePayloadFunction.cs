@@ -19,16 +19,18 @@ using System;
 
 namespace Lucene.Net.Search.Payloads
 {
-	
-	
-	/// <summary> Calculate the final score as the average score of all payloads seen.
-	/// <p/>
-	/// Is thread safe and completely reusable. 
-	/// 
-	/// 
-	/// </summary>
-	[Serializable]
-	public class AveragePayloadFunction:PayloadFunction
+
+
+    /// <summary> Calculate the final score as the average score of all payloads seen.
+    /// <p/>
+    /// Is thread safe and completely reusable. 
+    /// 
+    /// 
+    /// </summary>
+#if !DNXCORE50
+        [Serializable]
+#endif
+    public class AveragePayloadFunction:PayloadFunction
 	{
 		
 		public override float CurrentScore(int docId, System.String field, int start, int end, int numPayloadsSeen, float currentScore, float currentPayloadScore)

@@ -19,8 +19,9 @@ using System.Collections.Generic;
 
 namespace Lucene.Net.Analysis
 {
-	
-	/// <summary> Loader for text files that represent a list of stopwords.</summary>
+    using System.IO;
+
+    /// <summary> Loader for text files that represent a list of stopwords.</summary>
 	public class WordlistLoader
 	{
 		
@@ -33,7 +34,8 @@ namespace Lucene.Net.Analysis
 		/// <returns> A HashSet with the file's words</returns>
 		public static ISet<string> GetWordSet(System.IO.FileInfo wordfile)
 		{
-            using (var reader = new System.IO.StreamReader(wordfile.FullName, System.Text.Encoding.Default))
+            using (var file = File.OpenRead(wordfile.FullName))
+            using (var reader = new System.IO.StreamReader(file, System.Text.Encoding.UTF8))
             {
                 return GetWordSet(reader);
             }
@@ -49,7 +51,8 @@ namespace Lucene.Net.Analysis
 		/// <returns> A HashSet with the file's words</returns>
 		public static ISet<string> GetWordSet(System.IO.FileInfo wordfile, System.String comment)
 		{
-            using (var reader = new System.IO.StreamReader(wordfile.FullName, System.Text.Encoding.Default))
+            using (var file = File.OpenRead(wordfile.FullName))
+            using (var reader = new System.IO.StreamReader(file, System.Text.Encoding.UTF8))
             {
                 return GetWordSet(reader, comment);
             }
@@ -121,10 +124,18 @@ namespace Lucene.Net.Analysis
             var result = new Dictionary<string, string>();
 			System.IO.StreamReader br = null;
 			System.IO.StreamReader fr = null;
-			try
-			{
-				fr = new System.IO.StreamReader(wordstemfile.FullName, System.Text.Encoding.Default);
-				br = new System.IO.StreamReader(fr.BaseStream, fr.CurrentEncoding);
+#if DNXCORE50
+            FileStream fs = null;
+#endif
+            try
+            {
+#if DNXCORE50
+                fs = File.OpenRead(wordstemfile.FullName);
+				fr = new System.IO.StreamReader(fs, System.Text.Encoding.UTF8);
+#else
+                fr = new System.IO.StreamReader(wordstemfile.FullName, System.Text.Encoding.UTF8);
+#endif
+                br = new System.IO.StreamReader(fr.BaseStream, fr.CurrentEncoding);
 				System.String line;
                 char[] tab = {'\t'};
 				while ((line = br.ReadLine()) != null)
@@ -135,10 +146,28 @@ namespace Lucene.Net.Analysis
 			}
 			finally
 			{
-				if (fr != null)
-					fr.Close();
-				if (br != null)
-					br.Close();
+			    if (fr != null)
+			    {
+#if !DNXCORE50
+                    fr.Close();
+#else
+                    fr.Dispose();
+#endif   
+                }
+
+			    if (br != null)
+			    {
+#if !DNXCORE50
+                    br.Close();
+#else
+                    br.Dispose();
+#endif
+                }
+
+#if DNXCORE50
+                if (fs != null)
+                    fs.Dispose();
+#endif
 			}
 			return result;
 		}

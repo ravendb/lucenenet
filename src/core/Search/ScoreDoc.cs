@@ -19,12 +19,14 @@ using System;
 
 namespace Lucene.Net.Search
 {
-	
-	/// <summary>Expert: Returned by low-level search implementations.</summary>
-	/// <seealso cref="TopDocs">
-	/// </seealso>
-	[Serializable]
-	public class ScoreDoc
+
+    /// <summary>Expert: Returned by low-level search implementations.</summary>
+    /// <seealso cref="TopDocs">
+    /// </seealso>
+#if !DNXCORE50
+        [Serializable]
+#endif
+    public class ScoreDoc
 	{
         /// <summary>Expert: The score of this document for the query. </summary>
         public float Score { get; set; }

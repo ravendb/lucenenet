@@ -1,0 +1,14 @@
+﻿{
+  "frameworks": {
+    "net40": {
+      "dependencies": {
+      },
+      "frameworkAssemblies": {
+      }
+    }
+  },
+  "runtimes": {
+    "win": {
+    }
+  }
+}

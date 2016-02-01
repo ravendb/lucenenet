@@ -21,10 +21,12 @@ using FieldInvertState = Lucene.Net.Index.FieldInvertState;
 
 namespace Lucene.Net.Search
 {
-	
-	/// <summary>Expert: Default scoring implementation. </summary>
-	[Serializable]
-	public class DefaultSimilarity:Similarity
+
+    /// <summary>Expert: Default scoring implementation. </summary>
+#if !DNXCORE50
+        [Serializable]
+#endif
+    public class DefaultSimilarity:Similarity
 	{
 		
 		/// <summary>Implemented as

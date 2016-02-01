@@ -91,7 +91,7 @@ namespace Lucene.Net.Documents
         public static System.String DateToString(System.DateTime date)
         {
             TimeSpan ts = date.Subtract(new DateTime(1970, 1, 1));
-            ts = ts.Subtract(TimeZone.CurrentTimeZone.GetUtcOffset(date));
+            ts = ts.Subtract(TimeZoneInfo.Local.GetUtcOffset(date));
             return TimeToString(ts.Ticks / TimeSpan.TicksPerMillisecond);
         }
 		/// <summary> Converts a millisecond time to a string suitable for indexing.</summary>
@@ -131,7 +131,7 @@ namespace Lucene.Net.Documents
             long ticks = StringToTime(s) * TimeSpan.TicksPerMillisecond;
             System.DateTime date = new System.DateTime(1970, 1, 1);
             date = date.AddTicks(ticks);
-            date = date.Add(TimeZone.CurrentTimeZone.GetUtcOffset(date));
+            date = date.Add(TimeZoneInfo.Local.GetUtcOffset(date));
             return date;
         }
 	}

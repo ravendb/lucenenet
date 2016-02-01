@@ -23,15 +23,17 @@ using StringHelper = Lucene.Net.Util.StringHelper;
 
 namespace Lucene.Net.Documents
 {
-    
+
     /// <summary>A field is a section of a Document.  Each field has two parts, a name and a
     /// value.  Values may be free text, provided as a String or as a Reader, or they
     /// may be atomic keywords, which are not further processed.  Such keywords may
     /// be used to represent dates, urls, etc.  Fields are optionally stored in the
     /// index, so that they may be returned with hits on the document.
     /// </summary>
-    
-    [Serializable]
+
+#if !DNXCORE50
+        [Serializable]
+#endif
     public sealed class Field:AbstractField, IFieldable
     {
         /// <summary>Specifies whether and how a field should be stored. </summary>

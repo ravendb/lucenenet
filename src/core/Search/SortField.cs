@@ -27,15 +27,17 @@ using StringHelper = Lucene.Net.Util.StringHelper;
 
 namespace Lucene.Net.Search
 {
-	
-	/// <summary> Stores information about how to sort documents by terms in an individual
-	/// field.  Fields must be indexed in order to sort by them.
-	/// 
-	/// <p/>Created: Feb 11, 2004 1:25:29 PM
-	/// </summary>
-	/// <seealso cref="Sort"></seealso>
-	[Serializable]
-	public class SortField
+
+    /// <summary> Stores information about how to sort documents by terms in an individual
+    /// field.  Fields must be indexed in order to sort by them.
+    /// 
+    /// <p/>Created: Feb 11, 2004 1:25:29 PM
+    /// </summary>
+    /// <seealso cref="Sort"></seealso>
+#if !DNXCORE50
+        [Serializable]
+#endif
+    public class SortField
 	{
 		/// <summary>Sort by document score (relevancy).  Sort values are Float and higher
 		/// values are at the front. 

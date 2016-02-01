@@ -19,21 +19,23 @@ using System;
 
 namespace Lucene.Net.Search.Payloads
 {
-	
-	
-	/// <summary> An abstract class that defines a way for Payload*Query instances
-	/// to transform the cumulative effects of payload scores for a document.
-	/// 
-	/// </summary>
-	/// <seealso cref="Lucene.Net.Search.Payloads.PayloadTermQuery"> for more information
-	/// 
-	/// <p/>
-	/// This class and its derivations are experimental and subject to change
-	/// 
-	/// 
-	/// </seealso>
-	[Serializable]
-	public abstract class PayloadFunction
+
+
+    /// <summary> An abstract class that defines a way for Payload*Query instances
+    /// to transform the cumulative effects of payload scores for a document.
+    /// 
+    /// </summary>
+    /// <seealso cref="Lucene.Net.Search.Payloads.PayloadTermQuery"> for more information
+    /// 
+    /// <p/>
+    /// This class and its derivations are experimental and subject to change
+    /// 
+    /// 
+    /// </seealso>
+#if !DNXCORE50
+        [Serializable]
+#endif
+    public abstract class PayloadFunction
 	{
 		
 		/// <summary> Calculate the score up to this point for this doc and field</summary>

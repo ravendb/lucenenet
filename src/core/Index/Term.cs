@@ -21,14 +21,16 @@ using StringHelper = Lucene.Net.Util.StringHelper;
 
 namespace Lucene.Net.Index
 {
-	
-	/// <summary>A Term represents a word from text.  This is the unit of search.  It is
-	/// composed of two elements, the text of the word, as a string, and the name of
-	/// the field that the text occured in, an interned string.
-	/// Note that terms may represent more than words from text fields, but also
-	/// things like dates, email addresses, urls, etc.  
-	/// </summary>
-	[Serializable]
+
+    /// <summary>A Term represents a word from text.  This is the unit of search.  It is
+    /// composed of two elements, the text of the word, as a string, and the name of
+    /// the field that the text occured in, an interned string.
+    /// Note that terms may represent more than words from text fields, but also
+    /// things like dates, email addresses, urls, etc.  
+    /// </summary>
+#if !DNXCORE50
+        [Serializable]
+#endif
     public sealed class Term : System.IComparable<Term>
 	{
 		internal System.String field;

@@ -19,15 +19,17 @@ using System;
 
 namespace Lucene.Net.Util
 {
-	
-	/// <summary> Base class for Attributes that can be added to a 
-	/// <see cref="Lucene.Net.Util.AttributeSource" />.
-	/// <p/>
-	/// Attributes are used to add data in a dynamic, yet type-safe way to a source
-	/// of usually streamed objects, e. g. a <see cref="Lucene.Net.Analysis.TokenStream" />.
-	/// </summary>
-	[Serializable]
-	public abstract class Attribute : System.ICloneable, IAttribute
+
+    /// <summary> Base class for Attributes that can be added to a 
+    /// <see cref="Lucene.Net.Util.AttributeSource" />.
+    /// <p/>
+    /// Attributes are used to add data in a dynamic, yet type-safe way to a source
+    /// of usually streamed objects, e. g. a <see cref="Lucene.Net.Analysis.TokenStream" />.
+    /// </summary>
+#if !DNXCORE50
+        [Serializable]
+#endif
+    public abstract class Attribute : System.ICloneable, IAttribute
 	{
 		/// <summary> Clears the values in this AttributeImpl and resets it to its 
 		/// default value. If this implementation implements more than one Attribute interface

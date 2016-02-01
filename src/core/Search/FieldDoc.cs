@@ -19,26 +19,28 @@ using System;
 
 namespace Lucene.Net.Search
 {
-	
-	/// <summary> Expert: A ScoreDoc which also contains information about
-	/// how to sort the referenced document.  In addition to the
-	/// document number and score, this object contains an array
-	/// of values for the document from the field(s) used to sort.
-	/// For example, if the sort criteria was to sort by fields
-	/// "a", "b" then "c", the <c>fields</c> object array
-	/// will have three elements, corresponding respectively to
-	/// the term values for the document in fields "a", "b" and "c".
-	/// The class of each element in the array will be either
-	/// Integer, Float or String depending on the type of values
-	/// in the terms of each field.
-	/// 
-	/// <p/>Created: Feb 11, 2004 1:23:38 PM
-	/// 
-	/// </summary>
-	/// <seealso cref="ScoreDoc"></seealso>
-	/// <seealso cref="TopFieldDocs"></seealso>
-	[Serializable]
-	public class FieldDoc:ScoreDoc
+
+    /// <summary> Expert: A ScoreDoc which also contains information about
+    /// how to sort the referenced document.  In addition to the
+    /// document number and score, this object contains an array
+    /// of values for the document from the field(s) used to sort.
+    /// For example, if the sort criteria was to sort by fields
+    /// "a", "b" then "c", the <c>fields</c> object array
+    /// will have three elements, corresponding respectively to
+    /// the term values for the document in fields "a", "b" and "c".
+    /// The class of each element in the array will be either
+    /// Integer, Float or String depending on the type of values
+    /// in the terms of each field.
+    /// 
+    /// <p/>Created: Feb 11, 2004 1:23:38 PM
+    /// 
+    /// </summary>
+    /// <seealso cref="ScoreDoc"></seealso>
+    /// <seealso cref="TopFieldDocs"></seealso>
+#if !DNXCORE50
+        [Serializable]
+#endif
+    public class FieldDoc:ScoreDoc
 	{
 		
 		/// <summary>Expert: The values which are used to sort the referenced document.

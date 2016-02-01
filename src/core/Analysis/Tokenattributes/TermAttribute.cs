@@ -22,10 +22,12 @@ using Attribute = Lucene.Net.Util.Attribute;
 
 namespace Lucene.Net.Analysis.Tokenattributes
 {
-	
-	/// <summary> The term text of a Token.</summary>
-	[Serializable]
-	public class TermAttribute:Attribute, ITermAttribute, System.ICloneable
+
+    /// <summary> The term text of a Token.</summary>
+#if !DNXCORE50
+        [Serializable]
+#endif
+    public class TermAttribute:Attribute, ITermAttribute, System.ICloneable
 	{
 		private static int MIN_BUFFER_SIZE = 10;
 		

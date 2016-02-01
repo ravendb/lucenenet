@@ -301,7 +301,7 @@ namespace Lucene.Net.Analysis.Standard
 		/// </summary>
         /// <param name="in_Renamed"> the java.io.Inputstream to read input from.
 		/// </param>
-		internal StandardTokenizerImpl(System.IO.Stream in_Renamed):this(new System.IO.StreamReader(in_Renamed, System.Text.Encoding.Default))
+		internal StandardTokenizerImpl(System.IO.Stream in_Renamed):this(new System.IO.StreamReader(in_Renamed, System.Text.Encoding.UTF8))
 		{
 		}
 		
@@ -381,10 +381,16 @@ namespace Lucene.Net.Analysis.Standard
 		{
 			zzAtEOF = true; /* indicate end of file */
 			zzEndRead = zzStartRead; /* invalidate buffer    */
-			
-			if (zzReader != null)
-				zzReader.Close();
-		}
+
+		    if (zzReader != null)
+		    {
+#if !DNXCORE50
+                zzReader.Close();
+#else
+                zzReader.Dispose();
+#endif
+            }
+        }
 		
 		
 		/// <summary> Resets the scanner to read from a new input stream.

@@ -22,32 +22,34 @@ using FieldCache = Lucene.Net.Search.FieldCache;
 
 namespace Lucene.Net.Search.Function
 {
-	
-	/// <summary> Expert: A base class for ValueSource implementations that retrieve values for
-	/// a single field from the <see cref="Lucene.Net.Search.FieldCache">FieldCache</see>.
-	/// <p/>
-	/// Fields used herein nust be indexed (doesn't matter if these fields are stored or not).
-	/// <p/> 
-	/// It is assumed that each such indexed field is untokenized, or at least has a single token in a document.
-	/// For documents with multiple tokens of the same field, behavior is undefined (It is likely that current 
-	/// code would use the value of one of these tokens, but this is not guaranteed).
-	/// <p/>
-	/// Document with no tokens in this field are assigned the <c>Zero</c> value.    
-	/// 
-	/// <p/><font color="#FF0000">
-	/// WARNING: The status of the <b>Search.Function</b> package is experimental. 
-	/// The APIs introduced here might change in the future and will not be 
-	/// supported anymore in such a case.</font>
-	/// 
-	/// <p/><b>NOTE</b>: with the switch in 2.9 to segment-based
-	/// searching, if <see cref="GetValues" /> is invoked with a
-	/// composite (multi-segment) reader, this can easily cause
-	/// double RAM usage for the values in the FieldCache.  It's
-	/// best to switch your application to pass only atomic
-	/// (single segment) readers to this API.<p/>
-	/// </summary>
-	[Serializable]
-	public abstract class FieldCacheSource:ValueSource
+
+    /// <summary> Expert: A base class for ValueSource implementations that retrieve values for
+    /// a single field from the <see cref="Lucene.Net.Search.FieldCache">FieldCache</see>.
+    /// <p/>
+    /// Fields used herein nust be indexed (doesn't matter if these fields are stored or not).
+    /// <p/> 
+    /// It is assumed that each such indexed field is untokenized, or at least has a single token in a document.
+    /// For documents with multiple tokens of the same field, behavior is undefined (It is likely that current 
+    /// code would use the value of one of these tokens, but this is not guaranteed).
+    /// <p/>
+    /// Document with no tokens in this field are assigned the <c>Zero</c> value.    
+    /// 
+    /// <p/><font color="#FF0000">
+    /// WARNING: The status of the <b>Search.Function</b> package is experimental. 
+    /// The APIs introduced here might change in the future and will not be 
+    /// supported anymore in such a case.</font>
+    /// 
+    /// <p/><b>NOTE</b>: with the switch in 2.9 to segment-based
+    /// searching, if <see cref="GetValues" /> is invoked with a
+    /// composite (multi-segment) reader, this can easily cause
+    /// double RAM usage for the values in the FieldCache.  It's
+    /// best to switch your application to pass only atomic
+    /// (single segment) readers to this API.<p/>
+    /// </summary>
+#if !DNXCORE50
+        [Serializable]
+#endif
+    public abstract class FieldCacheSource:ValueSource
 	{
 		private System.String field;
 		

@@ -20,13 +20,16 @@ using Lucene.Net.Support;
 
 namespace Lucene.Net.Store
 {
+    using System.Threading;
 
     /// <summary> A memory-resident <see cref="Directory"/> implementation.  Locking
     /// implementation is by default the <see cref="SingleInstanceLockFactory"/>
     /// but can be changed with <see cref="Directory.SetLockFactory"/>.
-	/// </summary>
-	[Serializable]
-	public class RAMDirectory:Directory
+    /// </summary>
+#if !DNXCORE50
+        [Serializable]
+#endif
+    public class RAMDirectory:Directory
 	{
 		
 		private const long serialVersionUID = 1L;
@@ -150,10 +153,12 @@ namespace Lucene.Net.Store
 				}
 				catch (System.Threading.ThreadInterruptedException ie)
 				{
-					// In 3.0 we will change this to throw
-					// InterruptedException instead
-					ThreadClass.Current().Interrupt();
-					throw new System.SystemException(ie.Message, ie);
+#if !DNXCORE50
+                    // In 3.0 we will change this to throw
+                    // InterruptedException instead
+                    ThreadClass.Current().Interrupt();
+#endif
+                    throw new System.SystemException(ie.Message, ie);
 				}
                 ts2 = System.DateTime.UtcNow.Ticks / TimeSpan.TicksPerMillisecond;
 			}

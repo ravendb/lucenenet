@@ -19,13 +19,15 @@ using System;
 
 namespace Lucene.Net.Search.Payloads
 {
-	
-	/// <summary> Calculates the minimum payload seen
-	/// 
-	/// 
-	/// </summary>
-	[Serializable]
-	public class MinPayloadFunction:PayloadFunction
+
+    /// <summary> Calculates the minimum payload seen
+    /// 
+    /// 
+    /// </summary>
+#if !DNXCORE50
+        [Serializable]
+#endif
+    public class MinPayloadFunction:PayloadFunction
 	{
 		
 		public override float CurrentScore(int docId, System.String field, int start, int end, int numPayloadsSeen, float currentScore, float currentPayloadScore)

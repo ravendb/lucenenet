@@ -25,10 +25,12 @@ using Query = Lucene.Net.Search.Query;
 
 namespace Lucene.Net.Search.Spans
 {
-	
-	/// <summary>Removes matches which overlap with another SpanQuery. </summary>
-	[Serializable]
-	public class SpanNotQuery:SpanQuery, System.ICloneable
+
+    /// <summary>Removes matches which overlap with another SpanQuery. </summary>
+#if !DNXCORE50
+        [Serializable]
+#endif
+    public class SpanNotQuery:SpanQuery, System.ICloneable
 	{
 		private class AnonymousClassSpans : Spans
 		{

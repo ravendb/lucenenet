@@ -21,13 +21,15 @@ using System.Runtime.InteropServices;
 
 namespace Lucene.Net.Index
 {
-	
-	/// <summary> The TermVectorOffsetInfo class holds information pertaining to a Term in a <see cref="Lucene.Net.Index.TermPositionVector" />'s
-	/// offset information.  This offset information is the character offset as set during the Analysis phase (and thus may not be the actual offset in the
-	/// original content).
-	/// </summary>
-	[Serializable]
-	public struct TermVectorOffsetInfo : IEquatable<TermVectorOffsetInfo>
+
+    /// <summary> The TermVectorOffsetInfo class holds information pertaining to a Term in a <see cref="Lucene.Net.Index.TermPositionVector" />'s
+    /// offset information.  This offset information is the character offset as set during the Analysis phase (and thus may not be the actual offset in the
+    /// original content).
+    /// </summary>
+#if !DNXCORE50
+        [Serializable]
+#endif
+    public struct TermVectorOffsetInfo : IEquatable<TermVectorOffsetInfo>
 	{
 		/// <summary> Convenience declaration when creating a <see cref="Lucene.Net.Index.TermPositionVector" /> that stores only position information.</summary>
 		[NonSerialized]

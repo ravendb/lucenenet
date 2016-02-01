@@ -16,6 +16,7 @@
  */
 
 using System;
+using System.Globalization;
 using Lucene.Net.Search;
 using NumericUtils = Lucene.Net.Util.NumericUtils;
 

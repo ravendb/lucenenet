@@ -24,24 +24,26 @@ using Lucene.Net.Search;
 
 namespace Lucene.Net.Search.Function
 {
-	
-	/// <summary> Expert: A Query that sets the scores of document to the
-	/// values obtained from a <see cref="Lucene.Net.Search.Function.ValueSource">ValueSource</see>.
-	/// <p/>
-	/// This query provides a score for <em>each and every</em> undeleted document in the index.    
-	/// <p/>
-	/// The value source can be based on a (cached) value of an indexed field, but it
-	/// can also be based on an external source, e.g. values read from an external database. 
-	/// <p/>
-	/// Score is set as: Score(doc,query) = query.getBoost()<sup>2</sup> * valueSource(doc).  
-	/// 
-	/// <p/><font color="#FF0000">
-	/// WARNING: The status of the <b>Search.Function</b> package is experimental. 
-	/// The APIs introduced here might change in the future and will not be 
-	/// supported anymore in such a case.</font>
-	/// </summary>
-	[Serializable]
-	public class ValueSourceQuery:Query
+
+    /// <summary> Expert: A Query that sets the scores of document to the
+    /// values obtained from a <see cref="Lucene.Net.Search.Function.ValueSource">ValueSource</see>.
+    /// <p/>
+    /// This query provides a score for <em>each and every</em> undeleted document in the index.    
+    /// <p/>
+    /// The value source can be based on a (cached) value of an indexed field, but it
+    /// can also be based on an external source, e.g. values read from an external database. 
+    /// <p/>
+    /// Score is set as: Score(doc,query) = query.getBoost()<sup>2</sup> * valueSource(doc).  
+    /// 
+    /// <p/><font color="#FF0000">
+    /// WARNING: The status of the <b>Search.Function</b> package is experimental. 
+    /// The APIs introduced here might change in the future and will not be 
+    /// supported anymore in such a case.</font>
+    /// </summary>
+#if !DNXCORE50
+        [Serializable]
+#endif
+    public class ValueSourceQuery:Query
 	{
 		internal ValueSource valSrc;
 		
@@ -64,9 +66,11 @@ namespace Lucene.Net.Search.Function
 		{
 			// no terms involved here
 		}
-		
-		[Serializable]
-		internal class ValueSourceWeight:Weight
+
+#if !DNXCORE50
+        [Serializable]
+#endif
+        internal class ValueSourceWeight:Weight
 		{
 			private void  InitBlock(ValueSourceQuery enclosingInstance)
 			{

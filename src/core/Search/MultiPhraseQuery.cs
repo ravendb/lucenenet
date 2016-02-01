@@ -25,19 +25,21 @@ using ToStringUtils = Lucene.Net.Util.ToStringUtils;
 
 namespace Lucene.Net.Search
 {
-	
-	/// <summary> MultiPhraseQuery is a generalized version of PhraseQuery, with an added
-	/// method <see cref="Add(Term[])" />.
-	/// To use this class, to search for the phrase "Microsoft app*" first use
-	/// add(Term) on the term "Microsoft", then find all terms that have "app" as
-	/// prefix using IndexReader.terms(Term), and use MultiPhraseQuery.add(Term[]
-	/// terms) to add them to the query.
-	/// 
-	/// </summary>
-	/// <version>  1.0
-	/// </version>
-	[Serializable]
-	public class MultiPhraseQuery:Query
+
+    /// <summary> MultiPhraseQuery is a generalized version of PhraseQuery, with an added
+    /// method <see cref="Add(Term[])" />.
+    /// To use this class, to search for the phrase "Microsoft app*" first use
+    /// add(Term) on the term "Microsoft", then find all terms that have "app" as
+    /// prefix using IndexReader.terms(Term), and use MultiPhraseQuery.add(Term[]
+    /// terms) to add them to the query.
+    /// 
+    /// </summary>
+    /// <version>  1.0
+    /// </version>
+#if !DNXCORE50
+        [Serializable]
+#endif
+    public class MultiPhraseQuery:Query
 	{
 		private System.String field;
         private System.Collections.Generic.List<Term[]> termArrays = new System.Collections.Generic.List<Term[]>();
@@ -129,10 +131,12 @@ namespace Lucene.Net.Search
 			    terms.UnionWith(arr);
 			}
 		}
-		
-		
-		[Serializable]
-		private class MultiPhraseWeight:Weight
+
+
+#if !DNXCORE50
+        [Serializable]
+#endif
+        private class MultiPhraseWeight:Weight
 		{
 			private void  InitBlock(MultiPhraseQuery enclosingInstance)
 			{

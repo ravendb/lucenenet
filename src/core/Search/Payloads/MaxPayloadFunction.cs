@@ -19,16 +19,18 @@ using System;
 
 namespace Lucene.Net.Search.Payloads
 {
-	
-	
-	/// <summary> Returns the maximum payload score seen, else 1 if there are no payloads on the doc.
-	/// <p/>
-	/// Is thread safe and completely reusable.
-	/// 
-	/// 
-	/// </summary>
-	[Serializable]
-	public class MaxPayloadFunction:PayloadFunction
+
+
+    /// <summary> Returns the maximum payload score seen, else 1 if there are no payloads on the doc.
+    /// <p/>
+    /// Is thread safe and completely reusable.
+    /// 
+    /// 
+    /// </summary>
+#if !DNXCORE50
+        [Serializable]
+#endif
+    public class MaxPayloadFunction:PayloadFunction
 	{
 		public override float CurrentScore(int docId, System.String field, int start, int end, int numPayloadsSeen, float currentScore, float currentPayloadScore)
 		{

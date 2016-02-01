@@ -22,63 +22,65 @@ using DocIdSetIterator = Lucene.Net.Search.DocIdSetIterator;
 
 namespace Lucene.Net.Util
 {
-	
-	/// <summary>An "open" BitSet implementation that allows direct access to the array of words
-	/// storing the bits.
-	/// <p/>
-	/// Unlike java.util.bitset, the fact that bits are packed into an array of longs
-	/// is part of the interface.  This allows efficient implementation of other algorithms
-	/// by someone other than the author.  It also allows one to efficiently implement
-	/// alternate serialization or interchange formats.
-	/// <p/>
-	/// <c>OpenBitSet</c> is faster than <c>java.util.BitSet</c> in most operations
-	/// and *much* faster at calculating cardinality of sets and results of set operations.
-	/// It can also handle sets of larger cardinality (up to 64 * 2**32-1)
-	/// <p/>
-	/// The goals of <c>OpenBitSet</c> are the fastest implementation possible, and
-	/// maximum code reuse.  Extra safety and encapsulation
-	/// may always be built on top, but if that's built in, the cost can never be removed (and
-	/// hence people re-implement their own version in order to get better performance).
-	/// If you want a "safe", totally encapsulated (and slower and limited) BitSet
-	/// class, use <c>java.util.BitSet</c>.
-	/// <p/>
-	/// <h3>Performance Results</h3>
-	/// 
-	/// Test system: Pentium 4, Sun Java 1.5_06 -server -Xbatch -Xmx64M
-	/// <br/>BitSet size = 1,000,000
-	/// <br/>Results are java.util.BitSet time divided by OpenBitSet time.
-	/// <table border="1">
-	/// <tr>
-	/// <th></th> <th>cardinality</th> <th>intersect_count</th> <th>union</th> <th>nextSetBit</th> <th>get</th> <th>iterator</th>
-	/// </tr>
-	/// <tr>
-	/// <th>50% full</th> <td>3.36</td> <td>3.96</td> <td>1.44</td> <td>1.46</td> <td>1.99</td> <td>1.58</td>
-	/// </tr>
-	/// <tr>
-	/// <th>1% full</th> <td>3.31</td> <td>3.90</td> <td>&#160;</td> <td>1.04</td> <td>&#160;</td> <td>0.99</td>
-	/// </tr>
-	/// </table>
-	/// <br/>
-	/// Test system: AMD Opteron, 64 bit linux, Sun Java 1.5_06 -server -Xbatch -Xmx64M
-	/// <br/>BitSet size = 1,000,000
-	/// <br/>Results are java.util.BitSet time divided by OpenBitSet time.
-	/// <table border="1">
-	/// <tr>
-	/// <th></th> <th>cardinality</th> <th>intersect_count</th> <th>union</th> <th>nextSetBit</th> <th>get</th> <th>iterator</th>
-	/// </tr>
-	/// <tr>
-	/// <th>50% full</th> <td>2.50</td> <td>3.50</td> <td>1.00</td> <td>1.03</td> <td>1.12</td> <td>1.25</td>
-	/// </tr>
-	/// <tr>
-	/// <th>1% full</th> <td>2.51</td> <td>3.49</td> <td>&#160;</td> <td>1.00</td> <td>&#160;</td> <td>1.02</td>
-	/// </tr>
-	/// </table>
-	/// </summary>
-	/// <version>  $Id$
-	/// </version>
-	
-	[Serializable]
-	public class OpenBitSet:DocIdSet, System.ICloneable
+
+    /// <summary>An "open" BitSet implementation that allows direct access to the array of words
+    /// storing the bits.
+    /// <p/>
+    /// Unlike java.util.bitset, the fact that bits are packed into an array of longs
+    /// is part of the interface.  This allows efficient implementation of other algorithms
+    /// by someone other than the author.  It also allows one to efficiently implement
+    /// alternate serialization or interchange formats.
+    /// <p/>
+    /// <c>OpenBitSet</c> is faster than <c>java.util.BitSet</c> in most operations
+    /// and *much* faster at calculating cardinality of sets and results of set operations.
+    /// It can also handle sets of larger cardinality (up to 64 * 2**32-1)
+    /// <p/>
+    /// The goals of <c>OpenBitSet</c> are the fastest implementation possible, and
+    /// maximum code reuse.  Extra safety and encapsulation
+    /// may always be built on top, but if that's built in, the cost can never be removed (and
+    /// hence people re-implement their own version in order to get better performance).
+    /// If you want a "safe", totally encapsulated (and slower and limited) BitSet
+    /// class, use <c>java.util.BitSet</c>.
+    /// <p/>
+    /// <h3>Performance Results</h3>
+    /// 
+    /// Test system: Pentium 4, Sun Java 1.5_06 -server -Xbatch -Xmx64M
+    /// <br/>BitSet size = 1,000,000
+    /// <br/>Results are java.util.BitSet time divided by OpenBitSet time.
+    /// <table border="1">
+    /// <tr>
+    /// <th></th> <th>cardinality</th> <th>intersect_count</th> <th>union</th> <th>nextSetBit</th> <th>get</th> <th>iterator</th>
+    /// </tr>
+    /// <tr>
+    /// <th>50% full</th> <td>3.36</td> <td>3.96</td> <td>1.44</td> <td>1.46</td> <td>1.99</td> <td>1.58</td>
+    /// </tr>
+    /// <tr>
+    /// <th>1% full</th> <td>3.31</td> <td>3.90</td> <td>&#160;</td> <td>1.04</td> <td>&#160;</td> <td>0.99</td>
+    /// </tr>
+    /// </table>
+    /// <br/>
+    /// Test system: AMD Opteron, 64 bit linux, Sun Java 1.5_06 -server -Xbatch -Xmx64M
+    /// <br/>BitSet size = 1,000,000
+    /// <br/>Results are java.util.BitSet time divided by OpenBitSet time.
+    /// <table border="1">
+    /// <tr>
+    /// <th></th> <th>cardinality</th> <th>intersect_count</th> <th>union</th> <th>nextSetBit</th> <th>get</th> <th>iterator</th>
+    /// </tr>
+    /// <tr>
+    /// <th>50% full</th> <td>2.50</td> <td>3.50</td> <td>1.00</td> <td>1.03</td> <td>1.12</td> <td>1.25</td>
+    /// </tr>
+    /// <tr>
+    /// <th>1% full</th> <td>2.51</td> <td>3.49</td> <td>&#160;</td> <td>1.00</td> <td>&#160;</td> <td>1.02</td>
+    /// </tr>
+    /// </table>
+    /// </summary>
+    /// <version>  $Id$
+    /// </version>
+
+#if !DNXCORE50
+        [Serializable]
+#endif
+    public class OpenBitSet:DocIdSet, System.ICloneable
 	{
 		protected internal long[] internalbits;
 		protected internal int wlen; // number of words (elements) used in the array

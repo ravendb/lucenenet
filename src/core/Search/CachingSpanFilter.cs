@@ -22,12 +22,14 @@ using IndexReader = Lucene.Net.Index.IndexReader;
 
 namespace Lucene.Net.Search
 {
-	
-	/// <summary> Wraps another SpanFilter's result and caches it.  The purpose is to allow
-	/// filters to simply filter, and then wrap with this class to add caching.
-	/// </summary>
-	[Serializable]
-	public class CachingSpanFilter:SpanFilter
+
+    /// <summary> Wraps another SpanFilter's result and caches it.  The purpose is to allow
+    /// filters to simply filter, and then wrap with this class to add caching.
+    /// </summary>
+#if !DNXCORE50
+        [Serializable]
+#endif
+    public class CachingSpanFilter:SpanFilter
 	{
 		private SpanFilter filter;
 		

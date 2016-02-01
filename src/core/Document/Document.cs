@@ -24,22 +24,24 @@ using Searcher = Lucene.Net.Search.Searcher;
 
 namespace Lucene.Net.Documents
 {
-	
-	/// <summary>Documents are the unit of indexing and search.
-	/// 
-	/// A Document is a set of fields.  Each field has a name and a textual value.
-	/// A field may be <see cref="IFieldable.IsStored()">stored</see> with the document, in which
-	/// case it is returned with search hits on the document.  Thus each document
-	/// should typically contain one or more stored fields which uniquely identify
-	/// it.
-	/// 
-	/// <p/>Note that fields which are <i>not</i> <see cref="IFieldable.IsStored()">stored</see> are
-	/// <i>not</i> available in documents retrieved from the index, e.g. with <see cref="ScoreDoc.Doc" />,
-	/// <see cref="Searcher.Doc(int)" /> or <see cref="IndexReader.Document(int)" />.
-	/// </summary>
-	
-	[Serializable]
-	public sealed class Document
+
+    /// <summary>Documents are the unit of indexing and search.
+    /// 
+    /// A Document is a set of fields.  Each field has a name and a textual value.
+    /// A field may be <see cref="IFieldable.IsStored()">stored</see> with the document, in which
+    /// case it is returned with search hits on the document.  Thus each document
+    /// should typically contain one or more stored fields which uniquely identify
+    /// it.
+    /// 
+    /// <p/>Note that fields which are <i>not</i> <see cref="IFieldable.IsStored()">stored</see> are
+    /// <i>not</i> available in documents retrieved from the index, e.g. with <see cref="ScoreDoc.Doc" />,
+    /// <see cref="Searcher.Doc(int)" /> or <see cref="IndexReader.Document(int)" />.
+    /// </summary>
+
+#if !DNXCORE50
+        [Serializable]
+#endif
+    public sealed class Document
 	{
 		private class AnonymousClassEnumeration : System.Collections.IEnumerator
 		{

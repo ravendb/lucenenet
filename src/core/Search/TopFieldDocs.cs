@@ -19,12 +19,14 @@ using System;
 
 namespace Lucene.Net.Search
 {
-	
-	/// <summary>
-	/// Represents hits returned by <see cref="Searcher.Search(Query,Filter,int,Sort)" />.
-	/// </summary>
-	[Serializable]
-	public class TopFieldDocs:TopDocs
+
+    /// <summary>
+    /// Represents hits returned by <see cref="Searcher.Search(Query,Filter,int,Sort)" />.
+    /// </summary>
+#if !DNXCORE50
+        [Serializable]
+#endif
+    public class TopFieldDocs:TopDocs
 	{
 		
 		/// <summary>The fields which were used to sort results by. </summary>

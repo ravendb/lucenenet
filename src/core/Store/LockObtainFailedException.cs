@@ -22,14 +22,16 @@ namespace Lucene.Net.Store
     using System.Runtime.Serialization;
 
     /// <summary> This exception is thrown when the <c>write.lock</c>
-	/// could not be acquired.  This
-	/// happens when a writer tries to open an index
-	/// that another writer already has open.
-	/// </summary>
-	/// <seealso cref="Lock.Obtain(long)">
-	/// </seealso>
-	[Serializable]
-	public class LockObtainFailedException:System.IO.IOException
+    /// could not be acquired.  This
+    /// happens when a writer tries to open an index
+    /// that another writer already has open.
+    /// </summary>
+    /// <seealso cref="Lock.Obtain(long)">
+    /// </seealso>
+#if !DNXCORE50
+        [Serializable]
+#endif
+    public class LockObtainFailedException:System.IO.IOException
 	{
         public LockObtainFailedException()
         {
@@ -43,9 +45,11 @@ namespace Lucene.Net.Store
         {
         }
 
+#if !DNXCORE50
         public LockObtainFailedException(SerializationInfo info, StreamingContext context) 
             : base(info, context)
         {
         }
+#endif
     }
 }

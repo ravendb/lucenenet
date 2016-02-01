@@ -21,21 +21,23 @@ using IndexReader = Lucene.Net.Index.IndexReader;
 
 namespace Lucene.Net.Search
 {
-	
-	/// <summary> Constrains search results to only match those which also match a provided
-	/// query.  
-	/// 
-	/// <p/> This could be used, for example, with a <see cref="TermRangeQuery" /> on a suitably
-	/// formatted date field to implement date filtering.  One could re-use a single
-	/// QueryFilter that matches, e.g., only documents modified within the last
-	/// week.  The QueryFilter and TermRangeQuery would only need to be reconstructed
-	/// once per day.
-	/// 
-	/// </summary>
-	/// <version>  $Id:$
-	/// </version>
-	[Serializable]
-	public class QueryWrapperFilter:Filter
+
+    /// <summary> Constrains search results to only match those which also match a provided
+    /// query.  
+    /// 
+    /// <p/> This could be used, for example, with a <see cref="TermRangeQuery" /> on a suitably
+    /// formatted date field to implement date filtering.  One could re-use a single
+    /// QueryFilter that matches, e.g., only documents modified within the last
+    /// week.  The QueryFilter and TermRangeQuery would only need to be reconstructed
+    /// once per day.
+    /// 
+    /// </summary>
+    /// <version>  $Id:$
+    /// </version>
+#if !DNXCORE50
+        [Serializable]
+#endif
+    public class QueryWrapperFilter:Filter
 	{
 		private class AnonymousClassDocIdSet:DocIdSet
 		{

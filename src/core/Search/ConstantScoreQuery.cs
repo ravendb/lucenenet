@@ -21,12 +21,14 @@ using IndexReader = Lucene.Net.Index.IndexReader;
 
 namespace Lucene.Net.Search
 {
-	
-	/// <summary> A query that wraps a filter and simply returns a constant score equal to the
-	/// query boost for every document in the filter.
-	/// </summary>
-	[Serializable]
-	public class ConstantScoreQuery:Query
+
+    /// <summary> A query that wraps a filter and simply returns a constant score equal to the
+    /// query boost for every document in the filter.
+    /// </summary>
+#if !DNXCORE50
+        [Serializable]
+#endif
+    public class ConstantScoreQuery:Query
 	{
 		protected internal Filter internalFilter;
 		
@@ -51,9 +53,11 @@ namespace Lucene.Net.Search
 			// OK to not add any terms when used for MultiSearcher,
 			// but may not be OK for highlighting
 		}
-		
-		[Serializable]
-		protected internal class ConstantWeight:Weight
+
+#if !DNXCORE50
+        [Serializable]
+#endif
+        protected internal class ConstantWeight:Weight
 		{
 			private void  InitBlock(ConstantScoreQuery enclosingInstance)
 			{

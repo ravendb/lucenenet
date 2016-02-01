@@ -20,12 +20,14 @@ using Attribute = Lucene.Net.Util.Attribute;
 
 namespace Lucene.Net.Analysis.Tokenattributes
 {
-	
-	/// <summary> This attribute can be used to pass different flags down the tokenizer chain,
-	/// eg from one TokenFilter to another one. 
-	/// </summary>
-	[Serializable]
-	public class FlagsAttribute:Util.Attribute, IFlagsAttribute, System.ICloneable
+
+    /// <summary> This attribute can be used to pass different flags down the tokenizer chain,
+    /// eg from one TokenFilter to another one. 
+    /// </summary>
+#if !DNXCORE50
+        [Serializable]
+#endif
+    public class FlagsAttribute:Util.Attribute, IFlagsAttribute, System.ICloneable
 	{
 		private int flags = 0;
 

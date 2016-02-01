@@ -1195,16 +1195,17 @@ namespace Lucene.Net.QueryParsers
         /// <c>java Lucene.Net.QueryParsers.QueryParser &lt;input&gt;</c>
         /// </summary>
         [STAThread]
-        public static void Main(String[] args)
+        public static int Main(String[] args)
         {
             if (args.Length == 0)
             {
                 Console.WriteLine("Usage: java org.apache.lucene.queryParser.QueryParser <input>");
-                Environment.Exit(0);
+                return 0;
             }
             QueryParser qp = new QueryParser(Version.LUCENE_CURRENT, "field", new SimpleAnalyzer());
             Query q = qp.Parse(args[0]);
             Console.WriteLine(q.ToString("field"));
+            return 0;
         }
 
         // *   Query  ::= ( Clause )*
@@ -1861,7 +1862,9 @@ namespace Lucene.Net.QueryParsers
             throw GenerateParseException();
         }
 
+#if !DNXCORE50
         [Serializable]
+#endif
         private sealed class LookaheadSuccess : System.Exception
         {
         }

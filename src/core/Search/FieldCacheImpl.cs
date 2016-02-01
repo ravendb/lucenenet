@@ -165,12 +165,14 @@ namespace Lucene.Net.Search
                 get { return value; }
             }
         }
-        
+
         /// <summary> Hack: When thrown from a Parser (NUMERIC_UTILS_* ones), this stops
         /// processing terms and returns the current FieldCache
         /// array.
         /// </summary>
+#if !DNXCORE50
         [Serializable]
+#endif
         internal sealed class StopFillCacheException:System.SystemException
         {
         }

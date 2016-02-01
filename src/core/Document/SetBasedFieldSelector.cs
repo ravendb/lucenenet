@@ -20,12 +20,14 @@ using System.Collections.Generic;
 
 namespace Lucene.Net.Documents
 {
-	/// <summary> Declare what fields to load normally and what fields to load lazily
-	/// 
-	/// 
-	/// </summary>
-	[Serializable]
-	public class SetBasedFieldSelector : FieldSelector
+    /// <summary> Declare what fields to load normally and what fields to load lazily
+    /// 
+    /// 
+    /// </summary>
+#if !DNXCORE50
+        [Serializable]
+#endif
+    public class SetBasedFieldSelector : FieldSelector
 	{
 		private ISet<string> fieldsToLoad;
 		private ISet<string> lazyFieldsToLoad;

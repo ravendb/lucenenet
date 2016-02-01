@@ -19,8 +19,9 @@ using System;
 
 namespace Lucene.Net.Store
 {
-	
-	/// <summary> A <see cref="LockFactory" /> that wraps another <see cref="LockFactory" />
+    using System.Net.Sockets;
+
+    /// <summary> A <see cref="LockFactory" /> that wraps another <see cref="LockFactory" />
 	/// and verifies that each lock obtain/release
 	/// is "correct" (never results in two processes holding the
 	/// lock at the same time).  It does this by contacting an
@@ -70,16 +71,27 @@ namespace Lucene.Net.Store
 			{
 				try
 				{
-					System.Net.Sockets.TcpClient s = new System.Net.Sockets.TcpClient(Enclosing_Instance.host, Enclosing_Instance.port);
-					System.IO.Stream out_Renamed = s.GetStream();
+#if !DNXCORE50
+                    System.Net.Sockets.TcpClient s = new System.Net.Sockets.TcpClient(Enclosing_Instance.host, Enclosing_Instance.port);
+#else
+				    System.Net.Sockets.TcpClient s = new System.Net.Sockets.TcpClient(AddressFamily.InterNetwork);
+				    AsyncHelpers.RunSync(() => s.ConnectAsync(Enclosing_Instance.host, Enclosing_Instance.port));
+#endif
+                    System.IO.Stream out_Renamed = s.GetStream();
 					out_Renamed.WriteByte((byte) Enclosing_Instance.id);
 					out_Renamed.WriteByte((byte) message);
 					System.IO.Stream in_Renamed = s.GetStream();
 					int result = in_Renamed.ReadByte();
-					in_Renamed.Close();
+#if !DNXCORE50
+                    in_Renamed.Close();
 					out_Renamed.Close();
 					s.Close();
-					if (result != 0)
+#else
+                    in_Renamed.Dispose();
+                    out_Renamed.Dispose();
+                    s.Dispose();
+#endif
+                    if (result != 0)
 						throw new System.SystemException("lock was double acquired");
 				}
 				catch (System.Exception e)

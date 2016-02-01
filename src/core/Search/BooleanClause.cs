@@ -19,10 +19,12 @@ using System;
 
 namespace Lucene.Net.Search
 {
-	
-	/// <summary>A clause in a BooleanQuery. </summary>
-	[Serializable]
-	public class BooleanClause
+
+    /// <summary>A clause in a BooleanQuery. </summary>
+#if !DNXCORE50
+        [Serializable]
+#endif
+    public class BooleanClause
     {
 	    private Occur occur;
 		

@@ -28,23 +28,25 @@ using ReaderUtil = Lucene.Net.Util.ReaderUtil;
 
 namespace Lucene.Net.Search
 {
-	
-	/// <summary>Implements search over a single IndexReader.
-	/// 
-	/// <p/>Applications usually need only call the inherited <see cref="Searcher.Search(Query,int)" />
-	/// or <see cref="Searcher.Search(Query,Filter,int)" /> methods. For performance reasons it is 
-	/// recommended to open only one IndexSearcher and use it for all of your searches.
-	/// 
-	/// <a name="thread-safety"></a><p/><b>NOTE</b>:
-	/// <see cref="IndexSearcher" /> instances are completely
-	/// thread safe, meaning multiple threads can call any of its
-	/// methods, concurrently.  If your application requires
-	/// external synchronization, you should <b>not</b>
-	/// synchronize on the <c>IndexSearcher</c> instance;
-	/// use your own (non-Lucene) objects instead.<p/>
-	/// </summary>
-    [Serializable]
-	public class IndexSearcher : Searcher
+
+    /// <summary>Implements search over a single IndexReader.
+    /// 
+    /// <p/>Applications usually need only call the inherited <see cref="Searcher.Search(Query,int)" />
+    /// or <see cref="Searcher.Search(Query,Filter,int)" /> methods. For performance reasons it is 
+    /// recommended to open only one IndexSearcher and use it for all of your searches.
+    /// 
+    /// <a name="thread-safety"></a><p/><b>NOTE</b>:
+    /// <see cref="IndexSearcher" /> instances are completely
+    /// thread safe, meaning multiple threads can call any of its
+    /// methods, concurrently.  If your application requires
+    /// external synchronization, you should <b>not</b>
+    /// synchronize on the <c>IndexSearcher</c> instance;
+    /// use your own (non-Lucene) objects instead.<p/>
+    /// </summary>
+#if !DNXCORE50
+        [Serializable]
+#endif
+    public class IndexSearcher : Searcher
 	{
 		internal IndexReader reader;
 		private bool closeReader;

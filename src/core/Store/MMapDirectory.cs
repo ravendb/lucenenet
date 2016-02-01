@@ -498,7 +498,11 @@ namespace Lucene.Net.Store
 			}
 			finally
 			{
-				raf.Close();
+#if !DNXCORE50
+                raf.Close();
+#else
+                raf.Dispose();
+#endif
 			}
 		}
 		

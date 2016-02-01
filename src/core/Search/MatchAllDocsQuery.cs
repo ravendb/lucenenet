@@ -23,12 +23,14 @@ using ToStringUtils = Lucene.Net.Util.ToStringUtils;
 
 namespace Lucene.Net.Search
 {
-	
-	/// <summary> A query that matches all documents.
-	/// 
-	/// </summary>
-	[Serializable]
-	public class MatchAllDocsQuery:Query
+
+    /// <summary> A query that matches all documents.
+    /// 
+    /// </summary>
+#if !DNXCORE50
+        [Serializable]
+#endif
+    public class MatchAllDocsQuery:Query
 	{
 		
 		public MatchAllDocsQuery():this(null)
@@ -92,9 +94,11 @@ namespace Lucene.Net.Search
 				return doc = termDocs.SkipTo(target)?termDocs.Doc:NO_MORE_DOCS;
 			}
 		}
-		
-		[Serializable]
-		private class MatchAllDocsWeight:Weight
+
+#if !DNXCORE50
+        [Serializable]
+#endif
+        private class MatchAllDocsWeight:Weight
 		{
 			private void  InitBlock(MatchAllDocsQuery enclosingInstance)
 			{

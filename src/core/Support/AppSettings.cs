@@ -20,7 +20,7 @@
 */
 
 using System;
-using System.Configuration;
+using System.Collections.Specialized;
 
 namespace Lucene.Net.Support
 {
@@ -84,7 +84,7 @@ namespace Lucene.Net.Support
                 return (int)settings[key];
             }
 
-            System.String theValue = ConfigurationManager.AppSettings.Get(key);
+            System.String theValue = ConfigurationManager.GetAppSetting(key);
             if (theValue == null)
             {
                 return defValue;
@@ -107,7 +107,7 @@ namespace Lucene.Net.Support
                 return (long)settings[key];
             }
 
-            System.String theValue = ConfigurationManager.AppSettings.Get(key);
+            System.String theValue = ConfigurationManager.GetAppSetting(key);
             if (theValue == null)
             {
                 return defValue;
@@ -130,7 +130,7 @@ namespace Lucene.Net.Support
                 return (System.String)settings[key];
             }
 
-            System.String theValue = ConfigurationManager.AppSettings.Get(key);
+            System.String theValue = ConfigurationManager.GetAppSetting(key);
             if (theValue == null)
             {
                 return defValue;
@@ -146,7 +146,7 @@ namespace Lucene.Net.Support
                 return (bool)settings[key];
             }
 
-            System.String theValue = ConfigurationManager.AppSettings.Get(key);
+            System.String theValue = ConfigurationManager.GetAppSetting(key);
             if (theValue == null)
             {
                 return defValue;

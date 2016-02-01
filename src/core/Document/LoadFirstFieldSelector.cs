@@ -18,13 +18,15 @@
 using System;
 namespace Lucene.Net.Documents
 {
-	
-	/// <summary> Load the First field and break.
-	/// <p/>
-	/// See <see cref="FieldSelectorResult.LOAD_AND_BREAK" />
-	/// </summary>
-	[Serializable]
-	public class LoadFirstFieldSelector : FieldSelector
+
+    /// <summary> Load the First field and break.
+    /// <p/>
+    /// See <see cref="FieldSelectorResult.LOAD_AND_BREAK" />
+    /// </summary>
+#if !DNXCORE50
+        [Serializable]
+#endif
+    public class LoadFirstFieldSelector : FieldSelector
 	{
 		
 		public virtual FieldSelectorResult Accept(System.String fieldName)

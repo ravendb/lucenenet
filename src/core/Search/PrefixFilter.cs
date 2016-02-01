@@ -21,12 +21,14 @@ using Term = Lucene.Net.Index.Term;
 
 namespace Lucene.Net.Search
 {
-	
-	/// <summary> A Filter that restricts search results to values that have a matching prefix in a given
-	/// field.
-	/// </summary>
-	[Serializable]
-	public class PrefixFilter:MultiTermQueryWrapperFilter<PrefixQuery>
+
+    /// <summary> A Filter that restricts search results to values that have a matching prefix in a given
+    /// field.
+    /// </summary>
+#if !DNXCORE50
+        [Serializable]
+#endif
+    public class PrefixFilter:MultiTermQueryWrapperFilter<PrefixQuery>
 	{
 		
 		public PrefixFilter(Term prefix):base(new PrefixQuery(prefix))

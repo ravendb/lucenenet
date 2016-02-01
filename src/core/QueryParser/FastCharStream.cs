@@ -118,8 +118,12 @@ namespace Lucene.Net.QueryParsers
 		{
 			try
 			{
-				input.Close();
-			}
+#if !DNXCORE50
+                input.Close();
+#else
+                input.Dispose();
+#endif
+            }
 			catch (System.IO.IOException e)
 			{
 				System.Console.Error.WriteLine("Caught: " + e + "; ignoring.");

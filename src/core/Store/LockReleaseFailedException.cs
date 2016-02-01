@@ -22,12 +22,14 @@ namespace Lucene.Net.Store
     using System.Runtime.Serialization;
 
     /// <summary> This exception is thrown when the <c>write.lock</c>
-	/// could not be released.
-	/// </summary>
-	/// <seealso cref="Lock.Release()">
-	/// </seealso>
-	[Serializable]
-	public class LockReleaseFailedException:System.IO.IOException
+    /// could not be released.
+    /// </summary>
+    /// <seealso cref="Lock.Release()">
+    /// </seealso>
+#if !DNXCORE50
+        [Serializable]
+#endif
+    public class LockReleaseFailedException:System.IO.IOException
 	{
         public LockReleaseFailedException()
         {
@@ -42,9 +44,11 @@ namespace Lucene.Net.Store
         {
         }
 
+#if !DNXCORE50
         public LockReleaseFailedException(SerializationInfo info, StreamingContext context) 
             : base(info, context)
         {
         }
+#endif
     }
 }

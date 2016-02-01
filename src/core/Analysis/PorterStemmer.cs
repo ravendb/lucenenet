@@ -733,8 +733,12 @@ namespace Lucene.Net.Analysis
 							}
 						}
 					}
-					
-					in_Renamed.Close();
+
+#if !DNXCORE50
+                    in_Renamed.Close();
+#else
+                    in_Renamed.Dispose();
+#endif
 				}
 				catch (System.IO.IOException)
 				{

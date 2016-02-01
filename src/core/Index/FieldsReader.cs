@@ -426,12 +426,14 @@ namespace Lucene.Net.Index
 			doc.Add(new Field(fi.name, sizebytes, Field.Store.YES));
 			return size;
 		}
-		
-		/// <summary> A Lazy implementation of Fieldable that differs loading of fields until asked for, instead of when the Document is
-		/// loaded.
-		/// </summary>
-		[Serializable]
-		private sealed class LazyField : AbstractField
+
+        /// <summary> A Lazy implementation of Fieldable that differs loading of fields until asked for, instead of when the Document is
+        /// loaded.
+        /// </summary>
+#if !DNXCORE50
+        [Serializable]
+#endif
+        private sealed class LazyField : AbstractField
 		{
 			private void  InitBlock(FieldsReader enclosingInstance)
 			{

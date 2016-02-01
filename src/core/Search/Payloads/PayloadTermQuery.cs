@@ -33,21 +33,23 @@ using TermSpans = Lucene.Net.Search.Spans.TermSpans;
 
 namespace Lucene.Net.Search.Payloads
 {
-	
-	/// <summary> This class is very similar to
-	/// <see cref="Lucene.Net.Search.Spans.SpanTermQuery" /> except that it factors
-	/// in the value of the payload located at each of the positions where the
-	/// <see cref="Lucene.Net.Index.Term" /> occurs.
-	/// <p/>
-	/// In order to take advantage of this, you must override
+
+    /// <summary> This class is very similar to
+    /// <see cref="Lucene.Net.Search.Spans.SpanTermQuery" /> except that it factors
+    /// in the value of the payload located at each of the positions where the
+    /// <see cref="Lucene.Net.Index.Term" /> occurs.
+    /// <p/>
+    /// In order to take advantage of this, you must override
     /// <see cref="Lucene.Net.Search.Similarity.ScorePayload(int, String, int, int, byte[],int,int)" />
-	/// which returns 1 by default.
-	/// <p/>
-	/// Payload scores are aggregated using a pluggable <see cref="PayloadFunction" />.
-	/// 
-	/// </summary>
-	[Serializable]
-	public class PayloadTermQuery:SpanTermQuery
+    /// which returns 1 by default.
+    /// <p/>
+    /// Payload scores are aggregated using a pluggable <see cref="PayloadFunction" />.
+    /// 
+    /// </summary>
+#if !DNXCORE50
+        [Serializable]
+#endif
+    public class PayloadTermQuery:SpanTermQuery
 	{
 		protected internal PayloadFunction function;
 		private bool includeSpanScore;
@@ -66,9 +68,11 @@ namespace Lucene.Net.Search.Payloads
 		{
 			return new PayloadTermWeight(this, this, searcher);
 		}
-		
-		[Serializable]
-		protected internal class PayloadTermWeight:SpanWeight
+
+#if !DNXCORE50
+        [Serializable]
+#endif
+        protected internal class PayloadTermWeight:SpanWeight
 		{
 			private void  InitBlock(PayloadTermQuery enclosingInstance)
 			{

@@ -30,23 +30,25 @@ using Weight = Lucene.Net.Search.Weight;
 
 namespace Lucene.Net.Search.Function
 {
-	
-	/// <summary> Query that sets document score as a programmatic function of several (sub) scores:
-	/// <list type="bullet">
-	/// <item>the score of its subQuery (any query)</item>
-	/// <item>(optional) the score of its ValueSourceQuery (or queries).
-	/// For most simple/convenient use cases this query is likely to be a 
-	/// <see cref="Lucene.Net.Search.Function.FieldScoreQuery">FieldScoreQuery</see></item>
-	/// </list>
+
+    /// <summary> Query that sets document score as a programmatic function of several (sub) scores:
+    /// <list type="bullet">
+    /// <item>the score of its subQuery (any query)</item>
+    /// <item>(optional) the score of its ValueSourceQuery (or queries).
+    /// For most simple/convenient use cases this query is likely to be a 
+    /// <see cref="Lucene.Net.Search.Function.FieldScoreQuery">FieldScoreQuery</see></item>
+    /// </list>
     /// Subclasses can modify the computation by overriding <see cref="GetCustomScoreProvider" />.
-	/// 
-	/// <p/><font color="#FF0000">
-	/// WARNING: The status of the <b>Search.Function</b> package is experimental. 
-	/// The APIs introduced here might change in the future and will not be 
-	/// supported anymore in such a case.</font>
-	/// </summary>
-	[Serializable]
-	public class CustomScoreQuery:Query, System.ICloneable
+    /// 
+    /// <p/><font color="#FF0000">
+    /// WARNING: The status of the <b>Search.Function</b> package is experimental. 
+    /// The APIs introduced here might change in the future and will not be 
+    /// supported anymore in such a case.</font>
+    /// </summary>
+#if !DNXCORE50
+        [Serializable]
+#endif
+    public class CustomScoreQuery:Query, System.ICloneable
 	{
 		
 		private Query subQuery;
@@ -319,11 +321,13 @@ namespace Lucene.Net.Search.Function
 			exp.AddDetail(valSrcExpl);
 			return exp;
 		}
-		
-		//=========================== W E I G H T ============================
-		
-		[Serializable]
-		private class CustomWeight:Weight
+
+        //=========================== W E I G H T ============================
+
+#if !DNXCORE50
+        [Serializable]
+#endif
+        private class CustomWeight:Weight
 		{
 			private void  InitBlock(CustomScoreQuery enclosingInstance)
 			{

@@ -23,10 +23,12 @@ using ToStringUtils = Lucene.Net.Util.ToStringUtils;
 
 namespace Lucene.Net.Search.Spans
 {
-	
-	/// <summary>Matches spans containing a term. </summary>
-	[Serializable]
-	public class SpanTermQuery:SpanQuery
+
+    /// <summary>Matches spans containing a term. </summary>
+#if !DNXCORE50
+        [Serializable]
+#endif
+    public class SpanTermQuery:SpanQuery
 	{
 		protected internal Term internalTerm;
 		

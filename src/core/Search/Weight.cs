@@ -21,33 +21,35 @@ using IndexReader = Lucene.Net.Index.IndexReader;
 
 namespace Lucene.Net.Search
 {
-	
-	/// <summary> Expert: Calculate query weights and build query scorers.
-	/// <p/>
-	/// The purpose of <see cref="Weight" /> is to ensure searching does not
-	/// modify a <see cref="Query" />, so that a <see cref="Query" /> instance can be reused. <br/>
-	/// <see cref="Searcher" /> dependent state of the query should reside in the
-	/// <see cref="Weight" />. <br/>
-	/// <see cref="IndexReader" /> dependent state should reside in the <see cref="Scorer" />.
-	/// <p/>
-	/// A <c>Weight</c> is used in the following way:
-	/// <list type="bullet">
-	/// <item>A <c>Weight</c> is constructed by a top-level query, given a
-	/// <c>Searcher</c> (<see cref="Lucene.Net.Search.Query.CreateWeight(Searcher)" />).</item>
-	/// <item>The <see cref="GetSumOfSquaredWeights()" /> method is called on the
-	/// <c>Weight</c> to compute the query normalization factor
-	/// <see cref="Similarity.QueryNorm(float)" /> of the query clauses contained in the
-	/// query.</item>
-	/// <item>The query normalization factor is passed to <see cref="Normalize(float)" />. At
-	/// this point the weighting is complete.</item>
+
+    /// <summary> Expert: Calculate query weights and build query scorers.
+    /// <p/>
+    /// The purpose of <see cref="Weight" /> is to ensure searching does not
+    /// modify a <see cref="Query" />, so that a <see cref="Query" /> instance can be reused. <br/>
+    /// <see cref="Searcher" /> dependent state of the query should reside in the
+    /// <see cref="Weight" />. <br/>
+    /// <see cref="IndexReader" /> dependent state should reside in the <see cref="Scorer" />.
+    /// <p/>
+    /// A <c>Weight</c> is used in the following way:
+    /// <list type="bullet">
+    /// <item>A <c>Weight</c> is constructed by a top-level query, given a
+    /// <c>Searcher</c> (<see cref="Lucene.Net.Search.Query.CreateWeight(Searcher)" />).</item>
+    /// <item>The <see cref="GetSumOfSquaredWeights()" /> method is called on the
+    /// <c>Weight</c> to compute the query normalization factor
+    /// <see cref="Similarity.QueryNorm(float)" /> of the query clauses contained in the
+    /// query.</item>
+    /// <item>The query normalization factor is passed to <see cref="Normalize(float)" />. At
+    /// this point the weighting is complete.</item>
     /// <item>A <c>Scorer</c> is constructed by <see cref="Scorer(IndexReader,bool,bool)" />.</item>
-	/// </list>
-	/// 
-	/// </summary>
-	/// <since> 2.9
-	/// </since>
-	[Serializable]
-	public abstract class Weight
+    /// </list>
+    /// 
+    /// </summary>
+    /// <since> 2.9
+    /// </since>
+#if !DNXCORE50
+        [Serializable]
+#endif
+    public abstract class Weight
 	{
 		
 		/// <summary> An explanation of the score computation for the named document.

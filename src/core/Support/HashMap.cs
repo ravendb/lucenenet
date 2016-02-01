@@ -25,6 +25,8 @@ using System.Collections.Generic;
 
 namespace Lucene.Net.Support
 {
+    using Lucene.Net.Util;
+
     /// <summary>
     /// A C# emulation of the <a href="http://download.oracle.com/javase/1,5.0/docs/api/java/util/HashMap.html">Java Hashmap</a>
     /// <para>
@@ -52,7 +54,9 @@ namespace Lucene.Net.Support
     /// </summary>
     /// <typeparam name="TKey">The type of keys in the dictionary</typeparam>
     /// <typeparam name="TValue">The type of values in the dictionary</typeparam>
-    [Serializable]
+#if !DNXCORE50
+        [Serializable]
+#endif
     public class HashMap<TKey, TValue> : IDictionary<TKey, TValue>
     {
         internal IEqualityComparer<TKey> _comparer;
@@ -87,7 +91,7 @@ namespace Lucene.Net.Support
             _dict = new Dictionary<TKey, TValue>(initialCapacity, _comparer);
             _hasNullValue = false;
 
-            if (typeof(TKey).IsValueType)
+            if (typeof(TKey).IsValueType())
             {
                 _isValueType = Nullable.GetUnderlyingType(typeof(TKey)) == null;
             }

@@ -22,10 +22,12 @@ using DocIdBitSet = Lucene.Net.Util.DocIdBitSet;
 
 namespace Lucene.Net.Search
 {
-	
-	/// <summary>Abstract base class for restricting which documents may be returned during searching.</summary>
-	[Serializable]
-	public abstract class Filter
+
+    /// <summary>Abstract base class for restricting which documents may be returned during searching.</summary>
+#if !DNXCORE50
+        [Serializable]
+#endif
+    public abstract class Filter
 	{
 	    ///<summary>
 	    ///  <para>Creates a <see cref="DocIdSet" /> enumerating the documents that should be

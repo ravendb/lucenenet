@@ -19,9 +19,11 @@ using System;
 
 namespace Lucene.Net.Store
 {
-	
-	[Serializable]
-	public class RAMFile
+
+#if !DNXCORE50
+        [Serializable]
+#endif
+    public class RAMFile
 	{
 		
 		private const long serialVersionUID = 1L;
