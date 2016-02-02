@@ -19,10 +19,10 @@ using System;
 
 namespace Lucene.Net.Demo.Html
 {
-	
-	class Test
+    class Test
 	{
-		[STAThread]
+#if !DNXCORE50
+        [STAThread]
 		public static void  Main(System.String[] argv)
 		{
 			if ("-dir".Equals(argv[0]))
@@ -39,8 +39,9 @@ namespace Lucene.Net.Demo.Html
 			else
 				Parse(new System.IO.FileInfo(argv[0]));
 		}
-		
-		public static void  Parse(System.IO.FileInfo file)
+#endif
+
+        public static void  Parse(System.IO.FileInfo file)
 		{
 			System.IO.FileStream fis = null;
 			try

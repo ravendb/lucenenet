@@ -1190,6 +1190,7 @@ namespace Lucene.Net.QueryParsers
             return sb.ToString();
         }
 
+#if !DNXCORE50
         /// <summary> Command line tool to test QueryParser, using {@link Lucene.Net.Analysis.SimpleAnalyzer}.
         /// Usage:<br/>
         /// <c>java Lucene.Net.QueryParsers.QueryParser &lt;input&gt;</c>
@@ -1207,6 +1208,7 @@ namespace Lucene.Net.QueryParsers
             Console.WriteLine(q.ToString("field"));
             return 0;
         }
+#endif
 
         // *   Query  ::= ( Clause )*
         // *   Clause ::= ["+", "-"] [<TermToken> ":"] ( <TermToken> | "(" Query ")" )

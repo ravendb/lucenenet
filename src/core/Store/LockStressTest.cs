@@ -32,8 +32,8 @@ namespace Lucene.Net.Store
 	
 	public class LockStressTest
 	{
-		
-		[STAThread]
+#if !DNXCORE50
+        [STAThread]
 		public static int Main(System.String[] args)
 		{
 			
@@ -124,5 +124,6 @@ namespace Lucene.Net.Store
 				System.Threading.Thread.Sleep(new System.TimeSpan((System.Int64) 10000 * sleepTimeMS));
 			}
 		}
-	}
+#endif
+    }
 }

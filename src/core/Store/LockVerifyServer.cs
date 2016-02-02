@@ -38,8 +38,9 @@ namespace Lucene.Net.Store
 		{
 			return "[" + (((DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond) - startTime) / 1000) + "s] ";
 		}
-		
-		[STAThread]
+
+#if !DNXCORE50
+        [STAThread]
 		public static int Main(System.String[] args)
 		{
 			
@@ -122,5 +123,6 @@ namespace Lucene.Net.Store
 #endif
             }
 		}
-	}
+#endif
+    }
 }

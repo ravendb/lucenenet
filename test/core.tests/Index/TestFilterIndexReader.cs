@@ -90,18 +90,19 @@ namespace Lucene.Net.Index
 				return new TestTermPositions(in_Renamed.TermPositions());
 			}
 		}
-		
-		
-		/// <summary>Main for running test case by itself. </summary>
-		[STAThread]
+
+#if !DNXCORE50
+        /// <summary>Main for running test case by itself. </summary>
+        [STAThread]
 		public static void  Main(System.String[] args)
 		{
 			// TestRunner.run(new TestSuite(typeof(TestIndexReader))); // {{Aroush-2.9}} How do you do this in NUnit?
 		}
-		
-		/// <summary> Tests the IndexReader.getFieldNames implementation</summary>
-		/// <throws>  Exception on error </throws>
-		[Test]
+#endif
+
+        /// <summary> Tests the IndexReader.getFieldNames implementation</summary>
+        /// <throws>  Exception on error </throws>
+        [Test]
 		public virtual void  TestFilterIndexReader_Renamed()
 		{
 			RAMDirectory directory = new MockRAMDirectory();

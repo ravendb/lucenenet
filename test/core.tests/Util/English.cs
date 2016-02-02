@@ -144,11 +144,13 @@ namespace Lucene.Net.Util
 				case 0:  result.Append(""); break;
 				}
 		}
-		
-		[STAThread]
+
+#if !DNXCORE50
+        [STAThread]
 		public static void  Main(System.String[] args)
 		{
 			System.Console.Out.WriteLine(IntToEnglish(System.Int32.Parse(args[0])));
 		}
-	}
+#endif
+    }
 }

@@ -34,23 +34,25 @@ namespace Lucene.Net
 	[TestFixture]
 	public class TestSearch:LuceneTestCase
 	{
-		
-		/// <summary>Main for running test case by itself. </summary>
-		[STAThread]
+
+#if !DNXCORE50
+        /// <summary>Main for running test case by itself. </summary>
+        [STAThread]
 		public static void  Main(System.String[] args)
 		{
 			// TestRunner.run(new TestSuite(typeof(TestSearch))); // {{Aroush-2.9}} how is this done in NUnit?
 		}
-		
-		/// <summary>This test performs a number of searches. It also compares output
-		/// of searches using multi-file index segments with single-file
-		/// index segments.
-		/// 
-		/// TODO: someone should check that the results of the searches are
-		/// still correct by adding assert statements. Right now, the test
-		/// passes if the results are the same between multi-file and
-		/// single-file formats, even if the results are wrong.
-		/// </summary>
+#endif
+
+        /// <summary>This test performs a number of searches. It also compares output
+        /// of searches using multi-file index segments with single-file
+        /// index segments.
+        /// 
+        /// TODO: someone should check that the results of the searches are
+        /// still correct by adding assert statements. Right now, the test
+        /// passes if the results are the same between multi-file and
+        /// single-file formats, even if the results are wrong.
+        /// </summary>
         [Test]
         public virtual void TestSearch_Renamed()
 		{

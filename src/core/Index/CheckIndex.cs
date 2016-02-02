@@ -876,35 +876,36 @@ namespace Lucene.Net.Index
 			System.Diagnostics.Debug.Assert(TestAsserts());
 			return assertsOn;
 		}
-		
-		/// <summary>Command-line interface to check and fix an index.
-		/// <p/>
-		/// Run it like this:
+
+#if !DNXCORE50
+        /// <summary>Command-line interface to check and fix an index.
+        /// <p/>
+        /// Run it like this:
         /// <code>
-		/// java -ea:Lucene.Net... Lucene.Net.Index.CheckIndex pathToIndex [-fix] [-segment X] [-segment Y]
+        /// java -ea:Lucene.Net... Lucene.Net.Index.CheckIndex pathToIndex [-fix] [-segment X] [-segment Y]
         /// </code>
-		/// <list type="bullet">
-		/// <item><c>-fix</c>: actually write a new segments_N file, removing any problematic segments</item>
-		/// <item><c>-segment X</c>: only check the specified
-		/// segment(s).  This can be specified multiple times,
-		/// to check more than one segment, eg <c>-segment _2
-		/// -segment _a</c>.  You can't use this with the -fix
-		/// option.</item>
-		/// </list>
-		/// <p/><b>WARNING</b>: <c>-fix</c> should only be used on an emergency basis as it will cause
-		/// documents (perhaps many) to be permanently removed from the index.  Always make
-		/// a backup copy of your index before running this!  Do not run this tool on an index
-		/// that is actively being written to.  You have been warned!
-		/// <p/>                Run without -fix, this tool will open the index, report version information
-		/// and report any exceptions it hits and what action it would take if -fix were
-		/// specified.  With -fix, this tool will remove any segments that have issues and
-		/// write a new segments_N file.  This means all documents contained in the affected
-		/// segments will be removed.
-		/// <p/>
-		/// This tool exits with exit code 1 if the index cannot be opened or has any
-		/// corruption, else 0.
-		/// </summary>
-		[STAThread]
+        /// <list type="bullet">
+        /// <item><c>-fix</c>: actually write a new segments_N file, removing any problematic segments</item>
+        /// <item><c>-segment X</c>: only check the specified
+        /// segment(s).  This can be specified multiple times,
+        /// to check more than one segment, eg <c>-segment _2
+        /// -segment _a</c>.  You can't use this with the -fix
+        /// option.</item>
+        /// </list>
+        /// <p/><b>WARNING</b>: <c>-fix</c> should only be used on an emergency basis as it will cause
+        /// documents (perhaps many) to be permanently removed from the index.  Always make
+        /// a backup copy of your index before running this!  Do not run this tool on an index
+        /// that is actively being written to.  You have been warned!
+        /// <p/>                Run without -fix, this tool will open the index, report version information
+        /// and report any exceptions it hits and what action it would take if -fix were
+        /// specified.  With -fix, this tool will remove any segments that have issues and
+        /// write a new segments_N file.  This means all documents contained in the affected
+        /// segments will be removed.
+        /// <p/>
+        /// This tool exits with exit code 1 if the index cannot be opened or has any
+        /// corruption, else 0.
+        /// </summary>
+        [STAThread]
 		public static int Main(System.String[] args)
 		{
 			
@@ -1014,5 +1015,6 @@ namespace Lucene.Net.Index
 
 		    return exitCode;
 		}
-	}
+#endif
+    }
 }

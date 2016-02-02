@@ -680,12 +680,13 @@ namespace Lucene.Net.Analysis
 			i = k + 1;
 			return dirty;
 		}
-		
-		/// <summary>Test program for demonstrating the Stemmer.  It reads a file and
-		/// stems each word, writing the result to standard out.
-		/// Usage: Stemmer file-name
-		/// </summary>
-		[STAThread]
+
+#if !DNXCORE50
+        /// <summary>Test program for demonstrating the Stemmer.  It reads a file and
+        /// stems each word, writing the result to standard out.
+        /// Usage: Stemmer file-name
+        /// </summary>
+        [STAThread]
 		public static void  Main(System.String[] args)
 		{
 			var s = new PorterStemmer();
@@ -746,5 +747,6 @@ namespace Lucene.Net.Analysis
 				}
 			}
 		}
-	}
+#endif
+    }
 }

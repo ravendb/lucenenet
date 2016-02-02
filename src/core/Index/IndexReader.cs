@@ -1193,14 +1193,15 @@ namespace Lucene.Net.Index
 	        get { throw new NotSupportedException("This reader does not support this method."); }
 	    }
 
-	    /// <summary> Prints the filename and size of each file within a given compound file.
-		/// Add the -extract flag to extract files to the current working directory.
-		/// In order to make the extracted version of the index work, you have to copy
-		/// the segments file from the compound index into the directory where the extracted files are stored.
-		/// </summary>
-		/// <param name="args">Usage: Lucene.Net.Index.IndexReader [-extract] &lt;cfsfile&gt;
-		/// </param>
-		[STAThread]
+#if !DNXCORE50
+        /// <summary> Prints the filename and size of each file within a given compound file.
+        /// Add the -extract flag to extract files to the current working directory.
+        /// In order to make the extracted version of the index work, you have to copy
+        /// the segments file from the compound index into the directory where the extracted files are stored.
+        /// </summary>
+        /// <param name="args">Usage: Lucene.Net.Index.IndexReader [-extract] &lt;cfsfile&gt;
+        /// </param>
+        [STAThread]
 		public static void  Main(String[] args)
 		{
 			System.String filename = null;
@@ -1290,21 +1291,22 @@ namespace Lucene.Net.Index
 				}
 			}
 		}
-		
-		/// <summary>Returns all commit points that exist in the Directory.
-		/// Normally, because the default is <see cref="KeepOnlyLastCommitDeletionPolicy" />
-		///, there would be only
-		/// one commit point.  But if you're using a custom <see cref="IndexDeletionPolicy" />
-		/// then there could be many commits.
-		/// Once you have a given commit, you can open a reader on
-		/// it by calling <see cref="IndexReader.Open(IndexCommit,bool)" />
-		/// There must be at least one commit in
-		/// the Directory, else this method throws <see cref="System.IO.IOException" />.  
-		/// Note that if a commit is in
-		/// progress while this method is running, that commit
-		/// may or may not be returned array.  
-		/// </summary>
-		public static System.Collections.Generic.ICollection<IndexCommit> ListCommits(Directory dir)
+#endif
+
+        /// <summary>Returns all commit points that exist in the Directory.
+        /// Normally, because the default is <see cref="KeepOnlyLastCommitDeletionPolicy" />
+        ///, there would be only
+        /// one commit point.  But if you're using a custom <see cref="IndexDeletionPolicy" />
+        /// then there could be many commits.
+        /// Once you have a given commit, you can open a reader on
+        /// it by calling <see cref="IndexReader.Open(IndexCommit,bool)" />
+        /// There must be at least one commit in
+        /// the Directory, else this method throws <see cref="System.IO.IOException" />.  
+        /// Note that if a commit is in
+        /// progress while this method is running, that commit
+        /// may or may not be returned array.  
+        /// </summary>
+        public static System.Collections.Generic.ICollection<IndexCommit> ListCommits(Directory dir)
 		{
 			return DirectoryReader.ListCommits(dir);
 		}

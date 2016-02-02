@@ -35,17 +35,18 @@ namespace Lucene.Net
     [TestFixture]
     public class TestSearchForDuplicates : LuceneTestCase
 	{
-		
-		/// <summary>Main for running test case by itself. </summary>
-		[STAThread]
+
+#if !DNXCORE50
+        /// <summary>Main for running test case by itself. </summary>
+        [STAThread]
 		public static void  Main(System.String[] args)
 		{
 			// TestRunner.run(new TestSuite(typeof(TestSearchForDuplicates))); {{Aroush-2.9}} how is this done in NUnit?
 		}
-		
-		
-		
-		internal const System.String PRIORITY_FIELD = "priority";
+#endif
+
+
+        internal const System.String PRIORITY_FIELD = "priority";
 		internal const System.String ID_FIELD = "id";
 		internal const System.String HIGH_PRIORITY = "high";
 		internal const System.String MED_PRIORITY = "medium";

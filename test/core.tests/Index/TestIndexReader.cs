@@ -48,8 +48,9 @@ namespace Lucene.Net.Index
     [TestFixture]
 	public class TestIndexReader:LuceneTestCase
 	{
-		/// <summary>Main for running test case by itself. </summary>
-		[STAThread]
+#if !DNXCORE50
+        /// <summary>Main for running test case by itself. </summary>
+        [STAThread]
 		public static void  Main(System.String[] args)
 		{
 			// TestRunner.run(new TestSuite(typeof(TestIndexReader))); // {{Aroush-2.9}} how is this done in NUnit?
@@ -58,8 +59,9 @@ namespace Lucene.Net.Index
 			//        TestRunner.run (new TestIndexReader("testDeleteReaderReaderConflict"));
 			//        TestRunner.run (new TestIndexReader("testFilesOpenClose"));
 		}
-		
-		public TestIndexReader(System.String name):base(name)
+#endif
+
+        public TestIndexReader(System.String name):base(name)
 		{
 		}
 

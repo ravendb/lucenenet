@@ -32,8 +32,9 @@ namespace Lucene.Net.Index
 	[TestFixture]
 	public class TestCompoundFile:LuceneTestCase
 	{
-		/// <summary>Main for running test case by itself. </summary>
-		[STAThread]
+#if !DNXCORE50
+        /// <summary>Main for running test case by itself. </summary>
+        [STAThread]
 		public static void  Main(System.String[] args)
 		{
 			// TestRunner.run(new TestSuite(typeof(TestCompoundFile))); // {{Aroush-2.9}} how is this done in NUnit?
@@ -49,9 +50,10 @@ namespace Lucene.Net.Index
 			
 			//        TestRunner.run (new TestCompoundFile("testIWCreate"));
 		}
-		
-		
-		private Directory dir;
+#endif
+
+
+        private Directory dir;
 		
 		
 		[SetUp]
