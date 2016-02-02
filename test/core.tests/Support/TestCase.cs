@@ -22,6 +22,8 @@
 using System.Linq;
 using System.Reflection;
 
+using Lucene.Net.Test.Util;
+
 namespace Lucene.Net
 {
     /// <summary>
@@ -42,10 +44,11 @@ namespace Lucene.Net
 
         static string GetTestCaseName(bool fullName)
         {
-            System.Diagnostics.StackTrace stackTrace = new System.Diagnostics.StackTrace();
-            for (int i = 0; i < stackTrace.FrameCount; i++)
+            System.Diagnostics.StackTrace trace = StackTraceHelper.Create();
+            var frames = trace.GetFrames();
+            for (int i = 0; i < frames.Length; i++)
             {
-                System.Reflection.MethodBase method = stackTrace.GetFrame(i).GetMethod();
+                System.Reflection.MethodBase method = frames[i].GetMethod();
                 object[] testAttrs = method.GetCustomAttributes(typeof(NUnit.Framework.TestAttribute), false).ToArray();
                 if (testAttrs != null && testAttrs.Length > 0)
                     if (fullName) return method.DeclaringType.FullName + "." + method.Name;

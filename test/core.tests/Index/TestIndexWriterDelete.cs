@@ -17,6 +17,8 @@
 
 using System;
 using Lucene.Net.Support;
+using Lucene.Net.Test.Util;
+
 using NUnit.Framework;
 
 using WhitespaceAnalyzer = Lucene.Net.Analysis.WhitespaceAnalyzer;
@@ -67,10 +69,11 @@ namespace Lucene.Net.Index
 				if (sawMaybe && !failed)
 				{
 					bool seen = false;
-					System.Diagnostics.StackTrace trace = new System.Diagnostics.StackTrace();
-					for (int i = 0; i < trace.FrameCount; i++)
-					{
-						System.Diagnostics.StackFrame sf = trace.GetFrame(i);
+					System.Diagnostics.StackTrace trace = StackTraceHelper.Create();
+                    var frames = trace.GetFrames();
+                    for (int i = 0; i < frames.Length; i++)
+                    {
+                        System.Diagnostics.StackFrame sf = frames[i];
 						if ("ApplyDeletes".Equals(sf.GetMethod().Name))
 						{
 							seen = true;
@@ -86,10 +89,11 @@ namespace Lucene.Net.Index
 				}
 				if (!failed)
 				{
-					System.Diagnostics.StackTrace trace = new System.Diagnostics.StackTrace();
-					for (int i = 0; i < trace.FrameCount; i++)
-					{
-						System.Diagnostics.StackFrame sf = trace.GetFrame(i);
+					System.Diagnostics.StackTrace trace = StackTraceHelper.Create();
+                    var frames = trace.GetFrames();
+                    for (int i = 0; i < frames.Length; i++)
+                    {
+                        System.Diagnostics.StackFrame sf = frames[i];
 						if ("ApplyDeletes".Equals(sf.GetMethod().Name))
 						{
 							sawMaybe = true;

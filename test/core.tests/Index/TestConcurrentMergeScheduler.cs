@@ -17,6 +17,9 @@
 
 using System;
 using System.Threading;
+
+using Lucene.Net.Test.Util;
+
 using NUnit.Framework;
 
 using Analyzer = Lucene.Net.Analysis.Analyzer;
@@ -54,11 +57,12 @@ namespace Lucene.Net.Index
 			public override void  Eval(MockRAMDirectory dir)
 			{
                 if (doFail && !(Thread.CurrentThread.Name ?? "").Contains("Merge Thread"))
-				{
-					System.Diagnostics.StackTrace trace = new System.Diagnostics.StackTrace();
-					for (int i = 0; i < trace.FrameCount; i++)
+                {
+                    System.Diagnostics.StackTrace trace = StackTraceHelper.Create();
+				    var frames = trace.GetFrames();
+					for (int i = 0; i < frames.Length; i++)
 					{
-						System.Diagnostics.StackFrame sf = trace.GetFrame(i);
+						System.Diagnostics.StackFrame sf = frames[i];
 						if ("DoFlush".Equals(sf.GetMethod().Name))
 						{
 						    hitExc = true;

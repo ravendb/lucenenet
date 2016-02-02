@@ -540,6 +540,7 @@
     <Compile Include="Util\LocalizedTestCase.cs" />
     <Compile Include="Util\LuceneTestCase.cs" />
     <Compile Include="Util\Paths.cs" />
+    <Compile Include="Util\StackTraceHelper.cs" />
     <Compile Include="Util\TestAttributeSource.cs" />
     <Compile Include="Util\TestBitVector.cs">
       <SubType>Code</SubType>

@@ -55,6 +55,8 @@ using SpanTermQuery = Lucene.Net.Search.Spans.SpanTermQuery;
 using _TestUtil = Lucene.Net.Util._TestUtil;
 using System.Collections.Generic;
 
+using Lucene.Net.Test.Util;
+
 namespace Lucene.Net.Index
 {
     using System.Diagnostics;
@@ -2331,12 +2333,13 @@ namespace Lucene.Net.Index
             {
                 if (doFail)
                 {
-                    System.Diagnostics.StackTrace trace = new System.Diagnostics.StackTrace();
+                    System.Diagnostics.StackTrace trace = StackTraceHelper.Create();
+                    var frames = trace.GetFrames();
                     bool sawAppend = false;
                     bool sawFlush = false;
-                    for (int i = 0; i < trace.FrameCount; i++)
+                    for (int i = 0; i < frames.Length; i++)
                     {
-                        System.Diagnostics.StackFrame sf = trace.GetFrame(i);
+                        System.Diagnostics.StackFrame sf = frames[i];
                         string className = sf.GetMethod().DeclaringType.Namespace + "." + sf.GetMethod().DeclaringType.Name;
                         if ("Lucene.Net.Index.FreqProxTermsWriter".Equals(className) && "AppendPostings".Equals(sf.GetMethod().Name))
                             sawAppend = true;
@@ -2953,10 +2956,11 @@ namespace Lucene.Net.Index
             {
                 if (doFail)
                 {
-                    System.Diagnostics.StackTrace trace = new System.Diagnostics.StackTrace();
-                    for (int i = 0; i < trace.FrameCount; i++)
+                    System.Diagnostics.StackTrace trace = StackTraceHelper.Create();
+                    var frames = trace.GetFrames();
+                    for (int i = 0; i < frames.Length; i++)
                     {
-                        System.Diagnostics.StackFrame sf = trace.GetFrame(i);
+                        System.Diagnostics.StackFrame sf = frames[i];
                         if ("Abort".Equals(sf.GetMethod().Name) || "FlushDocument".Equals(sf.GetMethod().Name))
                         {
                             if (onlyOnce)
@@ -3110,10 +3114,11 @@ namespace Lucene.Net.Index
             {
                 if (doFail)
                 {
-                    System.Diagnostics.StackTrace trace = new System.Diagnostics.StackTrace();
-                    for (int i = 0; i < trace.FrameCount; i++)
+                    System.Diagnostics.StackTrace trace = StackTraceHelper.Create();
+                    var frames = trace.GetFrames();
+                    for (int i = 0; i < frames.Length; i++)
                     {
-                        System.Diagnostics.StackFrame sf = trace.GetFrame(i);
+                        System.Diagnostics.StackFrame sf = frames[i];
                         if ("CloseDocStore".Equals(sf.GetMethod().Name))
                         {
                             if (onlyOnce)
@@ -3165,10 +3170,11 @@ namespace Lucene.Net.Index
             {
                 if (doFail)
                 {
-                    System.Diagnostics.StackTrace trace = new System.Diagnostics.StackTrace();
-                    for (int i = 0; i < trace.FrameCount; i++)
+                    System.Diagnostics.StackTrace trace = StackTraceHelper.Create();
+                    var frames = trace.GetFrames();
+                    for (int i = 0; i < frames.Length; i++)
                     {
-                        System.Diagnostics.StackFrame sf = trace.GetFrame(i);
+                        System.Diagnostics.StackFrame sf = frames[i];
                         string className = sf.GetMethod().DeclaringType.Namespace + "." + sf.GetMethod().DeclaringType.Name;
                         if ("Flush".Equals(sf.GetMethod().Name) && "Lucene.Net.Index.DocFieldProcessor".Equals(className))
                         {
@@ -3322,10 +3328,11 @@ namespace Lucene.Net.Index
             {
                 if (doFail)
                 {
-                    System.Diagnostics.StackTrace trace = new System.Diagnostics.StackTrace();
-                    for (int i = 0; i < trace.FrameCount; i++)
+                    System.Diagnostics.StackTrace trace = StackTraceHelper.Create();
+                    var frames = trace.GetFrames();
+                    for (int i = 0; i < frames.Length; i++)
                     {
-                        System.Diagnostics.StackFrame sf = trace.GetFrame(i);
+                        System.Diagnostics.StackFrame sf = frames[i];
                         string className = sf.GetMethod().DeclaringType.Namespace + "." + sf.GetMethod().DeclaringType.Name;
                         if (doFail && "Lucene.Net.Store.MockRAMDirectory".Equals(className) && "Sync".Equals(sf.GetMethod().Name))
                         {
@@ -3897,12 +3904,13 @@ namespace Lucene.Net.Index
 
             public override void Eval(MockRAMDirectory dir)
             {
-                System.Diagnostics.StackTrace trace = new System.Diagnostics.StackTrace();
+                System.Diagnostics.StackTrace trace = StackTraceHelper.Create();
+                var frames = trace.GetFrames();
                 bool isCommit = false;
                 bool isDelete = false;
-                for (int i = 0; i < trace.FrameCount; i++)
+                for (int i = 0; i < frames.Length; i++)
                 {
-                    System.Diagnostics.StackFrame sf = trace.GetFrame(i);
+                    System.Diagnostics.StackFrame sf = frames[i];
                     string className = sf.GetMethod().DeclaringType.Namespace + "." + sf.GetMethod().DeclaringType.Name;
                     // NOTE: Added "Write" to the method name comparisons for TestExceptionDuringCommit to pass.
                     // In release mode, the JITer inlines PrepareCommit, and it wasn't getting caught by this check.
@@ -5615,10 +5623,11 @@ namespace Lucene.Net.Index
                     return;
                 }
 
-                System.Diagnostics.StackTrace trace = new System.Diagnostics.StackTrace();
-                for (int i = 0; i < trace.FrameCount; i++)
+                System.Diagnostics.StackTrace trace = StackTraceHelper.Create();
+                var frames = trace.GetFrames();
+                for (int i = 0; i < frames.Length; i++)
                 {
-                    System.Diagnostics.StackFrame sf = trace.GetFrame(i);
+                    System.Diagnostics.StackFrame sf = frames[i];
                     string className = sf.GetMethod().DeclaringType.Namespace + "." + sf.GetMethod().DeclaringType.Name;
                     if ("Lucene.Net.Index.SegmentMerger".Equals(className) && "MergeTerms".Equals(sf.GetMethod().Name) && !didFail1)
                     {
