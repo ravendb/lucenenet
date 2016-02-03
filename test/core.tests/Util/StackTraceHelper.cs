@@ -10,14 +10,7 @@ namespace Lucene.Net.Test.Util
 #if !DNXCORE50
             return new StackTrace();
 #else
-            try
-            {
-                throw new Exception();
-            }
-            catch (Exception e)
-            {
-                return new StackTrace(e, false);
-            }
+            return Activator.CreateInstance<StackTrace>();
 #endif
         }
     }

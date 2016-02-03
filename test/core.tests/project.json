@@ -14,7 +14,8 @@
 
   "dependencies": {
     "core": "3.0.0",
-    "NUnitLite": "3.0.1"
+    "NUnitLite": "3.0.1",
+    "Microsoft.Dnx.TestHost": "1.0.0-rc1-final"
   },
 
   "frameworks": {
