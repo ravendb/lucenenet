@@ -76,9 +76,11 @@ namespace Lucene.Net.Search
 				double[] doubles = cache.GetDoubles(reader, "theDouble");
 				float[] floats = cache.GetFloats(reader, "theDouble");
                 writer.Flush();
+			    bos.Position = 0;
 			    using (var sr = new StreamReader(bos))
 			    {
-                    Assert.IsTrue(sr.ReadToEnd().IndexOf("WARNING") != -1);
+			        var result = sr.ReadToEnd();
+                    Assert.IsTrue(result.IndexOf("WARNING") != -1);
                 }
 			}
 			finally

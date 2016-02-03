@@ -136,7 +136,6 @@ namespace Lucene.Net.Index
 	                                                "29.nocfs"
 	                                            };
 
-        [Test]
         private void assertCompressedFields29(Directory dir, bool shouldStillBeCompressed)
         {
             int count = 0;
@@ -220,7 +219,7 @@ namespace Lucene.Net.Index
 	        int hasTested29 = 0;
 			for (int i = 0; i < oldNames.Length; i++)
 			{
-				System.String dirName = Paths.CombinePath(Paths.ProjectRootDirectory, "test/core/index/index." + oldNames[i]);
+				System.String dirName = Paths.CombinePath(Paths.ProjectRootDirectory, "test/core.tests/index/index." + oldNames[i]);
 				Unzip(dirName, oldNames[i]);
 				System.String fullPath = FullDir(oldNames[i]);
 				Directory dir = FSDirectory.Open(new System.IO.DirectoryInfo(fullPath));
@@ -254,7 +253,7 @@ namespace Lucene.Net.Index
 		{
 			for (int i = 0; i < oldNames.Length; i++)
 			{
-                System.String dirName = Paths.CombinePath(Paths.ProjectRootDirectory, "test/core/index/index." + oldNames[i]);
+                System.String dirName = Paths.CombinePath(Paths.ProjectRootDirectory, "test/core.tests/index/index." + oldNames[i]);
 				Unzip(dirName, oldNames[i]);
 				searchIndex(oldNames[i], oldNames[i]);
 				RmDir(oldNames[i]);
@@ -266,7 +265,7 @@ namespace Lucene.Net.Index
 		{
 			for (int i = 0; i < oldNames.Length; i++)
 			{
-                System.String dirName = Paths.CombinePath(Paths.ProjectRootDirectory, "test/core/index/index." + oldNames[i]);
+                System.String dirName = Paths.CombinePath(Paths.ProjectRootDirectory, "test/core.tests/index/index." + oldNames[i]);
 				Unzip(dirName, oldNames[i]);
 				ChangeIndexNoAdds(oldNames[i]);
 				RmDir(oldNames[i]);
@@ -278,7 +277,7 @@ namespace Lucene.Net.Index
 		{
 			for (int i = 0; i < oldNames.Length; i++)
 			{
-                System.String dirName = Paths.CombinePath(Paths.ProjectRootDirectory, "test/core/index/index." + oldNames[i]);
+                System.String dirName = Paths.CombinePath(Paths.ProjectRootDirectory, "test/core.tests/index/index." + oldNames[i]);
 				Unzip(dirName, oldNames[i]);
 				ChangeIndexWithAdds(oldNames[i]);
 				RmDir(oldNames[i]);

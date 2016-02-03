@@ -7,6 +7,9 @@ namespace Lucene.Net.Test.Util
     {
         public static StackTrace Create()
         {
+#if !DNXCORE50
+            return new StackTrace();
+#else
             try
             {
                 throw new Exception();
@@ -15,6 +18,7 @@ namespace Lucene.Net.Test.Util
             {
                 return new StackTrace(e, false);
             }
+#endif
         }
     }
 }

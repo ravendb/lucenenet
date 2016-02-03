@@ -226,10 +226,10 @@ namespace Lucene.Net.Index
 		    using (var fs = File.OpenRead(file.FullName))
 		    {
                 doc.Add(new Field("contents", new System.IO.StreamReader(fs)));
+			    writer.AddDocument(doc);
             }
 
-			writer.AddDocument(doc);
-			writer.Commit();
+            writer.Commit();
 			return writer.NewestSegment();
 #endif
 		}
