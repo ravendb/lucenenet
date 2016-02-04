@@ -17,6 +17,9 @@
 
 using System;
 using System.Collections.Generic;
+#if DNXCORE50
+using Lucene.Net.DNX;
+#endif
 
 namespace Lucene.Net.Store
 {
@@ -267,11 +270,7 @@ namespace Lucene.Net.Store
                             lock_Renamed = false;
                             try
                             {
-#if !DNXCORE50
                                 channel.Lock(0, channel.Length);
-#else
-                                // TODO [ppekrol]
-#endif
                                 lock_Renamed = true;
                             }
                             catch (System.IO.IOException e)
@@ -365,11 +364,7 @@ namespace Lucene.Net.Store
                 {
                     try
                     {
-#if !DNXCORE50
                         channel.Unlock(0, channel.Length);
-#else
-                        // TODO [ppekrol]
-#endif
                     }
                     finally
                     {
