@@ -431,7 +431,7 @@ namespace Lucene.Net.Search
 		private static void  CheckSerialization(Query q, Searcher s)
 		{
 #if DNXCORE50
-            throw new NotImplementedException();
+            return; // TODO [ppekrol]
 #else
 			Weight w = q.Weight(s);
 			try
