@@ -89,7 +89,14 @@ namespace Lucene.Net.Util
 		
 		protected internal virtual System.String GetTestLabel()
 		{
-			return NUnit.Framework.TestContext.CurrentContext.Test.FullName;
+		    try
+		    {
+                return NUnit.Framework.TestContext.CurrentContext.Test.FullName;
+            }
+		    catch (NullReferenceException)
+		    {
+		        return "Unknown test";
+		    }
 		}
 		
 		[TearDown]

@@ -1,6 +1,6 @@
 {
   "title": "Lucene.Net.Test",
-  "version": "3.0.0",
+  "version": "3.0.3",
   "compile": [ "**/*.cs" ],
 
   "compilationOptions": {
@@ -14,7 +14,7 @@
   },
 
   "dependencies": {
-    "core": "3.0.0",
+    "core": "3.0.3",
     "NUnitLite": "3.0.1",
     "Microsoft.Dnx.TestHost": "1.0.0-rc1-final",
     "SharpZipLib.Portable": "0.86.0.3"
