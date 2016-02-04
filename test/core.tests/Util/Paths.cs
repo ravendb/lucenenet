@@ -21,6 +21,10 @@ using System.Linq;
 using System.Collections.Generic;
 using Lucene.Net.Support;
 
+#if DNXCORE50
+using Microsoft.Extensions.PlatformAbstractions;
+#endif
+
 namespace Lucene.Net.Util
 {
     /// <summary>
@@ -101,10 +105,17 @@ namespace Lucene.Net.Util
             {
                 if (s_assemblyDirectory == null)
                 {
+#if !DNXCORE50
                     // CodeBase uses unc path, get rid of the file prefix if it exists.
                     // File prefix could be file:// or file:///
-                    var assemblyDirectoryUri = new Uri(typeof(Paths).Assembly().CodeBase());
+                    var assemblyDirectoryUri = new Uri(typeof(Paths).Assembly().CodeBase);
                     s_assemblyDirectory = Path.GetDirectoryName(assemblyDirectoryUri.LocalPath);
+#else
+                    var library = PlatformServices.Default.LibraryManager.GetLibrary(typeof(Paths).Assembly().GetName().Name);
+                    var path = library.Path;
+
+                    s_assemblyDirectory = Path.GetDirectoryName(path);
+#endif
                 }
                 return s_assemblyDirectory;
             }
@@ -123,6 +134,7 @@ namespace Lucene.Net.Util
                     // we currently assume that the assembly's directory is root/bin/[Section]/[Build]
                     // where [Section] is either core, demo, or contrib, and [Build] is either Debug or Release.  
                     string assemblyLocation = AssemblyDirectory;
+#if !DNXCORE50
                     int index = -1;
                     if (assemblyLocation.IndexOf("build") > -1)
                         index = assemblyLocation.IndexOf(Path.DirectorySeparatorChar + "build" + Path.DirectorySeparatorChar);
@@ -135,12 +147,19 @@ namespace Lucene.Net.Util
 
                     for (int i = 0; i < difference; i++)
                         list.Add("..");
+#else
+                    var index = assemblyLocation.IndexOf("core.tests", StringComparison.OrdinalIgnoreCase);
+                    if (index <= -1)
+                        throw new InvalidOperationException();
 
+                    var list = new List<string>();
+
+                    for (int i = 0; i < 2; i++)
+                        list.Add("..");
+#endif
                     var parameters = list.ToArray();
 
                     s_projectRootDirectory = Path.GetFullPath(CombinePath(assemblyLocation, parameters));
-
-                    //TODO: remove
                     Console.WriteLine(s_projectRootDirectory);
                 }
                 return s_projectRootDirectory;

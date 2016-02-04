@@ -170,6 +170,9 @@
   <PropertyGroup>
     <SignAssembly>true</SignAssembly>
   </PropertyGroup>
+  <PropertyGroup>
+    <OutputType>Library</OutputType>
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="ICSharpCode.SharpZipLib, Version=0.85.5.452, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>

@@ -24,15 +24,6 @@
         }
 #endif
 
-        public static string CodeBase(this Assembly assembly)
-        {
-#if !DNXCORE50
-            return assembly.CodeBase;
-#else
-            throw new NotImplementedException();
-#endif
-        }
-
         public static bool IsInterface(this Type type)
         {
 #if !DNXCORE50

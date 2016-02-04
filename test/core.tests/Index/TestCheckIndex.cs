@@ -31,6 +31,7 @@ using Field = Lucene.Net.Documents.Field;
 using MockRAMDirectory = Lucene.Net.Store.MockRAMDirectory;
 using Constants = Lucene.Net.Util.Constants;
 using LuceneTestCase = Lucene.Net.Util.LuceneTestCase;
+using Lucene.Net.Util;
 
 namespace Lucene.Net.Index
 {
@@ -110,7 +111,7 @@ namespace Lucene.Net.Index
 
 #if DNXCORE50
 
-            var library = PlatformServices.Default.LibraryManager.GetLibrary("Lucene.Net");
+            var library = PlatformServices.Default.LibraryManager.GetLibrary(typeof(Lucene.Net.Documents.Document).Assembly().GetName().Name);
 		    version = library.Version;
 #else
             AppDomain MyDomain = AppDomain.CurrentDomain;
