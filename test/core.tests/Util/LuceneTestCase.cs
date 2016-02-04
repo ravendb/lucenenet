@@ -59,6 +59,7 @@ namespace Lucene.Net.Util
 
 		public LuceneTestCase() : base()
 		{
+		    Console.WriteLine("Running " + GetTestLabel());
 		}
 		
 		public LuceneTestCase(System.String name)
