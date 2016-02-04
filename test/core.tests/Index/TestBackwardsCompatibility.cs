@@ -95,23 +95,34 @@ namespace Lucene.Net.Index
 			ICSharpCode.SharpZipLib.Zip.ZipEntry entry;
 			while ((entry = zipFile.GetNextEntry()) != null)
 			{
-				System.IO.Stream streamout = new System.IO.BufferedStream(new System.IO.FileStream(new System.IO.FileInfo(System.IO.Path.Combine(fileDir.FullName, entry.Name)).FullName, System.IO.FileMode.Create));
-				
-				byte[] buffer = new byte[8192];
+#if !DNXCORE50
+                System.IO.Stream streamout = new System.IO.BufferedStream(new System.IO.FileStream(new System.IO.FileInfo(System.IO.Path.Combine(fileDir.FullName, entry.Name)).FullName, System.IO.FileMode.Create));
+#else
+                Stream streamout = new FileStream(new FileInfo(Path.Combine(fileDir.FullName, entry.Name)).FullName, FileMode.Create);
+#endif
+                byte[] buffer = new byte[8192];
 				int len;
 				while ((len = zipFile.Read(buffer, 0, buffer.Length)) > 0)
 				{
 					streamout.Write(buffer, 0, len);
 				}
-				
-				streamout.Close();
+
+#if !DNXCORE50
+                streamout.Close();
+#else
+                streamout.Dispose();
+#endif
 			}
-			
-			zipFile.Close();
+
+#if !DNXCORE50
+            zipFile.Close();
+#else
+            zipFile.Dispose();
+#endif
 #else
 			Assert.Fail("Needs integration with SharpZipLib");
 #endif
-		}
+            }
 		
 		[Test]
 		public virtual void  TestCreateCFS()

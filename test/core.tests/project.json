@@ -5,7 +5,8 @@
 
   "compilationOptions": {
     "keyFile": "Lucene.Net.snk",
-    "emitEntryPoint": true
+    "emitEntryPoint": true,
+    "define": [ "SHARP_ZIP_LIB" ]
   },
 
   "commands": {
@@ -28,7 +29,8 @@
         "System.Reflection.Extensions": "4.0.1-beta-23516",
         "System.Reflection.TypeExtensions": "4.1.0-beta-23516",
         "System.Threading.Tasks.Parallel": "4.0.1-beta-23516",
-        "System.Threading.ThreadPool": "4.0.10-beta-23516"
+        "System.Threading.ThreadPool": "4.0.10-beta-23516",
+        "System.IO": "4.0.11-beta-23516"
       }
     }
   }
