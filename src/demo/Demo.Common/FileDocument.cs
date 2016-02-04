@@ -39,7 +39,7 @@ namespace Lucene.Net.Demo
 		/// </ul>
 		/// </p>
 		/// </summary>
-		public static Document Document(FileInfo f)
+		public static Document Document(FileInfo f, FileStream fs)
 		{
 			
 			// make a new, empty document
@@ -53,13 +53,13 @@ namespace Lucene.Net.Demo
 			// a field that is indexed (i.e. searchable), but don't tokenize the field
 			// into words.
 			doc.Add(new Field("modified", DateTools.TimeToString(f.LastWriteTime.Millisecond, DateTools.Resolution.MINUTE), Field.Store.YES, Field.Index.NOT_ANALYZED));
-			
-			// Add the contents of the file to a field named "contents".  Specify a Reader,
-			// so that the text of the file is tokenized and indexed, but not stored.
-			// Note that FileReader expects the file to be in the system's default encoding.
-			// If that's not the case searching for special characters will fail.
-			doc.Add(new Field("contents", new StreamReader(f.FullName, System.Text.Encoding.Default)));
-			
+
+            // Add the contents of the file to a field named "contents".  Specify a Reader,
+            // so that the text of the file is tokenized and indexed, but not stored.
+            // Note that FileReader expects the file to be in the system's default encoding.
+            // If that's not the case searching for special characters will fail.
+            doc.Add(new Field("contents", new StreamReader(fs, System.Text.Encoding.UTF8)));
+
 			// return the document
 			return doc;
 		}

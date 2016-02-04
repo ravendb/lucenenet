@@ -1,0 +1,21 @@
+﻿{
+  "title": "Demo Common",
+  "version": "3.0.3",
+  "compile": [ "**/*.cs" ],
+
+  "compilationOptions": {
+    "keyFile": "Lucene.Net.snk"
+  },
+
+  "dependencies": {
+    "core": "3.0.3"
+  },
+
+  "frameworks": {
+    "dnxcore50": {
+      "dependencies": {
+        "Microsoft.CSharp": "4.0.1-beta-23516"
+      }
+    }
+  }
+}

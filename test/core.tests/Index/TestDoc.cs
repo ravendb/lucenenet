@@ -22,9 +22,7 @@ using Lucene.Net.Support;
 using NUnit.Framework;
 
 using SimpleAnalyzer = Lucene.Net.Analysis.SimpleAnalyzer;
-#if !DNXCORE50
 using FileDocument = Lucene.Net.Demo.FileDocument;
-#endif
 using Document = Lucene.Net.Documents.Document;
 using Directory = Lucene.Net.Store.Directory;
 using FSDirectory = Lucene.Net.Store.FSDirectory;
@@ -218,20 +216,16 @@ namespace Lucene.Net.Index
 		
 		private SegmentInfo IndexDoc(IndexWriter writer, System.String fileName)
 		{
-#if DNXCORE50
-            throw new NotImplementedException();
-#else
             System.IO.FileInfo file = new System.IO.FileInfo(System.IO.Path.Combine(workDir.FullName, fileName));
-			Document doc = FileDocument.Document(file);
-		    using (var fs = File.OpenRead(file.FullName))
-		    {
+            using (var fs = File.OpenRead(file.FullName))
+            { 
+                Document doc = FileDocument.Document(file, fs);
                 doc.Add(new Field("contents", new System.IO.StreamReader(fs)));
 			    writer.AddDocument(doc);
             }
 
             writer.Commit();
 			return writer.NewestSegment();
-#endif
 		}
 		
 		
