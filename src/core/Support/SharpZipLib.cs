@@ -19,12 +19,11 @@
  *
 */
 
+using System;
 using System.Reflection;
 
 namespace Lucene.Net.Support
 {
-    using System;
-
     public class SharpZipLib
     {
         static System.Reflection.Assembly asm = null;
@@ -33,7 +32,11 @@ namespace Lucene.Net.Support
         {
             try
             {
+#if !DNXCORE50
                 asm = Assembly.Load(new AssemblyName("ICSharpCode.SharpZipLib"));
+#else
+                asm = Assembly.Load(new AssemblyName("ICSharpCode.SharpZipLib.Portable"));
+#endif
             }
             catch { }
         }
