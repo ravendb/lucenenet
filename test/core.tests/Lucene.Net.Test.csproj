@@ -584,12 +584,12 @@
     <None Include="Lucene.Net.snk" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="Messages\MessagesTestBundle.ja.resources">
+    <Content Include="Messages\MessagesTestBundle.ja.resources">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Messages\MessagesTestBundle.resources">
+    </Content>
+    <Content Include="Messages\MessagesTestBundle.resources">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </EmbeddedResource>
+    </Content>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\core\Lucene.Net.csproj">

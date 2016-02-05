@@ -107,7 +107,9 @@ namespace Lucene.Net.Messages
 		{
 			return GetLocalizedMessage(key, CultureInfo.CurrentCulture, args);
 		}
-		
+
+        protected static string ResourceDirectory = "Messages";
+
 		/// <summary> Initialize a given class with the message bundle Keys Should be called from
 		/// a class that extends NLS in a static block at class load time.
 		/// 
@@ -134,44 +136,36 @@ namespace Lucene.Net.Messages
 		
 		private static System.Object GetResourceBundleObject(System.String messageKey, System.Globalization.CultureInfo locale)
 		{
-			
-			// slow resource checking
-			// need to loop thru all registered resource bundles
-			for (var it = bundles.Keys.GetEnumerator(); it.MoveNext(); )
-			{
-				System.Type clazz = bundles[it.Current];
-#if !DNXCORE50
-			    Thread.CurrentThread.CurrentUICulture = locale;
+#if DNXCORE50
+            throw new NotSupportedException("DNX does not have ResourceManager.CreateFileBasedResourceManager");
 #else
-                CultureInfo.CurrentUICulture = locale;
-#endif
+            // slow resource checking
+            // need to loop thru all registered resource bundles
+            for (var it = bundles.Keys.GetEnumerator(); it.MoveNext();)
+            {
+                System.Type clazz = bundles[it.Current];
+                Thread.CurrentThread.CurrentUICulture = locale;
 
-#if !DNXCORE50
-                System.Resources.ResourceManager resourceBundle = System.Resources.ResourceManager.CreateFileBasedResourceManager(clazz.Name, "Messages", null); //{{Lucene.Net-2.9.1}} Can we make resourceDir "Messages" more general?
-#else
-                System.Resources.ResourceManager resourceBundle = new ResourceManager(clazz.Name, clazz.Assembly());
-#endif
-				if (resourceBundle != null)
-				{
-					try
-					{
-#if !DNXCORE50
+                System.Resources.ResourceManager resourceBundle = System.Resources.ResourceManager.CreateFileBasedResourceManager(clazz.Name, ResourceDirectory, null); //{{Lucene.Net-2.9.1}} Can we make resourceDir "Messages" more general?
+
+                if (resourceBundle != null)
+                {
+                    try
+                    {
                         var obj = resourceBundle.GetObject(messageKey);
-#else
-                        var obj = resourceBundle.GetString(messageKey);
-#endif
                         if (obj != null)
-							return obj;
-					}
-					catch (System.Resources.MissingManifestResourceException)
-					{
-						// just continue it might be on the next resource bundle
-					}
-				}
-			}
-			// if resource is not found
-			return null;
-		}
+                            return obj;
+                    }
+                    catch (System.Resources.MissingManifestResourceException)
+                    {
+                        // just continue it might be on the next resource bundle
+                    }
+                }
+            }
+            // if resource is not found
+            return null;
+#endif
+        }
 		
 		private static void  Load<T>()
 		{

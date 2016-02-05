@@ -44,6 +44,9 @@ namespace Lucene.Net.Messages
 				// values
                 NLS.InitializeMessages<MessagesTestBundle>(BUNDLE_NAME);
 			}
-		}
+#if !DNXCORE50
+		    ResourceDirectory = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "Messages");
+#endif
+        }
 	}
 }
