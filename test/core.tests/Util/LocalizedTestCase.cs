@@ -76,9 +76,9 @@ namespace Lucene.Net.Util
         [Test]
         public void RunLocalizedTests()
         {
-#if DNXCORE50
-            throw new NotImplementedException();
-#else
+//#if DNXCORE50
+//            throw new NotImplementedException();
+//#else
             // No need to test with default locale.  Already done when actualy test was called by NUnit
             var currentMethodName = TestMethodHelper.CallerName();
 
@@ -97,8 +97,11 @@ namespace Lucene.Net.Util
                                         .ToList();
 
             // Get a list of all locales to run the test against
+#if !DNXCORE50
             var systemLocales = CultureInfo.GetCultures(CultureTypes.InstalledWin32Cultures);
-
+#else
+            var systemLocales = CultureHelper.GetCultures(CultureHelper.CultureTypes.AllCultures);
+#endif
             // Store the original cultures used, so they can be restored
             var originalCulture = CultureInfo.CurrentCulture;
             var originalUICulture = CultureInfo.CurrentUICulture;
@@ -141,7 +144,6 @@ namespace Lucene.Net.Util
                 CultureInfo.CurrentUICulture = originalUICulture;
 #endif
             }
-#endif
         }
     }
 }
