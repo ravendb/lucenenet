@@ -17,6 +17,7 @@
 
 using System;
 using System.IO;
+using System.Threading;
 using Lucene.Net.Support;
 using NUnit.Framework;
 
@@ -94,8 +95,12 @@ namespace Lucene.Net.Util
 		
 		public static void  RmDir(System.String dir)
         {
-            if(System.IO.Directory.Exists(dir))
-                System.IO.Directory.Delete(dir, true);
+		    if (System.IO.Directory.Exists(dir))
+		    {
+		        System.IO.Directory.Delete(dir, true);
+               
+                Assert.True(SpinWait.SpinUntil(() => System.IO.Directory.Exists(dir) == false, TimeSpan.FromSeconds(5)));
+		    }
 		}
 		
 		public static void  SyncConcurrentMerges(IndexWriter writer)
