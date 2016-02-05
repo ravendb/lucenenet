@@ -179,7 +179,7 @@ namespace Lucene.Net.Store
 		public virtual void  TestSerializable()
 		{
 #if DNXCORE50
-            throw new NotImplementedException();
+            Assert.Ignore("In DNX binary serialization isn't available");
 #else
             Directory dir = new RAMDirectory();
 			System.IO.MemoryStream bos = new System.IO.MemoryStream(1024);

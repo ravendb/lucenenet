@@ -2188,7 +2188,7 @@ namespace Lucene.Net.Index
         public virtual void TestMaxThreadPriority()
         {
 #if DNXCORE50
-            throw new NotImplementedException();
+            Assert.Ignore("In DNX code we don't have ThreadClass.Priority since Thread.Priority isn't available");
 #else
             int pri = (System.Int32)ThreadClass.Current().Priority;
             try
@@ -5371,7 +5371,7 @@ namespace Lucene.Net.Index
         public virtual void TestThreadInterruptDeadlock()
         {
 #if DNXCORE50
-            throw new NotImplementedException();
+            Assert.Ignore("In DNX code we don't have ThreadClass.Interrupt because Thread.Interrupt isn't available");
 #else
             IndexerThreadInterrupt t = new IndexerThreadInterrupt(this);
             t.IsBackground = true;
