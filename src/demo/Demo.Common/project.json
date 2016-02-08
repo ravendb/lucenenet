@@ -1,6 +1,6 @@
 ﻿{
   "title": "Demo Common",
-  "version": "3.0.3",
+  "version": "3.0.4",
   "compile": [ "**/*.cs" ],
 
   "compilationOptions": {
@@ -8,7 +8,7 @@
   },
 
   "dependencies": {
-    "core": "3.0.3"
+    "core": "3.0.4"
   },
 
   "frameworks": {
