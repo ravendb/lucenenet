@@ -50,9 +50,9 @@ namespace Lucene.Net.Spatial.Prefix.Tree
 			String cname;
             if (!args.TryGetValue(PREFIX_TREE, out cname) || cname == null)
 				cname = ctx.IsGeo() ? "geohash" : "quad";
-			if ("geohash".Equals(cname, StringComparison.InvariantCultureIgnoreCase))
+			if ("geohash".Equals(cname, StringComparison.OrdinalIgnoreCase))
 				instance = new GeohashPrefixTree.Factory();
-			else if ("quad".Equals(cname, StringComparison.InvariantCultureIgnoreCase))
+			else if ("quad".Equals(cname, StringComparison.OrdinalIgnoreCase))
 				instance = new QuadPrefixTree.Factory();
 			else
 			{

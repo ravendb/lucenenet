@@ -23,7 +23,9 @@ using Spatial4n.Core.Shapes;
 
 namespace Spatial4n.Core.Exceptions
 {
+#if !DNXCORE50
 	[Serializable]
+#endif
 	public class InvalidSpatialArgument : ArgumentException
 	{
 		public InvalidSpatialArgument(String reason)

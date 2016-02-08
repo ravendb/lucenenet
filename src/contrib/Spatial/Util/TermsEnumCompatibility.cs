@@ -41,7 +41,11 @@ namespace Lucene.Net.Spatial.Util
 		public TermsEnumCompatibility(IndexReader reader, String fieldName)
 		{
 			this.reader = reader;
+#if !DNXCORE50
 			this.fieldName = string.Intern(fieldName);
+#else
+			this.fieldName = fieldName;
+#endif
 			this.termEnum = reader.Terms(new Term(this.fieldName));
 		}
 
