@@ -1,5 +1,5 @@
 ﻿#if DNXCORE50
-using Microsoft.Framework.ConfigurationModel;
+using Microsoft.Extensions.Configuration;
 #endif
 
 namespace Lucene.Net
@@ -7,18 +7,19 @@ namespace Lucene.Net
     public static class ConfigurationManager
     {
 #if DNXCORE50
-        private static readonly Configuration configuration;
+        private static readonly IConfigurationRoot configuration;
 
         static ConfigurationManager()
         {
-            configuration = new Configuration();
+            var builder = new ConfigurationBuilder().AddJsonFile("appsettings.json", optional: true);
+            configuration = builder.Build();
         }
 #endif
 
         public static string GetAppSetting(string key)
         {
 #if DNXCORE50
-            return configuration.Get(key);
+            return configuration[key];
 #else
             return System.Configuration.ConfigurationManager.AppSettings[key];
 #endif

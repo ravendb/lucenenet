@@ -121,12 +121,19 @@ namespace Lucene.Net.Support
 
             // if 32 bit process
             if (IntPtr.Size == 4)
-            { 
+            {
+#if !DNXCORE50
                 // TODO: determine if there is an similar issue when in a 64 bit process.
                 Assert.IsTrue(
                     hash1.Equals(hash2),
                     "BCL string.GetHashCode() no longer exhibits inconsistent inequality for certain strings."
                     );
+#else
+                Assert.IsFalse(
+                    hash1.Equals(hash2),
+                    "In DNX string.GetHashCode() got fixed");
+#endif
+
             }
         }
 

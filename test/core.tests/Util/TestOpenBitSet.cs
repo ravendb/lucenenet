@@ -36,7 +36,7 @@ namespace Lucene.Net.Util
 			int max = a.Length;
 			for (int i = 0; i < max; i++)
 			{
-                Assert.AreEqual(a.Get(i) != b.Get(i), "mismatch: BitSet=[" + i + "]=" + a.Get(i));
+                Assert.AreEqual(a.Get(i), b.Get(i), "mismatch: BitSet=[" + i + "]=" + a.Get(i));
 			}
 		}
 		

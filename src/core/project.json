@@ -1,12 +1,10 @@
-﻿{
+{
   "title": "Lucene.Net",
   "version": "3.0.3",
   "compile": [ "**/*.cs" ],
-
   "compilationOptions": {
     "keyFile": "Lucene.Net.snk"
   },
-
   "frameworks": {
     "dnxcore50": {
       "dependencies": {
@@ -30,7 +28,9 @@
         "System.Text.Encoding.Extensions": "4.0.11-beta-23516",
         "System.Text.RegularExpressions": "4.0.11-beta-23516",
         "System.Threading.Thread": "4.0.0-beta-23516",
-        "System.Diagnostics.Process": "4.1.0-beta-23516"
+        "System.Diagnostics.Process": "4.1.0-beta-23516",
+        "Microsoft.Extensions.Configuration": "1.0.0-rc1-final",
+        "Microsoft.Extensions.Configuration.Json": "1.0.0-rc1-final"
       }
     }
   }

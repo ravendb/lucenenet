@@ -58,7 +58,7 @@ namespace Lucene.Net.Support
         public void Test_Util_Parameter()
         {
 #if DNXCORE50
-            throw new NotImplementedException();
+            Assert.Ignore("In DNX we don't support serialization of Lucene.NET objects. It doesn't really make any sense for us to support that since we never use it.");
 #else
             Lucene.Net.Search.BooleanQuery queryPreSerialized = new Lucene.Net.Search.BooleanQuery();
             queryPreSerialized.Add(new Lucene.Net.Search.TermQuery(new Lucene.Net.Index.Term("country", "Russia")), Occur.MUST);
@@ -85,7 +85,7 @@ namespace Lucene.Net.Support
         public void Test_Store_RAMDirectory()
         {
 #if DNXCORE50
-            throw new NotImplementedException();
+            Assert.Ignore("In DNX we don't support serialization of Lucene.NET objects. It doesn't really make any sense for us to support that since we never use it.");
 #else
             Lucene.Net.Store.RAMDirectory ramDIR = new Lucene.Net.Store.RAMDirectory();
 
@@ -217,7 +217,7 @@ namespace Lucene.Net.Support
         public void Test_Search_FieldDoc()
         {
 #if DNXCORE50
-            throw new NotImplementedException();
+            Assert.Ignore("This test appears to test some kind of remote searching (but it actually throws an exception and ignores it). I don't think we need something like that, additionally DNX does not have offer ChannelServices");
 #else
             ANYPORT = new Random((int)(DateTime.Now.Ticks & 0x7fffffff)).Next(50000) + 10000;
             LUCENENET_100_CreateIndex();

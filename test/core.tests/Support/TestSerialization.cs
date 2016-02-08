@@ -75,7 +75,7 @@ namespace Lucene.Net.Support
         public void TestBooleanQuerySerialization()
         {
 #if DNXCORE50
-            throw new NotImplementedException();
+            Assert.Ignore("In DNX we don't support serialization of Lucene.NET objects. It doesn't really make any sense for us to support that since we never use it.");
 #else
             Lucene.Net.Search.BooleanQuery lucQuery = new Lucene.Net.Search.BooleanQuery();
 
