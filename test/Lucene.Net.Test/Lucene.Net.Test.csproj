@@ -592,13 +592,13 @@
     </Content>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\src\core\Lucene.Net.csproj">
-      <Project>{5D4AD9BE-1FFB-41AB-9943-25737971BF57}</Project>
-      <Name>Lucene.Net</Name>
-    </ProjectReference>
     <ProjectReference Include="..\..\src\demo\Demo.Common\Demo.Common.csproj">
       <Project>{F04CA2F4-E182-46A8-B914-F46AF5319E83}</Project>
       <Name>Demo.Common</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\src\Lucene.Net\Lucene.Net.csproj">
+      <Project>{5d4ad9be-1ffb-41ab-9943-25737971bf57}</Project>
+      <Name>Lucene.Net</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
