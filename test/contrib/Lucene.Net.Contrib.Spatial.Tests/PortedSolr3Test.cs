@@ -40,7 +40,7 @@ namespace Lucene.Net.Contrib.Spatial.Test
         {
             public List<Param> dataList = new List<Param>();
 
-            public IEnumerable<Param> ParamsProvider()
+            public static IEnumerable<Param> ParamsProvider()
             {
                 var ctorArgs = new List<Param>();
 

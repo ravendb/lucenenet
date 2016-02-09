@@ -400,12 +400,33 @@ namespace Lucene.Net.Spatial.Util
 				return false;
 			}
 
-			return bits.Equals(other.bits);
+			var thisLength = bits.Length;
+			var otherLength = other.bits.Length;
+
+			if (thisLength != otherLength)
+			{
+				return false;
+			}
+
+			for (var i = 0; i < thisLength; i++)
+			{
+				if (bits[i] != other.bits[i])
+				{
+					return false;
+				}
+			}
+
+			return true;
 		}
 
 		public override int GetHashCode()
 		{
-			return bits.GetHashCode();
+			int hash = 17;
+			foreach (var bit in bits)
+			{
+				hash = hash * 23 + bit.GetHashCode();
+			}
+			return hash;
 		}
 
 		public override DocIdSetIterator Iterator()

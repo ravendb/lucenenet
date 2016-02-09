@@ -100,6 +100,13 @@
     <DebugSymbols>true</DebugSymbols>
     <OutputType>Library</OutputType>
   </PropertyGroup>
+  <PropertyGroup>
+    <OutputType>Library</OutputType>
+  </PropertyGroup>
+  <PropertyGroup>
+    <StartupObject>
+    </StartupObject>
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="nunit.framework">
       <HintPath>..\..\..\lib\NUnit.org\NUnit\2.5.9\bin\net-2.0\framework\nunit.framework.dll</HintPath>
@@ -118,6 +125,7 @@
     <Compile Include="Compatibility\CompatibilityExtensionsTest.cs" />
     <Compile Include="Compatibility\FixedBitSetTest.cs" />
     <Compile Include="Compatibility\TermsFilterTest.cs" />
+    <Compile Include="Compatibility\TestFixedBitSet.cs" />
     <Compile Include="PortedSolr3Test.cs" />
     <Compile Include="Prefix\TestRecursivePrefixTreeStrategy.cs" />
     <Compile Include="Prefix\TestTermQueryPrefixGridStrategy.cs" />
