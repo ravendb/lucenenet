@@ -25,10 +25,10 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProductVersion>9.0.21022</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>{19FC2A6B-4DE9-403F-8CEF-10850F57B96E}</ProjectGuid>
+    <ProjectGuid>{02D030D0-C7B5-4561-8BDD-41408B2E2F41}</ProjectGuid>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Lucene.Net.Contrib.Spatial.Test</RootNamespace>
-    <AssemblyName>Lucene.Net.Contrib.Spatial.Test</AssemblyName>
+    <RootNamespace>Lucene.Net.Spatial</RootNamespace>
+    <AssemblyName>Lucene.Net.Contrib.Spatial.NTS</AssemblyName>
     <FileAlignment>512</FileAlignment>
     <FileUpgradeFlags>
     </FileUpgradeFlags>
@@ -56,10 +56,12 @@
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
-    <OutputPath>..\..\..\build\bin\contrib\Spatial\$(Configuration.Replace("35", ""))\$(Framework)\</OutputPath>
+    <OutputPath>..\..\..\build\bin\contrib\Spatial.NTS\$(Configuration.Replace("35", ""))\$(Framework)\</OutputPath>
     <DefineConstants>DEBUG;TRACE;$(Framework)</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <DocumentationFile>
+    </DocumentationFile>
     <NoWarn>618</NoWarn>
     <OutputType>Library</OutputType>
   </PropertyGroup>
@@ -69,10 +71,12 @@
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
-    <OutputPath>..\..\..\build\bin\contrib\Spatial\$(Configuration.Replace("35", ""))\$(Framework)\</OutputPath>
+    <OutputPath>..\..\..\build\bin\contrib\Spatial.NTS\$(Configuration.Replace("35", ""))\$(Framework)\</OutputPath>
     <DefineConstants>DEBUG;TRACE;$(Framework)</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <DocumentationFile>
+    </DocumentationFile>
     <NoWarn>618</NoWarn>
     <OutputType>Library</OutputType>
   </PropertyGroup>
@@ -81,10 +85,12 @@
     <Framework>$(TargetFrameworkVersion.Replace("v", "NET").Replace(".", ""))</Framework>
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
-    <OutputPath>..\..\..\build\bin\contrib\Spatial\$(Configuration.Replace("35", ""))\$(Framework)\</OutputPath>
+    <OutputPath>..\..\..\build\bin\contrib\Spatial.NTS\$(Configuration.Replace("35", ""))\$(Framework)\</OutputPath>
     <DefineConstants>TRACE;$(Framework)</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <DocumentationFile>..\..\..\build\bin\contrib\Spatial.NTS\Release\NET40\Lucene.Net.Contrib.Spatial.NTS.xml</DocumentationFile>
+    <NoWarn>618</NoWarn>
     <DebugSymbols>true</DebugSymbols>
     <OutputType>Library</OutputType>
   </PropertyGroup>
@@ -93,47 +99,71 @@
     <Framework>$(TargetFrameworkVersion.Replace("v", "NET").Replace(".", ""))</Framework>
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
-    <OutputPath>..\..\..\build\bin\contrib\Spatial\$(Configuration.Replace("35", ""))\$(Framework)\</OutputPath>
+    <OutputPath>..\..\..\build\bin\contrib\Spatial.NTS\$(Configuration.Replace("35", ""))\$(Framework)\</OutputPath>
     <DefineConstants>TRACE;$(Framework)</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <DocumentationFile>..\..\..\build\bin\contrib\Spatial.NTS\Release\NET35\Lucene.Net.Contrib.Spatial.NTS.xml</DocumentationFile>
+    <NoWarn>618</NoWarn>
     <DebugSymbols>true</DebugSymbols>
     <OutputType>Library</OutputType>
   </PropertyGroup>
+  <PropertyGroup>
+    <SignAssembly>true</SignAssembly>
+  </PropertyGroup>
+  <PropertyGroup>
+    <AssemblyOriginatorKeyFile>Lucene.Net.snk</AssemblyOriginatorKeyFile>
+  </PropertyGroup>
   <ItemGroup>
-    <Reference Include="nunit.framework">
-      <HintPath>..\..\..\lib\NUnit.org\NUnit\2.5.9\bin\net-2.0\framework\nunit.framework.dll</HintPath>
-    </Reference>
-    <Reference Include="Spatial4n.Core, Version=1.0.0.0, Culture=neutral, PublicKeyToken=9f9456e1ca16d45e, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\lib\Spatial4n\$(Framework)\Spatial4n.Core.dll</HintPath>
+    <Reference Include="Spatial4n.Core.NTS">
+      <HintPath>..\..\..\lib\Spatial4n\$(Framework)\Spatial4n.Core.NTS.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Condition="'$(Framework)' == 'NET35'" Include="System.Core" />
+    <Reference Include="System.Data" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="..\..\core\Util\LuceneTestCase.cs">
-      <Link>LuceneTestCase.cs</Link>
-    </Compile>
-    <Compile Include="..\..\core\Util\Paths.cs">
-      <Link>Paths.cs</Link>
-    </Compile>
-    <Compile Include="BBox\TestBBoxStrategy.cs" />
-    <Compile Include="Compatibility\CompatibilityExtensionsTest.cs" />
-    <Compile Include="Compatibility\FixedBitSetTest.cs" />	
-    <Compile Include="Compatibility\TermsFilterTest.cs" />
-    <Compile Include="PortedSolr3Test.cs" />
-    <Compile Include="Prefix\TestRecursivePrefixTreeStrategy.cs" />
-    <Compile Include="Prefix\TestTermQueryPrefixGridStrategy.cs" />
-    <Compile Include="Prefix\Tree\SpatialPrefixTreeTest.cs" />
+    <Compile Include="BBox\AreaSimilarity.cs" />
+    <Compile Include="BBox\BBoxSimilarity.cs" />
+    <Compile Include="BBox\BBoxSimilarityValueSource.cs" />
+    <Compile Include="BBox\BBoxStrategy.cs" />
+    <Compile Include="BBox\DistanceSimilarity.cs" />
+    <Compile Include="Prefix\PointPrefixTreeFieldCacheProvider.cs" />
+    <Compile Include="Prefix\PrefixTreeStrategy.cs" />
+    <Compile Include="Prefix\RecursivePrefixTreeFilter.cs" />
+    <Compile Include="Prefix\RecursivePrefixTreeStrategy.cs" />
+    <Compile Include="Prefix\TermQueryPrefixTreeStrategy.cs" />
+    <Compile Include="Prefix\Tree\GeohashPrefixTree.cs" />
+    <Compile Include="Prefix\Tree\Node.cs" />
+    <Compile Include="Prefix\Tree\QuadPrefixTree.cs" />
+    <Compile Include="Prefix\Tree\SpatialPrefixTree.cs" />
+    <Compile Include="Prefix\Tree\SpatialPrefixTreeFactory.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Queries\SpatialArgsParserTest.cs" />
-    <Compile Include="SpatialMatchConcern.cs" />
-    <Compile Include="SpatialTestCase.cs" />
-    <Compile Include="SpatialTestQuery.cs" />
-    <Compile Include="StrategyTestCase.cs" />
-    <Compile Include="TestTestFramework.cs" />
-    <Compile Include="Vector\TestTwoDoublesStrategy.cs" />
+    <Compile Include="Queries\SpatialArgs.cs" />
+    <Compile Include="Queries\SpatialArgsParser.cs" />
+    <Compile Include="Queries\SpatialOperation.cs" />
+    <Compile Include="Queries\UnsupportedSpatialOperation.cs" />
+    <Compile Include="SpatialStrategy.cs" />
+    <Compile Include="Util\Bits.cs" />
+    <Compile Include="Util\ReciprocalFloatFunction.cs" />
+    <Compile Include="Util\ShapeFieldCacheDistanceValueSource.cs" />
+    <Compile Include="Util\CachingDoubleValueSource.cs" />
+    <Compile Include="Util\CompatibilityExtensions.cs" />
+    <Compile Include="Util\FixedBitSet.cs" />
+    <Compile Include="Util\FunctionQuery.cs" />
+    <Compile Include="Util\ShapeFieldCache.cs" />
+    <Compile Include="Util\ShapeFieldCacheProvider.cs" />
+    <Compile Include="Util\TermsEnumCompatibility.cs" />
+    <Compile Include="Util\TermsFilter.cs" />
+    <Compile Include="Util\ValueSourceFilter.cs" />
+    <Compile Include="Vector\DistanceValueSource.cs" />
+    <Compile Include="Vector\PointVectorStrategy.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\Lucene.Net\Lucene.Net.csproj">
+      <Project>{5D4AD9BE-1FFB-41AB-9943-25737971BF57}</Project>
+      <Name>Lucene.Net</Name>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <BootstrapperPackage Include=".NETFramework,Version=v4.0">
@@ -158,14 +188,8 @@
     </BootstrapperPackage>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\src\contrib\Spatial\Contrib.Spatial.csproj">
-      <Project>{35C347F4-24B2-4BE5-8117-A0E3001551CE}</Project>
-      <Name>Contrib.Spatial</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\..\src\core\Lucene.Net.csproj">
-      <Project>{5D4AD9BE-1FFB-41AB-9943-25737971BF57}</Project>
-      <Name>Lucene.Net</Name>
-    </ProjectReference>
+    <None Include="Lucene.Net.Contrib.Spatial.NTS.project.json" />
+    <None Include="Lucene.Net.snk" />
   </ItemGroup>
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

@@ -1,5 +1,5 @@
 {
-  "projects": [ "../src", "../test", "../src/demo" ],
+  "projects": [ "../src", "../test", "../src/demo", "../src/contrib", "../../Spatial4n", "../../GeoAPI", "../../NetTopologySuite" ],
   "sdk": {
     "version": "1.0.0-rc1-update1"
   }

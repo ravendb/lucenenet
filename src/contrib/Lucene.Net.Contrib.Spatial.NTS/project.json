@@ -8,15 +8,15 @@
   },
 
 	"dependencies": {
-		"Lucene.Net": "3.0.4",
-		"Spatial4n.Core": "0.3.1"
+		"Lucene.Net": "3.0.4"
 	},
 
 	"frameworks": {
 		"dnxcore50": {
 			"dependencies": {
 				"Microsoft.CSharp": "4.0.1-beta-23516",
-				"System.Dynamic.Runtime": "4.0.11-beta-23516"
+				"System.Dynamic.Runtime": "4.0.11-beta-23516",
+				"Spatial4n.Core": "0.3.1"
 			}
 		}
 	}

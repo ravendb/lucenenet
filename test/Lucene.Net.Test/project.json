@@ -6,19 +6,18 @@
   "compilationOptions": {
     "keyFile": "Lucene.Net.snk",
     "emitEntryPoint": true,
-    "define": [ "SHARP_ZIP_LIB" ]
+    "define": [ ]
   },
 
   "commands": {
-    "test": "core.tests"
+    "test": "Lucene.Net.Test"
   },
 
   "dependencies": {
     "Lucene.Net": "3.0.4",
     "Demo.Common": "3.0.4",
     "NUnitLite": "3.0.1",
-    "Microsoft.Dnx.TestHost": "1.0.0-rc1-final",
-    "SharpZipLib.Portable": "0.86.0.3"
+    "Microsoft.Dnx.TestHost": "1.0.0-rc1-final"
   },
 
   "frameworks": {

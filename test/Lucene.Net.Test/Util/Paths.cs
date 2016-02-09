@@ -148,7 +148,7 @@ namespace Lucene.Net.Util
                     for (int i = 0; i < difference; i++)
                         list.Add("..");
 #else
-                    var index = assemblyLocation.IndexOf("core.tests", StringComparison.OrdinalIgnoreCase);
+                    var index = assemblyLocation.IndexOf("Lucene.Net.Test", StringComparison.OrdinalIgnoreCase);
                     if (index <= -1)
                         throw new InvalidOperationException();
 
@@ -157,7 +157,7 @@ namespace Lucene.Net.Util
                     for (int i = 0; i < 2; i++)
                         list.Add("..");
 #endif
-                    var parameters = list.ToArray();
+					var parameters = list.ToArray();
 
                     s_projectRootDirectory = Path.GetFullPath(CombinePath(assemblyLocation, parameters));
                     Console.WriteLine(s_projectRootDirectory);
