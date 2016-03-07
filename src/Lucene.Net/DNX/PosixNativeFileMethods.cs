@@ -1,4 +1,4 @@
-﻿using System;
+﻿#if DNXCORE50
 using System.Runtime.InteropServices;
 
 namespace Lucene.Net.DNX
@@ -8,7 +8,7 @@ namespace Lucene.Net.DNX
         internal const string LIBC_6 = "libc.so.6";
 
         [DllImport(LIBC_6, SetLastError = true)]
-        public static extern int flock(int fd, int operation);
+        public static extern int flock(long fd, int operation);
     }
     
     public class PosixFileLockOptions
@@ -19,3 +19,4 @@ namespace Lucene.Net.DNX
         public const int LOCK_UN = 0x08; /* unlock file */
     }
 }
+#endif
