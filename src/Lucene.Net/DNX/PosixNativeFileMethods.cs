@@ -8,7 +8,7 @@ namespace Lucene.Net.DNX
         internal const string LIBC_6 = "libc.so.6";
 
         [DllImport(LIBC_6, SetLastError = true)]
-        public static extern int flock(long fd, int operation);
+        public static extern int flock(int fd, int operation);
     }
     
     public class PosixFileLockOptions

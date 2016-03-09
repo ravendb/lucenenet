@@ -21,7 +21,7 @@ namespace Lucene.Net.DNX
                 if (position != 0 && length != stream.Length)
                     throw new InvalidOperationException("On Posix platform we allow to lock only an entire file"); // we have only such usage in Lucene.NET
 
-                if (PosixNativeFileMethods.flock(stream.SafeFileHandle.DangerousGetHandle().ToInt64(), PosixFileLockOptions.LOCK_EX) != 0)
+                if (PosixNativeFileMethods.flock(stream.SafeFileHandle.DangerousGetHandle().ToInt32(), PosixFileLockOptions.LOCK_EX) != 0)
                     throw new InvalidOperationException($"Failure when trying to lock file in posix, error code was: {Marshal.GetLastWin32Error()}");
             }
             else
@@ -50,7 +50,7 @@ namespace Lucene.Net.DNX
                 if (position != 0 && length != stream.Length)
                     throw new InvalidOperationException("On Posix platform we allow to lock only an entire file"); // we have only such usage in Lucene.NET
 
-                if (PosixNativeFileMethods.flock(stream.SafeFileHandle.DangerousGetHandle().ToInt64(), PosixFileLockOptions.LOCK_UN) != 0)
+                if (PosixNativeFileMethods.flock(stream.SafeFileHandle.DangerousGetHandle().ToInt32(), PosixFileLockOptions.LOCK_UN) != 0)
                     throw new InvalidOperationException($"Failure when trying to unlock file in posix, error code was: {Marshal.GetLastWin32Error()}");
             }
             else
