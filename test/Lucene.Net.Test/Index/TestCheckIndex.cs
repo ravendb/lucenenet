@@ -110,9 +110,7 @@ namespace Lucene.Net.Index
 			string version = null;
 
 #if DNXCORE50
-
-            var library = PlatformServices.Default.LibraryManager.GetLibrary(typeof(Lucene.Net.Documents.Document).Assembly().GetName().Name);
-		    version = library.Version;
+		    version = PlatformServices.Default.Application.ApplicationVersion;
 #else
             AppDomain MyDomain = AppDomain.CurrentDomain;
             System.Reflection.Assembly[] AssembliesLoaded = MyDomain.GetAssemblies();

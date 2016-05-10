@@ -3,9 +3,34 @@
   "version": 1,
   "targets": {
     ".NETFramework,Version=v4.0": {
+      "GeoAPI/1.6.0": {
+        "compile": {
+          "lib/net35/GeoAPI.dll": {}
+        },
+        "runtime": {
+          "lib/net35/GeoAPI.dll": {}
+        }
+      },
+      "NetTopologySuite/1.12.0": {
+        "dependencies": {
+          "GeoAPI": "1.6.0"
+        },
+        "frameworkAssemblies": [
+          "System",
+          "System.Core"
+        ],
+        "compile": {
+          "lib/net35/NetTopologySuite.dll": {},
+          "lib/net35/PowerCollections.dll": {}
+        },
+        "runtime": {
+          "lib/net35/NetTopologySuite.dll": {},
+          "lib/net35/PowerCollections.dll": {}
+        }
+      },
       "Spatial4n.Core.NTS/0.3.0": {
         "dependencies": {
-          "NetTopologySuite": "[1.12.0, )"
+          "NetTopologySuite": "1.12.0"
         },
         "compile": {
           "lib/net40/Spatial4n.Core.NTS.dll": {}
@@ -16,9 +41,34 @@
       }
     },
     ".NETFramework,Version=v4.0/win": {
+      "GeoAPI/1.6.0": {
+        "compile": {
+          "lib/net35/GeoAPI.dll": {}
+        },
+        "runtime": {
+          "lib/net35/GeoAPI.dll": {}
+        }
+      },
+      "NetTopologySuite/1.12.0": {
+        "dependencies": {
+          "GeoAPI": "1.6.0"
+        },
+        "frameworkAssemblies": [
+          "System",
+          "System.Core"
+        ],
+        "compile": {
+          "lib/net35/NetTopologySuite.dll": {},
+          "lib/net35/PowerCollections.dll": {}
+        },
+        "runtime": {
+          "lib/net35/NetTopologySuite.dll": {},
+          "lib/net35/PowerCollections.dll": {}
+        }
+      },
       "Spatial4n.Core.NTS/0.3.0": {
         "dependencies": {
-          "NetTopologySuite": "[1.12.0, )"
+          "NetTopologySuite": "1.12.0"
         },
         "compile": {
           "lib/net40/Spatial4n.Core.NTS.dll": {}
@@ -30,10 +80,39 @@
     }
   },
   "libraries": {
+    "GeoAPI/1.6.0": {
+      "sha512": "SRpviaYF6GWooS9Fv+7zmn99XiWagvFTOjrr8hfd0CbsJIN8FjWsq2HKAffAhmv1aUE+wqGkBCR8QPHFPyEeiA==",
+      "type": "package",
+      "files": [
+        "GeoAPI.1.6.0.nupkg.sha512",
+        "GeoAPI.nuspec",
+        "lib/net20/GeoAPI.dll",
+        "lib/net35/GeoAPI.dll",
+        "lib/sl40-wp/GeoAPI.WindowsPhone.dll",
+        "lib/sl40/GeoAPI.Silverlight.dll"
+      ]
+    },
+    "NetTopologySuite/1.12.0": {
+      "sha512": "AzEuWKyfiahrqVcB8243S+EMMjxKDiezbn2hiKphQUpLrme7R3A3cRTyy7KIFIPY8YKlslBi+EaOR5BxSodRFw==",
+      "type": "package",
+      "files": [
+        "NetTopologySuite.1.12.0.nupkg.sha512",
+        "NetTopologySuite.nuspec",
+        "lib/net35/NetTopologySuite.dll",
+        "lib/net35/PowerCollections.dll",
+        "lib/sl40-wp/NetTopologySuite.WindowsPhone.dll",
+        "lib/sl40-wp/PowerCollections.WindowsPhone.dll",
+        "lib/sl40/NetTopologySuite.Data.Silverlight.dll",
+        "lib/sl40/NetTopologySuite.Encodings.Silverlight.dll",
+        "lib/sl40/NetTopologySuite.Silverlight.dll",
+        "lib/sl40/PowerCollections.SilverLight.dll"
+      ]
+    },
     "Spatial4n.Core.NTS/0.3.0": {
       "sha512": "XndzbUEo2cWhYm7oLNNv09vfHJNIoS828a0BI3fY9YafXDNRvLndoV+AXtPmPfNKf1eFQfIo6Yvz3sNPT0WSCw==",
       "type": "Package",
       "files": [
+        "Spatial4n.Core.NTS.nuspec",
         "[Content_Types].xml",
         "_rels/.rels",
         "lib/net20/Spatial4n.Core.NTS.dll",
@@ -42,8 +121,7 @@
         "lib/net40/Spatial4n.Core.NTS.dll",
         "lib/net40/Spatial4n.Core.NTS.pdb",
         "lib/net40/Spatial4n.Core.NTS.xml",
-        "package/services/metadata/core-properties/a06cf3cc82334cd2811a36ce4b109d4c.psmdcp",
-        "Spatial4n.Core.NTS.nuspec"
+        "package/services/metadata/core-properties/a06cf3cc82334cd2811a36ce4b109d4c.psmdcp"
       ]
     }
   },

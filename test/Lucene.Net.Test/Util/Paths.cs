@@ -19,6 +19,8 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Collections.Generic;
+using System.Reflection;
+
 using Lucene.Net.Support;
 
 #if DNXCORE50
@@ -105,17 +107,10 @@ namespace Lucene.Net.Util
             {
                 if (s_assemblyDirectory == null)
                 {
-#if !DNXCORE50
                     // CodeBase uses unc path, get rid of the file prefix if it exists.
                     // File prefix could be file:// or file:///
                     var assemblyDirectoryUri = new Uri(typeof(Paths).Assembly().CodeBase);
                     s_assemblyDirectory = Path.GetDirectoryName(assemblyDirectoryUri.LocalPath);
-#else
-                    var library = PlatformServices.Default.LibraryManager.GetLibrary(typeof(Paths).Assembly().GetName().Name);
-                    var path = library.Path;
-
-                    s_assemblyDirectory = Path.GetDirectoryName(path);
-#endif
                 }
                 return s_assemblyDirectory;
             }

@@ -12,7 +12,7 @@ namespace Lucene.Net.Test
 #if !DNXCORE50
             new AutoRun().Execute(args);
 #else
-            new AutoRun().Execute(typeof(Program).GetTypeInfo().Assembly, Console.Out, Console.In, args);
+            new AutoRun(typeof(Program).GetTypeInfo().Assembly).Execute(args, null, null);
 #endif
         }
     }

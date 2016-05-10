@@ -1,23 +1,29 @@
 {
   "title": "Lucene.Net Contrib Spatial NTS",
   "version": "3.0.4",
-  "compile": [ "**/*.cs" ],
 
-  "compilationOptions": {
-    "keyFile": "Lucene.Net.snk"
+  "buildOptions": {
+    "keyFile": "Lucene.Net.snk",
+    "compile": [ "**/*.cs" ]
   },
 
-	"dependencies": {
-		"Lucene.Net": "3.0.4"
-	},
+  "dependencies": {
+    "Lucene.Net": "3.0.4"
+  },
 
-	"frameworks": {
-		"dnxcore50": {
-			"dependencies": {
-				"Microsoft.CSharp": "4.0.1-beta-23516",
-				"System.Dynamic.Runtime": "4.0.11-beta-23516",
-				"Spatial4n.Core": "0.3.1"
-			}
-		}
-	}
+  "frameworks": {
+    "netstandard1.5": {
+      "buildOptions": {
+        "define": [ "DNXCORE50" ]
+      },
+      "dependencies": {
+        "Microsoft.CSharp": "4.0.1-rc2-*",
+        "NETStandard.Library": "1.5.0-rc2-*",
+        "Spatial4n.Core": "0.3.1"
+      },
+      "imports": [
+        "dnxcore50"
+      ]
+    }
+  }
 }

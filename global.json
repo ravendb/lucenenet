@@ -1,6 +1,8 @@
 {
-  "projects": [ "src", "test", "../Spatial4n", "../NetTopologySuite", "../GeoAPI" ],
+  "projects": [ "src", "test", "../Spatial4n", "../NetTopologySuite", "../GeoAPI", "src/demo" ],
   "sdk": {
-    "version": "1.0.0-rc1-update1"
+    "version": "1.0.0-preview1-002702",
+    "runtime": "coreclr",
+    "architecture": "x64"
   }
 }

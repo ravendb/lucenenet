@@ -3,10 +3,10 @@
   "version": "3.0.4",
   "compile": [ "**/*.cs" ],
 
-  "compilationOptions": {
+  "buildOptions": {
     "keyFile": "Lucene.Net.snk",
-    "emitEntryPoint": true,
-    "define": [ ]
+    "compile": [ "**/*.cs" ],
+    "emitEntryPoint": true
   },
 
   "commands": {
@@ -14,24 +14,34 @@
   },
 
   "dependencies": {
-    "Lucene.Net": "3.0.4",
     "Demo.Common": "3.0.4",
-    "NUnitLite": "3.0.1",
-    "Microsoft.Dnx.TestHost": "1.0.0-rc1-final"
+    "Lucene.Net": "3.0.4",
+    "NUnitLite": "3.2.1"
   },
 
   "frameworks": {
-    "dnxcore50": {
+    "netcoreapp1.0": {
+      "buildOptions": {
+        "define": [ "DNXCORE50" ]
+      },
       "dependencies": {
-        "Microsoft.CSharp": "4.0.1-beta-23516",
-        "Microsoft.Extensions.PlatformAbstractions": "1.0.0-rc1-final",
-        "System.Diagnostics.StackTrace": "4.0.1-beta-23516",
-        "System.Reflection.Extensions": "4.0.1-beta-23516",
-        "System.Reflection.TypeExtensions": "4.1.0-beta-23516",
-        "System.Threading.Tasks.Parallel": "4.0.1-beta-23516",
-        "System.Threading.ThreadPool": "4.0.10-beta-23516",
-        "System.IO": "4.0.11-beta-23516"
-      }
+        "Microsoft.CSharp": "4.0.1-rc2-*",
+        "Microsoft.Extensions.PlatformAbstractions": "1.0.0-rc2-final",
+        "NETStandard.Library": "1.5.0-rc2-*",
+        "System.Diagnostics.StackTrace": "4.0.1-rc2-*",
+        "System.Threading.Tasks.Parallel": "4.0.1-rc2-*",
+        "System.Threading.ThreadPool": "4.0.10-rc2-*",
+        "System.Collections.NonGeneric": "4.0.1-rc2-*",  
+
+        "Microsoft.NETCore.App": {
+          "type": "platform",
+          "version": "1.0.0-rc2-*"
+        }
+      },
+      "imports": [
+        "dotnet",
+        "dnxcore50"
+      ]
     }
   }
 }

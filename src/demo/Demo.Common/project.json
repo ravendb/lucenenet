@@ -1,10 +1,10 @@
 ﻿{
   "title": "Demo Common",
   "version": "3.0.4",
-  "compile": [ "**/*.cs" ],
 
-  "compilationOptions": {
-    "keyFile": "Lucene.Net.snk"
+  "buildOptions": {
+    "keyFile": "Lucene.Net.snk",
+    "compile": [ "**/*.cs" ]
   },
 
   "dependencies": {
@@ -12,10 +12,16 @@
   },
 
   "frameworks": {
-    "dnxcore50": {
+    "netstandard1.5": {
+      "buildOptions": {
+        "define": [ "DNXCORE50" ]
+      },
       "dependencies": {
-        "Microsoft.CSharp": "4.0.1-beta-23516"
-      }
+        "Microsoft.CSharp": "4.0.1-rc2-*"
+      },
+      "imports": [
+        "dnxcore50"
+      ]
     }
   }
 }
