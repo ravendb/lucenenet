@@ -11,6 +11,14 @@
     "test": "Lucene.Net.Contrib.Spatial.Tests"
   },
 
+  "configurations": {
+    "Release": {
+      "buildOptions": {
+        "optimize": true
+      }
+    }
+  },
+
   "dependencies": {
     "Lucene.Net": "3.0.4",
     "Lucene.Net.Contrib.Spatial.NTS": "3.0.4",
@@ -26,13 +34,13 @@
         "define": [ "DNXCORE50" ]
       },
       "dependencies": {
-        "Microsoft.CSharp": "4.0.1-rc2-*",
-        "NETStandard.Library": "1.5.0-rc2-*",
+        "Microsoft.CSharp": "4.0.1",
+        "NETStandard.Library": "1.6.0",
         "NUnitLite": "3.2.1",
 
         "Microsoft.NETCore.App": {
           "type": "platform",
-          "version": "1.0.0-rc2-*"
+          "version": "1.0.0"
         }
       },
       "imports": [

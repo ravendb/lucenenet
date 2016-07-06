@@ -7,17 +7,25 @@
     "compile": [ "**/*.cs" ]
   },
 
+  "configurations": {
+    "Release": {
+      "buildOptions": {
+        "optimize": true
+      }
+    }
+  },
+
   "dependencies": {
     "Lucene.Net": "3.0.4"
   },
 
   "frameworks": {
-    "netstandard1.5": {
+    "netstandard1.6": {
       "buildOptions": {
         "define": [ "DNXCORE50" ]
       },
       "dependencies": {
-        "Microsoft.CSharp": "4.0.1-rc2-*"
+        "Microsoft.CSharp": "4.0.1"
       },
       "imports": [
         "dnxcore50"

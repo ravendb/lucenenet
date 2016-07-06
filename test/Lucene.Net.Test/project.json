@@ -9,6 +9,14 @@
     "emitEntryPoint": true
   },
 
+  "configurations": {
+    "Release": {
+      "buildOptions": {
+        "optimize": true
+      }
+    }
+  },
+
   "commands": {
     "test": "Lucene.Net.Test"
   },
@@ -25,17 +33,17 @@
         "define": [ "DNXCORE50" ]
       },
       "dependencies": {
-        "Microsoft.CSharp": "4.0.1-rc2-*",
-        "Microsoft.Extensions.PlatformAbstractions": "1.0.0-rc2-final",
-        "NETStandard.Library": "1.5.0-rc2-*",
-        "System.Diagnostics.StackTrace": "4.0.1-rc2-*",
-        "System.Threading.Tasks.Parallel": "4.0.1-rc2-*",
-        "System.Threading.ThreadPool": "4.0.10-rc2-*",
-        "System.Collections.NonGeneric": "4.0.1-rc2-*",  
+        "Microsoft.CSharp": "4.0.1",
+        "Microsoft.Extensions.PlatformAbstractions": "1.0.0",
+        "NETStandard.Library": "1.6.0",
+        "System.Diagnostics.StackTrace": "4.0.1",
+        "System.Threading.Tasks.Parallel": "4.0.1",
+        "System.Threading.ThreadPool": "4.0.10",
+        "System.Collections.NonGeneric": "4.0.1",
 
         "Microsoft.NETCore.App": {
           "type": "platform",
-          "version": "1.0.0-rc2-*"
+          "version": "1.0.0"
         }
       },
       "imports": [
