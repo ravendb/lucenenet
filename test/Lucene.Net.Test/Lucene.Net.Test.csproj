@@ -1,18 +1,20 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
+  <PropertyGroup Label="Configuration" Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <OutputType>exe</OutputType>
+  </PropertyGroup>
+
   <PropertyGroup>
     <AssemblyTitle>Lucene.Net.Test</AssemblyTitle>
     <VersionPrefix>3.0.4</VersionPrefix>
     <TargetFramework>netcoreapp1.1</TargetFramework>
     <AssemblyName>Lucene.Net.Test</AssemblyName>
-    <OutputType>Exe</OutputType>
     <AssemblyOriginatorKeyFile>Lucene.Net.snk</AssemblyOriginatorKeyFile>
     <SignAssembly>true</SignAssembly>
     <PublicSign Condition=" '$(OS)' != 'Windows_NT' ">true</PublicSign>
     <PackageId>Lucene.Net.Test</PackageId>
+    <DefineConstants>$(DefineConstants);DNXCORE50</DefineConstants>
     <PackageTargetFallback>$(PackageTargetFallback);dotnet;dnxcore50</PackageTargetFallback>
-    <NetStandardImplicitPackageVersion>1.6.0</NetStandardImplicitPackageVersion>
-    <RuntimeFrameworkVersion>1.0.4</RuntimeFrameworkVersion>
     <GenerateAssemblyTitleAttribute>false</GenerateAssemblyTitleAttribute>
     <GenerateAssemblyDescriptionAttribute>false</GenerateAssemblyDescriptionAttribute>
     <GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>
@@ -21,6 +23,10 @@
     <GenerateAssemblyCopyrightAttribute>false</GenerateAssemblyCopyrightAttribute>
     <GenerateAssemblyInformationalVersionAttribute>false</GenerateAssemblyInformationalVersionAttribute>
     <GenerateAssemblyVersionAttribute>false</GenerateAssemblyVersionAttribute>
+    <GenerateProgramFile>false</GenerateProgramFile>
+    <ApplicationIcon />
+    <OutputTypeEx>exe</OutputTypeEx>
+    <StartupObject />
   </PropertyGroup>
 
   <ItemGroup>
@@ -34,29 +40,17 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.PlatformAbstractions" Version="1.1.0" />
-    <PackageReference Include="NUnitLite" Version="3.2.1" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.0.0" />
+    <PackageReference Include="NUnit" Version="3.6.1" />
+    <PackageReference Include="NUnitLite" Version="3.6.1" />
+    <PackageReference Include="System.Diagnostics.Process" Version="4.3.0" />
     <PackageReference Include="System.Diagnostics.StackTrace" Version="4.3.0" />
-  </ItemGroup>
-
-  <PropertyGroup Condition=" '$(TargetFramework)' == 'netcoreapp1.0' ">
-    <DefineConstants>$(DefineConstants);DNXCORE50</DefineConstants>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-    <DefineConstants>TRACE;DEBUG;NETCOREAPP1_1;DNXCORE50</DefineConstants>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
-    <DefineConstants>TRACE;DNXCORE50;RELEASE;NETCOREAPP1_1</DefineConstants>
-  </PropertyGroup>
-
-  <ItemGroup Condition=" '$(TargetFramework)' == 'netcoreapp1.0' ">
-    <PackageReference Include="Microsoft.CSharp" Version="4.0.1" />
-    <PackageReference Include="Microsoft.Extensions.PlatformAbstractions" Version="1.0.0" />
-    <PackageReference Include="System.Diagnostics.StackTrace" Version="4.0.1" />
-    <PackageReference Include="System.Threading.Tasks.Parallel" Version="4.0.1" />
-    <PackageReference Include="System.Threading.ThreadPool" Version="4.0.10" />
-    <PackageReference Include="System.Collections.NonGeneric" Version="4.0.1" />
+    <PackageReference Include="System.Threading" Version="4.3.0" />
+    <PackageReference Include="System.Threading.Tasks" Version="4.3.0" />
+    <PackageReference Include="System.Threading.Tasks.Parallel" Version="4.3.0" />
+    <PackageReference Include="System.Threading.ThreadPool" Version="4.3.0" />
+    <PackageReference Include="Microsoft.CSharp" Version="4.3.0" />
+    <PackageReference Include="System.Collections.NonGeneric" Version="4.3.0" />
   </ItemGroup>
 
 </Project>
