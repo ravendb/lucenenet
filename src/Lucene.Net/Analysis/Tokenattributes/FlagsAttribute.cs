@@ -27,7 +27,7 @@ namespace Lucene.Net.Analysis.Tokenattributes
 #if !DNXCORE50
         [Serializable]
 #endif
-    public class FlagsAttribute:Util.Attribute, IFlagsAttribute, System.ICloneable
+    public sealed class FlagsAttribute:Util.Attribute, IFlagsAttribute, System.ICloneable
 	{
 		private int flags = 0;
 
@@ -40,7 +40,7 @@ namespace Lucene.Net.Analysis.Tokenattributes
 	    /// 
 	    /// </summary>
 	    /// <value> The bits </value>
-	    public virtual int Flags
+	    public int Flags
 	    {
 	        get { return flags; }
 	        set { this.flags = value; }
@@ -77,7 +77,7 @@ namespace Lucene.Net.Analysis.Tokenattributes
 			t.Flags = flags;
 		}
 		
-		override public System.Object Clone()
+		public override System.Object Clone()
 		{
             FlagsAttribute impl = new FlagsAttribute();
             impl.flags = this.flags;

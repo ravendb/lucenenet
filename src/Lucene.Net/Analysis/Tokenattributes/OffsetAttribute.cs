@@ -25,7 +25,7 @@ namespace Lucene.Net.Analysis.Tokenattributes
 #if !DNXCORE50
         [Serializable]
 #endif
-    public class OffsetAttribute:Attribute, IOffsetAttribute, System.ICloneable
+    public sealed class OffsetAttribute:Attribute, IOffsetAttribute, System.ICloneable
 	{
 		private int startOffset;
 		private int endOffset;
@@ -36,7 +36,7 @@ namespace Lucene.Net.Analysis.Tokenattributes
 	    /// equal to termText.length(), as the term text may have been altered by a
 	    /// stemmer or some other filter. 
 	    /// </summary>
-	    public virtual int StartOffset
+	    public int StartOffset
 	    {
 	        get { return startOffset; }
 	    }
@@ -45,7 +45,7 @@ namespace Lucene.Net.Analysis.Tokenattributes
 	    /// <summary>Set the starting and ending offset.
         /// See StartOffset() and EndOffset()
         /// </summary>
-		public virtual void  SetOffset(int startOffset, int endOffset)
+		public void SetOffset(int startOffset, int endOffset)
 		{
 			this.startOffset = startOffset;
 			this.endOffset = endOffset;
@@ -56,7 +56,7 @@ namespace Lucene.Net.Analysis.Tokenattributes
 	    /// last character corresponding to this token in the source text. The length
 	    /// of the token in the source text is (endOffset - startOffset). 
 	    /// </summary>
-	    public virtual int EndOffset
+	    public int EndOffset
 	    {
 	        get { return endOffset; }
 	    }
@@ -97,7 +97,7 @@ namespace Lucene.Net.Analysis.Tokenattributes
 			t.SetOffset(startOffset, endOffset);
 		}
 		
-		override public System.Object Clone()
+		public override System.Object Clone()
 		{
             OffsetAttribute impl = new OffsetAttribute();
             impl.endOffset = endOffset;
