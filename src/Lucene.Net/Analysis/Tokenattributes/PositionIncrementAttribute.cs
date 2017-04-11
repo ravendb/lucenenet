@@ -49,7 +49,7 @@ namespace Lucene.Net.Analysis.Tokenattributes
 #if !DNXCORE50
         [Serializable]
 #endif
-    public class PositionIncrementAttribute:Attribute, IPositionIncrementAttribute, System.ICloneable
+    public sealed class PositionIncrementAttribute:Attribute, IPositionIncrementAttribute, System.ICloneable
 	{
 		private int positionIncrement = 1;
 
@@ -57,16 +57,22 @@ namespace Lucene.Net.Analysis.Tokenattributes
 	    /// 
 	    /// </summary>
 	    /// <value> the distance from the prior term </value>
-	    public virtual int PositionIncrement
+	    public int PositionIncrement
 	    {
 	        set
 	        {
-	            if (value < 0)
-	                throw new System.ArgumentException("Increment must be zero or greater: " + value);
-	            this.positionIncrement = value;
+	            if (value >= 0)
+	                this.positionIncrement = value;
+	            else
+	                this.positionIncrement = ThrowIncrementGreaterThanZero(value);
 	        }
 	        get { return positionIncrement; }
 	    }
+
+	    private int ThrowIncrementGreaterThanZero(int value)
+	    {
+	        throw new System.ArgumentException("Increment must be zero or greater: " + value);
+        }
 
 	    public override void  Clear()
 		{

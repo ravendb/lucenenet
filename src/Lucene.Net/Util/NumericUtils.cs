@@ -16,6 +16,7 @@
  */
 
 using System;
+using System.Runtime.CompilerServices;
 using Lucene.Net.Documents;
 using Lucene.Net.Search;
 using Lucene.Net.Support;
@@ -97,26 +98,29 @@ namespace Lucene.Net.Util
 		/// <seealso cref="IntToPrefixCoded(int,int,char[])">
 		/// </seealso>
 		public const int BUF_SIZE_INT = 31 / 7 + 2;
-		
-		/// <summary> Expert: Returns prefix coded bits after reducing the precision by <c>shift</c> bits.
-		/// This is method is used by <see cref="NumericTokenStream" />.
-		/// </summary>
-		/// <param name="val">the numeric value
-		/// </param>
-		/// <param name="shift">how many bits to strip from the right
-		/// </param>
-		/// <param name="buffer">that will contain the encoded chars, must be at least of <see cref="BUF_SIZE_LONG" />
-		/// length
-		/// </param>
-		/// <returns> number of chars written to buffer
-		/// </returns>
-		public static int LongToPrefixCoded(long val, int shift, char[] buffer)
+
+        /// <summary> Expert: Returns prefix coded bits after reducing the precision by <c>shift</c> bits.
+        /// This is method is used by <see cref="NumericTokenStream" />.
+        /// </summary>
+        /// <param name="val">the numeric value
+        /// </param>
+        /// <param name="shift">how many bits to strip from the right
+        /// </param>
+        /// <param name="buffer">that will contain the encoded chars, must be at least of <see cref="BUF_SIZE_LONG" />
+        /// length
+        /// </param>
+        /// <returns> number of chars written to buffer
+        /// </returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static int LongToPrefixCoded(long val, int shift, char[] buffer)
 		{
-			if (shift > 63 || shift < 0)
-				throw new System.ArgumentException("Illegal shift value, must be 0..63");
-			int nChars = (63 - shift) / 7 + 1, len = nChars + 1;
+		    if (shift > 63 || shift < 0)
+		        goto ERROR;
+
+            int nChars = (63 - shift) / 7 + 1, len = nChars + 1;
 			buffer[0] = (char) (SHIFT_START_LONG + shift);
-            ulong sortableBits = BitConverter.ToUInt64(BitConverter.GetBytes(val), 0) ^ 0x8000000000000000L;
+            ulong sortableBits = (ulong)val ^ 0x8000000000000000L;
+            
 			sortableBits = sortableBits >> shift;
 			while (nChars >= 1)
 			{
@@ -127,7 +131,15 @@ namespace Lucene.Net.Util
 				sortableBits = sortableBits >> 7;
 			}
 			return len;
+
+            ERROR:
+		    return ThrowIllegalShift();
 		}
+
+	    private static int ThrowIllegalShift()
+	    {
+	        throw new System.ArgumentException("Illegal shift value, must be 0..63");
+        }
 		
 		/// <summary> Expert: Returns prefix coded bits after reducing the precision by <c>shift</c> bits.
 		/// This is method is used by <see cref="LongRangeBuilder" />.

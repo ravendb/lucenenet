@@ -16,6 +16,7 @@
  */
 
 using System;
+using System.Runtime.CompilerServices;
 using Lucene.Net.Support;
 using ArrayUtil = Lucene.Net.Util.ArrayUtil;
 using Attribute = Lucene.Net.Util.Attribute;
@@ -27,7 +28,7 @@ namespace Lucene.Net.Analysis.Tokenattributes
 #if !DNXCORE50
         [Serializable]
 #endif
-    public class TermAttribute:Attribute, ITermAttribute, System.ICloneable
+    public sealed class TermAttribute:Attribute, ITermAttribute, System.ICloneable
 	{
 		private static int MIN_BUFFER_SIZE = 10;
 		
@@ -43,7 +44,7 @@ namespace Lucene.Net.Analysis.Tokenattributes
 	    /// really need a String, use this method, which is nothing more than
 	    /// a convenience call to <b>new String(token.termBuffer(), 0, token.termLength())</b>
 	    /// </summary>
-	    public virtual string Term
+	    public string Term
 	    {
 	        get
 	        {
@@ -61,7 +62,7 @@ namespace Lucene.Net.Analysis.Tokenattributes
 		/// </param>
 		/// <param name="length">the number of characters to copy
 		/// </param>
-		public virtual void  SetTermBuffer(char[] buffer, int offset, int length)
+		public void SetTermBuffer(char[] buffer, int offset, int length)
 		{
 			GrowTermBuffer(length);
 			Array.Copy(buffer, offset, termBuffer, 0, length);
@@ -71,7 +72,7 @@ namespace Lucene.Net.Analysis.Tokenattributes
 		/// <summary>Copies the contents of buffer into the termBuffer array.</summary>
 		/// <param name="buffer">the buffer to copy
 		/// </param>
-		public virtual void  SetTermBuffer(System.String buffer)
+		public void SetTermBuffer(System.String buffer)
 		{
 			int length = buffer.Length;
 			GrowTermBuffer(length);
@@ -88,7 +89,7 @@ namespace Lucene.Net.Analysis.Tokenattributes
 		/// </param>
 		/// <param name="length">the number of characters to copy
 		/// </param>
-		public virtual void  SetTermBuffer(System.String buffer, int offset, int length)
+		public void SetTermBuffer(System.String buffer, int offset, int length)
 		{
 			System.Diagnostics.Debug.Assert(offset <= buffer.Length);
 			System.Diagnostics.Debug.Assert(offset + length <= buffer.Length);
@@ -105,7 +106,7 @@ namespace Lucene.Net.Analysis.Tokenattributes
 		/// to record the number of valid
 		/// characters that were placed into the termBuffer. 
 		/// </summary>
-		public virtual char[] TermBuffer()
+		public char[] TermBuffer()
 		{
 			InitTermBuffer();
 			return termBuffer;
@@ -123,7 +124,7 @@ namespace Lucene.Net.Analysis.Tokenattributes
 		/// </param>
 		/// <returns> newly created termBuffer with length >= newSize
 		/// </returns>
-		public virtual char[] ResizeTermBuffer(int newSize)
+		public char[] ResizeTermBuffer(int newSize)
 		{
 			if (termBuffer == null)
 			{
@@ -168,6 +169,7 @@ namespace Lucene.Net.Analysis.Tokenattributes
 			}
 		}
 		
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
 		private void  InitTermBuffer()
 		{
 			if (termBuffer == null)
@@ -180,7 +182,7 @@ namespace Lucene.Net.Analysis.Tokenattributes
 		/// <summary>Return number of valid characters (length of the term)
 		/// in the termBuffer array. 
 		/// </summary>
-		public virtual int TermLength()
+		public int TermLength()
 		{
 			return termLength;
 		}
@@ -193,7 +195,7 @@ namespace Lucene.Net.Analysis.Tokenattributes
 		/// </summary>
 		/// <param name="length">the truncated length
 		/// </param>
-		public virtual void  SetTermLength(int length)
+		public void  SetTermLength(int length)
 		{
 			InitTermBuffer();
 			if (length > termBuffer.Length)

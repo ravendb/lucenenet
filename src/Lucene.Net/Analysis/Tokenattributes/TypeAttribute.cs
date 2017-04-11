@@ -25,7 +25,7 @@ namespace Lucene.Net.Analysis.Tokenattributes
 #if !DNXCORE50
         [Serializable]
 #endif
-    public class TypeAttribute:Attribute, ITypeAttribute, System.ICloneable
+    public sealed class TypeAttribute:Attribute, ITypeAttribute, System.ICloneable
 	{
 		private System.String type;
 		public const System.String DEFAULT_TYPE = "word";
@@ -40,7 +40,7 @@ namespace Lucene.Net.Analysis.Tokenattributes
 		}
 
 	    /// <summary>Returns this Token's lexical type.  Defaults to "word". </summary>
-	    public virtual string Type
+	    public string Type
 	    {
 	        get { return type; }
 	        set { this.type = value; }

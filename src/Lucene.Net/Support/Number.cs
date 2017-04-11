@@ -21,6 +21,7 @@
 
 using System;
 using System.Globalization;
+using System.Runtime.CompilerServices;
 
 namespace Lucene.Net.Support
 {
@@ -174,6 +175,7 @@ namespace Lucene.Net.Support
         /// <param name="number">Number to operate on</param>
         /// <param name="bits">Ammount of bits to shift</param>
         /// <returns>The resulting number from the shift operation</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int URShift(int number, int bits)
         {
             return (int)(((uint)number) >> bits);
@@ -186,6 +188,7 @@ namespace Lucene.Net.Support
         /// <param name="number">Number to operate on</param>
         /// <param name="bits">Ammount of bits to shift</param>
         /// <returns>The resulting number from the shift operation</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static long URShift(long number, int bits)
         {
             return (long)(((ulong)number) >> bits);

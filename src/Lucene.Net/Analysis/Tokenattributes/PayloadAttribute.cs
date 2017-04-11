@@ -26,7 +26,7 @@ namespace Lucene.Net.Analysis.Tokenattributes
 #if !DNXCORE50
         [Serializable]
 #endif
-    public class PayloadAttribute:Attribute, IPayloadAttribute, System.ICloneable
+    public sealed class PayloadAttribute:Attribute, IPayloadAttribute, System.ICloneable
 	{
 		private Payload payload;
 		
@@ -42,7 +42,7 @@ namespace Lucene.Net.Analysis.Tokenattributes
 		}
 
 	    /// <summary> Returns this Token's payload.</summary>
-	    public virtual Payload Payload
+	    public Payload Payload
 	    {
 	        get { return this.payload; }
 	        set { this.payload = value; }

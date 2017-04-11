@@ -16,6 +16,7 @@
  */
 
 using System;
+using System.Runtime.CompilerServices;
 using Lucene.Net.Analysis.Tokenattributes;
 using Lucene.Net.Documents;
 using Lucene.Net.Support;
@@ -228,15 +229,15 @@ namespace Lucene.Net.Index
 			QuickSort(postings, lo, left);
 			QuickSort(postings, left + 1, hi);
 		}
-		
-		/// <summary>Compares term text for two Posting instance and
+
+        /// <summary>Compares term text for two Posting instance and
         /// returns -1 if p1 &lt; p2; 1 if p1 &gt; p2; else 0. 
-		/// </summary>
-		internal int ComparePostings(RawPostingList p1, RawPostingList p2)
-		{
-			
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal int ComparePostings(RawPostingList p1, RawPostingList p2)
+		{			
 			if (p1 == p2)
-				return 0;
+				goto ReturnEquals;
 			
 			char[] text1 = charPool.buffers[p1.textStart >> DocumentsWriter.CHAR_BLOCK_SHIFT];
 			int pos1 = p1.textStart & DocumentsWriter.CHAR_BLOCK_MASK;
@@ -244,31 +245,38 @@ namespace Lucene.Net.Index
 			int pos2 = p2.textStart & DocumentsWriter.CHAR_BLOCK_MASK;
 			
 			System.Diagnostics.Debug.Assert(text1 != text2 || pos1 != pos2);
-			
+
+		    char c1;
+		    char c2;
 			while (true)
 			{
-				char c1 = text1[pos1++];
-				char c2 = text2[pos2++];
+				c1 = text1[pos1++];
+				c2 = text2[pos2++];
 				if (c1 != c2)
-				{
-					if (0xffff == c2)
-						return 1;
-					else if (0xffff == c1)
-						return - 1;
-					else
-						return c1 - c2;
-				}
-				else
-					// This method should never compare equal postings
-					// unless p1==p2
-					System.Diagnostics.Debug.Assert(c1 != 0xffff);
+				    goto ReturnCompare;
+
+				// This method should never compare equal postings
+				// unless p1==p2
+				System.Diagnostics.Debug.Assert(c1 != 0xffff);
 			}
-		}
-		
-		/// <summary>Test whether the text for current RawPostingList p equals
-		/// current tokenText. 
-		/// </summary>
-		private bool PostingEquals(char[] tokenText, int tokenTextLen)
+
+		    ReturnEquals:
+		    return 0;
+
+            ReturnCompare:
+		    if (0xffff == c2)
+		        return 1;
+		    if (0xffff == c1)
+		        return -1;
+		    
+            return c1 - c2;
+        }
+
+        /// <summary>Test whether the text for current RawPostingList p equals
+        /// current tokenText. 
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private bool PostingEquals(char[] tokenText, int tokenTextLen)
 		{
 			
 			char[] text = perThread.charPool.buffers[p.textStart >> DocumentsWriter.CHAR_BLOCK_SHIFT];
@@ -276,10 +284,16 @@ namespace Lucene.Net.Index
 			int pos = p.textStart & DocumentsWriter.CHAR_BLOCK_MASK;
 			
 			int tokenPos = 0;
-			for (; tokenPos < tokenTextLen; pos++, tokenPos++)
-				if (tokenText[tokenPos] != text[pos])
-					return false;
-			return 0xffff == text[pos];
+		    for (; tokenPos < tokenTextLen; pos++, tokenPos++)
+		    {
+		        if (tokenText[tokenPos] != text[pos])
+		            goto ReturnFalse;
+            }
+
+            return 0xffff == text[pos];
+
+            ReturnFalse:
+		    return false;
 		}
 		
 		private bool doCall;
