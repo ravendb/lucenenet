@@ -19,6 +19,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using Lucene.Net.Analysis.Tokenattributes;
 using Lucene.Net.Support;
 using TokenStream = Lucene.Net.Analysis.TokenStream;
@@ -324,8 +325,9 @@ namespace Lucene.Net.Util
 				return clone;
 			}
 		}
-		
-		private State GetCurrentState()
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private State GetCurrentState()
 		{
 		    var s = currentState[0];
             if (s != null || !HasAttributes)
@@ -348,10 +350,11 @@ namespace Lucene.Net.Util
 		    return s;
 		}
 
-		/// <summary> Resets all Attributes in this AttributeSource by calling
-		/// <see cref="Attribute.Clear()" /> on each Attribute implementation.
-		/// </summary>
-		public void ClearAttributes()
+        /// <summary> Resets all Attributes in this AttributeSource by calling
+        /// <see cref="Attribute.Clear()" /> on each Attribute implementation.
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ClearAttributes()
 		{
             for (var state = GetCurrentState(); state != null;  state = state.next)
             {

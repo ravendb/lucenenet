@@ -34,6 +34,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using Lucene.Net.Support;
 
 namespace Lucene.Net.Index
@@ -95,8 +96,8 @@ namespace Lucene.Net.Index
 				buffer = buffers[0];
 			}
 		}
-		
-		public void  NextBuffer()
+		        
+		public void NextBuffer()
 		{
 			if (1 + bufferUpto == buffers.Length)
 			{
@@ -111,15 +112,30 @@ namespace Lucene.Net.Index
 			byteOffset += DocumentsWriter.BYTE_BLOCK_SIZE;
 		}
 		
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public int NewSlice(int size)
 		{
 			if (byteUpto > DocumentsWriter.BYTE_BLOCK_SIZE - size)
-				NextBuffer();
-			int upto = byteUpto;
-			byteUpto += size;
-			buffer[byteUpto - 1] = 16;
-			return upto;
+			    goto AllocateNewBuffer;
+
+		    int upto = byteUpto;
+		    byteUpto += size;
+		    buffer[byteUpto - 1] = 16;
+		    return upto;
+
+            AllocateNewBuffer:
+		    return NewSliceUnlikely(size);
 		}
+
+	    private int NewSliceUnlikely(int size)
+	    {
+	        NextBuffer();
+
+	        int upto = byteUpto;
+	        byteUpto += size;
+	        buffer[byteUpto - 1] = 16;
+	        return upto;
+        }
 		
 		// Size of each slice.  These arrays should be at most 16
 		// elements (index is encoded with 4 bits).  First array

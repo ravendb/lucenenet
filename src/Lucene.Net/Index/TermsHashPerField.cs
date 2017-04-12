@@ -25,7 +25,7 @@ using UnicodeUtil = Lucene.Net.Util.UnicodeUtil;
 namespace Lucene.Net.Index
 {
 	
-	sealed class TermsHashPerField:InvertedDocConsumerPerField
+	internal sealed class TermsHashPerField : InvertedDocConsumerPerField
 	{
 		private void  InitBlock()
 		{
@@ -272,16 +272,15 @@ namespace Lucene.Net.Index
             return c1 - c2;
         }
 
-        /// <summary>Test whether the text for current RawPostingList p equals
+        /// <summary>Test whether the text for current RawPostingList currentP equals
         /// current tokenText. 
         /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private bool PostingEquals(char[] tokenText, int tokenTextLen)
-		{
-			
-			char[] text = perThread.charPool.buffers[p.textStart >> DocumentsWriter.CHAR_BLOCK_SHIFT];
+        private bool PostingEquals(ref RawPostingList currentP, char[] tokenText, int tokenTextLen)
+		{		
+			char[] text = perThread.charPool.buffers[currentP.textStart >> DocumentsWriter.CHAR_BLOCK_SHIFT];
 			System.Diagnostics.Debug.Assert(text != null);
-			int pos = p.textStart & DocumentsWriter.CHAR_BLOCK_MASK;
+			int pos = currentP.textStart & DocumentsWriter.CHAR_BLOCK_MASK;
 			
 			int tokenPos = 0;
 		    for (; tokenPos < tokenTextLen; pos++, tokenPos++)
@@ -400,18 +399,29 @@ namespace Lucene.Net.Index
 		}
 		
 		// Primary entry point (for first TermsHash)
-		internal override void  Add()
-		{
-			
+		internal override void Add()
+		{			
 			System.Diagnostics.Debug.Assert(!postingsCompacted);
-			
-			// We are first in the chain so we must "intern" the
-			// term text into textStart address
-			
-			// Get the text of this term.
-			char[] tokenText = termAtt.TermBuffer();
-			;
-			int tokenTextLen = termAtt.TermLength();
+
+            // We are first in the chain so we must "intern" the
+            // term text into textStart address
+
+		    char[] tokenText;
+		    int tokenTextLen;
+
+            // Get the text of this term.
+            var termAttConcrete = termAtt as TermAttribute;
+		    if (termAttConcrete != null)
+		    {
+                // PERF: Fast-path to avoid the method calls at the expense of a larger method.
+		        tokenText = termAttConcrete.TermBuffer();
+		        tokenTextLen = termAttConcrete.TermLength();
+            }
+		    else
+		    {
+		        tokenText = termAtt.TermBuffer();
+		        tokenTextLen = termAtt.TermLength();
+            }
 			
 			// Compute hashcode & replace any invalid UTF16 sequences
 			int downto = tokenTextLen;
@@ -457,9 +467,8 @@ namespace Lucene.Net.Index
 			int hashPos = code & postingsHashMask;
 			
 			// Locate RawPostingList in hash
-			p = postingsHash[hashPos];
-			
-			if (p != null && !PostingEquals(tokenText, tokenTextLen))
+			var pAux = postingsHash[hashPos];			
+			if (pAux != null && !PostingEquals(ref pAux, tokenText, tokenTextLen))
 			{
 				// Conflict: keep searching different locations in
 				// the hash table.
@@ -468,14 +477,14 @@ namespace Lucene.Net.Index
 				{
 					code += inc;
 					hashPos = code & postingsHashMask;
-					p = postingsHash[hashPos];
+				    pAux = postingsHash[hashPos];
 				}
-				while (p != null && !PostingEquals(tokenText, tokenTextLen));
+				while (pAux != null && !PostingEquals(ref pAux, tokenText, tokenTextLen));
 			}
-			
+		    p = pAux;
+
 			if (p == null)
-			{
-				
+			{				
 				// First time we are seeing this token since we last
 				// flushed the hash.
 				int textLen1 = 1 + tokenTextLen;

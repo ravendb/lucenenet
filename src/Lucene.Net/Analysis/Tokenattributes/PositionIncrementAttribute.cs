@@ -60,13 +60,8 @@ namespace Lucene.Net.Analysis.Tokenattributes
 	    /// <value> the distance from the prior term </value>
 	    public int PositionIncrement
 	    {
-	        set
-	        {
-	            if (value >= 0)
-	                this.positionIncrement = value;
-	            else
-	                this.positionIncrement = ThrowIncrementGreaterThanZero(value);
-	        }
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+	        set { this.positionIncrement = value >= 0 ? value : ThrowIncrementGreaterThanZero(value); }
 	        get { return positionIncrement; }
 	    }
 
@@ -113,7 +108,7 @@ namespace Lucene.Net.Analysis.Tokenattributes
 			t.PositionIncrement = positionIncrement;
 		}
 		
-		override public System.Object Clone()
+		public override Object Clone()
 		{
             PositionIncrementAttribute impl = new PositionIncrementAttribute();
             impl.positionIncrement = positionIncrement;

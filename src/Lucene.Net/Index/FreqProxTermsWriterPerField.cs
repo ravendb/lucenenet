@@ -141,8 +141,7 @@ namespace Lucene.Net.Index
 		}
 		
 		internal override void  AddTerm(RawPostingList p0)
-		{
-			
+		{			
 			System.Diagnostics.Debug.Assert(docState.TestPoint("FreqProxTermsWriterPerField.addTerm start"));
 			
 			FreqProxTermsWriter.PostingList p = (FreqProxTermsWriter.PostingList) p0;
