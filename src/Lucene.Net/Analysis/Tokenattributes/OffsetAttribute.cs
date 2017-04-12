@@ -16,6 +16,7 @@
  */
 
 using System;
+using System.Runtime.CompilerServices;
 using Attribute = Lucene.Net.Util.Attribute;
 
 namespace Lucene.Net.Analysis.Tokenattributes
@@ -64,11 +65,18 @@ namespace Lucene.Net.Analysis.Tokenattributes
 
 	    public override void  Clear()
 		{
-			startOffset = 0;
-			endOffset = 0;
-		}
-		
-		public  override bool Equals(System.Object other)
+		    ClearFast();
+        }
+
+	    // PERF: When CoreCLR 2.0 this can be replaced for Clear with AggresiveInlining because of devirtualization.
+	    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+	    public void ClearFast()
+	    {
+	        startOffset = 0;
+	        endOffset = 0;
+	    }
+
+        public  override bool Equals(System.Object other)
 		{
 			if (other == this)
 			{
