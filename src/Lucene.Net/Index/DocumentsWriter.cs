@@ -1546,9 +1546,9 @@ namespace Lucene.Net.Index
 		/* Initial chunks size of the shared byte[] blocks used to
 		store postings data */
 		internal const int BYTE_BLOCK_SHIFT = 15;
-		internal static readonly int BYTE_BLOCK_SIZE = 1 << BYTE_BLOCK_SHIFT;
-		internal static readonly int BYTE_BLOCK_MASK = BYTE_BLOCK_SIZE - 1;
-		internal static readonly int BYTE_BLOCK_NOT_MASK = ~ BYTE_BLOCK_MASK;
+		internal const int BYTE_BLOCK_SIZE = 1 << BYTE_BLOCK_SHIFT;
+		internal const int BYTE_BLOCK_MASK = BYTE_BLOCK_SIZE - 1;
+		internal const int BYTE_BLOCK_NOT_MASK = ~ BYTE_BLOCK_MASK;
 		
 		internal class ByteBlockAllocator : ByteBlockPool.Allocator
 		{

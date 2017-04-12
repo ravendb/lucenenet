@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 
+using System;
 using Lucene.Net.Analysis.Tokenattributes;
 using Lucene.Net.Search;
 using AttributeSource = Lucene.Net.Util.AttributeSource;
@@ -216,41 +217,88 @@ namespace Lucene.Net.Analysis
 		public override bool IncrementToken()
 		{
 			if (valSize == 0)
-				throw new System.SystemException("call set???Value() before usage");
-			if (shift >= valSize)
+				goto Error;
+
+            if (shift >= valSize)
 				return false;
 			
 			ClearAttributes();
-			char[] buffer;
-			switch (valSize)
-			{
-				
-				case 64: 
-					buffer = termAtt.ResizeTermBuffer(NumericUtils.BUF_SIZE_LONG);
-					termAtt.SetTermLength(NumericUtils.LongToPrefixCoded(value_Renamed, shift, buffer));
-					break;
-				
-				
-				case 32: 
-					buffer = termAtt.ResizeTermBuffer(NumericUtils.BUF_SIZE_INT);
-					termAtt.SetTermLength(NumericUtils.IntToPrefixCoded((int) value_Renamed, shift, buffer));
-					break;
-				
-				
-				default: 
-					// should not happen
-					throw new System.ArgumentException("valSize must be 32 or 64");
-				
-			}
-			
-			typeAtt.Type = (shift == 0)?TOKEN_TYPE_FULL_PREC:TOKEN_TYPE_LOWER_PREC;
-			posIncrAtt.PositionIncrement = (shift == 0)?1:0;
-			shift += precisionStep;
-			return true;
-		}
-		
-		// @Override
-		public override System.String ToString()
+
+		    var termAttLikely = termAtt as TermAttribute;            
+            if ( termAttLikely == null)
+                goto Unlikely;
+
+		    char[] buffer;
+		    if (valSize == 64)
+		    {
+		        buffer = termAttLikely.ResizeTermBuffer(NumericUtils.BUF_SIZE_LONG);
+		        termAttLikely.SetTermLength(NumericUtils.LongToPrefixCoded(value_Renamed, shift, buffer));
+		    }
+		    else if (valSize == 32)
+		    {
+		        buffer = termAttLikely.ResizeTermBuffer(NumericUtils.BUF_SIZE_INT);
+		        termAttLikely.SetTermLength(NumericUtils.IntToPrefixCoded((int)value_Renamed, shift, buffer));
+		    }
+		    else goto Error;
+
+		    string type = (shift == 0) ? TOKEN_TYPE_FULL_PREC : TOKEN_TYPE_LOWER_PREC;
+            int increment = (shift == 0) ? 1 : 0;
+
+		    // PERF: Try to avoid as much as possible the virtual calls here. 
+		    var typeAttConcrete = typeAtt as TypeAttribute;
+		    if (typeAttConcrete != null)
+		        typeAttConcrete.Type = type;
+		    else
+		        typeAtt.Type = type;
+
+		    // PERF: Try to avoid as much as possible the virtual calls here. 
+		    var posIncrAttConcrete = posIncrAtt as PositionIncrementAttribute;
+		    if (posIncrAttConcrete != null)
+		        posIncrAttConcrete.PositionIncrement = increment;
+		    else
+		        posIncrAtt.PositionIncrement = increment;
+		    
+            shift += precisionStep;
+		    return true;
+
+            Unlikely:
+		    return IncrementTokenUnlikely();
+
+            Error:
+		    return ThrowValueSizeIsNotValid<bool>();
+        }
+
+	    private bool IncrementTokenUnlikely()
+	    {
+	        char[] buffer;
+	        if (valSize == 64)
+	        {
+	            buffer = termAtt.ResizeTermBuffer(NumericUtils.BUF_SIZE_LONG);
+	            termAtt.SetTermLength(NumericUtils.LongToPrefixCoded(value_Renamed, shift, buffer));
+	        }
+	        else if (valSize == 32)
+	        {
+	            buffer = termAtt.ResizeTermBuffer(NumericUtils.BUF_SIZE_INT);
+	            termAtt.SetTermLength(NumericUtils.IntToPrefixCoded((int)value_Renamed, shift, buffer));
+	        }
+            else return ThrowValueSizeIsNotValid<bool> ();
+
+            typeAtt.Type = (shift == 0) ? TOKEN_TYPE_FULL_PREC : TOKEN_TYPE_LOWER_PREC;
+	        posIncrAtt.PositionIncrement = (shift == 0) ? 1 : 0;
+	        shift += precisionStep;
+	        return true;
+        }
+
+	    private T ThrowValueSizeIsNotValid<T>()
+	    {
+	        if (valSize == 0)
+	            throw new SystemException("called set??? Value() before usage");
+
+	        throw new ArgumentException("valSize must be 32 or 64.");
+        }
+
+	    // @Override
+		public override String ToString()
 		{
 			System.Text.StringBuilder sb = new System.Text.StringBuilder("(numeric,valSize=").Append(valSize);
 			sb.Append(",precisionStep=").Append(precisionStep).Append(')');

@@ -79,17 +79,17 @@ namespace Lucene.Net.Analysis.Tokenattributes
 			TextSupport.GetCharsFromString(buffer, 0, length, termBuffer, 0);
 			termLength = length;
 		}
-		
-		/// <summary>Copies the contents of buffer, starting at offset and continuing
-		/// for length characters, into the termBuffer array.
-		/// </summary>
-		/// <param name="buffer">the buffer to copy
-		/// </param>
-		/// <param name="offset">the index in the buffer of the first character to copy
-		/// </param>
-		/// <param name="length">the number of characters to copy
-		/// </param>
-		public void SetTermBuffer(System.String buffer, int offset, int length)
+
+        /// <summary>Copies the contents of buffer, starting at offset and continuing
+        /// for length characters, into the termBuffer array.
+        /// </summary>
+        /// <param name="buffer">the buffer to copy
+        /// </param>
+        /// <param name="offset">the index in the buffer of the first character to copy
+        /// </param>
+        /// <param name="length">the number of characters to copy
+        /// </param>
+        public void SetTermBuffer(System.String buffer, int offset, int length)
 		{
 			System.Diagnostics.Debug.Assert(offset <= buffer.Length);
 			System.Diagnostics.Debug.Assert(offset + length <= buffer.Length);
@@ -97,34 +97,36 @@ namespace Lucene.Net.Analysis.Tokenattributes
 			TextSupport.GetCharsFromString(buffer, offset, offset + length, termBuffer, 0);
 			termLength = length;
 		}
-		
-		/// <summary>Returns the internal termBuffer character array which
-		/// you can then directly alter.  If the array is too
-		/// small for your token, use <see cref="ResizeTermBuffer(int)" />
-		/// to increase it.  After
-		/// altering the buffer be sure to call <see cref="SetTermLength" />
-		/// to record the number of valid
-		/// characters that were placed into the termBuffer. 
-		/// </summary>
-		public char[] TermBuffer()
+
+        /// <summary>Returns the internal termBuffer character array which
+        /// you can then directly alter.  If the array is too
+        /// small for your token, use <see cref="ResizeTermBuffer(int)" />
+        /// to increase it.  After
+        /// altering the buffer be sure to call <see cref="SetTermLength" />
+        /// to record the number of valid
+        /// characters that were placed into the termBuffer. 
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public char[] TermBuffer()
 		{
 			InitTermBuffer();
 			return termBuffer;
 		}
-		
-		/// <summary>Grows the termBuffer to at least size newSize, preserving the
-		/// existing content. Note: If the next operation is to change
-		/// the contents of the term buffer use
-		/// <see cref="SetTermBuffer(char[], int, int)" />,
-		/// <see cref="SetTermBuffer(String)" />, or
-		/// <see cref="SetTermBuffer(String, int, int)" />
-		/// to optimally combine the resize with the setting of the termBuffer.
-		/// </summary>
-		/// <param name="newSize">minimum size of the new termBuffer
-		/// </param>
-		/// <returns> newly created termBuffer with length >= newSize
-		/// </returns>
-		public char[] ResizeTermBuffer(int newSize)
+
+        /// <summary>Grows the termBuffer to at least size newSize, preserving the
+        /// existing content. Note: If the next operation is to change
+        /// the contents of the term buffer use
+        /// <see cref="SetTermBuffer(char[], int, int)" />,
+        /// <see cref="SetTermBuffer(String)" />, or
+        /// <see cref="SetTermBuffer(String, int, int)" />
+        /// to optimally combine the resize with the setting of the termBuffer.
+        /// </summary>
+        /// <param name="newSize">minimum size of the new termBuffer
+        /// </param>
+        /// <returns> newly created termBuffer with length >= newSize
+        /// </returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public char[] ResizeTermBuffer(int newSize)
 		{
 			if (termBuffer == null)
 			{
@@ -170,7 +172,7 @@ namespace Lucene.Net.Analysis.Tokenattributes
 		}
 		
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-		private void  InitTermBuffer()
+		private void InitTermBuffer()
 		{
 			if (termBuffer == null)
 			{
@@ -178,30 +180,42 @@ namespace Lucene.Net.Analysis.Tokenattributes
 				termLength = 0;
 			}
 		}
-		
-		/// <summary>Return number of valid characters (length of the term)
-		/// in the termBuffer array. 
-		/// </summary>
-		public int TermLength()
+
+        /// <summary>Return number of valid characters (length of the term)
+        /// in the termBuffer array. 
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public int TermLength()
 		{
 			return termLength;
 		}
-		
-		/// <summary>Set number of valid characters (length of the term) in
-		/// the termBuffer array. Use this to truncate the termBuffer
-		/// or to synchronize with external manipulation of the termBuffer.
-		/// Note: to grow the size of the array,
-		/// use <see cref="ResizeTermBuffer(int)" /> first.
-		/// </summary>
-		/// <param name="length">the truncated length
-		/// </param>
-		public void  SetTermLength(int length)
+
+        /// <summary>Set number of valid characters (length of the term) in
+        /// the termBuffer array. Use this to truncate the termBuffer
+        /// or to synchronize with external manipulation of the termBuffer.
+        /// Note: to grow the size of the array,
+        /// use <see cref="ResizeTermBuffer(int)" /> first.
+        /// </summary>
+        /// <param name="length">the truncated length
+        /// </param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void SetTermLength(int length)
 		{
 			InitTermBuffer();
-			if (length > termBuffer.Length)
-				throw new System.ArgumentException("length " + length + " exceeds the size of the termBuffer (" + termBuffer.Length + ")");
-			termLength = length;
+		    if (length > termBuffer.Length)
+		        goto Error;
+
+            termLength = length;
+		    return;
+
+            Error:
+            ThrowLengthExceedsTermBuffer(length);
 		}
+
+	    private void ThrowLengthExceedsTermBuffer(int length)
+	    {
+	        throw new ArgumentException("length " + length + " exceeds the size of the termBuffer (" + termBuffer.Length + ")");
+        }
 		
 		public override int GetHashCode()
 		{
