@@ -16,6 +16,7 @@
  */
 
 using System;
+using System.Runtime.CompilerServices;
 using Attribute = Lucene.Net.Util.Attribute;
 
 namespace Lucene.Net.Analysis.Tokenattributes
@@ -46,12 +47,20 @@ namespace Lucene.Net.Analysis.Tokenattributes
 	        set { this.type = value; }
 	    }
 
-	    public override void  Clear()
-		{
-			type = DEFAULT_TYPE;
-		}
-		
-		public  override bool Equals(System.Object other)
+	    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public override void Clear()
+        {
+            type = DEFAULT_TYPE;
+        }
+
+	    // PERF: When CoreCLR 2.0 this can be replaced for Clear with AggresiveInlining because of devirtualization.
+	    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+	    public void ClearFast()
+	    {
+	        type = DEFAULT_TYPE;
+	    }
+
+        public  override bool Equals(System.Object other)
 		{
 			if (other == this)
 			{

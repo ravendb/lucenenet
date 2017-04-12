@@ -555,33 +555,48 @@ namespace Lucene.Net.Index
 		
 		internal int[] intUptos;
 		internal int intUptoStart;
-		
-		internal void  WriteByte(int stream, byte b)
-		{
-			int upto = intUptos[intUptoStart + stream];
-			byte[] bytes = bytePool.buffers[upto >> DocumentsWriter.BYTE_BLOCK_SHIFT];
-			System.Diagnostics.Debug.Assert(bytes != null);
-			int offset = upto & DocumentsWriter.BYTE_BLOCK_MASK;
-			if (bytes[offset] != 0)
-			{
-				// End of slice; allocate a new one
-				offset = bytePool.AllocSlice(bytes, offset);
-				bytes = bytePool.buffer;
-				intUptos[intUptoStart + stream] = offset + bytePool.byteOffset;
-			}
-			bytes[offset] = b;
-			(intUptos[intUptoStart + stream])++;
-		}
-		
-		public void  WriteBytes(int stream, byte[] b, int offset, int len)
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+	    internal void WriteByte(int stream, byte b)
+	    {
+	        int upto = intUptos[intUptoStart + stream];
+	        byte[] bytes = bytePool.buffers[upto >> DocumentsWriter.BYTE_BLOCK_SHIFT];
+
+	        System.Diagnostics.Debug.Assert(bytes != null);
+	        int offset = upto & DocumentsWriter.BYTE_BLOCK_MASK;
+	        if (bytes[offset] != 0)
+                goto WithNewSlice;
+
+	        bytes[offset] = b;
+	        (intUptos[intUptoStart + stream])++;
+	        return;
+            
+            WithNewSlice:
+            WriteByteUnlikely(bytes, offset, stream, b);
+	    }
+
+	    internal void WriteByteUnlikely(byte[] bytes, int offset, int stream, byte b)
+	    {
+	        // End of slice; allocate a new one
+	        offset = bytePool.AllocSlice(bytes, offset);
+	        bytes = bytePool.buffer;
+	        intUptos[intUptoStart + stream] = offset + bytePool.byteOffset;
+
+            bytes[offset] = b;
+	        (intUptos[intUptoStart + stream])++;
+	    }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteBytes(int stream, byte[] b, int offset, int len)
 		{
 			// TODO: optimize
 			int end = offset + len;
 			for (int i = offset; i < end; i++)
 				WriteByte(stream, b[i]);
 		}
-		
-		internal void  WriteVInt(int stream, int i)
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal void  WriteVInt(int stream, int i)
 		{
 			System.Diagnostics.Debug.Assert(stream < streamCount);
 			while ((i & ~ 0x7F) != 0)
@@ -595,8 +610,7 @@ namespace Lucene.Net.Index
 		internal override void  Finish()
 		{
 			consumer.Finish();
-			if (nextPerField != null)
-				nextPerField.Finish();
+		    nextPerField?.Finish();
 		}
 		
 		/// <summary>Called when postings hash is too small (> 50%

@@ -16,6 +16,7 @@
  */
 
 using System;
+using System.Runtime.CompilerServices;
 using Attribute = Lucene.Net.Util.Attribute;
 using TokenStream = Lucene.Net.Analysis.TokenStream;
 
@@ -76,10 +77,17 @@ namespace Lucene.Net.Analysis.Tokenattributes
 
 	    public override void  Clear()
 		{
-			this.positionIncrement = 1;
+			ClearFast();
 		}
-		
-		public  override bool Equals(System.Object other)
+
+	    // PERF: When CoreCLR 2.0 this can be replaced for Clear with AggresiveInlining because of devirtualization.
+	    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+	    public void ClearFast()
+	    {
+	        this.positionIncrement = 1;
+	    }
+
+        public  override bool Equals(System.Object other)
 		{
 			if (other == this)
 			{
@@ -111,5 +119,6 @@ namespace Lucene.Net.Analysis.Tokenattributes
             impl.positionIncrement = positionIncrement;
             return impl;
 		}
-	}
+
+    }
 }

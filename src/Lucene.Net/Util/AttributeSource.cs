@@ -19,6 +19,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using Lucene.Net.Analysis.Tokenattributes;
 using Lucene.Net.Support;
 using TokenStream = Lucene.Net.Analysis.TokenStream;
 
@@ -51,20 +52,16 @@ namespace Lucene.Net.Util
                 // This should be WeakDictionary<T, WeakReference<TImpl>> where typeof(T) is Attribute and TImpl is typeof(AttributeImpl)
 			    private static readonly WeakDictionary<Type, WeakReference> attClassImplMap =
 			        new WeakDictionary<Type, WeakReference>();
-                
-				internal DefaultAttributeFactory()
-				{
-				}
-				
+                			
 				public override Attribute CreateAttributeInstance<TAttImpl>()
 				{
 					try
 					{
-                        return (Attribute)System.Activator.CreateInstance(GetClassForInterface<TAttImpl>());
+                        return (Attribute)Activator.CreateInstance(GetClassForInterface<TAttImpl>());
 					}
-					catch (System.UnauthorizedAccessException)
+					catch (UnauthorizedAccessException)
                     {
-                        throw new System.ArgumentException("Could not instantiate implementing class for " + typeof(TAttImpl).FullName);
+                        throw new ArgumentException("Could not instantiate implementing class for " + typeof(TAttImpl).FullName);
 					}
                     //catch (System.Exception e)
                     //{
@@ -72,13 +69,13 @@ namespace Lucene.Net.Util
                     //}
 				}
 
-                private static System.Type GetClassForInterface<T>() where T : IAttribute
+                private static Type GetClassForInterface<T>() where T : IAttribute
 				{
 					lock (attClassImplMap)
 					{
 					    var attClass = typeof (T);
                         WeakReference refz = attClassImplMap[attClass];
-                        System.Type clazz = (refz == null) ? null : ((System.Type) refz.Target);
+                        Type clazz = (refz == null) ? null : ((Type) refz.Target);
 						if (clazz == null)
 						{
 							try
@@ -86,9 +83,9 @@ namespace Lucene.Net.Util
                                 string name = attClass.FullName.Replace(attClass.Name, attClass.Name.Substring(1)) + ", " + attClass.Assembly().FullName;
 								attClassImplMap.Add(attClass, new WeakReference( clazz = System.Type.GetType(name, true))); //OK
 							}
-                            catch (System.TypeLoadException) // was System.Exception
+                            catch (TypeLoadException) // was System.Exception
 							{
-								throw new System.ArgumentException("Could not find implementing class for " + attClass.FullName);
+								throw new ArgumentException("Could not find implementing class for " + attClass.FullName);
 							}
 						}
 						return clazz;
@@ -99,11 +96,11 @@ namespace Lucene.Net.Util
 		
 		// These two maps must always be in sync!!!
 		// So they are private, final and read-only from the outside (read-only iterators)
-		private GeneralKeyedCollection<Type, AttributeImplItem> attributes;
-		private GeneralKeyedCollection<Type, AttributeImplItem> attributeImpls;
+		private readonly Dictionary<Type, AttributeImplItem> attributes;
+		private readonly Dictionary<Type, AttributeImplItem> attributeImpls;
 
-	    private State[] currentState = null;
-	    private AttributeFactory factory;
+	    private readonly State[] currentState = null;
+	    private readonly AttributeFactory factory;
 		
 		/// <summary> An AttributeSource using the default attribute factory <see cref="AttributeSource.AttributeFactory.DEFAULT_ATTRIBUTE_FACTORY" />.</summary>
 		public AttributeSource():this(AttributeFactory.DEFAULT_ATTRIBUTE_FACTORY)
@@ -126,8 +123,8 @@ namespace Lucene.Net.Util
 		/// <summary> An AttributeSource using the supplied <see cref="AttributeFactory" /> for creating new <see cref="IAttribute" /> instances.</summary>
 		public AttributeSource(AttributeFactory factory)
 		{
-            this.attributes = new GeneralKeyedCollection<Type, AttributeImplItem>(att => att.Key);
-            this.attributeImpls = new GeneralKeyedCollection<Type, AttributeImplItem>(att => att.Key);
+		    this.attributes = new Dictionary<Type, AttributeImplItem>(); //att => att.Key);
+		    this.attributeImpls = new Dictionary<Type, AttributeImplItem>(); // att => att.Key);
             this.currentState = new State[1];
             this.factory = factory;
 		}
@@ -169,8 +166,7 @@ namespace Lucene.Net.Util
         }
 
 	    /// <summary>a cache that stores all interfaces for known implementation classes for performance (slow reflection) </summary>
-	    private static readonly WeakDictionary<Type, System.Collections.Generic.LinkedList<WeakReference>>
-	        knownImplClasses = new WeakDictionary<Type, System.Collections.Generic.LinkedList<WeakReference>>();
+	    private static readonly WeakDictionary<Type, LinkedList<WeakReference>> knownImplClasses = new WeakDictionary<Type, LinkedList<WeakReference>>();
 
         /// <summary>
         /// <b>Expert:</b> Adds a custom AttributeImpl instance with one or more Attribute interfaces.
@@ -181,12 +177,14 @@ namespace Lucene.Net.Util
         /// The recommended way to use custom implementations is using an <see cref="AttributeFactory"/>
         /// </font></p>
         /// </summary>
-		public virtual void  AddAttributeImpl(Attribute att)
+		public void AddAttributeImpl(Attribute att)
 		{
-			System.Type clazz = att.GetType();
-			if (attributeImpls.Contains(clazz))
-				return ;
-			System.Collections.Generic.LinkedList<WeakReference> foundInterfaces;
+			Type clazz = att.GetType();
+		    
+			if (attributeImpls.TryGetValue(clazz, out var impl))
+				return;
+
+			LinkedList<WeakReference> foundInterfaces;
 			lock (knownImplClasses)
 			{
 				foundInterfaces = knownImplClasses[clazz];
@@ -197,13 +195,13 @@ namespace Lucene.Net.Util
 					knownImplClasses.Add(clazz, foundInterfaces = new LinkedList<WeakReference>());
 					// find all interfaces that this attribute instance implements
 					// and that extend the Attribute interface
-					System.Type actClazz = clazz;
+					Type actClazz = clazz;
 					do 
 					{
-						System.Type[] interfaces = actClazz.GetInterfaces();
+						Type[] interfaces = actClazz.GetInterfaces();
 						for (int i = 0; i < interfaces.Length; i++)
 						{
-							System.Type curInterface = interfaces[i];
+							Type curInterface = interfaces[i];
 							if (curInterface != typeof(IAttribute) && typeof(IAttribute).IsAssignableFrom(curInterface))
 							{
 								foundInterfaces.AddLast(new WeakReference(curInterface));
@@ -221,15 +219,16 @@ namespace Lucene.Net.Util
 				System.Type curInterface = (System.Type) curInterfaceRef.Target;
 			    System.Diagnostics.Debug.Assert(curInterface != null,
 			                                    "We have a strong reference on the class holding the interfaces, so they should never get evicted");
-				// Attribute is a superclass of this interface
-				if (!attributes.ContainsKey(curInterface))
+				
+                // Attribute is a superclass of this interface
+                if (!attributes.TryGetValue(curInterface, out var _))
 				{
 					// invalidate state to force recomputation in captureState()
 					this.currentState[0] = null;
-                    attributes.Add(new AttributeImplItem(curInterface, att));
-                    if (!attributeImpls.ContainsKey(clazz))
+                    attributes[curInterface] = new AttributeImplItem(curInterface, att);
+                    if (!attributeImpls.TryGetValue(clazz, out _))
                     {
-                        attributeImpls.Add(new AttributeImplItem(clazz, att));
+                        attributeImpls[clazz] = new AttributeImplItem(clazz, att);
                     }
 				}
 			}
@@ -241,27 +240,29 @@ namespace Lucene.Net.Util
 		/// new instance is created, added to this AttributeSource and returned. 
 		/// </summary>
 		// NOTE: Java has Class<T>, .NET has no Type<T>, this is not a perfect port
-        public virtual T AddAttribute<T>() where T : IAttribute
+        public T AddAttribute<T>() where T : IAttribute
 		{
 		    var attClass = typeof (T);
-			if (!attributes.ContainsKey(attClass))
-			{
-                if (!(attClass.IsInterface() && typeof(IAttribute).IsAssignableFrom(attClass))) 
-                {
-                    throw new ArgumentException(
-                        "AddAttribute() only accepts an interface that extends Attribute, but " +
-                        attClass.FullName + " does not fulfil this contract."
-                    );
-                }
 
-				AddAttributeImpl(this.factory.CreateAttributeInstance<T>());
-			}
+		    if (!attributes.TryGetValue(attClass, out var value))
+		    {
+		        if (!(attClass.IsInterface() && typeof(IAttribute).IsAssignableFrom(attClass)))
+		        {
+		            throw new ArgumentException(
+		                "AddAttribute() only accepts an interface that extends Attribute, but " +
+		                attClass.FullName + " does not fulfil this contract."
+		            );
+		        }
 
-            return (T)(IAttribute)attributes[attClass].Value;
+		        AddAttributeImpl(this.factory.CreateAttributeInstance<T>());
+		        return (T)(IAttribute)attributes[attClass].Value;
+            }
+
+		    return (T) (IAttribute) value.Value;
 		}
 
 	    /// <summary>Returns true, iff this AttributeSource has any attributes </summary>
-	    public virtual bool HasAttributes
+	    public bool HasAttributes
 	    {
 	        get { return this.attributes.Count != 0; }
 	    }
@@ -269,9 +270,9 @@ namespace Lucene.Net.Util
 	    /// <summary> The caller must pass in a Class&lt;? extends Attribute&gt; value. 
 		/// Returns true, iff this AttributeSource contains the passed-in Attribute.
         /// </summary>\
-		public virtual bool HasAttribute<T>() where T : IAttribute
-		{
-			return this.attributes.Contains(typeof(T));
+		public bool HasAttribute<T>() where T : IAttribute
+		{            
+			return this.attributes.TryGetValue(typeof(T), out var _);
 		}
 		
 		/// <summary>
@@ -287,12 +288,12 @@ namespace Lucene.Net.Util
         /// consuming), use <see cref="HasAttribute" />.
         /// </throws>
         // NOTE: Java has Class<T>, .NET has no Type<T>, this is not a perfect port
-		public virtual T GetAttribute<T>() where T : IAttribute
+		public T GetAttribute<T>() where T : IAttribute
 		{
 		    var attClass = typeof (T);
             if (!this.attributes.ContainsKey(attClass))
             {
-                throw new System.ArgumentException("This AttributeSource does not have the attribute '" + attClass.FullName + "'.");
+                throw new ArgumentException("This AttributeSource does not have the attribute '" + attClass.FullName + "'.");
             }
             else
             {
@@ -333,7 +334,7 @@ namespace Lucene.Net.Util
             }
 
 		    var c = s = currentState[0] = new State();
-		    var it = attributeImpls.Values().GetEnumerator();
+		    var it = attributeImpls.Values.GetEnumerator();
 		    it.MoveNext();
 		    c.attribute = it.Current.Value;
 
@@ -350,18 +351,30 @@ namespace Lucene.Net.Util
 		/// <summary> Resets all Attributes in this AttributeSource by calling
 		/// <see cref="Attribute.Clear()" /> on each Attribute implementation.
 		/// </summary>
-		public virtual void  ClearAttributes()
+		public void ClearAttributes()
 		{
             for (var state = GetCurrentState(); state != null;  state = state.next)
             {
-                state.attribute.Clear();
+                // PERF: Fast-path will aggresively inline the calls to clear for known types
+                var attribute = state.attribute;
+
+                if (attribute is TypeAttribute)
+                    ((TypeAttribute)attribute).ClearFast();
+                else if (attribute is OffsetAttribute)
+                    ((OffsetAttribute)attribute).ClearFast();
+                else if (attribute is PositionIncrementAttribute)
+                    ((PositionIncrementAttribute)attribute).ClearFast();
+                else if (attribute is TermAttribute)
+                    ((TermAttribute)attribute).ClearFast();
+                else 
+                    attribute.Clear();
             }
 		}
 		
 		/// <summary> Captures the state of all Attributes. The return value can be passed to
 		/// <see cref="RestoreState" /> to restore the state of this or another AttributeSource.
 		/// </summary>
-		public virtual State CaptureState()
+		public State CaptureState()
 		{
 		    var state = this.GetCurrentState();
 		    return (state == null) ? null : (State) state.Clone();
@@ -381,7 +394,7 @@ namespace Lucene.Net.Util
 		/// reset its value to the default, in which case the caller should first
         /// call <see cref="AttributeSource.ClearAttributes()" /> on the targetStream.   
 		/// </summary>
-		public virtual void  RestoreState(State state)
+		public void RestoreState(State state)
 		{
 			if (state == null)
 				return ;
@@ -456,7 +469,7 @@ namespace Lucene.Net.Util
 				return false;
 		}
 		
-		public override System.String ToString()
+		public override String ToString()
 		{
             System.Text.StringBuilder sb = new System.Text.StringBuilder().Append('(');
 			
@@ -480,7 +493,7 @@ namespace Lucene.Net.Util
 		/// AttributeSource instance. This method can be used to e.g. create another TokenStream
 		/// with exactly the same attributes (using <see cref="AttributeSource(AttributeSource)" />)
 		/// </summary>
-		public virtual AttributeSource CloneAttributes()
+		public AttributeSource CloneAttributes()
 		{
 			var clone = new AttributeSource(this.factory);
 			
@@ -491,17 +504,17 @@ namespace Lucene.Net.Util
                 {
                     var impl = (Attribute) state.attribute.Clone();
 
-                    if (!clone.attributeImpls.ContainsKey(impl.GetType()))
-                    {
-                        clone.attributeImpls.Add(new AttributeImplItem(impl.GetType(), impl));
-                    }
+                    var type = impl.GetType();
+                    if (!clone.attributes.TryGetValue(type, out var _))
+                        clone.attributeImpls[type] = new AttributeImplItem(type, impl);
                 }
 			}
 			
 			// now the interfaces
-            foreach (var att in this.attributes)
-			{
-                clone.attributes.Add(new AttributeImplItem(att.Key, clone.attributeImpls[att.Value.GetType()].Value));
+            foreach (var item in this.attributes)
+            {
+                var att = item.Value;
+                clone.attributes[att.Key] = new AttributeImplItem(att.Key, clone.attributeImpls[att.Value.GetType()].Value);
 			}
 			
 			return clone;

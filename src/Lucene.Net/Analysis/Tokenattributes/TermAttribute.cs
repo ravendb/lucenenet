@@ -211,12 +211,19 @@ namespace Lucene.Net.Analysis.Tokenattributes
 			return code;
 		}
 		
-		public override void  Clear()
+		public override void Clear()
 		{
-			termLength = 0;
-		}
-		
-		public override System.Object Clone()
+		    ClearFast();
+        }
+
+	    // PERF: When CoreCLR 2.0 this can be replaced for Clear with AggresiveInlining because of devirtualization.
+	    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+	    public void ClearFast()
+	    {
+	        termLength = 0;
+        }
+
+        public override System.Object Clone()
 		{
 			TermAttribute t = (TermAttribute) base.Clone();
 			// Do a deep clone
