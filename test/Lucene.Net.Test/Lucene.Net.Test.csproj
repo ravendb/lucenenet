@@ -6,7 +6,7 @@
 
   <PropertyGroup>
     <AssemblyTitle>Lucene.Net.Test</AssemblyTitle>
-    <VersionPrefix>3.0.4</VersionPrefix>
+    <VersionPrefix>3.0.5</VersionPrefix>
     <TargetFramework>netcoreapp1.1</TargetFramework>
     <AssemblyName>Lucene.Net.Test</AssemblyName>
     <AssemblyOriginatorKeyFile>Lucene.Net.snk</AssemblyOriginatorKeyFile>
