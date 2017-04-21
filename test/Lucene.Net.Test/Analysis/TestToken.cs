@@ -29,7 +29,7 @@ namespace Lucene.Net.Analysis
 {
 	
     [TestFixture]
-	public class TestToken:LuceneTestCase
+	public class TestToken : LuceneTestCase
 	{
         public TestToken()
         {
@@ -86,7 +86,7 @@ namespace Lucene.Net.Analysis
 		}
 		
         [Test]
-		public virtual void  TestGrow()
+		public virtual void TestGrow()
 		{
 			Token t = new Token();
 			System.Text.StringBuilder buf = new System.Text.StringBuilder("ab");
@@ -99,7 +99,7 @@ namespace Lucene.Net.Analysis
 				buf.Append(buf.ToString());
 			}
 			Assert.AreEqual(1048576, t.TermLength());
-			Assert.AreEqual(1179654, t.TermBuffer().Length);
+			Assert.AreEqual(1048576, t.TermBuffer().Length);
 			
 			// now as a string, first variant
 			t = new Token();
@@ -113,7 +113,7 @@ namespace Lucene.Net.Analysis
 				buf.Append(content);
 			}
 			Assert.AreEqual(1048576, t.TermLength());
-			Assert.AreEqual(1179654, t.TermBuffer().Length);
+			Assert.AreEqual(1048576, t.TermBuffer().Length);
 			
 			// now as a string, second variant
 			t = new Token();
@@ -127,7 +127,7 @@ namespace Lucene.Net.Analysis
 				buf.Append(content);
 			}
 			Assert.AreEqual(1048576, t.TermLength());
-			Assert.AreEqual(1179654, t.TermBuffer().Length);
+			Assert.AreEqual(1048576, t.TermBuffer().Length);
 			
 			// Test for slow growth to a long term
 			t = new Token();
@@ -141,7 +141,7 @@ namespace Lucene.Net.Analysis
 				buf.Append("a");
 			}
 			Assert.AreEqual(20000, t.TermLength());
-			Assert.AreEqual(20167, t.TermBuffer().Length);
+			Assert.AreEqual(32768, t.TermBuffer().Length);
 			
 			// Test for slow growth to a long term
 			t = new Token();
@@ -155,7 +155,7 @@ namespace Lucene.Net.Analysis
 				buf.Append("a");
 			}
 			Assert.AreEqual(20000, t.TermLength());
-			Assert.AreEqual(20167, t.TermBuffer().Length);
+			Assert.AreEqual(32768, t.TermBuffer().Length);
 		}
 		
         [Test]

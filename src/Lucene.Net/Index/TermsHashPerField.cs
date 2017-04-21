@@ -23,11 +23,10 @@ using Lucene.Net.Support;
 using UnicodeUtil = Lucene.Net.Util.UnicodeUtil;
 
 namespace Lucene.Net.Index
-{
-	
+{	
 	internal sealed class TermsHashPerField : InvertedDocConsumerPerField
 	{
-		private void  InitBlock()
+		private void InitBlock()
 		{
 			postingsHashHalfSize = postingsHashSize / 2;
 			postingsHashMask = postingsHashSize - 1;
@@ -78,7 +77,7 @@ namespace Lucene.Net.Index
 				nextPerField = null;
 		}
 		
-		internal void  ShrinkHash(int targetSize)
+		internal void ShrinkHash(int targetSize)
 		{
 			System.Diagnostics.Debug.Assert(postingsCompacted || numPostings == 0);
 
@@ -94,11 +93,13 @@ namespace Lucene.Net.Index
             System.Array.Clear(postingsHash,0,postingsHash.Length);
 		}
 		
-		public void  Reset()
+		public void Reset()
 		{
 			if (!postingsCompacted)
 				CompactPostings();
+
 			System.Diagnostics.Debug.Assert(numPostings <= postingsHash.Length);
+
 			if (numPostings > 0)
 			{
 				perThread.termsHash.RecyclePostings(postingsHash, numPostings);
@@ -106,29 +107,28 @@ namespace Lucene.Net.Index
 				numPostings = 0;
 			}
 			postingsCompacted = false;
-			if (nextPerField != null)
-				nextPerField.Reset();
+		    nextPerField?.Reset();
 		}
 		
-		public override void  Abort()
+		public override void Abort()
 		{
 			lock (this)
 			{
 				Reset();
-				if (nextPerField != null)
-					nextPerField.Abort();
+			    nextPerField?.Abort();
 			}
 		}
 		
-		public void  InitReader(ByteSliceReader reader, RawPostingList p, int stream)
+		public void InitReader(ByteSliceReader reader, RawPostingList p, int stream)
 		{
 			System.Diagnostics.Debug.Assert(stream < streamCount);
+
 			int[] ints = intPool.buffers[p.intStart >> DocumentsWriter.INT_BLOCK_SHIFT];
 			int upto = p.intStart & DocumentsWriter.INT_BLOCK_MASK;
 			reader.Init(bytePool, p.byteStart + stream * ByteBlockPool.FIRST_LEVEL_SIZE, ints[upto + stream]);
 		}
 		
-		private void  CompactPostings()
+		private void CompactPostings()
 		{
 			lock (this)
 			{
@@ -159,7 +159,7 @@ namespace Lucene.Net.Index
 			return postingsHash;
 		}
 		
-		internal void  QuickSort(RawPostingList[] postings, int lo, int hi)
+		internal void QuickSort(RawPostingList[] postings, int lo, int hi)
 		{
 			if (lo >= hi)
 				return ;

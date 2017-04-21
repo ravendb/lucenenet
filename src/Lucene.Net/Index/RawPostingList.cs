@@ -18,9 +18,7 @@
 using System;
 
 namespace Lucene.Net.Index
-{
-	
-	
+{	
 	/// <summary>This is the base class for an in-memory posting list,
 	/// keyed by a Token.  <see cref="TermsHash" /> maintains a hash
 	/// table holding one instance of this per unique Token.

@@ -37,7 +37,7 @@ using Directory = Lucene.Net.Store.Directory;
 namespace Lucene.Net.Index
 {
     [TestFixture]
-	public class TestCheckIndex:LuceneTestCase
+	public class TestCheckIndex : LuceneTestCase
 	{
 		
 		[Test]

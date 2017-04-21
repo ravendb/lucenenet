@@ -143,16 +143,24 @@ namespace Lucene.Net.Util
 		*/
 		
 		
-		public static int GetNextSize(int targetSize)
+		public static int GetNextSize(int v)
 		{
-			/* This over-allocates proportional to the list size, making room
-			* for additional growth.  The over-allocation is mild, but is
-			* enough to give linear-time amortized behavior over a long
-			* sequence of appends() in the presence of a poorly-performing
-			* system realloc().
-			* The growth pattern is:  0, 4, 8, 16, 25, 35, 46, 58, 72, 88, ...
-			*/
-			return (targetSize >> 3) + (targetSize < 9?3:6) + targetSize;
+
+            /* This over-allocates proportional to the list size, making room
+            * for additional growth.  The over-allocation is more aggressive, 
+            * that the original Lucene version in order to avoid large rehashes
+            * in the usual batched workflows we use at RavenDB.
+            * The growth pattern is:  0, 4, 8, 16, 32, 64, 128, 256 ...
+            */
+
+		    v |= v >> 1;
+		    v |= v >> 2;
+		    v |= v >> 4;
+		    v |= v >> 8;
+		    v |= v >> 16;
+		    v++;
+
+		    return v;
 		}
 		
 		public static int GetShrinkSize(int currentSize, int targetSize)
