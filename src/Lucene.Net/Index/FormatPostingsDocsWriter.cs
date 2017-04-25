@@ -16,6 +16,7 @@
  */
 
 using System;
+using Lucene.Net.Store;
 using IndexOutput = Lucene.Net.Store.IndexOutput;
 using UnicodeUtil = Lucene.Net.Util.UnicodeUtil;
 
@@ -39,12 +40,12 @@ namespace Lucene.Net.Index
 		internal long freqStart;
 		internal FieldInfo fieldInfo;
 		
-		internal FormatPostingsDocsWriter(SegmentWriteState state, FormatPostingsTermsWriter parent):base()
+		internal FormatPostingsDocsWriter(SegmentWriteState state, FormatPostingsTermsWriter parent, IState s) :base()
 		{
 			this.parent = parent;
 			System.String fileName = IndexFileNames.SegmentFileName(parent.parent.segment, IndexFileNames.FREQ_EXTENSION);
 			state.flushedFiles.Add(fileName);
-			out_Renamed = parent.parent.dir.CreateOutput(fileName);
+			out_Renamed = parent.parent.dir.CreateOutput(fileName, s);
 			totalNumDocs = parent.parent.totalNumDocs;
 			
 			// TODO: abstraction violation
@@ -52,7 +53,7 @@ namespace Lucene.Net.Index
 			skipListWriter = parent.parent.skipListWriter;
 			skipListWriter.SetFreqOutput(out_Renamed);
 			
-			posWriter = new FormatPostingsPositionsWriter(state, this);
+			posWriter = new FormatPostingsPositionsWriter(state, this, s);
 		}
 		
 		internal void  SetField(FieldInfo fieldInfo)

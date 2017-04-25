@@ -33,7 +33,7 @@ namespace Lucene.Net.Store
 		/// <summary>Reads and returns a single byte.</summary>
 		/// <seealso cref="IndexOutput.WriteByte(byte)">
 		/// </seealso>
-		public abstract byte ReadByte();
+		public abstract byte ReadByte(IState state);
 		
 		/// <summary>Reads a specified number of bytes into an array at the specified offset.</summary>
 		/// <param name="b">the array to read bytes into
@@ -44,7 +44,7 @@ namespace Lucene.Net.Store
 		/// </param>
 		/// <seealso cref="IndexOutput.WriteBytes(byte[],int)">
 		/// </seealso>
-		public abstract void  ReadBytes(byte[] b, int offset, int len);
+		public abstract void  ReadBytes(byte[] b, int offset, int len, IState state);
 		
 		/// <summary>Reads a specified number of bytes into an array at the
 		/// specified offset with control over whether the read
@@ -63,18 +63,18 @@ namespace Lucene.Net.Store
 		/// </param>
 		/// <seealso cref="IndexOutput.WriteBytes(byte[],int)">
 		/// </seealso>
-		public virtual void  ReadBytes(byte[] b, int offset, int len, bool useBuffer)
+		public virtual void  ReadBytes(byte[] b, int offset, int len, bool useBuffer, IState state)
 		{
 			// Default to ignoring useBuffer entirely
-			ReadBytes(b, offset, len);
+			ReadBytes(b, offset, len, state);
 		}
 		
 		/// <summary>Reads four bytes and returns an int.</summary>
 		/// <seealso cref="IndexOutput.WriteInt(int)">
 		/// </seealso>
-		public virtual int ReadInt()
+		public virtual int ReadInt(IState state)
 		{
-			return ((ReadByte() & 0xFF) << 24) | ((ReadByte() & 0xFF) << 16) | ((ReadByte() & 0xFF) << 8) | (ReadByte() & 0xFF);
+			return ((ReadByte(state) & 0xFF) << 24) | ((ReadByte(state) & 0xFF) << 16) | ((ReadByte(state) & 0xFF) << 8) | (ReadByte(state) & 0xFF);
 		}
 		
 		/// <summary>Reads an int stored in variable-length format.  Reads between one and
@@ -83,13 +83,13 @@ namespace Lucene.Net.Store
 		/// </summary>
 		/// <seealso cref="IndexOutput.WriteVInt(int)">
 		/// </seealso>
-		public virtual int ReadVInt()
+		public virtual int ReadVInt(IState state)
 		{
-			byte b = ReadByte();
+			byte b = ReadByte(state);
 			int i = b & 0x7F;
 			for (int shift = 7; (b & 0x80) != 0; shift += 7)
 			{
-				b = ReadByte();
+				b = ReadByte(state);
 				i |= (b & 0x7F) << shift;
 			}
 			return i;
@@ -98,22 +98,22 @@ namespace Lucene.Net.Store
 		/// <summary>Reads eight bytes and returns a long.</summary>
 		/// <seealso cref="IndexOutput.WriteLong(long)">
 		/// </seealso>
-		public virtual long ReadLong()
+		public virtual long ReadLong(IState state)
 		{
-			return (((long) ReadInt()) << 32) | (ReadInt() & 0xFFFFFFFFL);
+			return (((long) ReadInt(state)) << 32) | (ReadInt(state) & 0xFFFFFFFFL);
 		}
 		
 		/// <summary>Reads a long stored in variable-length format.  Reads between one and
 		/// nine bytes.  Smaller values take fewer bytes.  Negative numbers are not
 		/// supported. 
 		/// </summary>
-		public virtual long ReadVLong()
+		public virtual long ReadVLong(IState state)
 		{
-			byte b = ReadByte();
+			byte b = ReadByte(state);
 			long i = b & 0x7F;
 			for (int shift = 7; (b & 0x80) != 0; shift += 7)
 			{
-				b = ReadByte();
+				b = ReadByte(state);
 				i |= (b & 0x7FL) << shift;
 			}
 			return i;
@@ -132,21 +132,21 @@ namespace Lucene.Net.Store
 		/// <summary>Reads a string.</summary>
 		/// <seealso cref="IndexOutput.WriteString(String)">
 		/// </seealso>
-		public virtual System.String ReadString()
+		public virtual System.String ReadString(IState state)
 		{
 			if (preUTF8Strings)
-				return ReadModifiedUTF8String();
-			int length = ReadVInt();
+				return ReadModifiedUTF8String(state);
+			int length = ReadVInt(state);
             byte[] bytes = new byte[length];
-			ReadBytes(bytes, 0, length);
+			ReadBytes(bytes, 0, length, state);
             return System.Text.Encoding.UTF8.GetString(bytes, 0, length);
 		}
 		
-		private System.String ReadModifiedUTF8String()
+		private System.String ReadModifiedUTF8String(IState state)
 		{
-			int length = ReadVInt();
+			int length = ReadVInt(state);
             char[] chars = new char[length];
-			ReadChars(chars, 0, length);
+			ReadChars(chars, 0, length, state);
 			return new System.String(chars, 0, length);
 		}
 		
@@ -166,20 +166,20 @@ namespace Lucene.Net.Store
 		/// from those utf8 bytes
 		/// </deprecated>
         [Obsolete("-- please use ReadString or ReadBytes instead, and construct the string from those utf8 bytes")]
-		public virtual void  ReadChars(char[] buffer, int start, int length)
+		public virtual void  ReadChars(char[] buffer, int start, int length, IState state)
 		{
 			int end = start + length;
 			for (int i = start; i < end; i++)
 			{
-				byte b = ReadByte();
+				byte b = ReadByte(state);
 				if ((b & 0x80) == 0)
 					buffer[i] = (char) (b & 0x7F);
 				else if ((b & 0xE0) != 0xE0)
 				{
-					buffer[i] = (char) (((b & 0x1F) << 6) | (ReadByte() & 0x3F));
+					buffer[i] = (char) (((b & 0x1F) << 6) | (ReadByte(state) & 0x3F));
 				}
 				else
-					buffer[i] = (char) (((b & 0x0F) << 12) | ((ReadByte() & 0x3F) << 6) | (ReadByte() & 0x3F));
+					buffer[i] = (char) (((b & 0x0F) << 12) | ((ReadByte(state) & 0x3F) << 6) | (ReadByte(state) & 0x3F));
 			}
 		}
 		
@@ -196,24 +196,24 @@ namespace Lucene.Net.Store
 		/// strings
 		/// </deprecated>
         [Obsolete("this method operates on old \"modified utf8\" encoded strings")]
-		public virtual void  SkipChars(int length)
+		public virtual void  SkipChars(int length, IState state)
 		{
 			for (int i = 0; i < length; i++)
 			{
-				byte b = ReadByte();
+				byte b = ReadByte(state);
 				if ((b & 0x80) == 0)
 				{
 					//do nothing, we only need one byte
 				}
 				else if ((b & 0xE0) != 0xE0)
 				{
-					ReadByte(); //read an additional byte
+					ReadByte(state); //read an additional byte
 				}
 				else
 				{
 					//read two additional bytes.
-					ReadByte();
-					ReadByte();
+					ReadByte(state);
+					ReadByte(state);
 				}
 			}
 		}
@@ -237,15 +237,15 @@ namespace Lucene.Net.Store
 	    /// </summary>
 	    /// <seealso cref="Seek(long)">
 	    /// </seealso>
-	    public abstract long FilePointer { get; }
+	    public abstract long FilePointer(IState state);
 
 	    /// <summary>Sets current position in this file, where the next read will occur.</summary>
 		/// <seealso cref="FilePointer">
 		/// </seealso>
-		public abstract void  Seek(long pos);
+		public abstract void  Seek(long pos, IState state);
 		
 		/// <summary>The number of bytes in the file. </summary>
-		public abstract long Length();
+		public abstract long Length(IState state);
 		
 		/// <summary>Returns a clone of this stream.
 		/// 
@@ -271,14 +271,14 @@ namespace Lucene.Net.Store
 		}
 		
 		// returns Map<String, String>
-		public virtual System.Collections.Generic.IDictionary<string,string> ReadStringStringMap()
+		public virtual System.Collections.Generic.IDictionary<string,string> ReadStringStringMap(IState state)
 		{
             var map = new HashMap<string, string>();
-			int count = ReadInt();
+			int count = ReadInt(state);
 			for (int i = 0; i < count; i++)
 			{
-				System.String key = ReadString();
-				System.String val = ReadString();
+				System.String key = ReadString(state);
+				System.String val = ReadString(state);
 				map[key] = val;
 			}
 			

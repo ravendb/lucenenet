@@ -17,6 +17,7 @@
 
 using System;
 using Lucene.Net.Index;
+using Lucene.Net.Store;
 using Lucene.Net.Support;
 using IndexReader = Lucene.Net.Index.IndexReader;
 
@@ -128,13 +129,13 @@ namespace Lucene.Net.Search
             protected internal System.Collections.Generic.List<Weight> weights = new System.Collections.Generic.List<Weight>(); // The Weight's for our subqueries, in 1-1 correspondence with disjuncts
 			
 			/* Construct the Weight for this Query searched by searcher.  Recursively construct subquery weights. */
-			public DisjunctionMaxWeight(DisjunctionMaxQuery enclosingInstance, Searcher searcher)
+			public DisjunctionMaxWeight(DisjunctionMaxQuery enclosingInstance, Searcher searcher, IState state)
 			{
 				InitBlock(enclosingInstance);
 				this.similarity = searcher.Similarity;
 				foreach(Query disjunctQuery in enclosingInstance.disjuncts)
 				{
-                    weights.Add(disjunctQuery.CreateWeight(searcher));
+                    weights.Add(disjunctQuery.CreateWeight(searcher, state));
 				}
 			}
 			
@@ -179,14 +180,14 @@ namespace Lucene.Net.Search
 			}
 			
 			/* Create the scorer used to score our associated DisjunctionMaxQuery */
-			public override Scorer Scorer(IndexReader reader, bool scoreDocsInOrder, bool topScorer)
+			public override Scorer Scorer(IndexReader reader, bool scoreDocsInOrder, bool topScorer, IState state)
 			{
 				Scorer[] scorers = new Scorer[weights.Count];
 				int idx = 0;
 				foreach(Weight w in weights)
 				{
-					Scorer subScorer = w.Scorer(reader, true, false);
-					if (subScorer != null && subScorer.NextDoc() != DocIdSetIterator.NO_MORE_DOCS)
+					Scorer subScorer = w.Scorer(reader, true, false, state);
+					if (subScorer != null && subScorer.NextDoc(state) != DocIdSetIterator.NO_MORE_DOCS)
 					{
 						scorers[idx++] = subScorer;
 					}
@@ -198,16 +199,16 @@ namespace Lucene.Net.Search
 			}
 			
 			/* Explain the score we computed for doc */
-			public override Explanation Explain(IndexReader reader, int doc)
+			public override Explanation Explain(IndexReader reader, int doc, IState state)
 			{
 				if (Enclosing_Instance.disjuncts.Count == 1)
-					return weights[0].Explain(reader, doc);
+					return weights[0].Explain(reader, doc, state);
 				ComplexExplanation result = new ComplexExplanation();
 				float max = 0.0f, sum = 0.0f;
 				result.Description = Enclosing_Instance.tieBreakerMultiplier == 0.0f?"max of:":"max plus " + Enclosing_Instance.tieBreakerMultiplier + " times others of:";
 				foreach(Weight wt in weights)
 				{
-					Explanation e = wt.Explain(reader, doc);
+					Explanation e = wt.Explain(reader, doc, state);
 					if (e.IsMatch)
 					{
 						System.Boolean tempAux = true;
@@ -223,9 +224,9 @@ namespace Lucene.Net.Search
 		} // end of DisjunctionMaxWeight inner class
 		
 		/* Create the Weight used to score us */
-		public override Weight CreateWeight(Searcher searcher)
+		public override Weight CreateWeight(Searcher searcher, IState state)
 		{
-			return new DisjunctionMaxWeight(this, searcher);
+			return new DisjunctionMaxWeight(this, searcher, state);
 		}
 		
 		/// <summary>Optimize our representation and our subqueries representations</summary>
@@ -233,13 +234,13 @@ namespace Lucene.Net.Search
 		/// </param>
 		/// <returns> an optimized copy of us (which may not be a copy if there is nothing to optimize) 
 		/// </returns>
-		public override Query Rewrite(IndexReader reader)
+		public override Query Rewrite(IndexReader reader, IState state)
 		{
 			int numDisjunctions = disjuncts.Count;
 			if (numDisjunctions == 1)
 			{
 				Query singleton = disjuncts[0];
-				Query result = singleton.Rewrite(reader);
+				Query result = singleton.Rewrite(reader, state);
 				if (Boost != 1.0f)
 				{
 					if (result == singleton)
@@ -252,7 +253,7 @@ namespace Lucene.Net.Search
 			for (int i = 0; i < numDisjunctions; i++)
 			{
 				Query clause = disjuncts[i];
-				Query rewrite = clause.Rewrite(reader);
+				Query rewrite = clause.Rewrite(reader, state);
 				if (rewrite != clause)
 				{
 					if (clone == null)

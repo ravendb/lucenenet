@@ -16,7 +16,7 @@
  */
 
 using System;
-
+using Lucene.Net.Store;
 using Term = Lucene.Net.Index.Term;
 using TermEnum = Lucene.Net.Index.TermEnum;
 
@@ -53,7 +53,7 @@ namespace Lucene.Net.Search
 		/// <summary> use this method to set the actual TermEnum (e.g. in ctor),
 		/// it will be automatically positioned on the first matching term.
 		/// </summary>
-		protected internal virtual void  SetEnum(TermEnum actualEnum)
+		protected internal virtual void  SetEnum(TermEnum actualEnum, IState state)
 		{
 			this.actualEnum = actualEnum;
 			// Find the first term that matches
@@ -61,7 +61,7 @@ namespace Lucene.Net.Search
 			if (term != null && TermCompare(term))
 				currentTerm = term;
 			else
-				Next();
+				Next(state);
 		}
 		
 		/// <summary> Returns the docFreq of the current Term in the enumeration.
@@ -76,7 +76,7 @@ namespace Lucene.Net.Search
 		}
 		
 		/// <summary>Increments the enumeration to the next element.  True if one exists. </summary>
-		public override bool Next()
+		public override bool Next(IState state)
 		{
 			if (actualEnum == null)
 				return false; // the actual enumerator is not initialized!
@@ -85,7 +85,7 @@ namespace Lucene.Net.Search
 			{
 				if (EndEnum())
 					return false;
-				if (actualEnum.Next())
+				if (actualEnum.Next(state))
 				{
 					Term term = actualEnum.Term;
 					if (TermCompare(term))

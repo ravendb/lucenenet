@@ -19,6 +19,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Lucene.Net.Store;
 using Lucene.Net.Support;
 using NumericField = Lucene.Net.Documents.NumericField;
 using IndexReader = Lucene.Net.Index.IndexReader;
@@ -194,7 +195,7 @@ namespace Lucene.Net.Search
 
             internal IDictionary<object, IDictionary<Entry, object>> readerCache = new WeakDictionary<object, IDictionary<Entry, object>>();
             
-            protected internal abstract System.Object CreateValue(IndexReader reader, Entry key);
+            protected internal abstract System.Object CreateValue(IndexReader reader, Entry key, IState state);
 
             /* Remove this reader from the cache, if present. */
             public void Purge(IndexReader r)
@@ -206,7 +207,7 @@ namespace Lucene.Net.Search
                 }
             }
             
-            public virtual System.Object Get(IndexReader reader, Entry key)
+            public virtual System.Object Get(IndexReader reader, Entry key, IState state)
             {
                 IDictionary<Entry, object> innerCache;
                 System.Object value;
@@ -237,7 +238,7 @@ namespace Lucene.Net.Search
                         CreationPlaceholder progress = (CreationPlaceholder) value;
                         if (progress.value_Renamed == null)
                         {
-                            progress.value_Renamed = CreateValue(reader, key);
+                            progress.value_Renamed = CreateValue(reader, key, state);
                             lock (readerCache)
                             {
                                 innerCache[key] = progress.value_Renamed;
@@ -326,15 +327,15 @@ namespace Lucene.Net.Search
         }
         
         // inherit javadocs
-        public virtual sbyte[] GetBytes(IndexReader reader, System.String field)
+        public virtual sbyte[] GetBytes(IndexReader reader, System.String field, IState state)
         {
-            return GetBytes(reader, field, null);
+            return GetBytes(reader, field, null, state);
         }
         
         // inherit javadocs
-        public virtual sbyte[] GetBytes(IndexReader reader, System.String field, ByteParser parser)
+        public virtual sbyte[] GetBytes(IndexReader reader, System.String field, ByteParser parser, IState state)
         {
-            return (sbyte[]) caches[typeof(sbyte)].Get(reader, new Entry(field, parser));
+            return (sbyte[]) caches[typeof(sbyte)].Get(reader, new Entry(field, parser), state);
         }
         
         internal sealed class ByteCache:Cache
@@ -342,18 +343,18 @@ namespace Lucene.Net.Search
             internal ByteCache(FieldCache wrapper):base(wrapper)
             {
             }
-            protected internal override System.Object CreateValue(IndexReader reader, Entry entryKey)
+            protected internal override System.Object CreateValue(IndexReader reader, Entry entryKey, IState state)
             {
                 Entry entry = entryKey;
                 System.String field = entry.field;
                 ByteParser parser = (ByteParser) entry.custom;
                 if (parser == null)
                 {
-                    return wrapper.GetBytes(reader, field, Lucene.Net.Search.FieldCache_Fields.DEFAULT_BYTE_PARSER);
+                    return wrapper.GetBytes(reader, field, Lucene.Net.Search.FieldCache_Fields.DEFAULT_BYTE_PARSER, state);
                 }
                 sbyte[] retArray = new sbyte[reader.MaxDoc];
-                TermDocs termDocs = reader.TermDocs();
-                TermEnum termEnum = reader.Terms(new Term(field));
+                TermDocs termDocs = reader.TermDocs(state);
+                TermEnum termEnum = reader.Terms(new Term(field), state);
                 try
                 {
                     do 
@@ -362,13 +363,13 @@ namespace Lucene.Net.Search
                         if (term == null || (System.Object) term.Field != (System.Object) field)
                             break;
                         sbyte termval = parser.ParseByte(term.Text);
-                        termDocs.Seek(termEnum);
-                        while (termDocs.Next())
+                        termDocs.Seek(termEnum, state);
+                        while (termDocs.Next(state))
                         {
                             retArray[termDocs.Doc] = termval;
                         }
                     }
-                    while (termEnum.Next());
+                    while (termEnum.Next(state));
                 }
                 catch (StopFillCacheException)
                 {
@@ -384,15 +385,15 @@ namespace Lucene.Net.Search
         
         
         // inherit javadocs
-        public virtual short[] GetShorts(IndexReader reader, System.String field)
+        public virtual short[] GetShorts(IndexReader reader, System.String field, IState state)
         {
-            return GetShorts(reader, field, null);
+            return GetShorts(reader, field, null, state);
         }
         
         // inherit javadocs
-        public virtual short[] GetShorts(IndexReader reader, System.String field, ShortParser parser)
+        public virtual short[] GetShorts(IndexReader reader, System.String field, ShortParser parser, IState state)
         {
-            return (short[]) caches[typeof(short)].Get(reader, new Entry(field, parser));
+            return (short[]) caches[typeof(short)].Get(reader, new Entry(field, parser), state);
         }
         
         internal sealed class ShortCache:Cache
@@ -401,18 +402,18 @@ namespace Lucene.Net.Search
             {
             }
             
-            protected internal override System.Object CreateValue(IndexReader reader, Entry entryKey)
+            protected internal override System.Object CreateValue(IndexReader reader, Entry entryKey, IState state)
             {
                 Entry entry = entryKey;
                 System.String field = entry.field;
                 ShortParser parser = (ShortParser) entry.custom;
                 if (parser == null)
                 {
-                    return wrapper.GetShorts(reader, field, Lucene.Net.Search.FieldCache_Fields.DEFAULT_SHORT_PARSER);
+                    return wrapper.GetShorts(reader, field, Lucene.Net.Search.FieldCache_Fields.DEFAULT_SHORT_PARSER, state);
                 }
                 short[] retArray = new short[reader.MaxDoc];
-                TermDocs termDocs = reader.TermDocs();
-                TermEnum termEnum = reader.Terms(new Term(field));
+                TermDocs termDocs = reader.TermDocs(state);
+                TermEnum termEnum = reader.Terms(new Term(field), state);
                 try
                 {
                     do 
@@ -421,13 +422,13 @@ namespace Lucene.Net.Search
                         if (term == null || (System.Object) term.Field != (System.Object) field)
                             break;
                         short termval = parser.ParseShort(term.Text);
-                        termDocs.Seek(termEnum);
-                        while (termDocs.Next())
+                        termDocs.Seek(termEnum, state);
+                        while (termDocs.Next(state))
                         {
                             retArray[termDocs.Doc] = termval;
                         }
                     }
-                    while (termEnum.Next());
+                    while (termEnum.Next(state));
                 }
                 catch (StopFillCacheException)
                 {
@@ -443,15 +444,15 @@ namespace Lucene.Net.Search
         
         
         // inherit javadocs
-        public virtual int[] GetInts(IndexReader reader, System.String field)
+        public virtual int[] GetInts(IndexReader reader, System.String field, IState state)
         {
-            return GetInts(reader, field, null);
+            return GetInts(reader, field, null, state);
         }
         
         // inherit javadocs
-        public virtual int[] GetInts(IndexReader reader, System.String field, IntParser parser)
+        public virtual int[] GetInts(IndexReader reader, System.String field, IntParser parser, IState state)
         {
-            return (int[]) caches[typeof(int)].Get(reader, new Entry(field, parser));
+            return (int[]) caches[typeof(int)].Get(reader, new Entry(field, parser), state);
         }
         
         internal sealed class IntCache:Cache
@@ -460,7 +461,7 @@ namespace Lucene.Net.Search
             {
             }
             
-            protected internal override System.Object CreateValue(IndexReader reader, Entry entryKey)
+            protected internal override System.Object CreateValue(IndexReader reader, Entry entryKey, IState state)
             {
                 Entry entry = entryKey;
                 System.String field = entry.field;
@@ -469,16 +470,16 @@ namespace Lucene.Net.Search
                 {
                     try
                     {
-                        return wrapper.GetInts(reader, field, Lucene.Net.Search.FieldCache_Fields.DEFAULT_INT_PARSER);
+                        return wrapper.GetInts(reader, field, Lucene.Net.Search.FieldCache_Fields.DEFAULT_INT_PARSER, state);
                     }
                     catch (System.FormatException)
                     {
-                        return wrapper.GetInts(reader, field, Lucene.Net.Search.FieldCache_Fields.NUMERIC_UTILS_INT_PARSER);
+                        return wrapper.GetInts(reader, field, Lucene.Net.Search.FieldCache_Fields.NUMERIC_UTILS_INT_PARSER, state);
                     }
                 }
                 int[] retArray = null;
-                TermDocs termDocs = reader.TermDocs();
-                TermEnum termEnum = reader.Terms(new Term(field));
+                TermDocs termDocs = reader.TermDocs(state);
+                TermEnum termEnum = reader.Terms(new Term(field), state);
                 try
                 {
                     do 
@@ -490,13 +491,13 @@ namespace Lucene.Net.Search
                         if (retArray == null)
                         // late init
                             retArray = new int[reader.MaxDoc];
-                        termDocs.Seek(termEnum);
-                        while (termDocs.Next())
+                        termDocs.Seek(termEnum, state);
+                        while (termDocs.Next(state))
                         {
                             retArray[termDocs.Doc] = termval;
                         }
                     }
-                    while (termEnum.Next());
+                    while (termEnum.Next(state));
                 }
                 catch (StopFillCacheException)
                 {
@@ -516,16 +517,16 @@ namespace Lucene.Net.Search
         
         
         // inherit javadocs
-        public virtual float[] GetFloats(IndexReader reader, System.String field)
+        public virtual float[] GetFloats(IndexReader reader, System.String field, IState state)
         {
-            return GetFloats(reader, field, null);
+            return GetFloats(reader, field, null, state);
         }
         
         // inherit javadocs
-        public virtual float[] GetFloats(IndexReader reader, System.String field, FloatParser parser)
+        public virtual float[] GetFloats(IndexReader reader, System.String field, FloatParser parser, IState state)
         {
             
-            return (float[]) caches[typeof(float)].Get(reader, new Entry(field, parser));
+            return (float[]) caches[typeof(float)].Get(reader, new Entry(field, parser), state);
         }
         
         internal sealed class FloatCache:Cache
@@ -534,7 +535,7 @@ namespace Lucene.Net.Search
             {
             }
             
-            protected internal override System.Object CreateValue(IndexReader reader, Entry entryKey)
+            protected internal override System.Object CreateValue(IndexReader reader, Entry entryKey, IState state)
             {
                 Entry entry = entryKey;
                 System.String field = entry.field;
@@ -543,16 +544,16 @@ namespace Lucene.Net.Search
                 {
                     try
                     {
-                        return wrapper.GetFloats(reader, field, Lucene.Net.Search.FieldCache_Fields.DEFAULT_FLOAT_PARSER);
+                        return wrapper.GetFloats(reader, field, Lucene.Net.Search.FieldCache_Fields.DEFAULT_FLOAT_PARSER, state);
                     }
                     catch (System.FormatException)
                     {
-                        return wrapper.GetFloats(reader, field, Lucene.Net.Search.FieldCache_Fields.NUMERIC_UTILS_FLOAT_PARSER);
+                        return wrapper.GetFloats(reader, field, Lucene.Net.Search.FieldCache_Fields.NUMERIC_UTILS_FLOAT_PARSER, state);
                     }
                 }
                 float[] retArray = null;
-                TermDocs termDocs = reader.TermDocs();
-                TermEnum termEnum = reader.Terms(new Term(field));
+                TermDocs termDocs = reader.TermDocs(state);
+                TermEnum termEnum = reader.Terms(new Term(field), state);
                 try
                 {
                     do 
@@ -564,13 +565,13 @@ namespace Lucene.Net.Search
                         if (retArray == null)
                         // late init
                             retArray = new float[reader.MaxDoc];
-                        termDocs.Seek(termEnum);
-                        while (termDocs.Next())
+                        termDocs.Seek(termEnum, state);
+                        while (termDocs.Next(state))
                         {
                             retArray[termDocs.Doc] = termval;
                         }
                     }
-                    while (termEnum.Next());
+                    while (termEnum.Next(state));
                 }
                 catch (StopFillCacheException)
                 {
@@ -589,15 +590,15 @@ namespace Lucene.Net.Search
         
         
         
-        public virtual long[] GetLongs(IndexReader reader, System.String field)
+        public virtual long[] GetLongs(IndexReader reader, System.String field, IState state)
         {
-            return GetLongs(reader, field, null);
+            return GetLongs(reader, field, null, state);
         }
         
         // inherit javadocs
-        public virtual long[] GetLongs(IndexReader reader, System.String field, Lucene.Net.Search.LongParser parser)
+        public virtual long[] GetLongs(IndexReader reader, System.String field, Lucene.Net.Search.LongParser parser, IState state)
         {
-            return (long[]) caches[typeof(long)].Get(reader, new Entry(field, parser));
+            return (long[]) caches[typeof(long)].Get(reader, new Entry(field, parser), state);
         }
         
         internal sealed class LongCache:Cache
@@ -606,7 +607,7 @@ namespace Lucene.Net.Search
             {
             }
             
-            protected internal override System.Object CreateValue(IndexReader reader, Entry entryKey)
+            protected internal override System.Object CreateValue(IndexReader reader, Entry entryKey, IState state)
             {
                 Entry entry = entryKey;
                 System.String field = entry.field;
@@ -615,16 +616,16 @@ namespace Lucene.Net.Search
                 {
                     try
                     {
-                        return wrapper.GetLongs(reader, field, Lucene.Net.Search.FieldCache_Fields.DEFAULT_LONG_PARSER);
+                        return wrapper.GetLongs(reader, field, Lucene.Net.Search.FieldCache_Fields.DEFAULT_LONG_PARSER, state);
                     }
                     catch (System.FormatException)
                     {
-                        return wrapper.GetLongs(reader, field, Lucene.Net.Search.FieldCache_Fields.NUMERIC_UTILS_LONG_PARSER);
+                        return wrapper.GetLongs(reader, field, Lucene.Net.Search.FieldCache_Fields.NUMERIC_UTILS_LONG_PARSER, state);
                     }
                 }
                 long[] retArray = null;
-                TermDocs termDocs = reader.TermDocs();
-                TermEnum termEnum = reader.Terms(new Term(field));
+                TermDocs termDocs = reader.TermDocs(state);
+                TermEnum termEnum = reader.Terms(new Term(field), state);
                 try
                 {
                     do 
@@ -636,13 +637,13 @@ namespace Lucene.Net.Search
                         if (retArray == null)
                         // late init
                             retArray = new long[reader.MaxDoc];
-                        termDocs.Seek(termEnum);
-                        while (termDocs.Next())
+                        termDocs.Seek(termEnum, state);
+                        while (termDocs.Next(state))
                         {
                             retArray[termDocs.Doc] = termval;
                         }
                     }
-                    while (termEnum.Next());
+                    while (termEnum.Next(state));
                 }
                 catch (StopFillCacheException)
                 {
@@ -661,15 +662,15 @@ namespace Lucene.Net.Search
         
         
         // inherit javadocs
-        public virtual double[] GetDoubles(IndexReader reader, System.String field)
+        public virtual double[] GetDoubles(IndexReader reader, System.String field, IState state)
         {
-            return GetDoubles(reader, field, null);
+            return GetDoubles(reader, field, null, state);
         }
         
         // inherit javadocs
-        public virtual double[] GetDoubles(IndexReader reader, System.String field, Lucene.Net.Search.DoubleParser parser)
+        public virtual double[] GetDoubles(IndexReader reader, System.String field, Lucene.Net.Search.DoubleParser parser, IState state)
         {
-            return (double[]) caches[typeof(double)].Get(reader, new Entry(field, parser));
+            return (double[]) caches[typeof(double)].Get(reader, new Entry(field, parser), state);
         }
         
         internal sealed class DoubleCache:Cache
@@ -678,7 +679,7 @@ namespace Lucene.Net.Search
             {
             }
             
-            protected internal override System.Object CreateValue(IndexReader reader, Entry entryKey)
+            protected internal override System.Object CreateValue(IndexReader reader, Entry entryKey, IState state)
             {
                 Entry entry = entryKey;
                 System.String field = entry.field;
@@ -687,16 +688,16 @@ namespace Lucene.Net.Search
                 {
                     try
                     {
-                        return wrapper.GetDoubles(reader, field, Lucene.Net.Search.FieldCache_Fields.DEFAULT_DOUBLE_PARSER);
+                        return wrapper.GetDoubles(reader, field, Lucene.Net.Search.FieldCache_Fields.DEFAULT_DOUBLE_PARSER, state);
                     }
                     catch (System.FormatException)
                     {
-                        return wrapper.GetDoubles(reader, field, Lucene.Net.Search.FieldCache_Fields.NUMERIC_UTILS_DOUBLE_PARSER);
+                        return wrapper.GetDoubles(reader, field, Lucene.Net.Search.FieldCache_Fields.NUMERIC_UTILS_DOUBLE_PARSER, state);
                     }
                 }
                 double[] retArray = null;
-                TermDocs termDocs = reader.TermDocs();
-                TermEnum termEnum = reader.Terms(new Term(field));
+                TermDocs termDocs = reader.TermDocs(state);
+                TermEnum termEnum = reader.Terms(new Term(field), state);
                 try
                 {
                     do 
@@ -708,13 +709,13 @@ namespace Lucene.Net.Search
                         if (retArray == null)
                         // late init
                             retArray = new double[reader.MaxDoc];
-                        termDocs.Seek(termEnum);
-                        while (termDocs.Next())
+                        termDocs.Seek(termEnum, state);
+                        while (termDocs.Next(state))
                         {
                             retArray[termDocs.Doc] = termval;
                         }
                     }
-                    while (termEnum.Next());
+                    while (termEnum.Next(state));
                 }
                 catch (StopFillCacheException)
                 {
@@ -733,9 +734,9 @@ namespace Lucene.Net.Search
         
         
         // inherit javadocs
-        public virtual System.String[] GetStrings(IndexReader reader, System.String field)
+        public virtual System.String[] GetStrings(IndexReader reader, System.String field, IState state)
         {
-            return (System.String[]) caches[typeof(string)].Get(reader, new Entry(field, (Parser) null));
+            return (System.String[]) caches[typeof(string)].Get(reader, new Entry(field, (Parser) null), state);
         }
         
         internal sealed class StringCache:Cache
@@ -744,12 +745,12 @@ namespace Lucene.Net.Search
             {
             }
             
-            protected internal override System.Object CreateValue(IndexReader reader, Entry entryKey)
+            protected internal override System.Object CreateValue(IndexReader reader, Entry entryKey, IState state)
             {
                 System.String field = StringHelper.Intern(entryKey.field);
                 System.String[] retArray = new System.String[reader.MaxDoc];
-                TermDocs termDocs = reader.TermDocs();
-                TermEnum termEnum = reader.Terms(new Term(field));
+                TermDocs termDocs = reader.TermDocs(state);
+                TermEnum termEnum = reader.Terms(new Term(field), state);
                 try
                 {
                     do 
@@ -758,13 +759,13 @@ namespace Lucene.Net.Search
                         if (term == null || (System.Object) term.Field != (System.Object) field)
                             break;
                         System.String termval = term.Text;
-                        termDocs.Seek(termEnum);
-                        while (termDocs.Next())
+                        termDocs.Seek(termEnum, state);
+                        while (termDocs.Next(state))
                         {
                             retArray[termDocs.Doc] = termval;
                         }
                     }
-                    while (termEnum.Next());
+                    while (termEnum.Next(state));
                 }
                 finally
                 {
@@ -777,9 +778,9 @@ namespace Lucene.Net.Search
         
         
         // inherit javadocs
-        public virtual StringIndex GetStringIndex(IndexReader reader, System.String field)
+        public virtual StringIndex GetStringIndex(IndexReader reader, System.String field, IState state)
         {
-            return (StringIndex) caches[typeof(StringIndex)].Get(reader, new Entry(field, (Parser) null));
+            return (StringIndex) caches[typeof(StringIndex)].Get(reader, new Entry(field, (Parser) null), state);
         }
         
         internal sealed class StringIndexCache:Cache
@@ -788,13 +789,13 @@ namespace Lucene.Net.Search
             {
             }
             
-            protected internal override System.Object CreateValue(IndexReader reader, Entry entryKey)
+            protected internal override System.Object CreateValue(IndexReader reader, Entry entryKey, IState state)
             {
                 System.String field = StringHelper.Intern(entryKey.field);
                 int[] retArray = new int[reader.MaxDoc];
                 System.String[] mterms = new System.String[reader.MaxDoc + 1];
-                TermDocs termDocs = reader.TermDocs();
-                TermEnum termEnum = reader.Terms(new Term(field));
+                TermDocs termDocs = reader.TermDocs(state);
+                TermEnum termEnum = reader.Terms(new Term(field), state);
                 int t = 0; // current term number
                 
                 // an entry for documents that have no terms in this field
@@ -813,15 +814,15 @@ namespace Lucene.Net.Search
                         // store term text
                         mterms[t] = term.Text;
                         
-                        termDocs.Seek(termEnum);
-                        while (termDocs.Next())
+                        termDocs.Seek(termEnum, state);
+                        while (termDocs.Next(state))
                         {
                             retArray[termDocs.Doc] = t;
                         }
                         
                         t++;
                     }
-                    while (termEnum.Next());
+                    while (termEnum.Next(state));
                 }
                 finally
                 {

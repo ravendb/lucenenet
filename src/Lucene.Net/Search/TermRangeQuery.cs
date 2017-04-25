@@ -17,6 +17,7 @@
 
 using System;
 using System.Globalization;
+using Lucene.Net.Store;
 using IndexReader = Lucene.Net.Index.IndexReader;
 using ToStringUtils = Lucene.Net.Util.ToStringUtils;
 
@@ -155,9 +156,9 @@ namespace Lucene.Net.Search
 	        get { return collator; }
 	    }
 
-	    protected internal override FilteredTermEnum GetEnum(IndexReader reader)
+	    protected internal override FilteredTermEnum GetEnum(IndexReader reader, IState state)
 		{
-			return new TermRangeTermEnum(reader, field, lowerTerm, upperTerm, includeLower, includeUpper, collator);
+			return new TermRangeTermEnum(reader, field, lowerTerm, upperTerm, includeLower, includeUpper, collator, state);
 		}
 		
 		/// <summary>Prints a user-readable version of this query. </summary>

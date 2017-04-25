@@ -16,19 +16,19 @@
  */
 
 using System;
+using Lucene.Net.Store;
 
 namespace Lucene.Net.Index
 {
 	
 	public class ReadOnlySegmentReader:SegmentReader
 	{
-		
 		internal static void  NoWrite()
 		{
 			throw new System.NotSupportedException("This IndexReader cannot make any changes to the index (it was opened with readOnly = true)");
 		}
 		
-		protected internal override void  AcquireWriteLock()
+		protected internal override void  AcquireWriteLock(IState state)
 		{
 			NoWrite();
 		}

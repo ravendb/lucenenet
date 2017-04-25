@@ -17,6 +17,7 @@
 
 using System;
 using Lucene.Net.Documents;
+using Lucene.Net.Store;
 using Lucene.Net.Support;
 using Document = Lucene.Net.Documents.Document;
 using Directory = Lucene.Net.Store.Directory;
@@ -68,14 +69,14 @@ namespace Lucene.Net.Index
 		/// <param name="name">The name of the file to open the IndexInput from in the Directory
 		/// </param>
 		/// <throws>  IOException </throws>
-		public /*internal*/ FieldInfos(Directory d, String name)
+		public /*internal*/ FieldInfos(Directory d, String name, IState state)
 		{
-			IndexInput input = d.OpenInput(name);
+			IndexInput input = d.OpenInput(name, state);
 			try
 			{
 				try
 				{
-					Read(input, name);
+					Read(input, name, state);
 				}
 				catch (System.IO.IOException)
 				{
@@ -84,7 +85,7 @@ namespace Lucene.Net.Index
 						// LUCENE-1623: FORMAT_PRE (before there was a
 						// format) may be 2.3.2 (pre-utf8) or 2.4.x (utf8)
 						// encoding; retry with input set to pre-utf8
-						input.Seek(0);
+						input.Seek(0, state);
 						input.SetModifiedUTF8StringsMode();
 						byNumber.Clear();
 						byName.Clear();
@@ -92,7 +93,7 @@ namespace Lucene.Net.Index
 					    bool rethrow = false;
 						try
 						{
-							Read(input, name);
+							Read(input, name, state);
 						}
 						catch (Exception)
                         {
@@ -397,9 +398,9 @@ namespace Lucene.Net.Index
 			return hasVectors;
 		}
 		
-		public void  Write(Directory d, System.String name)
+		public void  Write(Directory d, System.String name, IState state)
 		{
-			IndexOutput output = d.CreateOutput(name);
+			IndexOutput output = d.CreateOutput(name, state);
 			try
 			{
 				Write(output);
@@ -438,9 +439,9 @@ namespace Lucene.Net.Index
 			}
 		}
 		
-		private void  Read(IndexInput input, String fileName)
+		private void  Read(IndexInput input, String fileName, IState state)
 		{
-			int firstInt = input.ReadVInt();
+			int firstInt = input.ReadVInt(state);
 			
 			if (firstInt < 0)
 			{
@@ -464,13 +465,13 @@ namespace Lucene.Net.Index
 			}
 			else
 			{
-				size = input.ReadVInt(); //read in the size
+				size = input.ReadVInt(state); //read in the size
 			}
 			
 			for (int i = 0; i < size; i++)
 			{
-				String name = StringHelper.Intern(input.ReadString());
-				byte bits = input.ReadByte();
+				String name = StringHelper.Intern(input.ReadString(state));
+				byte bits = input.ReadByte(state);
 				bool isIndexed = (bits & IS_INDEXED) != 0;
 				bool storeTermVector = (bits & STORE_TERMVECTOR) != 0;
 				bool storePositionsWithTermVector = (bits & STORE_POSITIONS_WITH_TERMVECTOR) != 0;
@@ -482,9 +483,9 @@ namespace Lucene.Net.Index
 				AddInternal(name, isIndexed, storeTermVector, storePositionsWithTermVector, storeOffsetWithTermVector, omitNorms, storePayloads, omitTermFreqAndPositions);
 			}
 			
-			if (input.FilePointer != input.Length())
+			if (input.FilePointer(state) != input.Length(state))
 			{
-				throw new CorruptIndexException("did not read all bytes from file \"" + fileName + "\": read " + input.FilePointer + " vs size " + input.Length());
+				throw new CorruptIndexException("did not read all bytes from file \"" + fileName + "\": read " + input.FilePointer(state) + " vs size " + input.Length(state));
 			}
 		}
 	}

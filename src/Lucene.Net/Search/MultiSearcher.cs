@@ -18,6 +18,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Lucene.Net.Store;
 using Lucene.Net.Support;
 using Lucene.Net.Util;
 using Document = Lucene.Net.Documents.Document;
@@ -64,13 +65,13 @@ namespace Lucene.Net.Search
 			{
 				collector.SetScorer(scorer);
 			}
-			public override void  Collect(int doc)
+			public override void  Collect(int doc, IState state)
 			{
-				collector.Collect(doc);
+				collector.Collect(doc, state);
 			}
-			public override void  SetNextReader(IndexReader reader, int docBase)
+			public override void  SetNextReader(IndexReader reader, int docBase, IState state)
 			{
-				collector.SetNextReader(reader, start + docBase);
+				collector.SetNextReader(reader, start + docBase, state);
 			}
 
 		    public override bool AcceptsDocsOutOfOrder
@@ -95,7 +96,7 @@ namespace Lucene.Net.Search
 				Similarity = similarity;
 			}
 			
-			public override int DocFreq(Term term)
+			public override int DocFreq(Term term, IState state)
 			{
 				int df;
 				try
@@ -109,12 +110,12 @@ namespace Lucene.Net.Search
 				return df;
 			}
 			
-			public override int[] DocFreqs(Term[] terms)
+			public override int[] DocFreqs(Term[] terms, IState state)
 			{
 				int[] result = new int[terms.Length];
 				for (int i = 0; i < terms.Length; i++)
 				{
-					result[i] = DocFreq(terms[i]);
+					result[i] = DocFreq(terms[i], state);
 				}
 				return result;
 			}
@@ -124,7 +125,7 @@ namespace Lucene.Net.Search
                 get { return maxDoc; }
 			}
 			
-			public override Query Rewrite(Query query)
+			public override Query Rewrite(Query query, IState state)
 			{
 				// this is a bit of a hack. We know that a query which
 				// creates a Weight based on this Dummy-Searcher is
@@ -139,32 +140,32 @@ namespace Lucene.Net.Search
                 throw new System.NotSupportedException();
             }
 			
-			public override Document Doc(int i)
+			public override Document Doc(int i, IState state)
 			{
 				throw new System.NotSupportedException();
 			}
 			
-			public override Document Doc(int i, FieldSelector fieldSelector)
+			public override Document Doc(int i, FieldSelector fieldSelector, IState state)
 			{
 				throw new System.NotSupportedException();
 			}
 			
-			public override Explanation Explain(Weight weight, int doc)
+			public override Explanation Explain(Weight weight, int doc, IState state)
 			{
 				throw new System.NotSupportedException();
 			}
 			
-			public override void  Search(Weight weight, Filter filter, Collector results)
+			public override void  Search(Weight weight, Filter filter, Collector results, IState state)
 			{
 				throw new System.NotSupportedException();
 			}
 			
-			public override TopDocs Search(Weight weight, Filter filter, int n)
+			public override TopDocs Search(Weight weight, Filter filter, int n, IState state)
 			{
 				throw new System.NotSupportedException();
 			}
 			
-			public override TopFieldDocs Search(Weight weight, Filter filter, int n, Sort sort)
+			public override TopFieldDocs Search(Weight weight, Filter filter, int n, Sort sort, IState state)
 			{
 				throw new System.NotSupportedException();
 			}
@@ -214,26 +215,26 @@ namespace Lucene.Net.Search
             isDisposed = true;
         }
 
-		public override int DocFreq(Term term)
+		public override int DocFreq(Term term, IState state)
 		{
 			int docFreq = 0;
 			for (int i = 0; i < searchables.Length; i++)
-				docFreq += searchables[i].DocFreq(term);
+				docFreq += searchables[i].DocFreq(term, state);
 			return docFreq;
 		}
 		
 		// inherit javadoc
-		public override Document Doc(int n)
+		public override Document Doc(int n, IState state)
 		{
 			int i = SubSearcher(n); // find searcher index
-			return searchables[i].Doc(n - starts[i]); // dispatch to searcher
+			return searchables[i].Doc(n - starts[i], state); // dispatch to searcher
 		}
 		
 		// inherit javadoc
-		public override Document Doc(int n, FieldSelector fieldSelector)
+		public override Document Doc(int n, FieldSelector fieldSelector, IState state)
 		{
 			int i = SubSearcher(n); // find searcher index
-			return searchables[i].Doc(n - starts[i], fieldSelector); // dispatch to searcher
+			return searchables[i].Doc(n - starts[i], fieldSelector, state); // dispatch to searcher
 		}
 		
 		/// <summary>Returns index of the searcher for document <c>n</c> in the array
@@ -258,7 +259,7 @@ namespace Lucene.Net.Search
 	        get { return maxDoc; }
 	    }
 
-	    public override TopDocs Search(Weight weight, Filter filter, int nDocs)
+	    public override TopDocs Search(Weight weight, Filter filter, int nDocs, IState state)
 		{
 			HitQueue hq = new HitQueue(nDocs, false);
 			int totalHits = 0;
@@ -268,7 +269,7 @@ namespace Lucene.Net.Search
 			{
                 // search each searcher
                 // use NullLock, we don't care about synchronization for these
-                TopDocs docs = MultiSearcherCallableNoSort(ThreadLock.NullLock, lockObj, searchables[i], weight, filter, nDocs, hq, i, starts);
+                TopDocs docs = MultiSearcherCallableNoSort(ThreadLock.NullLock, lockObj, searchables[i], weight, filter, nDocs, hq, i, starts, state);
 				totalHits += docs.TotalHits; // update totalHits
 			}
 			
@@ -282,7 +283,7 @@ namespace Lucene.Net.Search
 			return new TopDocs(totalHits, scoreDocs2, maxScore);
 		}
 		
-		public override TopFieldDocs Search(Weight weight, Filter filter, int n, Sort sort)
+		public override TopFieldDocs Search(Weight weight, Filter filter, int n, Sort sort, IState state)
 		{
 			var hq = new FieldDocSortedHitQueue(n);
 			int totalHits = 0;
@@ -295,7 +296,7 @@ namespace Lucene.Net.Search
 				// search each searcher
                 // use NullLock, we don't care about synchronization for these
                 TopFieldDocs docs = MultiSearcherCallableWithSort(ThreadLock.NullLock, lockObj, searchables[i], weight, filter, n, hq, sort,
-			                                          i, starts);
+			                                          i, starts, state);
 			    totalHits += docs.TotalHits;
 				maxScore = System.Math.Max(maxScore, docs.MaxScore);
 			}
@@ -309,31 +310,31 @@ namespace Lucene.Net.Search
 		}
 		
 		///<inheritdoc />
-		public override void  Search(Weight weight, Filter filter, Collector collector)
+		public override void  Search(Weight weight, Filter filter, Collector collector, IState state)
 		{
 			for (int i = 0; i < searchables.Length; i++)
 			{
 				int start = starts[i];
 				
 				Collector hc = new AnonymousClassCollector(collector, start, this);
-				searchables[i].Search(weight, filter, hc);
+				searchables[i].Search(weight, filter, hc, state);
 			}
 		}
 		
-		public override Query Rewrite(Query original)
+		public override Query Rewrite(Query original, IState state)
 		{
 			Query[] queries = new Query[searchables.Length];
 			for (int i = 0; i < searchables.Length; i++)
 			{
-				queries[i] = searchables[i].Rewrite(original);
+				queries[i] = searchables[i].Rewrite(original, state);
 			}
 			return queries[0].Combine(queries);
 		}
 		
-		public override Explanation Explain(Weight weight, int doc)
+		public override Explanation Explain(Weight weight, int doc, IState state)
 		{
 			int i = SubSearcher(doc); // find searcher index
-			return searchables[i].Explain(weight, doc - starts[i]); // dispatch to searcher
+			return searchables[i].Explain(weight, doc - starts[i], state); // dispatch to searcher
 		}
 		
 		/// <summary> Create weight in multiple index scenario.
@@ -351,10 +352,10 @@ namespace Lucene.Net.Search
 		/// </summary>
 		/// <returns> rewritten queries
 		/// </returns>
-		public /*protected internal*/ override Weight CreateWeight(Query original)
+		public /*protected internal*/ override Weight CreateWeight(Query original, IState state)
 		{
 			// step 1
-			Query rewrittenQuery = Rewrite(original);
+			Query rewrittenQuery = Rewrite(original, state);
 			
 			// step 2
 		    ISet<Term> terms = Lucene.Net.Support.Compatibility.SetFactory.CreateHashSet<Term>();
@@ -365,7 +366,7 @@ namespace Lucene.Net.Search
             int[] aggregatedDfs = new int[terms.Count];
 			for (int i = 0; i < searchables.Length; i++)
 			{
-				int[] dfs = searchables[i].DocFreqs(allTermsArray);
+				int[] dfs = searchables[i].DocFreqs(allTermsArray, state);
 				for (int j = 0; j < aggregatedDfs.Length; j++)
 				{
 					aggregatedDfs[j] += dfs[j];
@@ -382,13 +383,13 @@ namespace Lucene.Net.Search
 			int numDocs = MaxDoc;
 			CachedDfSource cacheSim = new CachedDfSource(dfMap, numDocs, Similarity);
 			
-			return rewrittenQuery.Weight(cacheSim);
+			return rewrittenQuery.Weight(cacheSim, state);
 		}
 
-	    internal Func<ThreadLock, object, Searchable, Weight, Filter, int, HitQueue, int, int[], TopDocs> MultiSearcherCallableNoSort =
-	        (threadLock, lockObj, searchable, weight, filter, nDocs, hq, i, starts) =>
+	    internal Func<ThreadLock, object, Searchable, Weight, Filter, int, HitQueue, int, int[], IState, TopDocs> MultiSearcherCallableNoSort =
+	        (threadLock, lockObj, searchable, weight, filter, nDocs, hq, i, starts, state) =>
 	            {
-	                TopDocs docs = searchable.Search(weight, filter, nDocs);
+	                TopDocs docs = searchable.Search(weight, filter, nDocs, state);
 	                ScoreDoc[] scoreDocs = docs.ScoreDocs;
                     for(int j = 0; j < scoreDocs.Length; j++) // merge scoreDocs into hq
                     {
@@ -409,10 +410,10 @@ namespace Lucene.Net.Search
 	                return docs;
 	            };
 
-        internal Func<ThreadLock, object, Searchable, Weight, Filter, int, FieldDocSortedHitQueue, Sort, int, int[], TopFieldDocs>
-            MultiSearcherCallableWithSort = (threadLock, lockObj, searchable, weight, filter, nDocs, hq, sort, i, starts) =>
+        internal Func<ThreadLock, object, Searchable, Weight, Filter, int, FieldDocSortedHitQueue, Sort, int, int[], IState, TopFieldDocs>
+            MultiSearcherCallableWithSort = (threadLock, lockObj, searchable, weight, filter, nDocs, hq, sort, i, starts, state) =>
 	                                            {
-	                                                TopFieldDocs docs = searchable.Search(weight, filter, nDocs, sort);
+	                                                TopFieldDocs docs = searchable.Search(weight, filter, nDocs, sort, state);
                                                     // if one of the Sort fields is FIELD_DOC, need to fix its values, so that
                                                     // it will break ties by doc Id properly.  Otherwise, it will compare to
                                                     // 'relative' doc Ids, that belong to two different searchables.

@@ -325,14 +325,14 @@ namespace Lucene.Net.Store
 		/// </summary>
 		/// <seealso cref="ListAll(System.IO.DirectoryInfo)">
 		/// </seealso>
-		public override System.String[] ListAll()
+		public override System.String[] ListAll(IState state)
 		{
 			EnsureOpen();
 			return ListAll(internalDirectory);
 		}
 		
 		/// <summary>Returns true iff a file with the given name exists. </summary>
-		public override bool FileExists(System.String name)
+		public override bool FileExists(System.String name, IState state)
 		{
 			EnsureOpen();
 			System.IO.FileInfo file = new System.IO.FileInfo(System.IO.Path.Combine(internalDirectory.FullName, name));
@@ -340,7 +340,7 @@ namespace Lucene.Net.Store
 		}
 		
 		/// <summary>Returns the time the named file was last modified. </summary>
-		public override long FileModified(System.String name)
+		public override long FileModified(System.String name, IState state)
 		{
 			EnsureOpen();
 			System.IO.FileInfo file = new System.IO.FileInfo(System.IO.Path.Combine(internalDirectory.FullName, name));
@@ -355,7 +355,7 @@ namespace Lucene.Net.Store
 		}
 		
 		/// <summary>Set the modified time of an existing file to now. </summary>
-		public override void  TouchFile(System.String name)
+		public override void  TouchFile(System.String name, IState state)
 		{
 			EnsureOpen();
 			System.IO.FileInfo file = new System.IO.FileInfo(System.IO.Path.Combine(internalDirectory.FullName, name));
@@ -363,7 +363,7 @@ namespace Lucene.Net.Store
 		}
 		
 		/// <summary>Returns the length in bytes of a file in the directory. </summary>
-		public override long FileLength(System.String name)
+		public override long FileLength(System.String name, IState state)
 		{
 			EnsureOpen();
 			System.IO.FileInfo file = new System.IO.FileInfo(System.IO.Path.Combine(internalDirectory.FullName, name));
@@ -371,7 +371,7 @@ namespace Lucene.Net.Store
 		}
 		
 		/// <summary>Removes an existing file in the directory. </summary>
-		public override void  DeleteFile(System.String name)
+		public override void  DeleteFile(System.String name, IState state)
 		{
 			EnsureOpen();
 			System.IO.FileInfo file = new System.IO.FileInfo(System.IO.Path.Combine(internalDirectory.FullName, name));
@@ -433,10 +433,10 @@ namespace Lucene.Net.Store
 		}
 		
 		// Inherit javadoc
-		public override IndexInput OpenInput(System.String name)
+		public override IndexInput OpenInput(System.String name, IState state)
 		{
 			EnsureOpen();
-			return OpenInput(name, BufferedIndexInput.BUFFER_SIZE);
+			return OpenInput(name, BufferedIndexInput.BUFFER_SIZE, state);
 		}
 		
 		/// <summary> So we can do some byte-to-hexchar conversion below</summary>

@@ -16,7 +16,7 @@
  */
 
 using System;
-
+using Lucene.Net.Store;
 using IndexReader = Lucene.Net.Index.IndexReader;
 
 namespace Lucene.Net.Search
@@ -44,9 +44,9 @@ namespace Lucene.Net.Search
 			{
 			}
 			
-			public override void  Collect(int doc)
+			public override void  Collect(int doc, IState state)
 			{
-				float score = scorer.Score();
+				float score = scorer.Score(state);
                 
                 // This collector cannot handle these scores:
                 System.Diagnostics.Debug.Assert(score != float.NegativeInfinity);
@@ -78,9 +78,9 @@ namespace Lucene.Net.Search
 			{
 			}
 			
-			public override void  Collect(int doc)
+			public override void  Collect(int doc, IState state)
 			{
-				float score = scorer.Score();
+				float score = scorer.Score(state);
 
                 // This collector cannot handle NaN
                 System.Diagnostics.Debug.Assert(!float.IsNaN(score));
@@ -164,7 +164,7 @@ namespace Lucene.Net.Search
 			return new TopDocs(internalTotalHits, results, maxScore);
 		}
 		
-		public override void SetNextReader(IndexReader reader, int base_Renamed)
+		public override void SetNextReader(IndexReader reader, int base_Renamed, IState state)
 		{
 			docBase = base_Renamed;
 		}

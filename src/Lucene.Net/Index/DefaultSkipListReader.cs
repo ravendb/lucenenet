@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 
+using Lucene.Net.Store;
 using Lucene.Net.Support;
 using IndexInput = Lucene.Net.Store.IndexInput;
 
@@ -81,9 +82,9 @@ namespace Lucene.Net.Index
 			return lastPayloadLength;
 		}
 		
-		protected internal override void  SeekChild(int level)
+		protected internal override void  SeekChild(int level, IState state)
 		{
-			base.SeekChild(level);
+			base.SeekChild(level, state);
 			freqPointer[level] = lastFreqPointer;
 			proxPointer[level] = lastProxPointer;
 			payloadLength[level] = lastPayloadLength;
@@ -98,7 +99,7 @@ namespace Lucene.Net.Index
 		}
 		
 		
-		protected internal override int ReadSkipData(int level, IndexInput skipStream)
+		protected internal override int ReadSkipData(int level, IndexInput skipStream, IState state)
 		{
 			int delta;
 			if (currentFieldStoresPayloads)
@@ -108,19 +109,19 @@ namespace Lucene.Net.Index
 				// to read the current payload length
 				// because it differs from the length of the
 				// previous payload
-				delta = skipStream.ReadVInt();
+				delta = skipStream.ReadVInt(state);
 				if ((delta & 1) != 0)
 				{
-					payloadLength[level] = skipStream.ReadVInt();
+					payloadLength[level] = skipStream.ReadVInt(state);
 				}
 				delta = Number.URShift(delta, 1);
 			}
 			else
 			{
-				delta = skipStream.ReadVInt();
+				delta = skipStream.ReadVInt(state);
 			}
-			freqPointer[level] += skipStream.ReadVInt();
-			proxPointer[level] += skipStream.ReadVInt();
+			freqPointer[level] += skipStream.ReadVInt(state);
+			proxPointer[level] += skipStream.ReadVInt(state);
 			
 			return delta;
 		}

@@ -16,7 +16,7 @@
  */
 
 using System;
-
+using Lucene.Net.Store;
 using IndexReader = Lucene.Net.Index.IndexReader;
 
 namespace Lucene.Net.Search
@@ -44,6 +44,6 @@ namespace Lucene.Net.Search
 		/// <throws>  java.io.IOException if there was an issue accessing the necessary information </throws>
 		/// <summary> 
 		/// </summary>
-		public abstract SpanFilterResult BitSpans(IndexReader reader);
+		public abstract SpanFilterResult BitSpans(IndexReader reader, IState state);
 	}
 }

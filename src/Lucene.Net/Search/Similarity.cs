@@ -18,6 +18,7 @@
 using System;
 using System.Collections.Generic;
 using Lucene.Net.Documents;
+using Lucene.Net.Store;
 using FieldInvertState = Lucene.Net.Index.FieldInvertState;
 using Term = Lucene.Net.Index.Term;
 using SmallFloat = Lucene.Net.Util.SmallFloat;
@@ -585,9 +586,9 @@ namespace Lucene.Net.Search
 		/// and an explanation for the term.
 		/// </returns>
 		/// <throws>  IOException </throws>
-		public virtual IDFExplanation IdfExplain(Term term, Searcher searcher)
+		public virtual IDFExplanation IdfExplain(Term term, Searcher searcher, IState state)
 		{
-			int df = searcher.DocFreq(term);
+			int df = searcher.DocFreq(term, state);
 			int max = searcher.MaxDoc;
 			float idf2 = Idf(df, max);
 			return new AnonymousClassIDFExplanation1(df, max, idf2, this);
@@ -609,14 +610,14 @@ namespace Lucene.Net.Search
 		/// for each term.
 		/// </returns>
 		/// <throws>  IOException </throws>
-		public virtual IDFExplanation IdfExplain(ICollection<Term> terms, Searcher searcher)
+		public virtual IDFExplanation IdfExplain(ICollection<Term> terms, Searcher searcher, IState state)
 		{
 			int max = searcher.MaxDoc;
 			float idf2 = 0.0f;
 			System.Text.StringBuilder exp = new System.Text.StringBuilder();
             foreach (Term term in terms)
 			{
-				int df = searcher.DocFreq(term);
+				int df = searcher.DocFreq(term, state);
 				idf2 += Idf(df, max);
 				exp.Append(" ");
 				exp.Append(term.Text);

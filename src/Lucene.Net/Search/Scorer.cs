@@ -17,6 +17,7 @@
 
 using System;
 using Lucene.Net.Index;
+using Lucene.Net.Store;
 
 namespace Lucene.Net.Search
 {
@@ -59,13 +60,13 @@ namespace Lucene.Net.Search
 	    /// <summary>Scores and collects all matching documents.</summary>
 		/// <param name="collector">The collector to which all matching documents are passed.
 		/// </param>
-		public virtual void  Score(Collector collector)
+		public virtual void  Score(Collector collector, IState state)
 		{
 			collector.SetScorer(this);
 			int doc;
-			while ((doc = NextDoc()) != NO_MORE_DOCS)
+			while ((doc = NextDoc(state)) != NO_MORE_DOCS)
 			{
-				collector.Collect(doc);
+				collector.Collect(doc, state);
 			}
 		}
 		
@@ -84,14 +85,14 @@ namespace Lucene.Net.Search
 		/// </param>
 		/// <returns> true if more matching documents may remain.
 		/// </returns>
-		public /*protected internal*/ virtual bool Score(Collector collector, int max, int firstDocID)
+		public /*protected internal*/ virtual bool Score(Collector collector, int max, int firstDocID, IState state)
 		{
 			collector.SetScorer(this);
 			int doc = firstDocID;
 			while (doc < max)
 			{
-				collector.Collect(doc);
-				doc = NextDoc();
+				collector.Collect(doc, state);
+				doc = NextDoc(state);
 			}
 			return doc != NO_MORE_DOCS;
 		}
@@ -101,6 +102,6 @@ namespace Lucene.Net.Search
 		/// is called the first time, or when called from within
 		/// <see cref="Collector.Collect(int)" />.
 		/// </summary>
-		public abstract float Score();
+		public abstract float Score(IState state);
 	}
 }

@@ -16,7 +16,7 @@
  */
 
 using System;
-
+using Lucene.Net.Store;
 using IndexReader = Lucene.Net.Index.IndexReader;
 using Query = Lucene.Net.Search.Query;
 using Searcher = Lucene.Net.Search.Searcher;
@@ -34,14 +34,14 @@ namespace Lucene.Net.Search.Spans
 		/// <summary>Expert: Returns the matches for this query in an index.  Used internally
 		/// to search for spans. 
 		/// </summary>
-		public abstract Spans GetSpans(IndexReader reader);
+		public abstract Spans GetSpans(IndexReader reader, IState state);
 
 	    /// <summary>Returns the name of the field matched by this query.</summary>
 	    public abstract string Field { get; }
 
-	    public override Weight CreateWeight(Searcher searcher)
+	    public override Weight CreateWeight(Searcher searcher, IState state)
 		{
-			return new SpanWeight(this, searcher);
+			return new SpanWeight(this, searcher, state);
 		}
 	}
 }

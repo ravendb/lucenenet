@@ -16,6 +16,7 @@
  */
 
 using System;
+using Lucene.Net.Store;
 
 namespace Lucene.Net.Index
 {
@@ -31,12 +32,12 @@ namespace Lucene.Net.Index
 		/// <summary>Sets this to the data for a term.
 		/// The enumeration is reset to the start of the data for this term.
 		/// </summary>
-		void  Seek(Term term);
+		void  Seek(Term term, IState state);
 		
 		/// <summary>Sets this to the data for the current term in a <see cref="TermEnum" />.
 		/// This may be optimized in some implementations.
 		/// </summary>
-		void  Seek(TermEnum termEnum);
+		void  Seek(TermEnum termEnum, IState state);
 
 	    /// <summary>Returns the current document number.  <p/> This is invalid until <see cref="Next()" />
 	    /// is called for the first time.
@@ -51,7 +52,7 @@ namespace Lucene.Net.Index
 	    /// <summary>Moves to the next pair in the enumeration.  <p/> Returns true iff there is
 		/// such a next pair in the enumeration. 
 		/// </summary>
-		bool Next();
+		bool Next(IState state);
 		
 		/// <summary>Attempts to read multiple entries from the enumeration, up to length of
 		/// <i>docs</i>.  Document numbers are stored in <i>docs</i>, and term
@@ -61,7 +62,7 @@ namespace Lucene.Net.Index
 		/// <p/>Returns the number of entries read.  Zero is only returned when the
 		/// stream has been exhausted.  
 		/// </summary>
-		int Read(int[] docs, int[] freqs);
+		int Read(int[] docs, int[] freqs, IState state);
 		
 		/// <summary>Skips entries to the first beyond the current whose document number is
 		/// greater than or equal to <i>target</i>. <p/>Returns true iff there is such
@@ -76,7 +77,7 @@ namespace Lucene.Net.Index
         /// </code>
 		/// Some implementations are considerably more efficient than that.
 		/// </summary>
-		bool SkipTo(int target);
+		bool SkipTo(int target, IState state);
 		
         // TODO: Determine which release this will be removed from
 		/// <summary>Frees associated resources. </summary>

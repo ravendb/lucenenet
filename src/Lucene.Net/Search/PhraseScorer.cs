@@ -16,7 +16,7 @@
  */
 
 using System;
-
+using Lucene.Net.Store;
 using TermPositions = Lucene.Net.Index.TermPositions;
 
 namespace Lucene.Net.Search
@@ -80,18 +80,18 @@ namespace Lucene.Net.Search
 			return first.doc;
 		}
 		
-		public override int NextDoc()
+		public override int NextDoc(IState state)
 		{
 			if (firstTime)
 			{
-				Init();
+				Init(state);
 				firstTime = false;
 			}
 			else if (more)
 			{
-				more = last.Next(); // trigger further scanning
+				more = last.Next(state); // trigger further scanning
 			}
-			if (!DoNext())
+			if (!DoNext(state))
 			{
 				first.doc = NO_MORE_DOCS;
 			}
@@ -99,24 +99,24 @@ namespace Lucene.Net.Search
 		}
 		
 		// next without initial increment
-		private bool DoNext()
+		private bool DoNext(IState state)
 		{
 			while (more)
 			{
 				while (more && first.doc < last.doc)
 				{
 					// find doc w/ all the terms
-					more = first.SkipTo(last.doc); // skip first upto last
+					more = first.SkipTo(last.doc, state); // skip first upto last
 					FirstToLast(); // and move it to the end
 				}
 				
 				if (more)
 				{
 					// found a doc with all of the terms
-					freq = PhraseFreq(); // check for phrase
+					freq = PhraseFreq(state); // check for phrase
 					if (freq == 0.0f)
 					// no match
-						more = last.Next();
+						more = last.Next(state);
 					// trigger further scanning
 					else
 						return true; // found a match
@@ -125,25 +125,25 @@ namespace Lucene.Net.Search
 			return false; // no more matches
 		}
 		
-		public override float Score()
+		public override float Score(IState state)
 		{
 			//System.out.println("scoring " + first.doc);
 			float raw = Similarity.Tf(freq) * value_Renamed; // raw score
 			return norms == null?raw:raw * Similarity.DecodeNorm(norms[first.doc]); // normalize
 		}
 		
-		public override int Advance(int target)
+		public override int Advance(int target, IState state)
 		{
 			firstTime = false;
 			for (PhrasePositions pp = first; more && pp != null; pp = pp.next)
 			{
-				more = pp.SkipTo(target);
+				more = pp.SkipTo(target, state);
 			}
 			if (more)
 			{
 				Sort(); // re-sort
 			}
-			if (!DoNext())
+			if (!DoNext(state))
 			{
 				first.doc = NO_MORE_DOCS;
 			}
@@ -166,13 +166,13 @@ namespace Lucene.Net.Search
 		/// </summary>
 		/// <returns> frequency of the phrase in current doc, 0 if not found. 
 		/// </returns>
-		protected internal abstract float PhraseFreq();
+		protected internal abstract float PhraseFreq(IState state);
 		
-		private void  Init()
+		private void  Init(IState state)
 		{
 			for (PhrasePositions pp = first; more && pp != null; pp = pp.next)
 			{
-				more = pp.Next();
+				more = pp.Next(state);
 			}
 			if (more)
 			{

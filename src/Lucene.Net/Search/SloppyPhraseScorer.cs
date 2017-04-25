@@ -17,6 +17,7 @@
 
 using System;
 using System.Linq;
+using Lucene.Net.Store;
 using Lucene.Net.Support;
 using TermPositions = Lucene.Net.Index.TermPositions;
 
@@ -52,9 +53,9 @@ namespace Lucene.Net.Search
 		/// would get same score as "g f"~2, although "c b"~2 could be matched twice.
 		/// We may want to fix this in the future (currently not, for performance reasons).
 		/// </summary>
-		protected internal override float PhraseFreq()
+		protected internal override float PhraseFreq(IState state)
 		{
-			int end = InitPhrasePositions();
+			int end = InitPhrasePositions(state);
 			
 			float freq = 0.0f;
 			bool done = (end < 0);
@@ -69,7 +70,7 @@ namespace Lucene.Net.Search
 				{
 					if (pos <= next && tpsDiffer)
 						start = pos; // advance pp to min window
-					if (!pp.NextPosition())
+					if (!pp.NextPosition(state))
 					{
 						done = true; // ran out of a term -- done
 						break;
@@ -130,7 +131,7 @@ namespace Lucene.Net.Search
 		/// <returns> end (max position), or -1 if any term ran out (i.e. done) 
 		/// </returns>
 		/// <throws>  IOException  </throws>
-		private int InitPhrasePositions()
+		private int InitPhrasePositions(IState state)
 		{
 			int end = 0;
 			
@@ -141,7 +142,7 @@ namespace Lucene.Net.Search
 				pq.Clear();
 				for (PhrasePositions pp = first; pp != null; pp = pp.next)
 				{
-					pp.FirstPosition();
+					pp.FirstPosition(state);
 					if (pp.position > end)
 						end = pp.position;
 					pq.Add(pp); // build pq from list
@@ -151,7 +152,7 @@ namespace Lucene.Net.Search
 			
 			// position the pp's
 			for (PhrasePositions pp = first; pp != null; pp = pp.next)
-				pp.FirstPosition();
+				pp.FirstPosition(state);
 			
 			// one time initializatin for this scorer
 			if (!checkedRepeats)
@@ -193,7 +194,7 @@ namespace Lucene.Net.Search
 					PhrasePositions pp2;
 					while ((pp2 = TermPositionsDiffer(pp)) != null)
 					{
-						if (!pp2.NextPosition())
+						if (!pp2.NextPosition(state))
 						// out of pps that do not differ, advance the pp with higher offset 
 							return - 1; // ran out of a term -- done  
 					}

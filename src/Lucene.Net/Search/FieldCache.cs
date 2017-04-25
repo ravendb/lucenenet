@@ -17,6 +17,7 @@
 
 using System;
 using System.IO;
+using Lucene.Net.Store;
 using Lucene.Net.Support;
 using Double = Lucene.Net.Support.Double;
 using NumericTokenStream = Lucene.Net.Analysis.NumericTokenStream;
@@ -408,7 +409,7 @@ namespace Lucene.Net.Search
         /// <returns> The values in the given field for each document.
         /// </returns>
         /// <throws>  IOException  If any error occurs. </throws>
-        sbyte[] GetBytes(IndexReader reader, System.String field);
+        sbyte[] GetBytes(IndexReader reader, System.String field, IState state);
 
         /// <summary>Checks the internal cache for an appropriate entry, and if none is found,
         /// reads the terms in <c>field</c> as bytes and returns an array of
@@ -424,7 +425,7 @@ namespace Lucene.Net.Search
         /// <returns> The values in the given field for each document.
         /// </returns>
         /// <throws>  IOException  If any error occurs. </throws>
-        sbyte[] GetBytes(IndexReader reader, System.String field, ByteParser parser);
+        sbyte[] GetBytes(IndexReader reader, System.String field, ByteParser parser, IState state);
 
         /// <summary>Checks the internal cache for an appropriate entry, and if none is
         /// found, reads the terms in <c>field</c> as shorts and returns an array
@@ -438,7 +439,7 @@ namespace Lucene.Net.Search
         /// <returns> The values in the given field for each document.
         /// </returns>
         /// <throws>  IOException  If any error occurs. </throws>
-        short[] GetShorts(IndexReader reader, System.String field);
+        short[] GetShorts(IndexReader reader, System.String field, IState state);
 
         /// <summary>Checks the internal cache for an appropriate entry, and if none is found,
         /// reads the terms in <c>field</c> as shorts and returns an array of
@@ -454,7 +455,7 @@ namespace Lucene.Net.Search
         /// <returns> The values in the given field for each document.
         /// </returns>
         /// <throws>  IOException  If any error occurs. </throws>
-        short[] GetShorts(IndexReader reader, System.String field, ShortParser parser);
+        short[] GetShorts(IndexReader reader, System.String field, ShortParser parser, IState state);
 
         /// <summary>Checks the internal cache for an appropriate entry, and if none is
         /// found, reads the terms in <c>field</c> as integers and returns an array
@@ -468,7 +469,7 @@ namespace Lucene.Net.Search
         /// <returns> The values in the given field for each document.
         /// </returns>
         /// <throws>  IOException  If any error occurs. </throws>
-        int[] GetInts(IndexReader reader, System.String field);
+        int[] GetInts(IndexReader reader, System.String field, IState state);
 
         /// <summary>Checks the internal cache for an appropriate entry, and if none is found,
         /// reads the terms in <c>field</c> as integers and returns an array of
@@ -484,7 +485,7 @@ namespace Lucene.Net.Search
         /// <returns> The values in the given field for each document.
         /// </returns>
         /// <throws>  IOException  If any error occurs. </throws>
-        int[] GetInts(IndexReader reader, System.String field, IntParser parser);
+        int[] GetInts(IndexReader reader, System.String field, IntParser parser, IState state);
 
         /// <summary>Checks the internal cache for an appropriate entry, and if
         /// none is found, reads the terms in <c>field</c> as floats and returns an array
@@ -498,7 +499,7 @@ namespace Lucene.Net.Search
         /// <returns> The values in the given field for each document.
         /// </returns>
         /// <throws>  IOException  If any error occurs. </throws>
-        float[] GetFloats(IndexReader reader, System.String field);
+        float[] GetFloats(IndexReader reader, System.String field, IState state);
 
         /// <summary>Checks the internal cache for an appropriate entry, and if
         /// none is found, reads the terms in <c>field</c> as floats and returns an array
@@ -514,7 +515,7 @@ namespace Lucene.Net.Search
         /// <returns> The values in the given field for each document.
         /// </returns>
         /// <throws>  IOException  If any error occurs. </throws>
-        float[] GetFloats(IndexReader reader, System.String field, FloatParser parser);
+        float[] GetFloats(IndexReader reader, System.String field, FloatParser parser, IState state);
 
         /// <summary> Checks the internal cache for an appropriate entry, and if none is
         /// found, reads the terms in <c>field</c> as longs and returns an array
@@ -529,7 +530,7 @@ namespace Lucene.Net.Search
         /// <returns> The values in the given field for each document.
         /// </returns>
         /// <throws>  java.io.IOException If any error occurs. </throws>
-        long[] GetLongs(IndexReader reader, System.String field);
+        long[] GetLongs(IndexReader reader, System.String field, IState state);
 
         /// <summary> Checks the internal cache for an appropriate entry, and if none is found,
         /// reads the terms in <c>field</c> as longs and returns an array of
@@ -546,7 +547,7 @@ namespace Lucene.Net.Search
         /// <returns> The values in the given field for each document.
         /// </returns>
         /// <throws>  IOException If any error occurs. </throws>
-        long[] GetLongs(IndexReader reader, System.String field, LongParser parser);
+        long[] GetLongs(IndexReader reader, System.String field, LongParser parser, IState state);
 
 
         /// <summary> Checks the internal cache for an appropriate entry, and if none is
@@ -562,7 +563,7 @@ namespace Lucene.Net.Search
         /// <returns> The values in the given field for each document.
         /// </returns>
         /// <throws>  IOException If any error occurs. </throws>
-        double[] GetDoubles(IndexReader reader, System.String field);
+        double[] GetDoubles(IndexReader reader, System.String field, IState state);
 
         /// <summary> Checks the internal cache for an appropriate entry, and if none is found,
         /// reads the terms in <c>field</c> as doubles and returns an array of
@@ -579,7 +580,7 @@ namespace Lucene.Net.Search
         /// <returns> The values in the given field for each document.
         /// </returns>
         /// <throws>  IOException If any error occurs. </throws>
-        double[] GetDoubles(IndexReader reader, System.String field, DoubleParser parser);
+        double[] GetDoubles(IndexReader reader, System.String field, DoubleParser parser, IState state);
 
         /// <summary>Checks the internal cache for an appropriate entry, and if none
         /// is found, reads the term values in <c>field</c> and returns an array
@@ -593,7 +594,7 @@ namespace Lucene.Net.Search
         /// <returns> The values in the given field for each document.
         /// </returns>
         /// <throws>  IOException  If any error occurs. </throws>
-        System.String[] GetStrings(IndexReader reader, System.String field);
+        System.String[] GetStrings(IndexReader reader, System.String field, IState state);
 
         /// <summary>Checks the internal cache for an appropriate entry, and if none
         /// is found reads the term values in <c>field</c> and returns
@@ -607,7 +608,7 @@ namespace Lucene.Net.Search
         /// <returns> Array of terms and index into the array for each document.
         /// </returns>
         /// <throws>  IOException  If any error occurs. </throws>
-        StringIndex GetStringIndex(IndexReader reader, System.String field);
+        StringIndex GetStringIndex(IndexReader reader, System.String field, IState state);
 
         /// <summary> EXPERT: Generates an array of CacheEntry objects representing all items 
         /// currently in the FieldCache.

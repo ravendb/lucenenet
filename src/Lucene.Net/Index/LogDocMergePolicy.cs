@@ -16,6 +16,7 @@
  */
 
 using System;
+using Lucene.Net.Store;
 
 namespace Lucene.Net.Index
 {
@@ -40,9 +41,9 @@ namespace Lucene.Net.Index
 			// it to Long.MAX_VALUE to disable it
 			maxMergeSize = System.Int64.MaxValue;
 		}
-		protected internal override long Size(SegmentInfo info)
+		protected internal override long Size(SegmentInfo info, IState state)
 		{
-			return SizeDocs(info);
+			return SizeDocs(info, state);
 		}
 
 	    protected override void Dispose(bool disposing)

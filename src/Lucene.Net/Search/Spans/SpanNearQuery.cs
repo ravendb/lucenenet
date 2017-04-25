@@ -18,6 +18,7 @@
 using System;
 using System.Linq;
 using Lucene.Net.Index;
+using Lucene.Net.Store;
 using Lucene.Net.Support;
 using IndexReader = Lucene.Net.Index.IndexReader;
 using ToStringUtils = Lucene.Net.Util.ToStringUtils;
@@ -128,26 +129,26 @@ namespace Lucene.Net.Search.Spans
 			return buffer.ToString();
 		}
 		
-		public override Spans GetSpans(IndexReader reader)
+		public override Spans GetSpans(IndexReader reader, IState state)
 		{
 			if (clauses.Count == 0)
 			// optimize 0-clause case
-				return new SpanOrQuery(GetClauses()).GetSpans(reader);
+				return new SpanOrQuery(GetClauses()).GetSpans(reader, state);
 			
 			if (clauses.Count == 1)
 			// optimize 1-clause case
-				return clauses[0].GetSpans(reader);
+				return clauses[0].GetSpans(reader, state);
 			
-			return inOrder?(Spans) new NearSpansOrdered(this, reader, collectPayloads):(Spans) new NearSpansUnordered(this, reader);
+			return inOrder?(Spans) new NearSpansOrdered(this, reader, collectPayloads, state):(Spans) new NearSpansUnordered(this, reader, state);
 		}
 		
-		public override Query Rewrite(IndexReader reader)
+		public override Query Rewrite(IndexReader reader, IState state)
 		{
 			SpanNearQuery clone = null;
 			for (int i = 0; i < clauses.Count; i++)
 			{
 				SpanQuery c = clauses[i];
-				SpanQuery query = (SpanQuery) c.Rewrite(reader);
+				SpanQuery query = (SpanQuery) c.Rewrite(reader, state);
 				if (query != c)
 				{
 					// clause rewrote: must clone

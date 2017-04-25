@@ -16,6 +16,7 @@
  */
 
 using System;
+using Lucene.Net.Store;
 
 namespace Lucene.Net.Search
 {
@@ -43,9 +44,9 @@ namespace Lucene.Net.Search
 			this.scorer = scorer;
 		}
 		
-		public /*protected internal*/ override bool Score(Collector collector, int max, int firstDocID)
+		public /*protected internal*/ override bool Score(Collector collector, int max, int firstDocID, IState state)
 		{
-			return scorer.Score(collector, max, firstDocID);
+			return scorer.Score(collector, max, firstDocID, state);
 		}
 
 	    public override Similarity Similarity
@@ -53,12 +54,12 @@ namespace Lucene.Net.Search
 	        get { return scorer.Similarity; }
 	    }
 
-	    public override float Score()
+	    public override float Score(IState state)
 		{
 			int doc = scorer.DocID();
 			if (doc != curDoc)
 			{
-				curScore = scorer.Score();
+				curScore = scorer.Score(state);
 				curDoc = doc;
 			}
 			
@@ -70,19 +71,19 @@ namespace Lucene.Net.Search
 			return scorer.DocID();
 		}
 		
-		public override int NextDoc()
+		public override int NextDoc(IState state)
 		{
-			return scorer.NextDoc();
+			return scorer.NextDoc(state);
 		}
 		
-		public override void  Score(Collector collector)
+		public override void  Score(Collector collector, IState state)
 		{
-			scorer.Score(collector);
+			scorer.Score(collector, state);
 		}
 		
-		public override int Advance(int target)
+		public override int Advance(int target, IState state)
 		{
-			return scorer.Advance(target);
+			return scorer.Advance(target, state);
 		}
 	}
 }

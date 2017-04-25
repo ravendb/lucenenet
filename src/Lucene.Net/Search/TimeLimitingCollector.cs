@@ -16,6 +16,7 @@
  */
 
 using System;
+using Lucene.Net.Store;
 using Lucene.Net.Support;
 using IndexReader = Lucene.Net.Index.IndexReader;
 
@@ -193,7 +194,7 @@ namespace Lucene.Net.Search
 		/// <throws>  TimeExceededException </throws>
 		/// <summary>           if the time allowed has exceeded.
 		/// </summary>
-		public override void  Collect(int doc)
+		public override void  Collect(int doc, IState state)
 		{
 			long time = TIMER_THREAD.Milliseconds;
 			if (timeout < time)
@@ -201,18 +202,18 @@ namespace Lucene.Net.Search
 				if (greedy)
 				{
 					//System.out.println(this+"  greedy: before failing, collecting doc: "+doc+"  "+(time-t0));
-					collector.Collect(doc);
+					collector.Collect(doc, state);
 				}
 				//System.out.println(this+"  failing on:  "+doc+"  "+(time-t0));
                 throw new TimeExceededException(timeout - t0, time - t0, docBase + doc);
 			}
 			//System.out.println(this+"  collecting: "+doc+"  "+(time-t0));
-			collector.Collect(doc);
+			collector.Collect(doc, state);
 		}
 		
-		public override void  SetNextReader(IndexReader reader, int base_Renamed)
+		public override void  SetNextReader(IndexReader reader, int base_Renamed, IState state)
 		{
-			collector.SetNextReader(reader, base_Renamed);
+			collector.SetNextReader(reader, base_Renamed, state);
             this.docBase = base_Renamed;
 		}
 		

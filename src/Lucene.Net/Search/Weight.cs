@@ -16,7 +16,7 @@
  */
 
 using System;
-
+using Lucene.Net.Store;
 using IndexReader = Lucene.Net.Index.IndexReader;
 
 namespace Lucene.Net.Search
@@ -62,7 +62,7 @@ namespace Lucene.Net.Search
 		/// <returns> an Explanation for the score
 		/// </returns>
 		/// <throws>  IOException </throws>
-		public abstract Explanation Explain(IndexReader reader, int doc);
+		public abstract Explanation Explain(IndexReader reader, int doc, IState state);
 
 	    /// <summary>The query that this concerns. </summary>
 	    public abstract Query Query { get; }
@@ -104,7 +104,7 @@ namespace Lucene.Net.Search
 		/// <returns> a <see cref="Scorer" /> which scores documents in/out-of order.
 		/// </returns>
 		/// <throws>  IOException </throws>
-		public abstract Scorer Scorer(IndexReader reader, bool scoreDocsInOrder, bool topScorer);
+		public abstract Scorer Scorer(IndexReader reader, bool scoreDocsInOrder, bool topScorer, IState state);
 
 	    /// <summary>The sum of squared weights of contained query clauses. </summary>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1024:UsePropertiesWhereAppropriate")]

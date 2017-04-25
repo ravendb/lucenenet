@@ -16,6 +16,7 @@
  */
 
 using System;
+using Lucene.Net.Store;
 
 namespace Lucene.Net.Index
 {
@@ -68,18 +69,18 @@ namespace Lucene.Net.Index
 			return docMap;
 		}
 		
-		internal TermPositions GetPositions()
+		internal TermPositions GetPositions(IState state)
 		{
 			if (postings == null)
 			{
-				postings = reader.TermPositions();
+				postings = reader.TermPositions(state);
 			}
 			return postings;
 		}
 		
-		internal bool Next()
+		internal bool Next(IState state)
 		{
-			if (termEnum.Next())
+			if (termEnum.Next(state))
 			{
 				term = termEnum.Term;
 				return true;

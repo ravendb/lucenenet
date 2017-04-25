@@ -37,16 +37,16 @@ namespace Lucene.Net.Store
             digest = new CRC32();
 		}
 		
-		public override byte ReadByte()
+		public override byte ReadByte(IState state)
 		{
-			byte b = main.ReadByte();
+			byte b = main.ReadByte(state);
 			digest.Update(b);
 			return b;
 		}
 		
-		public override void  ReadBytes(byte[] b, int offset, int len)
+		public override void  ReadBytes(byte[] b, int offset, int len, IState state)
 		{
-			main.ReadBytes(b, offset, len);
+			main.ReadBytes(b, offset, len, state);
 			digest.Update(b, offset, len);
 		}
 
@@ -71,19 +71,19 @@ namespace Lucene.Net.Store
             isDisposed = true;
         }
 
-	    public override long FilePointer
+	    public override long FilePointer(IState state)
 	    {
-	        get { return main.FilePointer; }
+	        return main.FilePointer(state);
 	    }
 
-	    public override void  Seek(long pos)
+	    public override void  Seek(long pos, IState state)
 		{
 			throw new System.SystemException("not allowed");
 		}
 		
-		public override long Length()
+		public override long Length(IState state)
 		{
-			return main.Length();
+			return main.Length(state);
 		}
 	}
 }

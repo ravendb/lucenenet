@@ -17,6 +17,7 @@
 
 using System;
 using System.Collections.Generic;
+using Lucene.Net.Store;
 using IndexReader = Lucene.Net.Index.IndexReader;
 using OpenBitSet = Lucene.Net.Util.OpenBitSet;
 using SpanQuery = Lucene.Net.Search.Spans.SpanQuery;
@@ -58,21 +59,21 @@ namespace Lucene.Net.Search
 			this.internalQuery = query;
 		}
 		
-		public override DocIdSet GetDocIdSet(IndexReader reader)
+		public override DocIdSet GetDocIdSet(IndexReader reader, IState state)
 		{
-			SpanFilterResult result = BitSpans(reader);
+			SpanFilterResult result = BitSpans(reader, state);
 			return result.DocIdSet;
 		}
 		
-		public override SpanFilterResult BitSpans(IndexReader reader)
+		public override SpanFilterResult BitSpans(IndexReader reader, IState state)
 		{
 			
 			OpenBitSet bits = new OpenBitSet(reader.MaxDoc);
-			Lucene.Net.Search.Spans.Spans spans = internalQuery.GetSpans(reader);
+			Lucene.Net.Search.Spans.Spans spans = internalQuery.GetSpans(reader, state);
 			IList<SpanFilterResult.PositionInfo> tmp = new List<SpanFilterResult.PositionInfo>(20);
 			int currentDoc = - 1;
 			SpanFilterResult.PositionInfo currentInfo = null;
-			while (spans.Next())
+			while (spans.Next(state))
 			{
 				int doc = spans.Doc();
 				bits.Set(doc);

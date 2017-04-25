@@ -16,7 +16,7 @@
  */
 
 using System;
-
+using Lucene.Net.Store;
 using IndexReader = Lucene.Net.Index.IndexReader;
 using FieldCache = Lucene.Net.Search.FieldCache;
 
@@ -60,9 +60,9 @@ namespace Lucene.Net.Search.Function
 		}
 		
 		/* (non-Javadoc) <see cref="Lucene.Net.Search.Function.ValueSource.getValues(Lucene.Net.Index.IndexReader) */
-		public override DocValues GetValues(IndexReader reader)
+		public override DocValues GetValues(IndexReader reader, IState state)
 		{
-			return GetCachedFieldValues(Lucene.Net.Search.FieldCache_Fields.DEFAULT, field, reader);
+			return GetCachedFieldValues(Lucene.Net.Search.FieldCache_Fields.DEFAULT, field, reader, state);
 		}
 		
 		/* (non-Javadoc) <see cref="Lucene.Net.Search.Function.ValueSource.description() */
@@ -78,7 +78,7 @@ namespace Lucene.Net.Search.Function
 		/// </param>
 		/// <seealso cref="ValueSource">
 		/// </seealso>
-		public abstract DocValues GetCachedFieldValues(FieldCache cache, System.String field, IndexReader reader);
+		public abstract DocValues GetCachedFieldValues(FieldCache cache, System.String field, IndexReader reader, IState state);
 		
 		/*(non-Javadoc) <see cref="java.lang.Object.equals(java.lang.Object) */
 		public  override bool Equals(System.Object o)

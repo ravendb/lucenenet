@@ -16,7 +16,7 @@
  */
 
 using System;
-
+using Lucene.Net.Store;
 using IndexReader = Lucene.Net.Index.IndexReader;
 
 namespace Lucene.Net.Search
@@ -62,9 +62,9 @@ namespace Lucene.Net.Search
 				}
 				
 			}
-			public override DocIdSetIterator Iterator()
+			public override DocIdSetIterator Iterator(IState state)
 			{
-				return weight.Scorer(reader, true, false);
+				return weight.Scorer(reader, true, false, state);
 			}
 
 		    public override bool IsCacheable
@@ -82,9 +82,9 @@ namespace Lucene.Net.Search
 			this.query = query;
 		}
 		
-		public override DocIdSet GetDocIdSet(IndexReader reader)
+		public override DocIdSet GetDocIdSet(IndexReader reader, IState state)
 		{
-			Weight weight = query.Weight(new IndexSearcher(reader));
+			Weight weight = query.Weight(new IndexSearcher(reader), state);
 			return new AnonymousClassDocIdSet(weight, reader, this);
 		}
 		

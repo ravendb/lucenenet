@@ -18,6 +18,7 @@
 
 /* Derived from Lucene.Net.Util.PriorityQueue of March 2005 */
 using System;
+using Lucene.Net.Store;
 using Lucene.Net.Support;
 using DocIdSetIterator = Lucene.Net.Search.DocIdSetIterator;
 using Scorer = Lucene.Net.Search.Scorer;
@@ -145,20 +146,20 @@ namespace Lucene.Net.Util
 			return topHSD.doc;
 		}
 		
-		public float TopScore()
+		public float TopScore(IState state)
 		{
 			// assert size > 0;
-			return topHSD.scorer.Score();
+			return topHSD.scorer.Score(state);
 		}
 		
-		public bool TopNextAndAdjustElsePop()
+		public bool TopNextAndAdjustElsePop(IState state)
 		{
-			return CheckAdjustElsePop(topHSD.scorer.NextDoc() != DocIdSetIterator.NO_MORE_DOCS);
+			return CheckAdjustElsePop(topHSD.scorer.NextDoc(state) != DocIdSetIterator.NO_MORE_DOCS);
 		}
 		
-		public bool TopSkipToAndAdjustElsePop(int target)
+		public bool TopSkipToAndAdjustElsePop(int target, IState state)
 		{
-			return CheckAdjustElsePop(topHSD.scorer.Advance(target) != DocIdSetIterator.NO_MORE_DOCS);
+			return CheckAdjustElsePop(topHSD.scorer.Advance(target, state) != DocIdSetIterator.NO_MORE_DOCS);
 		}
 		
 		private bool CheckAdjustElsePop(bool cond)

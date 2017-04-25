@@ -16,7 +16,7 @@
  */
 
 using System;
-
+using Lucene.Net.Store;
 using IndexReader = Lucene.Net.Index.IndexReader;
 using ToStringUtils = Lucene.Net.Util.ToStringUtils;
 using Explanation = Lucene.Net.Search.Explanation;
@@ -66,9 +66,9 @@ namespace Lucene.Net.Search.Payloads
 			this.function = function;
 		}
 		
-		public override Weight CreateWeight(Searcher searcher)
+		public override Weight CreateWeight(Searcher searcher, IState state)
 		{
-			return new PayloadNearSpanWeight(this, this, searcher);
+			return new PayloadNearSpanWeight(this, this, searcher, state);
 		}
 		
 		public override System.Object Clone()
@@ -163,14 +163,14 @@ namespace Lucene.Net.Search.Payloads
 				}
 				
 			}
-			public PayloadNearSpanWeight(PayloadNearQuery enclosingInstance, SpanQuery query, Searcher searcher):base(query, searcher)
+			public PayloadNearSpanWeight(PayloadNearQuery enclosingInstance, SpanQuery query, Searcher searcher, IState state) :base(query, searcher, state)
 			{
 				InitBlock(enclosingInstance);
 			}
 
-			public override Scorer Scorer(IndexReader reader, bool scoreDocsInOrder, bool topScorer)
+			public override Scorer Scorer(IndexReader reader, bool scoreDocsInOrder, bool topScorer, IState state)
 			{
-				return new PayloadNearSpanScorer(enclosingInstance, internalQuery.GetSpans(reader), this, similarity, reader.Norms(internalQuery.Field));
+				return new PayloadNearSpanScorer(enclosingInstance, internalQuery.GetSpans(reader, state), this, similarity, reader.Norms(internalQuery.Field, state), state);
 			}
 		}
 		
@@ -196,14 +196,14 @@ namespace Lucene.Net.Search.Payloads
 			private int payloadsSeen;
 			internal Similarity similarity;
 			
-			protected internal PayloadNearSpanScorer(PayloadNearQuery enclosingInstance, Lucene.Net.Search.Spans.Spans spans, Weight weight, Similarity similarity, byte[] norms):base(spans, weight, similarity, norms)
+			protected internal PayloadNearSpanScorer(PayloadNearQuery enclosingInstance, Lucene.Net.Search.Spans.Spans spans, Weight weight, Similarity similarity, byte[] norms, IState state) :base(spans, weight, similarity, norms, state)
 			{
 				InitBlock(enclosingInstance);
 				this.spans = spans;
 			}
 			
 			// Get the payloads associated with all underlying subspans
-			public virtual void  GetPayloads(Lucene.Net.Search.Spans.Spans[] subSpans)
+			public virtual void  GetPayloads(Lucene.Net.Search.Spans.Spans[] subSpans, IState state)
 			{
 				for (int i = 0; i < subSpans.Length; i++)
 				{
@@ -211,17 +211,17 @@ namespace Lucene.Net.Search.Payloads
 					{
 						if (((NearSpansOrdered) subSpans[i]).IsPayloadAvailable())
 						{
-							ProcessPayloads(((NearSpansOrdered) subSpans[i]).GetPayload(), subSpans[i].Start(), subSpans[i].End());
+							ProcessPayloads(((NearSpansOrdered) subSpans[i]).GetPayload(state), subSpans[i].Start(), subSpans[i].End());
 						}
-						GetPayloads(((NearSpansOrdered) subSpans[i]).GetSubSpans());
+						GetPayloads(((NearSpansOrdered) subSpans[i]).GetSubSpans(), state);
 					}
 					else if (subSpans[i] is NearSpansUnordered)
 					{
 						if (((NearSpansUnordered) subSpans[i]).IsPayloadAvailable())
 						{
-							ProcessPayloads(((NearSpansUnordered) subSpans[i]).GetPayload(), subSpans[i].Start(), subSpans[i].End());
+							ProcessPayloads(((NearSpansUnordered) subSpans[i]).GetPayload(state), subSpans[i].Start(), subSpans[i].End());
 						}
-						GetPayloads(((NearSpansUnordered) subSpans[i]).GetSubSpans());
+						GetPayloads(((NearSpansUnordered) subSpans[i]).GetSubSpans(), state);
 					}
 				}
 			}
@@ -249,7 +249,7 @@ namespace Lucene.Net.Search.Payloads
 			}
 			
 			//
-			public /*protected internal*/ override bool SetFreqCurrentDoc()
+			public /*protected internal*/ override bool SetFreqCurrentDoc(IState state)
 			{
 				if (!more)
 				{
@@ -259,20 +259,20 @@ namespace Lucene.Net.Search.Payloads
 				spansArr[0] = spans;
 				payloadScore = 0;
 				payloadsSeen = 0;
-				GetPayloads(spansArr);
-				return base.SetFreqCurrentDoc();
+				GetPayloads(spansArr, state);
+				return base.SetFreqCurrentDoc(state);
 			}
 			
-			public override float Score()
+			public override float Score(IState state)
 			{
 				
-				return base.Score() * Enclosing_Instance.function.DocScore(doc, Enclosing_Instance.fieldName, payloadsSeen, payloadScore);
+				return base.Score(state) * Enclosing_Instance.function.DocScore(doc, Enclosing_Instance.fieldName, payloadsSeen, payloadScore);
 			}
 			
-			protected internal override Explanation Explain(int doc)
+			protected internal override Explanation Explain(int doc, IState state)
 			{
 				Explanation result = new Explanation();
-				Explanation nonPayloadExpl = base.Explain(doc);
+				Explanation nonPayloadExpl = base.Explain(doc, state);
 				result.AddDetail(nonPayloadExpl);
 				Explanation payloadBoost = new Explanation();
 				result.AddDetail(payloadBoost);

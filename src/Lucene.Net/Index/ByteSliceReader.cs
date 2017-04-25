@@ -16,7 +16,7 @@
  */
 
 using System;
-
+using Lucene.Net.Store;
 using IndexInput = Lucene.Net.Store.IndexInput;
 using IndexOutput = Lucene.Net.Store.IndexOutput;
 
@@ -73,7 +73,7 @@ namespace Lucene.Net.Index
 			return upto + bufferOffset == endIndex;
 		}
 		
-		public override byte ReadByte()
+		public override byte ReadByte(IState state)
 		{
 			System.Diagnostics.Debug.Assert(!Eof());
 			System.Diagnostics.Debug.Assert(upto <= limit);
@@ -134,7 +134,7 @@ namespace Lucene.Net.Index
 			}
 		}
 		
-		public override void  ReadBytes(byte[] b, int offset, int len)
+		public override void  ReadBytes(byte[] b, int offset, int len, IState state)
 		{
 			while (len > 0)
 			{
@@ -157,16 +157,16 @@ namespace Lucene.Net.Index
 			}
 		}
 
-	    public override long FilePointer
+	    public override long FilePointer(IState state)
 	    {
-			get { throw new NotImplementedException(); }
+			throw new NotImplementedException();
 	    }
 
-	    public override long Length()
+	    public override long Length(IState state)
 		{
 			throw new NotImplementedException();
 		}
-		public override void  Seek(long pos)
+		public override void  Seek(long pos, IState state)
 		{
 			throw new NotImplementedException();
 		}

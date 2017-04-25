@@ -16,7 +16,7 @@
  */
 
 using System;
-
+using Lucene.Net.Store;
 using RAMOutputStream = Lucene.Net.Store.RAMOutputStream;
 using ArrayUtil = Lucene.Net.Util.ArrayUtil;
 
@@ -51,7 +51,7 @@ namespace Lucene.Net.Index
 			return new StoredFieldsWriterPerThread(docState, this);
 		}
 		
-		public void  Flush(SegmentWriteState state)
+		public void  Flush(SegmentWriteState state, IState s)
 		{
 			lock (this)
 			{
@@ -61,7 +61,7 @@ namespace Lucene.Net.Index
 					// It's possible that all documents seen in this segment
 					// hit non-aborting exceptions, in which case we will
 					// not have yet init'd the FieldsWriter:
-					InitFieldsWriter();
+					InitFieldsWriter(s);
 					
 					// Fill fdx file to include any final docs that we
 					// skipped because they hit non-aborting exceptions
@@ -73,7 +73,7 @@ namespace Lucene.Net.Index
 			}
 		}
 		
-		private void  InitFieldsWriter()
+		private void  InitFieldsWriter(IState state)
 		{
 			if (fieldsWriter == null)
 			{
@@ -81,7 +81,7 @@ namespace Lucene.Net.Index
 				if (docStoreSegment != null)
 				{
 					System.Diagnostics.Debug.Assert(docStoreSegment != null);
-					fieldsWriter = new FieldsWriter(docWriter.directory, docStoreSegment, fieldInfos);
+					fieldsWriter = new FieldsWriter(docWriter.directory, docStoreSegment, fieldInfos, state);
 					docWriter.AddOpenFile(docStoreSegment + "." + IndexFileNames.FIELDS_EXTENSION);
 					docWriter.AddOpenFile(docStoreSegment + "." + IndexFileNames.FIELDS_INDEX_EXTENSION);
 					lastDocID = 0;
@@ -89,14 +89,14 @@ namespace Lucene.Net.Index
 			}
 		}
 		
-		public void  CloseDocStore(SegmentWriteState state)
+		public void  CloseDocStore(SegmentWriteState state, IState s)
 		{
 			lock (this)
 			{
 				int inc = state.numDocsInStore - lastDocID;
 				if (inc > 0)
 				{
-					InitFieldsWriter();
+					InitFieldsWriter(s);
 					Fill(state.numDocsInStore - docWriter.DocStoreOffset);
 				}
 				
@@ -114,8 +114,8 @@ namespace Lucene.Net.Index
 					
 					System.String fileName = state.docStoreSegmentName + "." + IndexFileNames.FIELDS_INDEX_EXTENSION;
 					
-					if (4 + ((long) state.numDocsInStore) * 8 != state.directory.FileLength(fileName))
-						throw new System.SystemException("after flush: fdx size mismatch: " + state.numDocsInStore + " docs vs " + state.directory.FileLength(fileName) + " length in bytes of " + fileName + " file exists?=" + state.directory.FileExists(fileName));
+					if (4 + ((long) state.numDocsInStore) * 8 != state.directory.FileLength(fileName, s))
+						throw new System.SystemException("after flush: fdx size mismatch: " + state.numDocsInStore + " docs vs " + state.directory.FileLength(fileName, s) + " length in bytes of " + fileName + " file exists?=" + state.directory.FileExists(fileName, s));
 				}
 			}
 		}
@@ -178,12 +178,12 @@ namespace Lucene.Net.Index
 			}
 		}
 		
-		internal void  FinishDocument(PerDoc perDoc)
+		internal void  FinishDocument(PerDoc perDoc, IState state)
 		{
 			lock (this)
 			{
 				System.Diagnostics.Debug.Assert(docWriter.writer.TestPoint("StoredFieldsWriter.finishDocument start"));
-				InitFieldsWriter();
+				InitFieldsWriter(state);
 				
 				Fill(perDoc.docID);
 				
@@ -257,9 +257,9 @@ namespace Lucene.Net.Index
                 return buffer.SizeInBytes;
 			}
 			
-			public override void  Finish()
+			public override void  Finish(IState state)
 			{
-				Enclosing_Instance.FinishDocument(this);
+				Enclosing_Instance.FinishDocument(this, state);
 			}
 		}
 	}

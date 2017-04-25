@@ -18,6 +18,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Lucene.Net.Store;
 using Lucene.Net.Support;
 
 namespace Lucene.Net.Search

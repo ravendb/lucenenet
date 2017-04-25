@@ -15,6 +15,8 @@
  * limitations under the License.
  */
 
+using Lucene.Net.Store;
+
 namespace Lucene.Net.Index
 {
 	
@@ -28,7 +30,7 @@ namespace Lucene.Net.Index
 		/// "synchronized" so that even if the application is using
 		/// multiple threads, only one merge may run at a time. 
 		/// </summary>
-		public override void  Merge(IndexWriter writer)
+		public override void  Merge(IndexWriter writer, IState state)
 		{
 			lock (this)
 			{
@@ -37,7 +39,7 @@ namespace Lucene.Net.Index
 					MergePolicy.OneMerge merge = writer.GetNextMerge();
 					if (merge == null)
 						break;
-					writer.Merge(merge);
+					writer.Merge(merge, state);
 				}
 			}
 		}

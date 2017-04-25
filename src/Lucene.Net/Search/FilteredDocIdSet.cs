@@ -16,6 +16,7 @@
  */
 
 using System;
+using Lucene.Net.Store;
 
 namespace Lucene.Net.Search
 {
@@ -99,9 +100,9 @@ namespace Lucene.Net.Search
 		/// <seealso cref="FilteredDocIdSetIterator">
 		/// </seealso>
 		// @Override
-		public override DocIdSetIterator Iterator()
+		public override DocIdSetIterator Iterator(IState state)
 		{
-			return new AnonymousClassFilteredDocIdSetIterator(this, _innerSet.Iterator());
+			return new AnonymousClassFilteredDocIdSetIterator(this, _innerSet.Iterator(state));
 		}
 	}
 }

@@ -17,6 +17,7 @@
 
 using System;
 using System.Collections;
+using Lucene.Net.Store;
 using Lucene.Net.Support;
 using DocIdSet = Lucene.Net.Search.DocIdSet;
 using DocIdSetIterator = Lucene.Net.Search.DocIdSetIterator;
@@ -33,7 +34,7 @@ namespace Lucene.Net.Util
 			this.bitSet = bitSet;
 		}
 		
-		public override DocIdSetIterator Iterator()
+		public override DocIdSetIterator Iterator(IState state)
 		{
 			return new DocIdBitSetIterator(bitSet);
 		}
@@ -66,7 +67,7 @@ namespace Lucene.Net.Util
 				return docId;
 			}
 			
-			public override int NextDoc()
+			public override int NextDoc(IState state)
 			{
 				// (docId + 1) on next line requires -1 initial value for docNr:
 				int d = BitSetSupport.NextSetBit(bitSet, docId + 1);
@@ -75,7 +76,7 @@ namespace Lucene.Net.Util
 				return docId;
 			}
 			
-			public override int Advance(int target)
+			public override int Advance(int target, IState state)
 			{
 				int d = BitSetSupport.NextSetBit(bitSet, target);
 				// -1 returned by BitSet.nextSetBit() when exhausted

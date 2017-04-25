@@ -17,6 +17,7 @@
 
 using System;
 using System.Collections.Generic;
+using Lucene.Net.Store;
 using ArrayUtil = Lucene.Net.Util.ArrayUtil;
 
 namespace Lucene.Net.Index
@@ -109,17 +110,17 @@ namespace Lucene.Net.Index
 			}
 		}
 		
-		internal override void  CloseDocStore(SegmentWriteState state)
+		internal override void  CloseDocStore(SegmentWriteState state, IState s)
 		{
 			lock (this)
 			{
-				consumer.CloseDocStore(state);
+				consumer.CloseDocStore(state, s);
 				if (nextTermsHash != null)
-					nextTermsHash.CloseDocStore(state);
+					nextTermsHash.CloseDocStore(state, s);
 			}
 		}
 		
-		internal override void  Flush(IDictionary<InvertedDocConsumerPerThread, ICollection<InvertedDocConsumerPerField>> threadsAndFields, SegmentWriteState state)
+		internal override void  Flush(IDictionary<InvertedDocConsumerPerThread, ICollection<InvertedDocConsumerPerField>> threadsAndFields, SegmentWriteState state, IState s)
 		{
 			lock (this)
 			{
@@ -163,12 +164,12 @@ namespace Lucene.Net.Index
 						nextThreadsAndFields[perThread.nextPerThread] = nextChildFields;
 				}
 				
-				consumer.Flush(childThreadsAndFields, state);
+				consumer.Flush(childThreadsAndFields, state, s);
 				
 				ShrinkFreePostings(threadsAndFields, state);
 				
 				if (nextTermsHash != null)
-					nextTermsHash.Flush(nextThreadsAndFields, state);
+					nextTermsHash.Flush(nextThreadsAndFields, state, s);
 			}
 		}
 		

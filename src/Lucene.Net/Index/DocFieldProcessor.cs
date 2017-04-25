@@ -18,6 +18,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Lucene.Net.Store;
 using Lucene.Net.Support;
 
 namespace Lucene.Net.Index
@@ -46,13 +47,13 @@ namespace Lucene.Net.Index
 			fieldsWriter = new StoredFieldsWriter(docWriter, fieldInfos);
 		}
 		
-		public override void  CloseDocStore(SegmentWriteState state)
+		public override void  CloseDocStore(SegmentWriteState state, IState s)
 		{
-			consumer.CloseDocStore(state);
-			fieldsWriter.CloseDocStore(state);
+			consumer.CloseDocStore(state, s);
+			fieldsWriter.CloseDocStore(state, s);
 		}
 		
-		public override void Flush(ICollection<DocConsumerPerThread> threads, SegmentWriteState state)
+		public override void Flush(ICollection<DocConsumerPerThread> threads, SegmentWriteState state, IState s)
 		{
 			var childThreadsAndFields = new HashMap<DocFieldConsumerPerThread, ICollection<DocFieldConsumerPerField>>();
 			foreach(DocConsumerPerThread thread in threads)
@@ -61,15 +62,15 @@ namespace Lucene.Net.Index
 				childThreadsAndFields[perThread.consumer] = perThread.Fields();
 				perThread.TrimFields(state);
 			}
-			fieldsWriter.Flush(state);
-			consumer.Flush(childThreadsAndFields, state);
+			fieldsWriter.Flush(state, s);
+			consumer.Flush(childThreadsAndFields, state, s);
 			
 			// Important to save after asking consumer to flush so
 			// consumer can alter the FieldInfo* if necessary.  EG,
 			// FreqProxTermsWriter does this with
 			// FieldInfo.storePayload.
 			System.String fileName = state.SegmentFileName(IndexFileNames.FIELD_INFOS_EXTENSION);
-			fieldInfos.Write(state.directory, fileName);
+			fieldInfos.Write(state.directory, fileName, s);
             state.flushedFiles.Add(fileName);
 		}
 		

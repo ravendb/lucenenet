@@ -16,6 +16,7 @@
  */
 
 using System.Linq;
+using Lucene.Net.Store;
 using Lucene.Net.Support;
 using BufferedIndexInput = Lucene.Net.Store.BufferedIndexInput;
 using Directory = Lucene.Net.Store.Directory;
@@ -52,11 +53,11 @@ namespace Lucene.Net.Index
 		private HashMap<string, FileEntry> entries = new HashMap<string, FileEntry>();
 		
 		
-		public CompoundFileReader(Directory dir, System.String name):this(dir, name, BufferedIndexInput.BUFFER_SIZE)
+		public CompoundFileReader(Directory dir, System.String name, IState state) :this(dir, name, BufferedIndexInput.BUFFER_SIZE,state)
 		{
 		}
 		
-		public CompoundFileReader(Directory dir, System.String name, int readBufferSize)
+		public CompoundFileReader(Directory dir, System.String name, int readBufferSize, IState state)
 		{
 			directory = dir;
 			fileName = name;
@@ -66,15 +67,15 @@ namespace Lucene.Net.Index
 			
 			try
 			{
-				stream = dir.OpenInput(name, readBufferSize);
+				stream = dir.OpenInput(name, readBufferSize, state);
 				
 				// read the directory and init files
-				int count = stream.ReadVInt();
+				int count = stream.ReadVInt(state);
 				FileEntry entry = null;
 				for (int i = 0; i < count; i++)
 				{
-					long offset = stream.ReadLong();
-					System.String id = stream.ReadString();
+					long offset = stream.ReadLong(state);
+					System.String id = stream.ReadString(state);
 					
 					if (entry != null)
 					{
@@ -89,7 +90,7 @@ namespace Lucene.Net.Index
 				// set the length of the final entry
 				if (entry != null)
 				{
-					entry.length = stream.Length() - entry.offset;
+					entry.length = stream.Length(state) - entry.offset;
 				}
 				
 				success = true;
@@ -142,16 +143,16 @@ namespace Lucene.Net.Index
             }
         }
 		
-		public override IndexInput OpenInput(System.String id)
+		public override IndexInput OpenInput(System.String id, IState state)
 		{
 			lock (this)
 			{
 				// Default to readBufferSize passed in when we were opened
-				return OpenInput(id, readBufferSize);
+				return OpenInput(id, readBufferSize, state);
 			}
 		}
 		
-		public override IndexInput OpenInput(System.String id, int readBufferSize)
+		public override IndexInput OpenInput(System.String id, int readBufferSize, IState state)
 		{
 			lock (this)
 			{
@@ -167,32 +168,32 @@ namespace Lucene.Net.Index
 		}
 		
 		/// <summary>Returns an array of strings, one for each file in the directory. </summary>
-		public override System.String[] ListAll()
+		public override System.String[] ListAll(IState state)
 		{
 		    return entries.Keys.ToArray();
 		}
 		
 		/// <summary>Returns true iff a file with the given name exists. </summary>
-		public override bool FileExists(System.String name)
+		public override bool FileExists(System.String name, IState state)
 		{
 			return entries.ContainsKey(name);
 		}
 		
 		/// <summary>Returns the time the compound file was last modified. </summary>
-		public override long FileModified(System.String name)
+		public override long FileModified(System.String name, IState state)
 		{
-			return directory.FileModified(fileName);
+			return directory.FileModified(fileName, state);
 		}
 		
 		/// <summary>Set the modified time of the compound file to now. </summary>
-		public override void  TouchFile(System.String name)
+		public override void  TouchFile(System.String name, IState state)
 		{
-			directory.TouchFile(fileName);
+			directory.TouchFile(fileName, state);
 		}
 		
 		/// <summary>Not implemented</summary>
 		/// <throws>  UnsupportedOperationException  </throws>
-		public override void  DeleteFile(System.String name)
+		public override void  DeleteFile(System.String name, IState state)
 		{
 			throw new System.NotSupportedException();
 		}
@@ -206,7 +207,7 @@ namespace Lucene.Net.Index
 		
 		/// <summary>Returns the length of a file in the directory.</summary>
 		/// <throws>  IOException if the file does not exist  </throws>
-		public override long FileLength(System.String name)
+		public override long FileLength(System.String name, IState state)
 		{
 			FileEntry e = entries[name];
 			if (e == null)
@@ -216,7 +217,7 @@ namespace Lucene.Net.Index
 		
 		/// <summary>Not implemented</summary>
 		/// <throws>  UnsupportedOperationException  </throws>
-		public override IndexOutput CreateOutput(System.String name)
+		public override IndexOutput CreateOutput(System.String name, IState state)
 		{
 			throw new System.NotSupportedException();
 		}
@@ -270,13 +271,13 @@ namespace Lucene.Net.Index
 			/// </param>
 			/// <param name="len">the number of bytes to read
 			/// </param>
-			public override void  ReadInternal(byte[] b, int offset, int len)
+			public override void  ReadInternal(byte[] b, int offset, int len, IState state)
 			{
-				long start = FilePointer;
+				long start = FilePointer(state);
 				if (start + len > length)
 					throw new System.IO.IOException("read past EOF");
-				base_Renamed.Seek(fileOffset + start);
-				base_Renamed.ReadBytes(b, offset, len, false);
+				base_Renamed.Seek(fileOffset + start, state);
+				base_Renamed.ReadBytes(b, offset, len, false, state);
 			}
 			
 			/// <summary>Expert: implements seek.  Sets current position in this file, where
@@ -303,7 +304,7 @@ namespace Lucene.Net.Index
                 isDisposed = true;
             }
 			
-			public override long Length()
+			public override long Length(IState state)
 			{
 				return length;
 			}

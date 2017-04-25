@@ -18,6 +18,7 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
+using Lucene.Net.Store;
 using IndexReader = Lucene.Net.Index.IndexReader;
 using Term = Lucene.Net.Index.Term;
 using QueryParser = Lucene.Net.QueryParsers.QueryParser;
@@ -89,7 +90,7 @@ namespace Lucene.Net.Search
 #endif
         private sealed class ConstantScoreFilterRewrite:RewriteMethod
 		{
-			public override Query Rewrite(IndexReader reader, MultiTermQuery query)
+			public override Query Rewrite(IndexReader reader, MultiTermQuery query, IState state)
 			{
 				Query result = new ConstantScoreQuery(new MultiTermQueryWrapperFilter<MultiTermQuery>(query));
 				result.Boost = query.Boost;
@@ -124,10 +125,10 @@ namespace Lucene.Net.Search
 #endif
         private class ScoringBooleanQueryRewrite:RewriteMethod
 		{
-			public override Query Rewrite(IndexReader reader, MultiTermQuery query)
+			public override Query Rewrite(IndexReader reader, MultiTermQuery query, IState state)
 			{
 				
-				FilteredTermEnum enumerator = query.GetEnum(reader);
+				FilteredTermEnum enumerator = query.GetEnum(reader, state);
 				BooleanQuery result = new BooleanQuery(true);
 				int count = 0;
 				try
@@ -143,7 +144,7 @@ namespace Lucene.Net.Search
 							count++;
 						}
 					}
-					while (enumerator.Next());
+					while (enumerator.Next(state));
 				}
 				finally
 				{
@@ -182,10 +183,10 @@ namespace Lucene.Net.Search
 #endif
         private class ConstantScoreBooleanQueryRewrite:ScoringBooleanQueryRewrite
 		{
-			public override Query Rewrite(IndexReader reader, MultiTermQuery query)
+			public override Query Rewrite(IndexReader reader, MultiTermQuery query, IState state)
 			{
 				// strip the scores off
-				Query result = new ConstantScoreQuery(new QueryWrapperFilter(base.Rewrite(reader, query)));
+				Query result = new ConstantScoreQuery(new QueryWrapperFilter(base.Rewrite(reader, query, state)));
 				result.Boost = query.Boost;
 				return result;
 			}
@@ -269,7 +270,7 @@ namespace Lucene.Net.Search
 		        set { docCountPercent = value; }
 		    }
 
-		    public override Query Rewrite(IndexReader reader, MultiTermQuery query)
+		    public override Query Rewrite(IndexReader reader, MultiTermQuery query, IState state)
 			{
 				// Get the enum and start visiting terms.  If we
 				// exhaust the enum before hitting either of the
@@ -280,7 +281,7 @@ namespace Lucene.Net.Search
 				int termCountLimit = System.Math.Min(BooleanQuery.MaxClauseCount, termCountCutoff);
 				int docVisitCount = 0;
 				
-				FilteredTermEnum enumerator = query.GetEnum(reader);
+				FilteredTermEnum enumerator = query.GetEnum(reader, state);
 				try
 				{
 					while (true)
@@ -293,7 +294,7 @@ namespace Lucene.Net.Search
 							// should not be costly, because 1) the
 							// query/filter will load the TermInfo when it
 							// runs, and 2) the terms dict has a cache:
-							docVisitCount += reader.DocFreq(t);
+							docVisitCount += reader.DocFreq(t, state);
 						}
 						
 						if (pendingTerms.Count >= termCountLimit || docVisitCount >= docCountCutoff)
@@ -303,7 +304,7 @@ namespace Lucene.Net.Search
 							result.Boost = query.Boost;
 							return result;
 						}
-						else if (!enumerator.Next())
+						else if (!enumerator.Next(state))
 						{
 							// Enumeration is done, and we hit a small
 							// enough number of terms & docs -- just make a
@@ -381,7 +382,7 @@ namespace Lucene.Net.Search
 		}
 		
 		/// <summary>Construct the enumeration to be used, expanding the pattern term. </summary>
-		protected internal abstract FilteredTermEnum GetEnum(IndexReader reader);
+		protected internal abstract FilteredTermEnum GetEnum(IndexReader reader, IState state);
 
 	    /// <summary> Expert: Return the number of unique terms visited during execution of the query.
 	    /// If there are many of them, you may consider using another query type
@@ -418,9 +419,9 @@ namespace Lucene.Net.Search
 			numberOfTerms += inc;
 		}
 		
-		public override Query Rewrite(IndexReader reader)
+		public override Query Rewrite(IndexReader reader, IState state)
 		{
-			return internalRewriteMethod.Rewrite(reader, this);
+			return internalRewriteMethod.Rewrite(reader, this, state);
 		}
 		
 	    /// <summary> Sets the rewrite method to be used when executing the
@@ -474,6 +475,6 @@ namespace Lucene.Net.Search
 #endif
     public abstract class RewriteMethod
     {
-        public abstract Query Rewrite(IndexReader reader, MultiTermQuery query);
+        public abstract Query Rewrite(IndexReader reader, MultiTermQuery query, IState state);
     }
 }

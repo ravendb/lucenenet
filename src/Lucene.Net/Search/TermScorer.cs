@@ -16,7 +16,7 @@
  */
 
 using System;
-
+using Lucene.Net.Store;
 using TermDocs = Lucene.Net.Index.TermDocs;
 
 namespace Lucene.Net.Search
@@ -65,23 +65,23 @@ namespace Lucene.Net.Search
 				scoreCache[i] = Similarity.Tf(i) * weightValue;
 		}
 		
-		public override void  Score(Collector c)
+		public override void  Score(Collector c, IState state)
 		{
-			Score(c, System.Int32.MaxValue, NextDoc());
+			Score(c, System.Int32.MaxValue, NextDoc(state), state);
 		}
 		
 		// firstDocID is ignored since nextDoc() sets 'doc'
-		public /*protected internal*/ override bool Score(Collector c, int end, int firstDocID)
+		public /*protected internal*/ override bool Score(Collector c, int end, int firstDocID, IState state)
 		{
 			c.SetScorer(this);
 			while (doc < end)
 			{
 				// for docs in window
-				c.Collect(doc); // collect score
+				c.Collect(doc, state); // collect score
 				
 				if (++pointer >= pointerMax)
 				{
-					pointerMax = termDocs.Read(docs, freqs); // refill buffers
+					pointerMax = termDocs.Read(docs, freqs, state); // refill buffers
 					if (pointerMax != 0)
 					{
 						pointer = 0;
@@ -110,12 +110,12 @@ namespace Lucene.Net.Search
 		/// </summary>
 		/// <returns> the document matching the query or -1 if there are no more documents.
 		/// </returns>
-		public override int NextDoc()
+		public override int NextDoc(IState state)
 		{
 			pointer++;
 			if (pointer >= pointerMax)
 			{
-				pointerMax = termDocs.Read(docs, freqs); // refill buffer
+				pointerMax = termDocs.Read(docs, freqs, state); // refill buffer
 				if (pointerMax != 0)
 				{
 					pointer = 0;
@@ -130,7 +130,7 @@ namespace Lucene.Net.Search
 			return doc;
 		}
 		
-		public override float Score()
+		public override float Score(IState state)
 		{
 			System.Diagnostics.Debug.Assert(doc != - 1);
 			int f = freqs[pointer];
@@ -148,7 +148,7 @@ namespace Lucene.Net.Search
 		/// </param>
 		/// <returns> the matching document or -1 if none exist.
 		/// </returns>
-		public override int Advance(int target)
+		public override int Advance(int target, IState state)
 		{
 			// first scan in cache
 			for (pointer++; pointer < pointerMax; pointer++)
@@ -160,7 +160,7 @@ namespace Lucene.Net.Search
 			}
 			
 			// not found in cache, seek underlying stream
-			bool result = termDocs.SkipTo(target);
+			bool result = termDocs.SkipTo(target, state);
 			if (result)
 			{
 				pointerMax = 1;

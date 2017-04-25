@@ -16,7 +16,7 @@
  */
 
 using System;
-
+using Lucene.Net.Store;
 using IndexReader = Lucene.Net.Index.IndexReader;
 using Term = Lucene.Net.Index.Term;
 using ToStringUtils = Lucene.Net.Util.ToStringUtils;
@@ -58,15 +58,15 @@ namespace Lucene.Net.Search
 		                        && (text.IndexOf('*') == text.Length - 1);
 		}
 		
-		protected internal override FilteredTermEnum GetEnum(IndexReader reader)
+		protected internal override FilteredTermEnum GetEnum(IndexReader reader, IState state)
 		{
             if (_termContainsWildcard)
             {
-                return new WildcardTermEnum(reader, Term);
+                return new WildcardTermEnum(reader, Term, state);
             }
             else
             {
-                return new SingleTermEnum(reader, Term);
+                return new SingleTermEnum(reader, Term, state);
             }
 		}
 
@@ -76,7 +76,7 @@ namespace Lucene.Net.Search
 	        get { return internalTerm; }
 	    }
 
-	    public override Query Rewrite(IndexReader reader)
+	    public override Query Rewrite(IndexReader reader, IState state)
 		{
             if (_termIsPrefix)
             {
@@ -88,7 +88,7 @@ namespace Lucene.Net.Search
             }
             else
             {
-                return base.Rewrite(reader);
+                return base.Rewrite(reader, state);
             }
 		}
 		

@@ -17,6 +17,7 @@
 
 using System;
 using System.Collections.Generic;
+using Lucene.Net.Store;
 using IndexReader = Lucene.Net.Index.IndexReader;
 
 namespace Lucene.Net.Search.Spans
@@ -95,11 +96,11 @@ namespace Lucene.Net.Search.Spans
 		private SpanNearQuery query;
 		private bool collectPayloads = true;
 		
-		public NearSpansOrdered(SpanNearQuery spanNearQuery, IndexReader reader):this(spanNearQuery, reader, true)
+		public NearSpansOrdered(SpanNearQuery spanNearQuery, IndexReader reader, IState state) :this(spanNearQuery, reader, true, state)
 		{
 		}
 		
-		public NearSpansOrdered(SpanNearQuery spanNearQuery, IndexReader reader, bool collectPayloads)
+		public NearSpansOrdered(SpanNearQuery spanNearQuery, IndexReader reader, bool collectPayloads, IState state)
 		{
 			InitBlock();
 			if (spanNearQuery.GetClauses().Length < 2)
@@ -114,7 +115,7 @@ namespace Lucene.Net.Search.Spans
 			subSpansByDoc = new Spans[clauses.Length];
 			for (int i = 0; i < clauses.Length; i++)
 			{
-				subSpans[i] = clauses[i].GetSpans(reader);
+				subSpans[i] = clauses[i].GetSpans(reader, state);
 				subSpansByDoc[i] = subSpans[i]; // used in toSameDoc()
 			}
 			query = spanNearQuery; // kept for toString() only.
@@ -146,7 +147,7 @@ namespace Lucene.Net.Search.Spans
 		// TODO: Remove warning after API has been finalized
 		// TODO: Would be nice to be able to lazy load payloads
 
-	    public override ICollection<byte[]> GetPayload()
+	    public override ICollection<byte[]> GetPayload(IState state)
 	    {
 	        return matchPayload;
 	    }
@@ -159,14 +160,14 @@ namespace Lucene.Net.Search.Spans
 	    }
 
 	    // inherit javadocs
-		public override bool Next()
+		public override bool Next(IState state)
 		{
 			if (firstTime)
 			{
 				firstTime = false;
 				for (int i = 0; i < subSpans.Length; i++)
 				{
-					if (!subSpans[i].Next())
+					if (!subSpans[i].Next(state))
 					{
 						more = false;
 						return false;
@@ -178,18 +179,18 @@ namespace Lucene.Net.Search.Spans
 			{
 				matchPayload.Clear();
 			}
-			return AdvanceAfterOrdered();
+			return AdvanceAfterOrdered(state);
 		}
 		
 		// inherit javadocs
-		public override bool SkipTo(int target)
+		public override bool SkipTo(int target, IState state)
 		{
 			if (firstTime)
 			{
 				firstTime = false;
 				for (int i = 0; i < subSpans.Length; i++)
 				{
-					if (!subSpans[i].SkipTo(target))
+					if (!subSpans[i].SkipTo(target, state))
 					{
 						more = false;
 						return false;
@@ -199,7 +200,7 @@ namespace Lucene.Net.Search.Spans
 			}
 			else if (more && (subSpans[0].Doc() < target))
 			{
-				if (subSpans[0].SkipTo(target))
+				if (subSpans[0].SkipTo(target, state))
 				{
 					inSameDoc = false;
 				}
@@ -213,7 +214,7 @@ namespace Lucene.Net.Search.Spans
 			{
 				matchPayload.Clear();
 			}
-			return AdvanceAfterOrdered();
+			return AdvanceAfterOrdered(state);
 		}
 		
 		/// <summary>Advances the subSpans to just after an ordered match with a minimum slop
@@ -221,11 +222,11 @@ namespace Lucene.Net.Search.Spans
 		/// </summary>
 		/// <returns> true iff there is such a match.
 		/// </returns>
-		private bool AdvanceAfterOrdered()
+		private bool AdvanceAfterOrdered(IState state)
 		{
-			while (more && (inSameDoc || ToSameDoc()))
+			while (more && (inSameDoc || ToSameDoc(state)))
 			{
-				if (StretchToOrder() && ShrinkToAfterShortestMatch())
+				if (StretchToOrder(state) && ShrinkToAfterShortestMatch(state))
 				{
 					return true;
 				}
@@ -235,14 +236,14 @@ namespace Lucene.Net.Search.Spans
 		
 		
 		/// <summary>Advance the subSpans to the same document </summary>
-		private bool ToSameDoc()
+		private bool ToSameDoc(IState state)
 		{
 			System.Array.Sort(subSpansByDoc, spanDocComparator);
 			int firstIndex = 0;
 			int maxDoc = subSpansByDoc[subSpansByDoc.Length - 1].Doc();
 			while (subSpansByDoc[firstIndex].Doc() != maxDoc)
 			{
-				if (!subSpansByDoc[firstIndex].SkipTo(maxDoc))
+				if (!subSpansByDoc[firstIndex].SkipTo(maxDoc, state))
 				{
 					more = false;
 					inSameDoc = false;
@@ -294,14 +295,14 @@ namespace Lucene.Net.Search.Spans
 		/// <summary>Order the subSpans within the same document by advancing all later spans
 		/// after the previous one.
 		/// </summary>
-		private bool StretchToOrder()
+		private bool StretchToOrder(IState state)
 		{
 			matchDoc = subSpans[0].Doc();
 			for (int i = 1; inSameDoc && (i < subSpans.Length); i++)
 			{
 				while (!DocSpansOrdered(subSpans[i - 1], subSpans[i]))
 				{
-					if (!subSpans[i].Next())
+					if (!subSpans[i].Next(state))
 					{
 						inSameDoc = false;
 						more = false;
@@ -321,14 +322,14 @@ namespace Lucene.Net.Search.Spans
 		/// Compute the slop while making the match as short as possible by advancing
 		/// all subSpans except the last one in reverse order.
 		/// </summary>
-		private bool ShrinkToAfterShortestMatch()
+		private bool ShrinkToAfterShortestMatch(IState state)
 		{
 			matchStart = subSpans[subSpans.Length - 1].Start();
 			matchEnd = subSpans[subSpans.Length - 1].End();
             System.Collections.Generic.Dictionary<byte[], byte[]> possibleMatchPayloads = new System.Collections.Generic.Dictionary<byte[], byte[]>();
 			if (subSpans[subSpans.Length - 1].IsPayloadAvailable())
 			{
-                System.Collections.Generic.ICollection<byte[]> payload = subSpans[subSpans.Length - 1].GetPayload();
+                System.Collections.Generic.ICollection<byte[]> payload = subSpans[subSpans.Length - 1].GetPayload(state);
                 foreach(byte[] pl in payload)
                 {
                     if (!possibleMatchPayloads.ContainsKey(pl))
@@ -348,7 +349,7 @@ namespace Lucene.Net.Search.Spans
 				Spans prevSpans = subSpans[i];
 				if (collectPayloads && prevSpans.IsPayloadAvailable())
 				{
-					System.Collections.Generic.ICollection<byte[]> payload = prevSpans.GetPayload();
+					System.Collections.Generic.ICollection<byte[]> payload = prevSpans.GetPayload(state);
 					possiblePayload = new System.Collections.Generic.List<byte[]>(payload.Count);
 					possiblePayload.AddRange(payload);
 				}
@@ -358,7 +359,7 @@ namespace Lucene.Net.Search.Spans
 				while (true)
 				{
 					// Advance prevSpans until after (lastStart, lastEnd)
-					if (!prevSpans.Next())
+					if (!prevSpans.Next(state))
 					{
 						inSameDoc = false;
 						more = false;
@@ -384,7 +385,7 @@ namespace Lucene.Net.Search.Spans
 							prevEnd = ppEnd;
 							if (collectPayloads && prevSpans.IsPayloadAvailable())
 							{
-								System.Collections.Generic.ICollection<byte[]> payload = prevSpans.GetPayload();
+								System.Collections.Generic.ICollection<byte[]> payload = prevSpans.GetPayload(state);
 								possiblePayload = new System.Collections.Generic.List<byte[]>(payload.Count);
 								possiblePayload.AddRange(payload);
 							}

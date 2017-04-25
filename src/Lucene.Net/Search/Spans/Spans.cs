@@ -17,6 +17,7 @@
 
 using System;
 using System.Collections.Generic;
+using Lucene.Net.Store;
 
 namespace Lucene.Net.Search.Spans
 {
@@ -29,7 +30,7 @@ namespace Lucene.Net.Search.Spans
 	public abstract class Spans
 	{
 		/// <summary>Move to the next match, returning true iff any such exists. </summary>
-		public abstract bool Next();
+		public abstract bool Next(IState state);
 		
 		/// <summary>Skips to the first match beyond the current, whose document number is
 		/// greater than or equal to <i>target</i>. <p/>Returns true iff there is such
@@ -44,7 +45,7 @@ namespace Lucene.Net.Search.Spans
         /// </code>
 		/// Most implementations are considerably more efficient than that.
 		/// </summary>
-		public abstract bool SkipTo(int target);
+		public abstract bool SkipTo(int target, IState state);
 		
 		/// <summary>Returns the document number of the current match.  Initially invalid. </summary>
 		public abstract int Doc();
@@ -78,7 +79,7 @@ namespace Lucene.Net.Search.Spans
 	    /// <throws>  java.io.IOException </throws>
 	    // TODO: Remove warning after API has been finalized
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1024:UsePropertiesWhereAppropriate")]
-        public abstract ICollection<byte[]> GetPayload();
+        public abstract ICollection<byte[]> GetPayload(IState state);
 
 	    /// <summary> Checks if a payload can be loaded at this position.
 	    /// <p/>

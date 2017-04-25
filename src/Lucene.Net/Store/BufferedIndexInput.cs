@@ -35,10 +35,10 @@ namespace Lucene.Net.Store
 		private int bufferLength = 0; // end of valid bytes
 		private int bufferPosition = 0; // next byte to read
 		
-		public override byte ReadByte()
+		public override byte ReadByte(IState state)
 		{
 			if (bufferPosition >= bufferLength)
-				Refill();
+				Refill(state);
 			return buffer[bufferPosition++];
 		}
 
@@ -101,12 +101,12 @@ namespace Lucene.Net.Store
 				throw new System.ArgumentException("bufferSize must be greater than 0 (got " + bufferSize + ")");
 		}
 		
-		public override void  ReadBytes(byte[] b, int offset, int len)
+		public override void  ReadBytes(byte[] b, int offset, int len, IState state)
 		{
-			ReadBytes(b, offset, len, true);
+			ReadBytes(b, offset, len, true, state);
 		}
 		
-		public override void  ReadBytes(byte[] b, int offset, int len, bool useBuffer)
+		public override void  ReadBytes(byte[] b, int offset, int len, bool useBuffer, IState state)
 		{
 			
 			if (len <= (bufferLength - bufferPosition))
@@ -134,7 +134,7 @@ namespace Lucene.Net.Store
 					// If the amount left to read is small enough, and
 					// we are allowed to use our buffer, do it in the usual
 					// buffered way: fill the buffer and copy from it:
-					Refill();
+					Refill(state);
 					if (bufferLength < len)
 					{
 						// Throw an exception when refill() could not read len bytes:
@@ -157,9 +157,9 @@ namespace Lucene.Net.Store
 					// here, because there's no need to reread what we
 					// had in the buffer.
 					long after = bufferStart + bufferPosition + len;
-					if (after > Length())
+					if (after > Length(state))
 						throw new System.IO.IOException("read past EOF");
-					ReadInternal(b, offset, len);
+					ReadInternal(b, offset, len, state);
 					bufferStart = after;
 					bufferPosition = 0;
 					bufferLength = 0; // trigger refill() on read
@@ -167,13 +167,13 @@ namespace Lucene.Net.Store
 			}
 		}
 		
-		private void  Refill()
+		private void  Refill(IState state)
 		{
 			long start = bufferStart + bufferPosition;
 			long end = start + _bufferSize;
-			if (end > Length())
+			if (end > Length(state))
 			// don't read past EOF
-				end = Length();
+				end = Length(state);
 			int newLength = (int) (end - start);
 			if (newLength <= 0)
 				throw new System.IO.IOException("read past EOF");
@@ -183,7 +183,7 @@ namespace Lucene.Net.Store
 				NewBuffer(new byte[_bufferSize]); // allocate buffer lazily
 				SeekInternal(bufferStart);
 			}
-			ReadInternal(buffer, 0, newLength);
+			ReadInternal(buffer, 0, newLength, state);
 			bufferLength = newLength;
 			bufferStart = start;
 			bufferPosition = 0;
@@ -198,14 +198,14 @@ namespace Lucene.Net.Store
 		/// </param>
 		/// <param name="length">the number of bytes to read
 		/// </param>
-		public abstract void  ReadInternal(byte[] b, int offset, int length);
+		public abstract void  ReadInternal(byte[] b, int offset, int length, IState state);
 
-	    public override long FilePointer
+	    public override long FilePointer(IState state)
 	    {
-	        get { return bufferStart + bufferPosition; }
+	        return bufferStart + bufferPosition;
 	    }
 
-	    public override void  Seek(long pos)
+	    public override void  Seek(long pos, IState state)
 		{
 			if (pos >= bufferStart && pos < (bufferStart + bufferLength))
 				bufferPosition = (int) (pos - bufferStart);
@@ -233,7 +233,7 @@ namespace Lucene.Net.Store
 			clone.buffer = null;
 			clone.bufferLength = 0;
 			clone.bufferPosition = 0;
-			clone.bufferStart = FilePointer;
+			clone.bufferStart = FilePointer(StateHolder.Current.Value);
 			
 			return clone;
 		}

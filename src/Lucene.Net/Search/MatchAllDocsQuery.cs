@@ -17,6 +17,7 @@
 
 using System;
 using Lucene.Net.Index;
+using Lucene.Net.Store;
 using IndexReader = Lucene.Net.Index.IndexReader;
 using TermDocs = Lucene.Net.Index.TermDocs;
 using ToStringUtils = Lucene.Net.Util.ToStringUtils;
@@ -66,10 +67,10 @@ namespace Lucene.Net.Search
 			internal byte[] norms;
 			private int doc = - 1;
 			
-			internal MatchAllScorer(MatchAllDocsQuery enclosingInstance, IndexReader reader, Similarity similarity, Weight w, byte[] norms):base(similarity)
+			internal MatchAllScorer(MatchAllDocsQuery enclosingInstance, IndexReader reader, Similarity similarity, Weight w, byte[] norms, IState state) :base(similarity)
 			{
 				InitBlock(enclosingInstance);
-				this.termDocs = reader.TermDocs(null);
+				this.termDocs = reader.TermDocs(null, state);
 				score = w.Value;
 				this.norms = norms;
 			}
@@ -79,19 +80,19 @@ namespace Lucene.Net.Search
 				return doc;
 			}
 			
-			public override int NextDoc()
+			public override int NextDoc(IState state)
 			{
-				return doc = termDocs.Next()?termDocs.Doc:NO_MORE_DOCS;
+				return doc = termDocs.Next(state)?termDocs.Doc:NO_MORE_DOCS;
 			}
 			
-			public override float Score()
+			public override float Score(IState state)
 			{
 				return norms == null?score:score * Similarity.DecodeNorm(norms[DocID()]);
 			}
 			
-			public override int Advance(int target)
+			public override int Advance(int target, IState state)
 			{
-				return doc = termDocs.SkipTo(target)?termDocs.Doc:NO_MORE_DOCS;
+				return doc = termDocs.SkipTo(target, state)?termDocs.Doc:NO_MORE_DOCS;
 			}
 		}
 
@@ -150,12 +151,12 @@ namespace Lucene.Net.Search
 				queryWeight *= this.queryNorm;
 			}
 			
-			public override Scorer Scorer(IndexReader reader, bool scoreDocsInOrder, bool topScorer)
+			public override Scorer Scorer(IndexReader reader, bool scoreDocsInOrder, bool topScorer, IState state)
 			{
-				return new MatchAllScorer(enclosingInstance, reader, similarity, this, Enclosing_Instance.normsField != null?reader.Norms(Enclosing_Instance.normsField):null);
+				return new MatchAllScorer(enclosingInstance, reader, similarity, this, Enclosing_Instance.normsField != null?reader.Norms(Enclosing_Instance.normsField, state):null, state);
 			}
 			
-			public override Explanation Explain(IndexReader reader, int doc)
+			public override Explanation Explain(IndexReader reader, int doc, IState state)
 			{
 				// explain query weight
 				Explanation queryExpl = new ComplexExplanation(true, Value, "MatchAllDocsQuery, product of:");
@@ -169,7 +170,7 @@ namespace Lucene.Net.Search
 			}
 		}
 		
-		public override Weight CreateWeight(Searcher searcher)
+		public override Weight CreateWeight(Searcher searcher, IState state)
 		{
 			return new MatchAllDocsWeight(this, searcher);
 		}

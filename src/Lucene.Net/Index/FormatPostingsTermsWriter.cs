@@ -16,6 +16,7 @@
  */
 
 using System;
+using Lucene.Net.Store;
 
 namespace Lucene.Net.Index
 {
@@ -27,11 +28,11 @@ namespace Lucene.Net.Index
 		internal TermInfosWriter termsOut;
 		internal FieldInfo fieldInfo;
 		
-		internal FormatPostingsTermsWriter(SegmentWriteState state, FormatPostingsFieldsWriter parent):base()
+		internal FormatPostingsTermsWriter(SegmentWriteState state, FormatPostingsFieldsWriter parent, IState s):base()
 		{
 			this.parent = parent;
 			termsOut = parent.termsOut;
-			docsWriter = new FormatPostingsDocsWriter(state, this);
+			docsWriter = new FormatPostingsDocsWriter(state, this, s);
 		}
 		
 		internal void  SetField(FieldInfo fieldInfo)

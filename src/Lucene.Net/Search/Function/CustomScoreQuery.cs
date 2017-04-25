@@ -18,6 +18,7 @@
 using System;
 using System.Linq;
 using Lucene.Net.Index;
+using Lucene.Net.Store;
 using IndexReader = Lucene.Net.Index.IndexReader;
 using ToStringUtils = Lucene.Net.Util.ToStringUtils;
 using ComplexExplanation = Lucene.Net.Search.ComplexExplanation;
@@ -91,11 +92,11 @@ namespace Lucene.Net.Search.Function
 		}
 		
 		/*(non-Javadoc) <see cref="Lucene.Net.Search.Query.rewrite(Lucene.Net.Index.IndexReader) */
-        public override Query Rewrite(IndexReader reader)
+        public override Query Rewrite(IndexReader reader, IState state)
         {
             CustomScoreQuery clone = null;
 
-            Query sq = subQuery.Rewrite(reader);
+            Query sq = subQuery.Rewrite(reader, state);
             if (sq != subQuery)
             {
                 clone = (CustomScoreQuery)Clone();
@@ -104,7 +105,7 @@ namespace Lucene.Net.Search.Function
 
             for (int i = 0; i < valSrcQueries.Length; i++)
             {
-                ValueSourceQuery v = (ValueSourceQuery)valSrcQueries[i].Rewrite(reader);
+                ValueSourceQuery v = (ValueSourceQuery)valSrcQueries[i].Rewrite(reader, state);
                 if (v != valSrcQueries[i])
                 {
                     if (clone == null) clone = (CustomScoreQuery)Clone();
@@ -347,15 +348,15 @@ namespace Lucene.Net.Search.Function
 			internal Weight[] valSrcWeights;
 			internal bool qStrict;
 			
-			public CustomWeight(CustomScoreQuery enclosingInstance, Searcher searcher)
+			public CustomWeight(CustomScoreQuery enclosingInstance, Searcher searcher, IState state)
 			{
 				InitBlock(enclosingInstance);
 				this.similarity = Enclosing_Instance.GetSimilarity(searcher);
-				this.subQueryWeight = Enclosing_Instance.subQuery.Weight(searcher);
+				this.subQueryWeight = Enclosing_Instance.subQuery.Weight(searcher, state);
 				this.valSrcWeights = new Weight[Enclosing_Instance.valSrcQueries.Length];
 				for (int i = 0; i < Enclosing_Instance.valSrcQueries.Length; i++)
 				{
-					this.valSrcWeights[i] = Enclosing_Instance.valSrcQueries[i].CreateWeight(searcher);
+					this.valSrcWeights[i] = Enclosing_Instance.valSrcQueries[i].CreateWeight(searcher, state);
 				}
 				this.qStrict = Enclosing_Instance.strict;
 			}
@@ -413,14 +414,14 @@ namespace Lucene.Net.Search.Function
 				}
 			}
 			
-			public override Scorer Scorer(IndexReader reader, bool scoreDocsInOrder, bool topScorer)
+			public override Scorer Scorer(IndexReader reader, bool scoreDocsInOrder, bool topScorer, IState state)
 			{
 				// Pass true for "scoresDocsInOrder", because we
 				// require in-order scoring, even if caller does not,
 				// since we call advance on the valSrcScorers.  Pass
 				// false for "topScorer" because we will not invoke
 				// score(Collector) on these scorers:
-				Scorer subQueryScorer = subQueryWeight.Scorer(reader, true, false);
+				Scorer subQueryScorer = subQueryWeight.Scorer(reader, true, false, state);
 				if (subQueryScorer == null)
 				{
 					return null;
@@ -428,20 +429,20 @@ namespace Lucene.Net.Search.Function
 				Scorer[] valSrcScorers = new Scorer[valSrcWeights.Length];
 				for (int i = 0; i < valSrcScorers.Length; i++)
 				{
-					valSrcScorers[i] = valSrcWeights[i].Scorer(reader, true, topScorer);
+					valSrcScorers[i] = valSrcWeights[i].Scorer(reader, true, topScorer, state);
 				}
 				return new CustomScorer(enclosingInstance, similarity, reader, this, subQueryScorer, valSrcScorers);
 			}
 			
-			public override Explanation Explain(IndexReader reader, int doc)
+			public override Explanation Explain(IndexReader reader, int doc, IState state)
 			{
-				Explanation explain = DoExplain(reader, doc);
+				Explanation explain = DoExplain(reader, doc, state);
 				return explain == null?new Explanation(0.0f, "no matching docs"):explain;
 			}
 			
-			private Explanation DoExplain(IndexReader reader, int doc)
+			private Explanation DoExplain(IndexReader reader, int doc, IState state)
 			{
-				Explanation subQueryExpl = subQueryWeight.Explain(reader, doc);
+				Explanation subQueryExpl = subQueryWeight.Explain(reader, doc, state);
 				if (!subQueryExpl.IsMatch)
 				{
 					return subQueryExpl;
@@ -450,7 +451,7 @@ namespace Lucene.Net.Search.Function
 				Explanation[] valSrcExpls = new Explanation[valSrcWeights.Length];
                 for (int i = 0; i < valSrcWeights.Length; i++)
 				{
-                    valSrcExpls[i] = valSrcWeights[i].Explain(reader, doc);
+                    valSrcExpls[i] = valSrcWeights[i].Explain(reader, doc, state);
 				}
                 Explanation customExp = Enclosing_Instance.GetCustomScoreProvider(reader).CustomExplain(doc, subQueryExpl, valSrcExpls);
 				float sc = Value * customExp.Value;
@@ -504,14 +505,14 @@ namespace Lucene.Net.Search.Function
                 this.provider = this.Enclosing_Instance.GetCustomScoreProvider(reader);
 			}
 			
-			public override int NextDoc()
+			public override int NextDoc(IState state)
 			{
-				int doc = subQueryScorer.NextDoc();
+				int doc = subQueryScorer.NextDoc(state);
 				if (doc != NO_MORE_DOCS)
 				{
 					for (int i = 0; i < valSrcScorers.Length; i++)
 					{
-						valSrcScorers[i].Advance(doc);
+						valSrcScorers[i].Advance(doc, state);
 					}
 				}
 				return doc;
@@ -523,32 +524,32 @@ namespace Lucene.Net.Search.Function
 			}
 			
 			/*(non-Javadoc) <see cref="Lucene.Net.Search.Scorer.score() */
-			public override float Score()
+			public override float Score(IState state)
 			{
 				for (int i = 0; i < valSrcScorers.Length; i++)
 				{
-					vScores[i] = valSrcScorers[i].Score();
+					vScores[i] = valSrcScorers[i].Score(state);
 				}
-                return qWeight * provider.CustomScore(subQueryScorer.DocID(), subQueryScorer.Score(), vScores);
+                return qWeight * provider.CustomScore(subQueryScorer.DocID(), subQueryScorer.Score(state), vScores);
 			}
 			
-			public override int Advance(int target)
+			public override int Advance(int target, IState state)
 			{
-				int doc = subQueryScorer.Advance(target);
+				int doc = subQueryScorer.Advance(target, state);
 				if (doc != NO_MORE_DOCS)
 				{
 					for (int i = 0; i < valSrcScorers.Length; i++)
 					{
-						valSrcScorers[i].Advance(doc);
+						valSrcScorers[i].Advance(doc, state);
 					}
 				}
 				return doc;
 			}
 		}
 		
-		public override Weight CreateWeight(Searcher searcher)
+		public override Weight CreateWeight(Searcher searcher, IState state)
 		{
-			return new CustomWeight(this, searcher);
+			return new CustomWeight(this, searcher, state);
 		}
 		
 		/// <summary> Checks if this is strict custom scoring.

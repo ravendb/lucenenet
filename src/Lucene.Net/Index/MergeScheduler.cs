@@ -16,6 +16,7 @@
  */
 
 using System;
+using Lucene.Net.Store;
 
 namespace Lucene.Net.Index
 {
@@ -39,7 +40,7 @@ namespace Lucene.Net.Index
 	{
 		
 		/// <summary>Run the merges provided by <see cref="IndexWriter.GetNextMerge()" />. </summary>
-		public abstract void  Merge(IndexWriter writer);
+		public abstract void  Merge(IndexWriter writer, IState state);
 		
         [Obsolete("Use Dispose() instead")]
 		public void Close()

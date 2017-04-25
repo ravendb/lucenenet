@@ -17,6 +17,7 @@
 
 using System;
 using Lucene.Net.Documents;
+using Lucene.Net.Store;
 using Lucene.Net.Support;
 using Document = Lucene.Net.Documents.Document;
 using ArrayUtil = Lucene.Net.Util.ArrayUtil;
@@ -171,7 +172,7 @@ namespace Lucene.Net.Index
 			hashMask = newHashMask;
 		}
 		
-		public override DocumentsWriter.DocWriter ProcessDocument()
+		public override DocumentsWriter.DocWriter ProcessDocument(IState state)
 		{
 			
 			consumer.StartDocument();
@@ -259,7 +260,7 @@ namespace Lucene.Net.Index
 				fp.fields[fp.fieldCount++] = field;
 				if (field.IsStored)
 				{
-					fieldsWriter.AddField(field, fp.fieldInfo);
+					fieldsWriter.AddField(field, fp.fieldInfo, state);
 				}
 			}
 			
@@ -272,7 +273,7 @@ namespace Lucene.Net.Index
 			QuickSort(fields, 0, fieldCount - 1);
 			
 			for (int i = 0; i < fieldCount; i++)
-				fields[i].consumer.ProcessFields(fields[i].fields, fields[i].fieldCount);
+				fields[i].consumer.ProcessFields(fields[i].fields, fields[i].fieldCount, state);
 
             if (docState.maxTermPrefix != null && docState.infoStream != null)
             {
@@ -436,17 +437,17 @@ namespace Lucene.Net.Index
 				return one.SizeInBytes() + two.SizeInBytes();
 			}
 			
-			public override void  Finish()
+			public override void  Finish(IState state)
 			{
 				try
 				{
 					try
 					{
-						one.Finish();
+						one.Finish(state);
 					}
 					finally
 					{
-						two.Finish();
+						two.Finish(state);
 					}
 				}
 				finally

@@ -16,7 +16,7 @@
  */
 
 using System;
-
+using Lucene.Net.Store;
 using IndexInput = Lucene.Net.Store.IndexInput;
 using IndexOutput = Lucene.Net.Store.IndexOutput;
 
@@ -32,7 +32,7 @@ namespace Lucene.Net.Index
 		internal bool storePayloads;
 		internal int lastPayloadLength = - 1;
 		
-		internal FormatPostingsPositionsWriter(SegmentWriteState state, FormatPostingsDocsWriter parent)
+		internal FormatPostingsPositionsWriter(SegmentWriteState state, FormatPostingsDocsWriter parent, IState s)
 		{
 			this.parent = parent;
 			omitTermFreqAndPositions = parent.omitTermFreqAndPositions;
@@ -42,7 +42,7 @@ namespace Lucene.Net.Index
 				// prox file
 				System.String fileName = IndexFileNames.SegmentFileName(parent.parent.parent.segment, IndexFileNames.PROX_EXTENSION);
 				state.flushedFiles.Add(fileName);
-				out_Renamed = parent.parent.parent.dir.CreateOutput(fileName);
+				out_Renamed = parent.parent.parent.dir.CreateOutput(fileName, s);
 				parent.skipListWriter.SetProxOutput(out_Renamed);
 			}
 			// Every field omits TF so we will write no prox file

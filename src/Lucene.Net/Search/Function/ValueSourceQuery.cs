@@ -21,6 +21,7 @@ using IndexReader = Lucene.Net.Index.IndexReader;
 using TermDocs = Lucene.Net.Index.TermDocs;
 using ToStringUtils = Lucene.Net.Util.ToStringUtils;
 using Lucene.Net.Search;
+using Lucene.Net.Store;
 
 namespace Lucene.Net.Search.Function
 {
@@ -56,7 +57,7 @@ namespace Lucene.Net.Search.Function
 		}
 		
 		/*(non-Javadoc) <see cref="Lucene.Net.Search.Query.rewrite(Lucene.Net.Index.IndexReader) */
-		public override Query Rewrite(IndexReader reader)
+		public override Query Rewrite(IndexReader reader, IState state)
 		{
 			return this;
 		}
@@ -124,15 +125,15 @@ namespace Lucene.Net.Search.Function
 				queryWeight *= this.queryNorm;
 			}
 			
-			public override Scorer Scorer(IndexReader reader, bool scoreDocsInOrder, bool topScorer)
+			public override Scorer Scorer(IndexReader reader, bool scoreDocsInOrder, bool topScorer, IState state)
 			{
-				return new ValueSourceScorer(enclosingInstance, similarity, reader, this);
+				return new ValueSourceScorer(enclosingInstance, similarity, reader, this, state);
 			}
 			
 			/*(non-Javadoc) <see cref="Lucene.Net.Search.Weight.explain(Lucene.Net.Index.IndexReader, int) */
-			public override Explanation Explain(IndexReader reader, int doc)
+			public override Explanation Explain(IndexReader reader, int doc, IState state)
 			{
-			    DocValues vals = enclosingInstance.valSrc.GetValues(reader);
+			    DocValues vals = enclosingInstance.valSrc.GetValues(reader, state);
 			    float sc = queryWeight*vals.FloatVal(doc);
 
                 Explanation result = new ComplexExplanation(true, sc, enclosingInstance.ToString() + ", product of:")
@@ -171,20 +172,20 @@ namespace Lucene.Net.Search.Function
             private int doc = -1;
 
             // constructor
-            internal ValueSourceScorer(ValueSourceQuery enclosingInstance, Similarity similarity, IndexReader reader, ValueSourceWeight w)
+            internal ValueSourceScorer(ValueSourceQuery enclosingInstance, Similarity similarity, IndexReader reader, ValueSourceWeight w, IState state)
                 : base(similarity)
             {
                 InitBlock(enclosingInstance);
                 this.weight = w;
                 this.qWeight = w.Value;
                 // this is when/where the values are first created.
-                vals = Enclosing_Instance.valSrc.GetValues(reader);
-                termDocs = reader.TermDocs(null);
+                vals = Enclosing_Instance.valSrc.GetValues(reader, state);
+                termDocs = reader.TermDocs(null, state);
             }
 
-            public override int NextDoc()
+            public override int NextDoc(IState state)
             {
-                return doc = termDocs.Next() ? termDocs.Doc : NO_MORE_DOCS;
+                return doc = termDocs.Next(state) ? termDocs.Doc : NO_MORE_DOCS;
             }
 
             public override int DocID()
@@ -192,19 +193,19 @@ namespace Lucene.Net.Search.Function
                 return doc;
             }
 
-            public override int Advance(int target)
+            public override int Advance(int target, IState state)
             {
-                return doc = termDocs.SkipTo(target) ? termDocs.Doc : NO_MORE_DOCS;
+                return doc = termDocs.SkipTo(target, state) ? termDocs.Doc : NO_MORE_DOCS;
             }
 
             /*(non-Javadoc) <see cref="Lucene.Net.Search.Scorer.explain(int) */
-            public override float Score()
+            public override float Score(IState state)
             {
                 return qWeight * vals.FloatVal(termDocs.Doc);
             }
         }
 
-		public override Weight CreateWeight(Searcher searcher)
+		public override Weight CreateWeight(Searcher searcher, IState state)
 		{
 			return new ValueSourceQuery.ValueSourceWeight(this, searcher);
 		}

@@ -16,6 +16,7 @@
  */
 
 using System;
+using Lucene.Net.Store;
 using Lucene.Net.Support;
 using Directory = Lucene.Net.Store.Directory;
 using IndexInput = Lucene.Net.Store.IndexInput;
@@ -164,9 +165,9 @@ namespace Lucene.Net.Util
 		/// <c>d</c>, in a format that can be read by the constructor 
 		/// <see cref="BitVector(Directory, String)" />.  
 		/// </summary>
-		public void  Write(Directory d, System.String name)
+		public void  Write(Directory d, System.String name, IState state)
 		{
-			IndexOutput output = d.CreateOutput(name);
+			IndexOutput output = d.CreateOutput(name, state);
 			try
 			{
 				if (IsSparse())
@@ -238,19 +239,19 @@ namespace Lucene.Net.Util
 		/// <summary>Constructs a bit vector from the file <c>name</c> in Directory
 		/// <c>d</c>, as written by the <see cref="Write" /> method.
 		/// </summary>
-		public BitVector(Directory d, System.String name)
+		public BitVector(Directory d, System.String name, IState state)
 		{
-			IndexInput input = d.OpenInput(name);
+			IndexInput input = d.OpenInput(name, state);
 			try
 			{
-				size = input.ReadInt(); // read size
+				size = input.ReadInt(state); // read size
 				if (size == - 1)
 				{
-					ReadDgaps(input);
+					ReadDgaps(input, state);
 				}
 				else
 				{
-					ReadBits(input);
+					ReadBits(input, state);
 				}
 			}
 			finally
@@ -260,25 +261,25 @@ namespace Lucene.Net.Util
 		}
 		
 		/// <summary>Read as a bit set </summary>
-		private void  ReadBits(IndexInput input)
+		private void  ReadBits(IndexInput input, IState state)
 		{
-			count = input.ReadInt(); // read count
+			count = input.ReadInt(state); // read count
 			bits = new byte[(size >> 3) + 1]; // allocate bits
-			input.ReadBytes(bits, 0, bits.Length);
+			input.ReadBytes(bits, 0, bits.Length, state);
 		}
 		
 		/// <summary>read as a d-gaps list </summary>
-		private void  ReadDgaps(IndexInput input)
+		private void  ReadDgaps(IndexInput input, IState state)
 		{
-			size = input.ReadInt(); // (re)read size
-			count = input.ReadInt(); // read count
+			size = input.ReadInt(state); // (re)read size
+			count = input.ReadInt(state); // read count
 			bits = new byte[(size >> 3) + 1]; // allocate bits
 			int last = 0;
 			int n = Count();
 			while (n > 0)
 			{
-				last += input.ReadVInt();
-				bits[last] = input.ReadByte();
+				last += input.ReadVInt(state);
+				bits[last] = input.ReadByte(state);
 				n -= BYTE_COUNTS[bits[last] & 0xFF];
 			}
 		}

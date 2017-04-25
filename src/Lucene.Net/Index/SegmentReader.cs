@@ -17,6 +17,7 @@
 
 using System;
 using System.Linq;
+using Lucene.Net.Store;
 using Lucene.Net.Support;
 using Lucene.Net.Util;
 using Document = Lucene.Net.Documents.Document;
@@ -104,7 +105,7 @@ namespace Lucene.Net.Index
 			internal CompoundFileReader cfsReader;
 			internal CompoundFileReader storeCFSReader;
 
-            internal CoreReaders(SegmentReader origInstance, Directory dir, SegmentInfo si, int readBufferSize, int termsIndexDivisor)
+            internal CoreReaders(SegmentReader origInstance, Directory dir, SegmentInfo si, int readBufferSize, int termsIndexDivisor, IState state)
 			{
 				segment = si.name;
 				this.readBufferSize = readBufferSize;
@@ -115,17 +116,17 @@ namespace Lucene.Net.Index
 				try
 				{
 					Directory dir0 = dir;
-					if (si.GetUseCompoundFile())
+					if (si.GetUseCompoundFile(state))
 					{
-						cfsReader = new CompoundFileReader(dir, segment + "." + IndexFileNames.COMPOUND_FILE_EXTENSION, readBufferSize);
+						cfsReader = new CompoundFileReader(dir, segment + "." + IndexFileNames.COMPOUND_FILE_EXTENSION, readBufferSize, state);
 						dir0 = cfsReader;
 					}
 					cfsDir = dir0;
 					
-					fieldInfos = new FieldInfos(cfsDir, segment + "." + IndexFileNames.FIELD_INFOS_EXTENSION);
+					fieldInfos = new FieldInfos(cfsDir, segment + "." + IndexFileNames.FIELD_INFOS_EXTENSION, state);
 					
 					this.termsIndexDivisor = termsIndexDivisor;
-					var reader = new TermInfosReader(cfsDir, segment, fieldInfos, readBufferSize, termsIndexDivisor);
+					var reader = new TermInfosReader(cfsDir, segment, fieldInfos, readBufferSize, termsIndexDivisor, state);
 					if (termsIndexDivisor == - 1)
 					{
 						tisNoIndex = reader;
@@ -138,9 +139,9 @@ namespace Lucene.Net.Index
 					
 					// make sure that all index files have been read or are kept open
 					// so that if an index update removes them we'll still have them
-					freqStream = cfsDir.OpenInput(segment + "." + IndexFileNames.FREQ_EXTENSION, readBufferSize);
+					freqStream = cfsDir.OpenInput(segment + "." + IndexFileNames.FREQ_EXTENSION, readBufferSize, state);
 					
-					proxStream = fieldInfos.HasProx() ? cfsDir.OpenInput(segment + "." + IndexFileNames.PROX_EXTENSION, readBufferSize) : null;
+					proxStream = fieldInfos.HasProx() ? cfsDir.OpenInput(segment + "." + IndexFileNames.PROX_EXTENSION, readBufferSize, state) : null;
 					success = true;
 				}
 				finally
@@ -219,14 +220,14 @@ namespace Lucene.Net.Index
 			// sharing a segment that's still being merged.  This
 			// method is not fully thread safe, and relies on the
 			// synchronization in IndexWriter
-			internal void  LoadTermsIndex(SegmentInfo si, int termsIndexDivisor)
+			internal void  LoadTermsIndex(SegmentInfo si, int termsIndexDivisor, IState state)
 			{
 				lock (this)
 				{
 					if (tis == null)
 					{
 						Directory dir0;
-						if (si.GetUseCompoundFile())
+						if (si.GetUseCompoundFile(state))
 						{
 							// In some cases, we were originally opened when CFS
 							// was not used, but then we are asked to open the
@@ -234,7 +235,7 @@ namespace Lucene.Net.Index
 							// to CFS
 							if (cfsReader == null)
 							{
-								cfsReader = new CompoundFileReader(dir, segment + "." + IndexFileNames.COMPOUND_FILE_EXTENSION, readBufferSize);
+								cfsReader = new CompoundFileReader(dir, segment + "." + IndexFileNames.COMPOUND_FILE_EXTENSION, readBufferSize, state);
 							}
 							dir0 = cfsReader;
 						}
@@ -243,7 +244,7 @@ namespace Lucene.Net.Index
 							dir0 = dir;
 						}
 						
-						tis = new TermInfosReader(dir0, segment, fieldInfos, readBufferSize, termsIndexDivisor);
+						tis = new TermInfosReader(dir0, segment, fieldInfos, readBufferSize, termsIndexDivisor, state);
 					}
 				}
 			}
@@ -308,7 +309,7 @@ namespace Lucene.Net.Index
 				}
 			}
 			
-			internal void  OpenDocStores(SegmentInfo si)
+			internal void  OpenDocStores(SegmentInfo si, IState state)
 			{
 				lock (this)
 				{
@@ -323,7 +324,7 @@ namespace Lucene.Net.Index
 							if (si.DocStoreIsCompoundFile)
 							{
 								System.Diagnostics.Debug.Assert(storeCFSReader == null);
-								storeCFSReader = new CompoundFileReader(dir, si.DocStoreSegment + "." + IndexFileNames.COMPOUND_FILE_STORE_EXTENSION, readBufferSize);
+								storeCFSReader = new CompoundFileReader(dir, si.DocStoreSegment + "." + IndexFileNames.COMPOUND_FILE_STORE_EXTENSION, readBufferSize, state);
 								storeDir = storeCFSReader;
 								System.Diagnostics.Debug.Assert(storeDir != null);
 							}
@@ -333,14 +334,14 @@ namespace Lucene.Net.Index
 								System.Diagnostics.Debug.Assert(storeDir != null);
 							}
 						}
-						else if (si.GetUseCompoundFile())
+						else if (si.GetUseCompoundFile(state))
 						{
 							// In some cases, we were originally opened when CFS
 							// was not used, but then we are asked to open doc
 							// stores after the segment has switched to CFS
 							if (cfsReader == null)
 							{
-								cfsReader = new CompoundFileReader(dir, segment + "." + IndexFileNames.COMPOUND_FILE_EXTENSION, readBufferSize);
+								cfsReader = new CompoundFileReader(dir, segment + "." + IndexFileNames.COMPOUND_FILE_EXTENSION, readBufferSize, state);
 							}
 							storeDir = cfsReader;
 							System.Diagnostics.Debug.Assert(storeDir != null);
@@ -353,7 +354,7 @@ namespace Lucene.Net.Index
 
 						string storesSegment = si.DocStoreOffset != - 1 ? si.DocStoreSegment : segment;
 						
-						fieldsReaderOrig = new FieldsReader(storeDir, storesSegment, fieldInfos, readBufferSize, si.DocStoreOffset, si.docCount);
+						fieldsReaderOrig = new FieldsReader(storeDir, storesSegment, fieldInfos, readBufferSize, si.DocStoreOffset, si.docCount, state);
 						
 						// Verify two sources of "maxDoc" agree:
 						if (si.DocStoreOffset == - 1 && fieldsReaderOrig.Size() != si.docCount)
@@ -364,7 +365,7 @@ namespace Lucene.Net.Index
 						if (fieldInfos.HasVectors())
 						{
 							// open term vector files only as needed
-							termVectorsReaderOrig = new TermVectorsReader(storeDir, storesSegment, fieldInfos, readBufferSize, si.DocStoreOffset, si.docCount);
+							termVectorsReaderOrig = new TermVectorsReader(storeDir, storesSegment, fieldInfos, readBufferSize, si.DocStoreOffset, si.docCount, state);
 						}
 					}
 				}
@@ -555,7 +556,7 @@ namespace Lucene.Net.Index
 			
 			// Load bytes but do not cache them if they were not
 			// already cached
-			public void  Bytes(byte[] bytesOut, int offset, int len)
+			public void  Bytes(byte[] bytesOut, int offset, int len, IState state)
 			{
 				lock (this)
 				{
@@ -572,15 +573,15 @@ namespace Lucene.Net.Index
 						if (origNorm != null)
 						{
 							// Ask origNorm to load
-							origNorm.Bytes(bytesOut, offset, len);
+							origNorm.Bytes(bytesOut, offset, len, state);
 						}
 						else
 						{
 							// We are orig -- read ourselves from disk:
 							lock (in_Renamed)
 							{
-								in_Renamed.Seek(normSeek);
-								in_Renamed.ReadBytes(bytesOut, offset, len, false);
+								in_Renamed.Seek(normSeek, state);
+								in_Renamed.ReadBytes(bytesOut, offset, len, false, state);
 							}
 						}
 					}
@@ -588,7 +589,7 @@ namespace Lucene.Net.Index
 			}
 			
 			// Load & cache full bytes array.  Returns bytes.
-			public byte[] Bytes()
+			public byte[] Bytes(IState state)
 			{
 				lock (this)
 				{
@@ -602,7 +603,7 @@ namespace Lucene.Net.Index
 							// Ask origNorm to load so that for a series of
 							// reopened readers we share a single read-only
 							// byte[]
-							bytes = origNorm.Bytes();
+							bytes = origNorm.Bytes(state);
 							bytesRef = origNorm.bytesRef;
 							bytesRef.IncRef();
 							
@@ -624,8 +625,8 @@ namespace Lucene.Net.Index
 							// Read from disk.
 							lock (in_Renamed)
 							{
-								in_Renamed.Seek(normSeek);
-								in_Renamed.ReadBytes(bytes, 0, count, false);
+								in_Renamed.Seek(normSeek, state);
+								in_Renamed.ReadBytes(bytes, 0, count, false, state);
 							}
 							
 							bytesRef = new Ref();
@@ -645,12 +646,12 @@ namespace Lucene.Net.Index
 			
 			// Called if we intend to change a norm value.  We make a
 			// private copy of bytes if it's shared with others:
-			public byte[] CopyOnWrite()
+			public byte[] CopyOnWrite(IState state)
 			{
 				lock (this)
 				{
 					System.Diagnostics.Debug.Assert(refCount > 0 &&(origNorm == null || origNorm.refCount > 0));
-					Bytes();
+					Bytes(state);
 					System.Diagnostics.Debug.Assert(bytes != null);
 					System.Diagnostics.Debug.Assert(bytesRef != null);
 					if (bytesRef.RefCount() > 1)
@@ -717,14 +718,14 @@ namespace Lucene.Net.Index
 			
 			// Flush all pending changes to the next generation
 			// separate norms file.
-			public void  ReWrite(SegmentInfo si)
+			public void  ReWrite(SegmentInfo si, IState state)
 			{
 				System.Diagnostics.Debug.Assert(refCount > 0 && (origNorm == null || origNorm.refCount > 0), "refCount=" + refCount + " origNorm=" + origNorm);
 				
 				// NOTE: norms are re-written in regular directory, not cfs
 				si.AdvanceNormGen(this.number);
-				string normFileName = si.GetNormFileName(this.number);
-                IndexOutput @out = enclosingInstance.Directory().CreateOutput(normFileName);
+				string normFileName = si.GetNormFileName(this.number, state);
+                IndexOutput @out = enclosingInstance.Directory().CreateOutput(normFileName, state);
                 bool success = false;
 				try
 				{
@@ -741,7 +742,7 @@ namespace Lucene.Net.Index
                     {
                         try
                         {
-                            enclosingInstance.Directory().DeleteFile(normFileName);
+                            enclosingInstance.Directory().DeleteFile(normFileName, state);
                         }
                         catch (Exception)
                         {
@@ -758,14 +759,14 @@ namespace Lucene.Net.Index
 		
 		/// <throws>  CorruptIndexException if the index is corrupt </throws>
 		/// <throws>  IOException if there is a low-level IO error </throws>
-		public static SegmentReader Get(bool readOnly, SegmentInfo si, int termInfosIndexDivisor)
+		public static SegmentReader Get(bool readOnly, SegmentInfo si, int termInfosIndexDivisor, IState state)
 		{
-			return Get(readOnly, si.dir, si, BufferedIndexInput.BUFFER_SIZE, true, termInfosIndexDivisor);
+			return Get(readOnly, si.dir, si, BufferedIndexInput.BUFFER_SIZE, true, termInfosIndexDivisor, state);
 		}
 		
 		/// <throws>  CorruptIndexException if the index is corrupt </throws>
 		/// <throws>  IOException if there is a low-level IO error </throws>
-		public static SegmentReader Get(bool readOnly, Directory dir, SegmentInfo si, int readBufferSize, bool doOpenStores, int termInfosIndexDivisor)
+		public static SegmentReader Get(bool readOnly, Directory dir, SegmentInfo si, int readBufferSize, bool doOpenStores, int termInfosIndexDivisor, IState state)
 		{
 			SegmentReader instance = readOnly ? new ReadOnlySegmentReader() : new SegmentReader();
 			instance.readOnly = readOnly;
@@ -776,13 +777,13 @@ namespace Lucene.Net.Index
 			
 			try
 			{
-				instance.core = new CoreReaders(instance, dir, si, readBufferSize, termInfosIndexDivisor);
+				instance.core = new CoreReaders(instance, dir, si, readBufferSize, termInfosIndexDivisor, state);
 				if (doOpenStores)
 				{
-					instance.core.OpenDocStores(si);
+					instance.core.OpenDocStores(si, state);
 				}
-				instance.LoadDeletedDocs();
-				instance.OpenNorms(instance.core.cfsDir, readBufferSize);
+				instance.LoadDeletedDocs(state);
+				instance.OpenNorms(instance.core.cfsDir, readBufferSize, state);
 				success = true;
 			}
 			finally
@@ -795,45 +796,45 @@ namespace Lucene.Net.Index
 				// wait for a GC to do so.
 				if (!success)
 				{
-					instance.DoClose();
+					instance.DoClose(state);
 				}
 			}
 			return instance;
 		}
 		
-		internal virtual void  OpenDocStores()
+		internal virtual void  OpenDocStores(IState state)
 		{
-			core.OpenDocStores(si);
+			core.OpenDocStores(si, state);
 		}
 
-        private bool CheckDeletedCounts()
+        private bool CheckDeletedCounts(IState state)
         {
             int recomputedCount = deletedDocs.GetRecomputedCount();
 
             System.Diagnostics.Debug.Assert(deletedDocs.Count() == recomputedCount, "deleted count=" + deletedDocs.Count() + " vs recomputed count=" + recomputedCount);
 
-            System.Diagnostics.Debug.Assert(si.GetDelCount() == recomputedCount, "delete count mismatch: info=" + si.GetDelCount() + " vs BitVector=" + recomputedCount);
+            System.Diagnostics.Debug.Assert(si.GetDelCount(state) == recomputedCount, "delete count mismatch: info=" + si.GetDelCount(state) + " vs BitVector=" + recomputedCount);
 
             // Verify # deletes does not exceed maxDoc for this
             // segment:
-            System.Diagnostics.Debug.Assert(si.GetDelCount() <= MaxDoc, "delete count mismatch: " + recomputedCount + ") exceeds max doc (" + MaxDoc + ") for segment " + si.name);
+            System.Diagnostics.Debug.Assert(si.GetDelCount(state) <= MaxDoc, "delete count mismatch: " + recomputedCount + ") exceeds max doc (" + MaxDoc + ") for segment " + si.name);
 
             return true;
         }
 		
-		private void  LoadDeletedDocs()
+		private void  LoadDeletedDocs(IState state)
 		{
 			// NOTE: the bitvector is stored using the regular directory, not cfs
             //if(HasDeletions(si))
-			if (si.HasDeletions())
+			if (si.HasDeletions(state))
 			{
-				deletedDocs = new BitVector(Directory(), si.GetDelFileName());
+				deletedDocs = new BitVector(Directory(), si.GetDelFileName(), state);
 				deletedDocsRef = new Ref();
 
-                System.Diagnostics.Debug.Assert(CheckDeletedCounts());
+                System.Diagnostics.Debug.Assert(CheckDeletedCounts(state));
 			}
 			else 
-				System.Diagnostics.Debug.Assert(si.GetDelCount() == 0);
+				System.Diagnostics.Debug.Assert(si.GetDelCount(state) == 0);
 		}
 		
 		/// <summary> Clones the norm bytes.  May be overridden by subclasses.  New and experimental.</summary>
@@ -864,7 +865,7 @@ namespace Lucene.Net.Index
             {
                 try
                 {
-                    return Clone(readOnly); // Preserve current readOnly
+                    return Clone(readOnly, StateHolder.Current.Value); // Preserve current readOnly
                 }
                 catch (System.Exception ex)
                 {
@@ -873,26 +874,26 @@ namespace Lucene.Net.Index
             }
 		}
 		
-		public override IndexReader Clone(bool openReadOnly)
+		public override IndexReader Clone(bool openReadOnly, IState state)
 		{
 			lock (this)
 			{
-				return ReopenSegment(si, true, openReadOnly);
+				return ReopenSegment(si, true, openReadOnly, state);
 			}
 		}
 		
-		internal virtual SegmentReader ReopenSegment(SegmentInfo si, bool doClone, bool openReadOnly)
+		internal virtual SegmentReader ReopenSegment(SegmentInfo si, bool doClone, bool openReadOnly, IState state)
 		{
 			lock (this)
 			{
-				bool deletionsUpToDate = (this.si.HasDeletions() == si.HasDeletions()) && (!si.HasDeletions() || this.si.GetDelFileName().Equals(si.GetDelFileName()));
+				bool deletionsUpToDate = (this.si.HasDeletions(state) == si.HasDeletions(state)) && (!si.HasDeletions(state) || this.si.GetDelFileName().Equals(si.GetDelFileName()));
 				bool normsUpToDate = true;
 				
 				bool[] fieldNormsChanged = new bool[core.fieldInfos.Size()];
 				int fieldCount = core.fieldInfos.Size();
 				for (int i = 0; i < fieldCount; i++)
 				{
-					if (!this.si.GetNormFileName(i).Equals(si.GetNormFileName(i)))
+					if (!this.si.GetNormFileName(i, state).Equals(si.GetNormFileName(i, state)))
 					{
 						normsUpToDate = false;
 						fieldNormsChanged[i] = true;
@@ -947,7 +948,7 @@ namespace Lucene.Net.Index
 						{
 							// load deleted docs
 							System.Diagnostics.Debug.Assert(clone.deletedDocs == null);
-							clone.LoadDeletedDocs();
+							clone.LoadDeletedDocs(state);
 						}
 						else if (deletedDocs != null)
 						{
@@ -975,7 +976,7 @@ namespace Lucene.Net.Index
 					
 					// If we are not cloning, then this will open anew
 					// any norms that have changed:
-					clone.OpenNorms(si.GetUseCompoundFile()?core.GetCFSReader():Directory(), readBufferSize);
+					clone.OpenNorms(si.GetUseCompoundFile(state)?core.GetCFSReader():Directory(), readBufferSize, state);
 					
 					success = true;
 				}
@@ -985,7 +986,7 @@ namespace Lucene.Net.Index
 					{
 						// An exception occured during reopen, we have to decRef the norms
 						// that we incRef'ed already and close singleNormsStream and FieldsReader
-						clone.DecRef();
+						clone.DecRef(state);
 					}
 				}
 				
@@ -993,7 +994,7 @@ namespace Lucene.Net.Index
 			}
 		}
 
-        protected internal override void DoCommit(System.Collections.Generic.IDictionary<string, string> commitUserData)
+        protected internal override void DoCommit(System.Collections.Generic.IDictionary<string, string> commitUserData, IState state)
         {
             if (hasChanges)
             {
@@ -1001,7 +1002,7 @@ namespace Lucene.Net.Index
                 bool success = false;
                 try
                 {
-                    CommitChanges(commitUserData);
+                    CommitChanges(commitUserData, state);
                     success = true;
                 }
                 finally
@@ -1014,7 +1015,7 @@ namespace Lucene.Net.Index
             }
         }
 
-        private void CommitChanges(System.Collections.Generic.IDictionary<string, string> commitUserData)
+        private void CommitChanges(System.Collections.Generic.IDictionary<string, string> commitUserData, IState state)
         {
             if (deletedDocsDirty)
             {               // re-write deleted
@@ -1027,7 +1028,7 @@ namespace Lucene.Net.Index
                 bool success = false;
                 try
                 {
-                    deletedDocs.Write(Directory(), delFileName);
+                    deletedDocs.Write(Directory(), delFileName, state);
                     success = true;
                 }
                 finally
@@ -1036,7 +1037,7 @@ namespace Lucene.Net.Index
                     {
                         try
                         {
-                            Directory().DeleteFile(delFileName);
+                            Directory().DeleteFile(delFileName, state);
                         }
                         catch (Exception)
                         {
@@ -1046,9 +1047,9 @@ namespace Lucene.Net.Index
                     }
                 }
 
-                si.SetDelCount(si.GetDelCount() + pendingDeleteCount);
+                si.SetDelCount(si.GetDelCount(state) + pendingDeleteCount);
                 pendingDeleteCount = 0;
-                System.Diagnostics.Debug.Assert(deletedDocs.Count() == si.GetDelCount(), "delete count mismatch during commit: info=" + si.GetDelCount() + " vs BitVector=" + deletedDocs.Count());
+                System.Diagnostics.Debug.Assert(deletedDocs.Count() == si.GetDelCount(state), "delete count mismatch during commit: info=" + si.GetDelCount(state) + " vs BitVector=" + deletedDocs.Count());
             }
             else
             {
@@ -1062,7 +1063,7 @@ namespace Lucene.Net.Index
                 {
                     if (norm.dirty)
                     {
-                        norm.ReWrite(si);
+                        norm.ReWrite(si, state);
                     }
                 }
             }
@@ -1076,7 +1077,7 @@ namespace Lucene.Net.Index
 			return fieldsReaderLocal.Get();
 		}
 		
-		protected internal override void  DoClose()
+		protected internal override void  DoClose(IState state)
 		{
 			termVectorsLocal.Close();
 			fieldsReaderLocal.Close();
@@ -1113,17 +1114,17 @@ namespace Lucene.Net.Index
 	        }
 	    }
 
-	    internal static bool UsesCompoundFile(SegmentInfo si)
+	    internal static bool UsesCompoundFile(SegmentInfo si, IState state)
 		{
-			return si.GetUseCompoundFile();
+			return si.GetUseCompoundFile(state);
 		}
 		
-		internal static bool HasSeparateNorms(SegmentInfo si)
+		internal static bool HasSeparateNorms(SegmentInfo si, IState state)
 		{
-			return si.HasSeparateNorms();
+			return si.HasSeparateNorms(state);
 		}
 		
-		protected internal override void  DoDelete(int docNum)
+		protected internal override void  DoDelete(int docNum, IState state)
 		{
 			if (deletedDocs == null)
 			{
@@ -1145,7 +1146,7 @@ namespace Lucene.Net.Index
 				pendingDeleteCount++;
 		}
 		
-		protected internal override void  DoUndeleteAll()
+		protected internal override void  DoUndeleteAll(IState state)
 		{
 			deletedDocsDirty = false;
 			if (deletedDocs != null)
@@ -1165,21 +1166,21 @@ namespace Lucene.Net.Index
 			}
 		}
 		
-		internal virtual System.Collections.Generic.IList<string> Files()
+		internal virtual System.Collections.Generic.IList<string> Files(IState state)
 		{
-			return si.Files();
+			return si.Files(state);
 		}
 		
-		public override TermEnum Terms()
+		public override TermEnum Terms(IState state)
 		{
 			EnsureOpen();
 			return core.GetTermsReader().Terms();
 		}
 		
-		public override TermEnum Terms(Term t)
+		public override TermEnum Terms(Term t, IState state)
 		{
 			EnsureOpen();
-			return core.GetTermsReader().Terms(t);
+			return core.GetTermsReader().Terms(t, state);
 		}
 		
 		public /*internal*/ virtual FieldInfos FieldInfos()
@@ -1187,10 +1188,10 @@ namespace Lucene.Net.Index
 			return core.fieldInfos;
 		}
 		
-		public override Document Document(int n, FieldSelector fieldSelector)
+		public override Document Document(int n, FieldSelector fieldSelector, IState state)
 		{
 			EnsureOpen();
-			return GetFieldsReader().Doc(n, fieldSelector);
+			return GetFieldsReader().Doc(n, fieldSelector, state);
 		}
 		
 		public override bool IsDeleted(int n)
@@ -1201,7 +1202,7 @@ namespace Lucene.Net.Index
 			}
 		}
 		
-		public override TermDocs TermDocs(Term term)
+		public override TermDocs TermDocs(Term term, IState state)
 		{
 			if (term == null)
 			{
@@ -1209,26 +1210,26 @@ namespace Lucene.Net.Index
 			}
 			else
 			{
-				return base.TermDocs(term);
+				return base.TermDocs(term, state);
 			}
 		}
 		
-		public override TermDocs TermDocs()
+		public override TermDocs TermDocs(IState state)
 		{
 			EnsureOpen();
 			return new SegmentTermDocs(this);
 		}
 		
-		public override TermPositions TermPositions()
+		public override TermPositions TermPositions(IState state)
 		{
 			EnsureOpen();
 			return new SegmentTermPositions(this);
 		}
 		
-		public override int DocFreq(Term t)
+		public override int DocFreq(Term t, IState state)
 		{
 			EnsureOpen();
-			TermInfo ti = core.GetTermsReader().Get(t);
+			TermInfo ti = core.GetTermsReader().Get(t, state);
 			if (ti != null)
 				return ti.docFreq;
 			else
@@ -1312,7 +1313,7 @@ namespace Lucene.Net.Index
 		}
 		
 		
-		public override bool HasNorms(System.String field)
+		public override bool HasNorms(System.String field, IState state)
 		{
 			lock (this)
 			{
@@ -1322,29 +1323,29 @@ namespace Lucene.Net.Index
 		}
 		
 		// can return null if norms aren't stored
-		protected internal virtual byte[] GetNorms(System.String field)
+		protected internal virtual byte[] GetNorms(System.String field, IState state)
 		{
 			lock (this)
 			{
 				Norm norm = norms[field];
 				if (norm == null)
 					return null; // not indexed, or norms not stored
-				return norm.Bytes();
+				return norm.Bytes(state);
 			}
 		}
 		
 		// returns fake norms if norms aren't available
-		public override byte[] Norms(System.String field)
+		public override byte[] Norms(System.String field, IState state)
 		{
 			lock (this)
 			{
 				EnsureOpen();
-				byte[] bytes = GetNorms(field);
+				byte[] bytes = GetNorms(field, state);
 				return bytes;
 			}
 		}
 		
-		protected internal override void  DoSetNorm(int doc, System.String field, byte value_Renamed)
+		protected internal override void  DoSetNorm(int doc, System.String field, byte value_Renamed, IState state)
 		{
 			Norm norm = norms[field];
 			if (norm == null)
@@ -1352,11 +1353,11 @@ namespace Lucene.Net.Index
 				return ;
 			
 			normsDirty = true;
-			norm.CopyOnWrite()[doc] = value_Renamed; // set the value
+			norm.CopyOnWrite(state)[doc] = value_Renamed; // set the value
 		}
 		
 		/// <summary>Read norms into a pre-allocated array. </summary>
-		public override void Norms(System.String field, byte[] bytes, int offset)
+		public override void Norms(System.String field, byte[] bytes, int offset, IState state)
 		{
 			lock (this)
 			{
@@ -1372,12 +1373,12 @@ namespace Lucene.Net.Index
 					return ;
 				}
 				
-				norm.Bytes(bytes, offset, MaxDoc);
+				norm.Bytes(bytes, offset, MaxDoc, state);
 			}
 		}
 		
 		
-		private void  OpenNorms(Directory cfsDir, int readBufferSize)
+		private void  OpenNorms(Directory cfsDir, int readBufferSize, IState state)
 		{
 			long nextNormSeek = SegmentMerger.NORMS_HEADER.Length; //skip header (header unused for now)
 			int maxDoc = MaxDoc;
@@ -1393,8 +1394,8 @@ namespace Lucene.Net.Index
 				if (fi.isIndexed && !fi.omitNorms)
 				{
 					Directory d = Directory();
-					System.String fileName = si.GetNormFileName(fi.number);
-					if (!si.HasSeparateNorms(fi.number))
+					System.String fileName = si.GetNormFileName(fi.number, state);
+					if (!si.HasSeparateNorms(fi.number, state))
 					{
 						d = cfsDir;
 					}
@@ -1409,7 +1410,7 @@ namespace Lucene.Net.Index
 						normSeek = nextNormSeek;
 						if (singleNormStream == null)
 						{
-							singleNormStream = d.OpenInput(fileName, readBufferSize);
+							singleNormStream = d.OpenInput(fileName, readBufferSize, state);
 							singleNormRef = new Ref();
 						}
 						else
@@ -1424,7 +1425,7 @@ namespace Lucene.Net.Index
 					else
 					{
 						normSeek = 0;
-						normInput = d.OpenInput(fileName);
+						normInput = d.OpenInput(fileName, state);
 					}
 					
 					norms[fi.name] = new Norm(this, normInput, fi.number, normSeek);
@@ -1443,9 +1444,9 @@ namespace Lucene.Net.Index
 		// sharing a segment that's still being merged.  This
 		// method is not thread safe, and relies on the
 		// synchronization in IndexWriter
-		internal virtual void  LoadTermsIndex(int termsIndexDivisor)
+		internal virtual void  LoadTermsIndex(int termsIndexDivisor, IState state)
 		{
-			core.LoadTermsIndex(si, termsIndexDivisor);
+			core.LoadTermsIndex(si, termsIndexDivisor, state);
 		}
 		
 		// for testing only
@@ -1504,7 +1505,7 @@ namespace Lucene.Net.Index
 		/// flag set.  If the flag was not set, the method returns null.
 		/// </summary>
 		/// <throws>  IOException </throws>
-		public override ITermFreqVector GetTermFreqVector(int docNumber, System.String field)
+		public override ITermFreqVector GetTermFreqVector(int docNumber, System.String field, IState state)
 		{
 			// Check if this field is invalid or has no stored term vector
 			EnsureOpen();
@@ -1516,11 +1517,11 @@ namespace Lucene.Net.Index
 			if (termVectorsReader == null)
 				return null;
 			
-			return termVectorsReader.Get(docNumber, field);
+			return termVectorsReader.Get(docNumber, field, state);
 		}
 		
 		
-		public override void  GetTermFreqVector(int docNumber, System.String field, TermVectorMapper mapper)
+		public override void  GetTermFreqVector(int docNumber, System.String field, TermVectorMapper mapper, IState state)
 		{
 			EnsureOpen();
 			FieldInfo fi = core.fieldInfos.FieldInfo(field);
@@ -1532,11 +1533,11 @@ namespace Lucene.Net.Index
 			{
 				return;
 			}
-			termVectorsReader.Get(docNumber, field, mapper);
+			termVectorsReader.Get(docNumber, field, mapper, state);
 		}
 		
 		
-		public override void  GetTermFreqVector(int docNumber, TermVectorMapper mapper)
+		public override void  GetTermFreqVector(int docNumber, TermVectorMapper mapper, IState state)
 		{
 			EnsureOpen();
 			
@@ -1544,7 +1545,7 @@ namespace Lucene.Net.Index
 			if (termVectorsReader == null)
 				return ;
 			
-			termVectorsReader.Get(docNumber, mapper);
+			termVectorsReader.Get(docNumber, mapper, state);
 		}
 		
 		/// <summary>Return an array of term frequency vectors for the specified document.
@@ -1554,7 +1555,7 @@ namespace Lucene.Net.Index
 		/// If no such fields existed, the method returns null.
 		/// </summary>
 		/// <throws>  IOException </throws>
-		public override ITermFreqVector[] GetTermFreqVectors(int docNumber)
+		public override ITermFreqVector[] GetTermFreqVectors(int docNumber, IState state)
 		{
 			EnsureOpen();
 			
@@ -1562,7 +1563,7 @@ namespace Lucene.Net.Index
 			if (termVectorsReader == null)
 				return null;
 			
-			return termVectorsReader.Get(docNumber);
+			return termVectorsReader.Get(docNumber, state);
 		}
 
 	    /// <summary> Return the name of the segment this reader is reading.</summary>
@@ -1639,9 +1640,9 @@ namespace Lucene.Net.Index
 		/// We do it with R/W access for the tests (BW compatibility)
 		/// </summary>
 		[Obsolete("Remove this when tests are fixed!")]
-		public /*internal*/ static SegmentReader GetOnlySegmentReader(Directory dir)
+		public /*internal*/ static SegmentReader GetOnlySegmentReader(Directory dir, IState state)
 		{
-			return GetOnlySegmentReader(IndexReader.Open(dir,false));
+			return GetOnlySegmentReader(IndexReader.Open(dir,false, state));
 		}
 		
 		public /*internal*/ static SegmentReader GetOnlySegmentReader(IndexReader reader)

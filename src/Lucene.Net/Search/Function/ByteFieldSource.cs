@@ -16,7 +16,7 @@
  */
 
 using System;
-
+using Lucene.Net.Store;
 using IndexReader = Lucene.Net.Index.IndexReader;
 using FieldCache = Lucene.Net.Search.FieldCache;
 
@@ -112,9 +112,9 @@ namespace Lucene.Net.Search.Function
 		}
 		
 		/*(non-Javadoc) <see cref="Lucene.Net.Search.Function.FieldCacheSource.getCachedValues(Lucene.Net.Search.FieldCache, java.lang.String, Lucene.Net.Index.IndexReader) */
-		public override DocValues GetCachedFieldValues(FieldCache cache, System.String field, IndexReader reader)
+		public override DocValues GetCachedFieldValues(FieldCache cache, System.String field, IndexReader reader, IState state)
 		{
-			sbyte[] arr = cache.GetBytes(reader, field, parser);
+			sbyte[] arr = cache.GetBytes(reader, field, parser, state);
 			return new AnonymousClassDocValues(arr, this);
 		}
 		

@@ -18,6 +18,7 @@
 using System;
 using System.IO;
 using Lucene.Net.Search;
+using Lucene.Net.Store;
 using NumericTokenStream = Lucene.Net.Analysis.NumericTokenStream;
 using TokenStream = Lucene.Net.Analysis.TokenStream;
 using NumericUtils = Lucene.Net.Util.NumericUtils;
@@ -218,7 +219,7 @@ namespace Lucene.Net.Documents
 	    }
 
 	    /// <summary>Returns always <c>null</c> for numeric fields </summary>
-		public override byte[] GetBinaryValue(byte[] result)
+		public override byte[] GetBinaryValue(byte[] result, IState state)
 		{
 			return null;
 		}
@@ -230,9 +231,9 @@ namespace Lucene.Net.Documents
 	    }
 
 	    /// <summary>Returns the numeric value as a string (how it is stored, when <see cref="Field.Store.YES" /> is chosen). </summary>
-	    public override string StringValue
+	    public override string StringValue(IState state)
 	    {
-	        get { return (fieldsData == null) ? null : fieldsData.ToString(); }
+	        return (fieldsData == null) ? null : fieldsData.ToString();
 	    }
 
 	    /// <summary>Returns the current numeric value as a subclass of <see cref="Number" />, <c>null</c> if not yet initialized. </summary>

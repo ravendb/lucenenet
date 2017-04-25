@@ -16,6 +16,7 @@
  */
 
 using System;
+using Lucene.Net.Store;
 
 namespace Lucene.Net.Search
 {
@@ -45,8 +46,8 @@ namespace Lucene.Net.Search
 				}
 				
 			}
-			internal AnonymousClassDisjunctionSumScorer(BooleanScorer2 enclosingInstance, System.Collections.Generic.IList<Scorer> scorers, int minNrShouldMatch)
-                : base(scorers, minNrShouldMatch)
+			internal AnonymousClassDisjunctionSumScorer(BooleanScorer2 enclosingInstance, System.Collections.Generic.IList<Scorer> scorers, int minNrShouldMatch, IState state)
+                : base(scorers, minNrShouldMatch, state)
 			{
 				InitBlock(enclosingInstance);
 			}
@@ -54,14 +55,14 @@ namespace Lucene.Net.Search
 			// Save the score of lastScoredDoc, so that we don't compute it more than
 			// once in score().
 			private float lastDocScore = System.Single.NaN;
-			public override float Score()
+			public override float Score(IState state)
 			{
 				int doc = DocID();
 				if (doc >= lastScoredDoc)
 				{
 					if (doc > lastScoredDoc)
 					{
-						lastDocScore = base.Score();
+						lastDocScore = base.Score(state);
 						lastScoredDoc = doc;
 					}
 					Enclosing_Instance.coordinator.nrMatchers += base.nrMatchers;
@@ -86,8 +87,8 @@ namespace Lucene.Net.Search
 				}
 				
 			}
-			internal AnonymousClassConjunctionScorer(int requiredNrMatchers, BooleanScorer2 enclosingInstance, Lucene.Net.Search.Similarity defaultSimilarity, System.Collections.Generic.IList<Scorer> requiredScorers)
-                : base(defaultSimilarity, requiredScorers)
+			internal AnonymousClassConjunctionScorer(int requiredNrMatchers, BooleanScorer2 enclosingInstance, Lucene.Net.Search.Similarity defaultSimilarity, IState state, System.Collections.Generic.IList<Scorer> requiredScorers)
+                : base(defaultSimilarity, state, requiredScorers)
 			{
 				InitBlock(requiredNrMatchers, enclosingInstance);
 			}
@@ -95,14 +96,14 @@ namespace Lucene.Net.Search
 			// Save the score of lastScoredDoc, so that we don't compute it more than
 			// once in score().
 			private float lastDocScore = System.Single.NaN;
-			public override float Score()
+			public override float Score(IState state)
 			{
 				int doc = DocID();
 				if (doc >= lastScoredDoc)
 				{
 					if (doc > lastScoredDoc)
 					{
-						lastDocScore = base.Score();
+						lastDocScore = base.Score(state);
 						lastScoredDoc = doc;
 					}
 					Enclosing_Instance.coordinator.nrMatchers += requiredNrMatchers;
@@ -186,7 +187,8 @@ namespace Lucene.Net.Search
 		public BooleanScorer2(Similarity similarity, int minNrShouldMatch, 
                                 System.Collections.Generic.List<Scorer> required,
                                 System.Collections.Generic.List<Scorer> prohibited,
-                                System.Collections.Generic.List<Scorer> optional)
+                                System.Collections.Generic.List<Scorer> optional,
+                                IState state)
             : base(similarity)
 		{
 			if (minNrShouldMatch < 0)
@@ -205,7 +207,7 @@ namespace Lucene.Net.Search
 			prohibitedScorers = prohibited;
 			
 			coordinator.Init();
-			countingSumScorer = MakeCountingSumScorer();
+			countingSumScorer = MakeCountingSumScorer(state);
 		}
 		
 		/// <summary>Count a scorer as a single match. </summary>
@@ -235,14 +237,14 @@ namespace Lucene.Net.Search
 				InitBlock(enclosingInstance);
 				this.scorer = scorer;
 			}
-			public override float Score()
+			public override float Score(IState state)
 			{
 				int doc = DocID();
 				if (doc >= lastScoredDoc)
 				{
 					if (doc > lastScoredDoc)
 					{
-						lastDocScore = scorer.Score();
+						lastDocScore = scorer.Score(state);
 						lastScoredDoc = doc;
 					}
 					Enclosing_Instance.coordinator.nrMatchers++;
@@ -255,36 +257,36 @@ namespace Lucene.Net.Search
 				return scorer.DocID();
 			}
 
-			public override int NextDoc()
+			public override int NextDoc(IState state)
 			{
-				return scorer.NextDoc();
+				return scorer.NextDoc(state);
 			}
 
-			public override int Advance(int target)
+			public override int Advance(int target, IState state)
 			{
-				return scorer.Advance(target);
+				return scorer.Advance(target, state);
 			}
 		}
 		
-		private Scorer CountingDisjunctionSumScorer(System.Collections.Generic.List<Scorer> scorers, int minNrShouldMatch)
+		private Scorer CountingDisjunctionSumScorer(System.Collections.Generic.List<Scorer> scorers, int minNrShouldMatch, IState state)
 		{
 			// each scorer from the list counted as a single matcher
-			return new AnonymousClassDisjunctionSumScorer(this, scorers, minNrShouldMatch);
+			return new AnonymousClassDisjunctionSumScorer(this, scorers, minNrShouldMatch, state);
 		}
 		
 		private static readonly Similarity defaultSimilarity;
 		
-		private Scorer CountingConjunctionSumScorer(System.Collections.Generic.List<Scorer> requiredScorers)
+		private Scorer CountingConjunctionSumScorer(System.Collections.Generic.List<Scorer> requiredScorers, IState state)
 		{
 			// each scorer from the list counted as a single matcher
 			int requiredNrMatchers = requiredScorers.Count;
-			return new AnonymousClassConjunctionScorer(requiredNrMatchers, this, defaultSimilarity, requiredScorers);
+			return new AnonymousClassConjunctionScorer(requiredNrMatchers, this, defaultSimilarity, state, requiredScorers);
 		}
 		
-		private Scorer DualConjunctionSumScorer(Scorer req1, Scorer req2)
+		private Scorer DualConjunctionSumScorer(Scorer req1, Scorer req2, IState state)
 		{
 			// non counting.
-			return new ConjunctionScorer(defaultSimilarity, new Scorer[]{req1, req2});
+			return new ConjunctionScorer(defaultSimilarity, state, new Scorer[]{req1, req2});
 			// All scorers match, so defaultSimilarity always has 1 as
 			// the coordination factor.
 			// Therefore the sum of the scores of two scorers
@@ -294,28 +296,28 @@ namespace Lucene.Net.Search
 		/// <summary>Returns the scorer to be used for match counting and score summing.
 		/// Uses requiredScorers, optionalScorers and prohibitedScorers.
 		/// </summary>
-		private Scorer MakeCountingSumScorer()
+		private Scorer MakeCountingSumScorer(IState state)
 		{
 			// each scorer counted as a single matcher
-			return (requiredScorers.Count == 0)?MakeCountingSumScorerNoReq():MakeCountingSumScorerSomeReq();
+			return (requiredScorers.Count == 0)?MakeCountingSumScorerNoReq(state):MakeCountingSumScorerSomeReq(state);
 		}
 		
-		private Scorer MakeCountingSumScorerNoReq()
+		private Scorer MakeCountingSumScorerNoReq(IState state)
 		{
 			// No required scorers
 			// minNrShouldMatch optional scorers are required, but at least 1
 			int nrOptRequired = (minNrShouldMatch < 1)?1:minNrShouldMatch;
 			Scorer requiredCountingSumScorer;
 			if (optionalScorers.Count > nrOptRequired)
-				requiredCountingSumScorer = CountingDisjunctionSumScorer(optionalScorers, nrOptRequired);
+				requiredCountingSumScorer = CountingDisjunctionSumScorer(optionalScorers, nrOptRequired, state);
 			else if (optionalScorers.Count == 1)
 				requiredCountingSumScorer = new SingleMatchScorer(this, optionalScorers[0]);
 			else
-				requiredCountingSumScorer = CountingConjunctionSumScorer(optionalScorers);
-			return AddProhibitedScorers(requiredCountingSumScorer);
+				requiredCountingSumScorer = CountingConjunctionSumScorer(optionalScorers, state);
+			return AddProhibitedScorers(requiredCountingSumScorer, state);
 		}
 		
-		private Scorer MakeCountingSumScorerSomeReq()
+		private Scorer MakeCountingSumScorerSomeReq(IState state)
 		{
 			// At least one required scorer.
 			if (optionalScorers.Count == minNrShouldMatch)
@@ -323,7 +325,7 @@ namespace Lucene.Net.Search
 				// all optional scorers also required.
                 var allReq = new System.Collections.Generic.List<Scorer>(requiredScorers);
 				allReq.AddRange(optionalScorers);
-				return AddProhibitedScorers(CountingConjunctionSumScorer(allReq));
+				return AddProhibitedScorers(CountingConjunctionSumScorer(allReq, state), state);
 			}
 			else
 			{
@@ -331,19 +333,19 @@ namespace Lucene.Net.Search
 				Scorer requiredCountingSumScorer = 
                                     requiredScorers.Count == 1
                                     ? new SingleMatchScorer(this, requiredScorers[0])
-                                    : CountingConjunctionSumScorer(requiredScorers);
+                                    : CountingConjunctionSumScorer(requiredScorers, state);
 				if (minNrShouldMatch > 0)
 				{
 					// use a required disjunction scorer over the optional scorers
-					return AddProhibitedScorers(DualConjunctionSumScorer(requiredCountingSumScorer, CountingDisjunctionSumScorer(optionalScorers, minNrShouldMatch)));
+					return AddProhibitedScorers(DualConjunctionSumScorer(requiredCountingSumScorer, CountingDisjunctionSumScorer(optionalScorers, minNrShouldMatch, state), state), state);
 				}
 				else
 				{
 					// minNrShouldMatch == 0
-					return new ReqOptSumScorer(AddProhibitedScorers(requiredCountingSumScorer), 
+					return new ReqOptSumScorer(AddProhibitedScorers(requiredCountingSumScorer, state), 
                                                optionalScorers.Count == 1
                                                ? new SingleMatchScorer(this, optionalScorers[0])
-                                               : CountingDisjunctionSumScorer(optionalScorers, 1));
+                                               : CountingDisjunctionSumScorer(optionalScorers, 1, state));
 				}
 			}
 		}
@@ -353,36 +355,36 @@ namespace Lucene.Net.Search
 		/// </summary>
 		/// <param name="requiredCountingSumScorer">A required scorer already built.
 		/// </param>
-		private Scorer AddProhibitedScorers(Scorer requiredCountingSumScorer)
+		private Scorer AddProhibitedScorers(Scorer requiredCountingSumScorer, IState state)
 		{
 			return (prohibitedScorers.Count == 0) 
                    ? requiredCountingSumScorer
                    : new ReqExclScorer(requiredCountingSumScorer, 
                                        ((prohibitedScorers.Count == 1)
                                         ? prohibitedScorers[0]
-                                        : new DisjunctionSumScorer(prohibitedScorers)));
+                                        : new DisjunctionSumScorer(prohibitedScorers, state)));
 		}
 		
 		/// <summary>Scores and collects all matching documents.</summary>
 		/// <param name="collector">The collector to which all matching documents are passed through.
 		/// </param>
-		public override void  Score(Collector collector)
+		public override void  Score(Collector collector, IState state)
 		{
 			collector.SetScorer(this);
-			while ((doc = countingSumScorer.NextDoc()) != NO_MORE_DOCS)
+			while ((doc = countingSumScorer.NextDoc(state)) != NO_MORE_DOCS)
 			{
-				collector.Collect(doc);
+				collector.Collect(doc, state);
 			}
 		}
 		
-		public /*protected internal*/ override bool Score(Collector collector, int max, int firstDocID)
+		public /*protected internal*/ override bool Score(Collector collector, int max, int firstDocID, IState state)
 		{
 			doc = firstDocID;
 			collector.SetScorer(this);
 			while (doc < max)
 			{
-				collector.Collect(doc);
-				doc = countingSumScorer.NextDoc();
+				collector.Collect(doc, state);
+				doc = countingSumScorer.NextDoc(state);
 			}
 			return doc != NO_MORE_DOCS;
 		}
@@ -392,21 +394,21 @@ namespace Lucene.Net.Search
 			return doc;
 		}
 		
-		public override int NextDoc()
+		public override int NextDoc(IState state)
 		{
-			return doc = countingSumScorer.NextDoc();
+			return doc = countingSumScorer.NextDoc(state);
 		}
 		
-		public override float Score()
+		public override float Score(IState state)
 		{
 			coordinator.nrMatchers = 0;
-			float sum = countingSumScorer.Score();
+			float sum = countingSumScorer.Score(state);
 			return sum * coordinator.coordFactors[coordinator.nrMatchers];
 		}
 		
-		public override int Advance(int target)
+		public override int Advance(int target, IState state)
 		{
-			return doc = countingSumScorer.Advance(target);
+			return doc = countingSumScorer.Advance(target, state);
 		}
 		
 		static BooleanScorer2()

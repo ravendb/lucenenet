@@ -16,7 +16,7 @@
  */
 
 using System;
-
+using Lucene.Net.Store;
 using IndexReader = Lucene.Net.Index.IndexReader;
 using Term = Lucene.Net.Index.Term;
 using TermDocs = Lucene.Net.Index.TermDocs;
@@ -105,9 +105,9 @@ namespace Lucene.Net.Search
 			query.ClearTotalNumberOfTerms();
 		}
 
-        public override DocIdSet GetDocIdSet(IndexReader reader)
+        public override DocIdSet GetDocIdSet(IndexReader reader, IState state)
         {
-            TermEnum enumerator = query.GetEnum(reader);
+            TermEnum enumerator = query.GetEnum(reader, state);
             try
             {
                 // if current term in enum is null, the enum is empty -> shortcut
@@ -117,7 +117,7 @@ namespace Lucene.Net.Search
                 OpenBitSet bitSet = new OpenBitSet(reader.MaxDoc);
                 int[] docs = new int[32];
                 int[] freqs = new int[32];
-                TermDocs termDocs = reader.TermDocs();
+                TermDocs termDocs = reader.TermDocs(state);
                 try
                 {
                     int termCount = 0;
@@ -127,10 +127,10 @@ namespace Lucene.Net.Search
                         if (term == null)
                             break;
                         termCount++;
-                        termDocs.Seek(term);
+                        termDocs.Seek(term, state);
                         while (true)
                         {
-                            int count = termDocs.Read(docs, freqs);
+                            int count = termDocs.Read(docs, freqs, state);
                             if (count != 0)
                             {
                                 for (int i = 0; i < count; i++)
@@ -143,7 +143,7 @@ namespace Lucene.Net.Search
                                 break;
                             }
                         }
-                    } while (enumerator.Next());
+                    } while (enumerator.Next(state));
 
                     query.IncTotalNumberOfTerms(termCount); // {{Aroush-2.9}} is the use of 'temp' as is right?
                 }

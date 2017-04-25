@@ -18,6 +18,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Lucene.Net.Store;
 using IndexReader = Lucene.Net.Index.IndexReader;
 using Term = Lucene.Net.Index.Term;
 using BooleanClause = Lucene.Net.Search.BooleanClause;
@@ -66,14 +67,14 @@ namespace Lucene.Net.Search.Payloads
 		/// <returns> payloads Collection
 		/// </returns>
 		/// <throws>  IOException </throws>
-		public virtual ICollection<byte[]> GetPayloadsForQuery(Query query)
+		public virtual ICollection<byte[]> GetPayloadsForQuery(Query query, IState state)
 		{
 			ICollection<byte[]> payloads = new List<byte[]>();
-			QueryToSpanQuery(query, payloads);
+			QueryToSpanQuery(query, payloads, state);
 			return payloads;
 		}
 		
-		private void  QueryToSpanQuery(Query query, ICollection<byte[]> payloads)
+		private void  QueryToSpanQuery(Query query, ICollection<byte[]> payloads, IState state)
 		{
 			if (query is BooleanQuery)
 			{
@@ -83,7 +84,7 @@ namespace Lucene.Net.Search.Payloads
 				{
                     if (!queryClauses[i].IsProhibited)
 					{
-						QueryToSpanQuery(queryClauses[i].Query, payloads);
+						QueryToSpanQuery(queryClauses[i].Query, payloads, state);
 					}
 				}
 			}
@@ -106,28 +107,28 @@ namespace Lucene.Net.Search.Payloads
 				
 				SpanNearQuery sp = new SpanNearQuery(clauses, slop, inorder);
 				sp.Boost = query.Boost;
-				GetPayloads(payloads, sp);
+				GetPayloads(payloads, sp, state);
 			}
 			else if (query is TermQuery)
 			{
 				SpanTermQuery stq = new SpanTermQuery(((TermQuery) query).Term);
 				stq.Boost = query.Boost;
-				GetPayloads(payloads, stq);
+				GetPayloads(payloads, stq, state);
 			}
 			else if (query is SpanQuery)
 			{
-				GetPayloads(payloads, (SpanQuery) query);
+				GetPayloads(payloads, (SpanQuery) query, state);
 			}
 			else if (query is FilteredQuery)
 			{
-				QueryToSpanQuery(((FilteredQuery) query).Query, payloads);
+				QueryToSpanQuery(((FilteredQuery) query).Query, payloads, state);
 			}
 			else if (query is DisjunctionMaxQuery)
 			{
 
                 for (IEnumerator<Query> iterator = ((DisjunctionMaxQuery)query).GetEnumerator(); iterator.MoveNext(); )
                 {
-                    QueryToSpanQuery(iterator.Current, payloads);
+                    QueryToSpanQuery(iterator.Current, payloads, state);
                 }
 			}
 			else if (query is MultiPhraseQuery)
@@ -186,20 +187,20 @@ namespace Lucene.Net.Search.Payloads
 					
 					SpanNearQuery sp = new SpanNearQuery(clauses, slop + positionGaps, inorder);
 					sp.Boost = query.Boost;
-					GetPayloads(payloads, sp);
+					GetPayloads(payloads, sp, state);
 				}
 			}
 		}
 		
-		private void  GetPayloads(ICollection<byte[]> payloads, SpanQuery query)
+		private void  GetPayloads(ICollection<byte[]> payloads, SpanQuery query, IState state)
 		{
-			Spans.Spans spans = query.GetSpans(reader);
+			Spans.Spans spans = query.GetSpans(reader, state);
 			
-			while (spans.Next() == true)
+			while (spans.Next(state) == true)
 			{
 				if (spans.IsPayloadAvailable())
 				{
-                    ICollection<byte[]> payload = spans.GetPayload();
+                    ICollection<byte[]> payload = spans.GetPayload(state);
                     foreach (byte[] bytes in payload)
                     {
                         payloads.Add(bytes);

@@ -16,7 +16,7 @@
  */
 
 using System;
-
+using Lucene.Net.Store;
 using IndexReader = Lucene.Net.Index.IndexReader;
 using Term = Lucene.Net.Index.Term;
 using ToStringUtils = Lucene.Net.Util.ToStringUtils;
@@ -94,9 +94,9 @@ namespace Lucene.Net.Search.Spans
 			return true;
 		}
 		
-		public override Spans GetSpans(IndexReader reader)
+		public override Spans GetSpans(IndexReader reader, IState state)
 		{
-			return new TermSpans(reader.TermPositions(internalTerm), internalTerm);
+			return new TermSpans(reader.TermPositions(internalTerm, state), internalTerm);
 		}
 	}
 }

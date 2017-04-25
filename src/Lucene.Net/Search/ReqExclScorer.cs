@@ -16,6 +16,7 @@
  */
 
 using System;
+using Lucene.Net.Store;
 
 namespace Lucene.Net.Search
 {
@@ -44,13 +45,13 @@ namespace Lucene.Net.Search
 			this.exclDisi = exclDisi;
 		}
 		
-		public override int NextDoc()
+		public override int NextDoc(IState state)
 		{
 			if (reqScorer == null)
 			{
 				return doc;
 			}
-			doc = reqScorer.NextDoc();
+			doc = reqScorer.NextDoc(state);
 			if (doc == NO_MORE_DOCS)
 			{
 				reqScorer = null; // exhausted, nothing left
@@ -60,7 +61,7 @@ namespace Lucene.Net.Search
 			{
 				return doc;
 			}
-			return doc = ToNonExcluded();
+			return doc = ToNonExcluded(state);
 		}
 		
 		/// <summary>Advance to non excluded doc.
@@ -75,7 +76,7 @@ namespace Lucene.Net.Search
 		/// </summary>
 		/// <returns> true iff there is a non excluded required doc.
 		/// </returns>
-		private int ToNonExcluded()
+		private int ToNonExcluded(IState state)
 		{
 			int exclDoc = exclDisi.DocID();
 			int reqDoc = reqScorer.DocID(); // may be excluded
@@ -87,7 +88,7 @@ namespace Lucene.Net.Search
 				}
 				else if (reqDoc > exclDoc)
 				{
-					exclDoc = exclDisi.Advance(reqDoc);
+					exclDoc = exclDisi.Advance(reqDoc, state);
 					if (exclDoc == NO_MORE_DOCS)
 					{
 						exclDisi = null; // exhausted, no more exclusions
@@ -99,7 +100,7 @@ namespace Lucene.Net.Search
 					}
 				}
 			}
-			while ((reqDoc = reqScorer.NextDoc()) != NO_MORE_DOCS);
+			while ((reqDoc = reqScorer.NextDoc(state)) != NO_MORE_DOCS);
 			reqScorer = null; // exhausted, nothing left
 			return NO_MORE_DOCS;
 		}
@@ -114,12 +115,12 @@ namespace Lucene.Net.Search
 		/// </summary>
 		/// <returns> The score of the required scorer.
 		/// </returns>
-		public override float Score()
+		public override float Score(IState state)
 		{
-			return reqScorer.Score(); // reqScorer may be null when next() or skipTo() already return false
+			return reqScorer.Score(state); // reqScorer may be null when next() or skipTo() already return false
 		}
 		
-		public override int Advance(int target)
+		public override int Advance(int target, IState state)
 		{
 			if (reqScorer == null)
 			{
@@ -127,14 +128,14 @@ namespace Lucene.Net.Search
 			}
 			if (exclDisi == null)
 			{
-				return doc = reqScorer.Advance(target);
+				return doc = reqScorer.Advance(target, state);
 			}
-			if (reqScorer.Advance(target) == NO_MORE_DOCS)
+			if (reqScorer.Advance(target, state) == NO_MORE_DOCS)
 			{
 				reqScorer = null;
 				return doc = NO_MORE_DOCS;
 			}
-			return doc = ToNonExcluded();
+			return doc = ToNonExcluded(state);
 		}
 	}
 }

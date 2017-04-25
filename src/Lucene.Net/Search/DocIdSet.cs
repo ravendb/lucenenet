@@ -16,6 +16,7 @@
  */
 
 using System;
+using Lucene.Net.Store;
 
 namespace Lucene.Net.Search
 {
@@ -53,7 +54,7 @@ namespace Lucene.Net.Search
 					}
 					
 				}
-				public override int Advance(int target)
+				public override int Advance(int target, IState state)
 				{
 					return NO_MORE_DOCS;
 				}
@@ -61,7 +62,7 @@ namespace Lucene.Net.Search
 				{
 					return NO_MORE_DOCS;
 				}
-				public override int NextDoc()
+				public override int NextDoc(IState state)
 				{
 					return NO_MORE_DOCS;
 				}
@@ -73,7 +74,7 @@ namespace Lucene.Net.Search
 			
 			private DocIdSetIterator iterator;
 			
-			public override DocIdSetIterator Iterator()
+			public override DocIdSetIterator Iterator(IState state)
 			{
 				return iterator;
 			}
@@ -93,7 +94,7 @@ namespace Lucene.Net.Search
 		/// <c>EMPTY_DOCIDSET.Iterator()</c> if there
 		/// are no docs that match. 
 		/// </summary>
-		public abstract DocIdSetIterator Iterator();
+		public abstract DocIdSetIterator Iterator(IState state);
 
 	    /// <summary>This method is a hint for <see cref="CachingWrapperFilter" />, if this <c>DocIdSet</c>
 	    /// should be cached without copying it into a BitSet. The default is to return

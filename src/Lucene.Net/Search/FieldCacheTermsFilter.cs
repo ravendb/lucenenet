@@ -16,7 +16,7 @@
  */
 
 using System;
-
+using Lucene.Net.Store;
 using IndexReader = Lucene.Net.Index.IndexReader;
 using TermDocs = Lucene.Net.Index.TermDocs;
 using OpenBitSet = Lucene.Net.Util.OpenBitSet;
@@ -112,9 +112,9 @@ namespace Lucene.Net.Search
 	        get { return FieldCache_Fields.DEFAULT; }
 	    }
 
-	    public override DocIdSet GetDocIdSet(IndexReader reader)
+	    public override DocIdSet GetDocIdSet(IndexReader reader, IState state)
 		{
-			return new FieldCacheTermsFilterDocIdSet(this, FieldCache.GetStringIndex(reader, field));
+			return new FieldCacheTermsFilterDocIdSet(this, FieldCache.GetStringIndex(reader, field, state));
 		}
 		
 		protected internal class FieldCacheTermsFilterDocIdSet:DocIdSet
@@ -151,7 +151,7 @@ namespace Lucene.Net.Search
 				}
 			}
 			
-			public override DocIdSetIterator Iterator()
+			public override DocIdSetIterator Iterator(IState state)
 			{
 				return new FieldCacheTermsFilterDocIdSetIterator(this);
 			}
@@ -188,7 +188,7 @@ namespace Lucene.Net.Search
 					return doc;
 				}
 				
-				public override int NextDoc()
+				public override int NextDoc(IState state)
 				{
 					try
 					{
@@ -203,7 +203,7 @@ namespace Lucene.Net.Search
 					return doc;
 				}
 				
-				public override int Advance(int target)
+				public override int Advance(int target, IState state)
 				{
 					try
 					{

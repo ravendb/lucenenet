@@ -16,6 +16,7 @@
  */
 
 using System;
+using Lucene.Net.Store;
 
 // for javadoc
 using IndexReader = Lucene.Net.Index.IndexReader;
@@ -209,12 +210,12 @@ namespace Lucene.Net.Documents
 		/// method returns the first value added. If only binary fields with this name
 		/// exist, returns null.
 		/// </summary>
-		public System.String Get(System.String name)
+		public System.String Get(System.String name, IState state)
 		{
 			foreach(IFieldable field in fields)
 			{
 				if (field.Name.Equals(name) && (!field.IsBinary))
-					return field.StringValue;
+					return field.StringValue(state);
 			}
 			return null;
 		}
@@ -298,13 +299,13 @@ namespace Lucene.Net.Documents
 		/// </param>
 		/// <returns> a <c>String[]</c> of field values
 		/// </returns>
-		public System.String[] GetValues(System.String name)
+		public System.String[] GetValues(System.String name, IState state)
 		{
 			var result = new System.Collections.Generic.List<string>();
 			foreach(IFieldable field in fields)
 			{
 				if (field.Name.Equals(name) && (!field.IsBinary))
-					result.Add(field.StringValue);
+					result.Add(field.StringValue(state));
 			}
 			
 			if (result.Count == 0)
@@ -325,13 +326,13 @@ namespace Lucene.Net.Documents
 		/// </param>
 		/// <returns> a <c>byte[][]</c> of binary field values
 		/// </returns>
-		public byte[][] GetBinaryValues(System.String name)
+		public byte[][] GetBinaryValues(System.String name, IState state)
 		{
 			var result = new System.Collections.Generic.List<byte[]>();
 			foreach(IFieldable field in fields)
 			{
 				if (field.Name.Equals(name) && (field.IsBinary))
-					result.Add(field.GetBinaryValue());
+					result.Add(field.GetBinaryValue(state));
 			}
 			
 			if (result.Count == 0)
@@ -350,12 +351,12 @@ namespace Lucene.Net.Documents
 		/// </param>
 		/// <returns> a <c>byte[]</c> containing the binary field value or <c>null</c>
 		/// </returns>
-		public byte[] GetBinaryValue(System.String name)
+		public byte[] GetBinaryValue(System.String name, IState state)
 		{
 			foreach(IFieldable field in fields)
 			{
 				if (field.Name.Equals(name) && (field.IsBinary))
-					return field.GetBinaryValue();
+					return field.GetBinaryValue(state);
 			}
 			return null;
 		}

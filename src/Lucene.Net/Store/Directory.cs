@@ -53,28 +53,28 @@ namespace Lucene.Net.Store
 
 	    /// <summary>Returns an array of strings, one for each file in the directory.</summary>
 	    /// <exception cref="System.IO.IOException"></exception>
-	    public abstract System.String[] ListAll();
+	    public abstract System.String[] ListAll(IState state);
 		
 		/// <summary>Returns true iff a file with the given name exists. </summary>
-		public abstract bool FileExists(System.String name);
+		public abstract bool FileExists(System.String name, IState state);
 		
 		/// <summary>Returns the time the named file was last modified. </summary>
-		public abstract long FileModified(System.String name);
+		public abstract long FileModified(System.String name, IState state);
 		
 		/// <summary>Set the modified time of an existing file to now. </summary>
-		public abstract void TouchFile(System.String name);
+		public abstract void TouchFile(System.String name, IState state);
 		
 		/// <summary>Removes an existing file in the directory. </summary>
-		public abstract void  DeleteFile(System.String name);
+		public abstract void  DeleteFile(System.String name, IState state);
 		
 		/// <summary>Returns the length of a file in the directory. </summary>
-		public abstract long FileLength(System.String name);
+		public abstract long FileLength(System.String name, IState state);
 		
 		
 		/// <summary>Creates a new, empty file in the directory with the given name.
 		/// Returns a stream writing this file. 
 		/// </summary>
-		public abstract IndexOutput CreateOutput(System.String name);
+		public abstract IndexOutput CreateOutput(System.String name, IState state);
 		
 		/// <summary>Ensure that any writes to this file are moved to
 		/// stable storage.  Lucene uses this to properly commit
@@ -86,7 +86,7 @@ namespace Lucene.Net.Store
 		}
 		
 		/// <summary>Returns a stream reading an existing file. </summary>
-		public abstract IndexInput OpenInput(System.String name);
+		public abstract IndexInput OpenInput(System.String name, IState state);
 		
 		/// <summary>Returns a stream reading an existing file, with the
 		/// specified read buffer size.  The particular Directory
@@ -95,9 +95,9 @@ namespace Lucene.Net.Store
 		/// parameter are <see cref="FSDirectory" /> and <see cref="Lucene.Net.Index.CompoundFileReader" />
 		///.
 		/// </summary>
-		public virtual IndexInput OpenInput(System.String name, int bufferSize)
+		public virtual IndexInput OpenInput(System.String name, int bufferSize, IState state)
 		{
-			return OpenInput(name);
+			return OpenInput(name, state);
 		}
 		
 		/// <summary>Construct a <see cref="Lock" />.</summary>
@@ -200,9 +200,9 @@ namespace Lucene.Net.Store
 		/// <param name="closeDirSrc">if <c>true</c>, call <see cref="Close()" /> method on source directory
 		/// </param>
 		/// <throws>  IOException </throws>
-		public static void  Copy(Directory src, Directory dest, bool closeDirSrc)
+		public static void  Copy(Directory src, Directory dest, bool closeDirSrc, IState state)
 		{
-			System.String[] files = src.ListAll();
+			System.String[] files = src.ListAll(state);
 			
 			IndexFileNameFilter filter = IndexFileNameFilter.Filter;
 			
@@ -218,16 +218,16 @@ namespace Lucene.Net.Store
 				try
 				{
 					// create file in dest directory
-					os = dest.CreateOutput(files[i]);
+					os = dest.CreateOutput(files[i], state);
 					// read current file
-					is_Renamed = src.OpenInput(files[i]);
+					is_Renamed = src.OpenInput(files[i], state);
 					// and copy to dest directory
-					long len = is_Renamed.Length();
+					long len = is_Renamed.Length(state);
 					long readCount = 0;
 					while (readCount < len)
 					{
 						int toRead = readCount + BufferedIndexOutput.BUFFER_SIZE > len?(int) (len - readCount):BufferedIndexOutput.BUFFER_SIZE;
-						is_Renamed.ReadBytes(buf, 0, toRead);
+						is_Renamed.ReadBytes(buf, 0, toRead, state);
 						os.WriteBytes(buf, toRead);
 						readCount += toRead;
 					}

@@ -16,7 +16,7 @@
  */
 
 using System;
-
+using Lucene.Net.Store;
 using IndexReader = Lucene.Net.Index.IndexReader;
 
 namespace Lucene.Net.Search
@@ -37,17 +37,17 @@ namespace Lucene.Net.Search
 			this.c = c;
 		}
 		
-		public override void  Collect(int doc)
+		public override void  Collect(int doc, IState state)
 		{
-			if (scorer.Score() > 0)
+			if (scorer.Score(state) > 0)
 			{
-				c.Collect(doc);
+				c.Collect(doc, state);
 			}
 		}
 		
-		public override void  SetNextReader(IndexReader reader, int docBase)
+		public override void  SetNextReader(IndexReader reader, int docBase, IState state)
 		{
-			c.SetNextReader(reader, docBase);
+			c.SetNextReader(reader, docBase, state);
 		}
 		
 		public override void  SetScorer(Scorer scorer)

@@ -16,6 +16,7 @@
  */
 
 using System;
+using Lucene.Net.Store;
 
 namespace Lucene.Net.Search
 {
@@ -62,13 +63,13 @@ namespace Lucene.Net.Search
 			Heapify();
 		}
 		
-		public override int NextDoc()
+		public override int NextDoc(IState state)
 		{
 			if (numScorers == 0)
 				return doc = NO_MORE_DOCS;
 			while (subScorers[0].DocID() == doc)
 			{
-				if (subScorers[0].NextDoc() != NO_MORE_DOCS)
+				if (subScorers[0].NextDoc(state) != NO_MORE_DOCS)
 				{
 					HeapAdjust(0);
 				}
@@ -93,36 +94,36 @@ namespace Lucene.Net.Search
 		/// <summary>Determine the current document score.  Initially invalid, until <see cref="NextDoc()" /> is called the first time.</summary>
 		/// <returns> the score of the current generated document
 		/// </returns>
-		public override float Score()
+		public override float Score(IState state)
 		{
 			int doc = subScorers[0].DocID();
-			float[] sum = new float[]{subScorers[0].Score()}, max = new float[]{sum[0]};
+			float[] sum = new float[]{subScorers[0].Score(state)}, max = new float[]{sum[0]};
 			int size = numScorers;
-			ScoreAll(1, size, doc, sum, max);
-			ScoreAll(2, size, doc, sum, max);
+			ScoreAll(1, size, doc, sum, max, state);
+			ScoreAll(2, size, doc, sum, max, state);
 			return max[0] + (sum[0] - max[0]) * tieBreakerMultiplier;
 		}
 		
 		// Recursively iterate all subScorers that generated last doc computing sum and max
-		private void  ScoreAll(int root, int size, int doc, float[] sum, float[] max)
+		private void  ScoreAll(int root, int size, int doc, float[] sum, float[] max, IState state)
 		{
 			if (root < size && subScorers[root].DocID() == doc)
 			{
-				float sub = subScorers[root].Score();
+				float sub = subScorers[root].Score(state);
 				sum[0] += sub;
 				max[0] = System.Math.Max(max[0], sub);
-				ScoreAll((root << 1) + 1, size, doc, sum, max);
-				ScoreAll((root << 1) + 2, size, doc, sum, max);
+				ScoreAll((root << 1) + 1, size, doc, sum, max, state);
+				ScoreAll((root << 1) + 2, size, doc, sum, max, state);
 			}
 		}
 		
-		public override int Advance(int target)
+		public override int Advance(int target, IState state)
 		{
 			if (numScorers == 0)
 				return doc = NO_MORE_DOCS;
 			while (subScorers[0].DocID() < target)
 			{
-				if (subScorers[0].Advance(target) != NO_MORE_DOCS)
+				if (subScorers[0].Advance(target, state) != NO_MORE_DOCS)
 				{
 					HeapAdjust(0);
 				}

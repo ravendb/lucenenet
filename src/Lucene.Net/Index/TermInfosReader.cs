@@ -16,6 +16,7 @@
  */
 
 using System;
+using Lucene.Net.Store;
 using Lucene.Net.Support;
 using Lucene.Net.Util;
 using Lucene.Net.Util.Cache;
@@ -58,7 +59,7 @@ namespace Lucene.Net.Index
 			internal Cache<Term, TermInfo> termInfoCache;
 		}
 		
-		internal TermInfosReader(Directory dir, System.String seg, FieldInfos fis, int readBufferSize, int indexDivisor)
+		internal TermInfosReader(Directory dir, System.String seg, FieldInfos fis, int readBufferSize, int indexDivisor, IState state)
 		{
 			bool success = false;
 			
@@ -73,7 +74,7 @@ namespace Lucene.Net.Index
 				segment = seg;
 				fieldInfos = fis;
 				
-				origEnum = new SegmentTermEnum(directory.OpenInput(segment + "." + IndexFileNames.TERMS_EXTENSION, readBufferSize), fieldInfos, false);
+				origEnum = new SegmentTermEnum(directory.OpenInput(segment + "." + IndexFileNames.TERMS_EXTENSION, readBufferSize, state), fieldInfos, false, state);
 				size = origEnum.size;
 				
 				
@@ -81,7 +82,7 @@ namespace Lucene.Net.Index
 				{
 					// Load terms index
 					totalIndexInterval = origEnum.indexInterval * indexDivisor;
-					var indexEnum = new SegmentTermEnum(directory.OpenInput(segment + "." + IndexFileNames.TERMS_INDEX_EXTENSION, readBufferSize), fieldInfos, true);
+					var indexEnum = new SegmentTermEnum(directory.OpenInput(segment + "." + IndexFileNames.TERMS_INDEX_EXTENSION, readBufferSize, state), fieldInfos, true, state);
 					
 					try
 					{
@@ -91,14 +92,14 @@ namespace Lucene.Net.Index
 						indexInfos = new TermInfo[indexSize];
 						indexPointers = new long[indexSize];
 						
-						for (int i = 0; indexEnum.Next(); i++)
+						for (int i = 0; indexEnum.Next(state); i++)
 						{
 							indexTerms[i] = indexEnum.Term;
 							indexInfos[i] = indexEnum.TermInfo();
 							indexPointers[i] = indexEnum.indexPointer;
 							
 							for (int j = 1; j < indexDivisor; j++)
-								if (!indexEnum.Next())
+								if (!indexEnum.Next(state))
 									break;
 						}
 					}
@@ -193,19 +194,19 @@ namespace Lucene.Net.Index
 			return hi;
 		}
 		
-		private void SeekEnum(SegmentTermEnum enumerator, int indexOffset)
+		private void SeekEnum(SegmentTermEnum enumerator, int indexOffset, IState state)
 		{
-			enumerator.Seek(indexPointers[indexOffset], ((long)indexOffset * totalIndexInterval) - 1, indexTerms[indexOffset], indexInfos[indexOffset]);
+			enumerator.Seek(indexPointers[indexOffset], ((long)indexOffset * totalIndexInterval) - 1, indexTerms[indexOffset], indexInfos[indexOffset], state);
 		}
 		
 		/// <summary>Returns the TermInfo for a Term in the set, or null. </summary>
-		internal TermInfo Get(Term term)
+		internal TermInfo Get(Term term, IState state)
 		{
-			return Get(term, true);
+			return Get(term, true, state);
 		}
 		
 		/// <summary>Returns the TermInfo for a Term in the set, or null. </summary>
-		private TermInfo Get(Term term, bool useCache)
+		private TermInfo Get(Term term, bool useCache, IState state)
 		{
 			if (size == 0)
 				return null;
@@ -236,7 +237,7 @@ namespace Lucene.Net.Index
 				{
 					// no need to seek
 					
-					int numScans = enumerator.ScanTo(term);
+					int numScans = enumerator.ScanTo(term, state);
 					if (enumerator.Term != null && term.CompareTo(enumerator.Term) == 0)
 					{
 						ti = enumerator.TermInfo();
@@ -260,8 +261,8 @@ namespace Lucene.Net.Index
 			}
 			
 			// random-access: must seek
-			SeekEnum(enumerator, GetIndexOffset(term));
-			enumerator.ScanTo(term);
+			SeekEnum(enumerator, GetIndexOffset(term), state);
+			enumerator.ScanTo(term, state);
 			if (enumerator.Term != null && term.CompareTo(enumerator.Term) == 0)
 			{
 				ti = enumerator.TermInfo();
@@ -286,7 +287,7 @@ namespace Lucene.Net.Index
 		}
 		
 		/// <summary>Returns the position of a Term in the set or -1. </summary>
-		internal long GetPosition(Term term)
+		internal long GetPosition(Term term, IState state)
 		{
 			if (size == 0)
 				return - 1;
@@ -295,9 +296,9 @@ namespace Lucene.Net.Index
 			int indexOffset = GetIndexOffset(term);
 			
 			SegmentTermEnum enumerator = GetThreadResources().termEnum;
-			SeekEnum(enumerator, indexOffset);
+			SeekEnum(enumerator, indexOffset, state);
 			
-			while (term.CompareTo(enumerator.Term) > 0 && enumerator.Next())
+			while (term.CompareTo(enumerator.Term) > 0 && enumerator.Next(state))
 			{
 			}
 			
@@ -314,11 +315,11 @@ namespace Lucene.Net.Index
 		}
 		
 		/// <summary>Returns an enumeration of terms starting at or after the named term. </summary>
-		public SegmentTermEnum Terms(Term term)
+		public SegmentTermEnum Terms(Term term, IState state)
 		{
 			// don't use the cache in this call because we want to reposition the
 			// enumeration
-			Get(term, false);
+			Get(term, false, state);
 			return (SegmentTermEnum) GetThreadResources().termEnum.Clone();
 		}
 	}

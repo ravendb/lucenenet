@@ -21,6 +21,7 @@
 
 using System;
 using System.Threading;
+using Lucene.Net.Store;
 
 namespace Lucene.Net.Support
 {

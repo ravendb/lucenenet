@@ -16,7 +16,7 @@
  */
 
 using System;
-
+using Lucene.Net.Store;
 using IndexReader = Lucene.Net.Index.IndexReader;
 
 namespace Lucene.Net.Search.Function
@@ -47,7 +47,7 @@ namespace Lucene.Net.Search.Function
 		/// If any caching is involved, that caching would also be IndexReader based.  
 		/// </param>
 		/// <throws>  IOException for any error. </throws>
-		public abstract DocValues GetValues(IndexReader reader);
+		public abstract DocValues GetValues(IndexReader reader, IState state);
 		
 		/// <summary> description of field, used in explain() </summary>
 		public abstract System.String Description();

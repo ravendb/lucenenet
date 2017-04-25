@@ -40,7 +40,7 @@ namespace Lucene.Net.Store
             }
         }
 
-        public override IndexOutput CreateOutput(string name)
+        public override IndexOutput CreateOutput(string name, IState state)
         {
             throw new System.NotImplementedException("Waiting for volunteers to implement this class");
         }

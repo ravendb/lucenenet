@@ -16,7 +16,7 @@
  */
 
 using System;
-
+using Lucene.Net.Store;
 using IndexReader = Lucene.Net.Index.IndexReader;
 using Term = Lucene.Net.Index.Term;
 using TermDocs = Lucene.Net.Index.TermDocs;
@@ -61,11 +61,11 @@ namespace Lucene.Net.Search
 			private float queryWeight;
 			private IDFExplanation idfExp;
 			
-			public TermWeight(TermQuery enclosingInstance, Searcher searcher)
+			public TermWeight(TermQuery enclosingInstance, Searcher searcher, IState state)
 			{
 				InitBlock(enclosingInstance);
 				this.similarity = Enclosing_Instance.GetSimilarity(searcher);
-				idfExp = similarity.IdfExplain(Enclosing_Instance.term, searcher);
+				idfExp = similarity.IdfExplain(Enclosing_Instance.term, searcher, state);
 				idf = idfExp.Idf;
 			}
 			
@@ -97,17 +97,17 @@ namespace Lucene.Net.Search
 				value_Renamed = queryWeight * idf; // idf for document
 			}
 			
-			public override Scorer Scorer(IndexReader reader, bool scoreDocsInOrder, bool topScorer)
+			public override Scorer Scorer(IndexReader reader, bool scoreDocsInOrder, bool topScorer, IState state)
 			{
-				TermDocs termDocs = reader.TermDocs(Enclosing_Instance.term);
+				TermDocs termDocs = reader.TermDocs(Enclosing_Instance.term, state);
 				
 				if (termDocs == null)
 					return null;
 				
-				return new TermScorer(this, termDocs, similarity, reader.Norms(Enclosing_Instance.term.Field));
+				return new TermScorer(this, termDocs, similarity, reader.Norms(Enclosing_Instance.term.Field, state));
 			}
 			
-			public override Explanation Explain(IndexReader reader, int doc)
+			public override Explanation Explain(IndexReader reader, int doc, IState state)
 			{
 				
 				ComplexExplanation result = new ComplexExplanation();
@@ -138,12 +138,12 @@ namespace Lucene.Net.Search
 
                 Explanation tfExplanation = new Explanation();
                 int tf = 0;
-                TermDocs termDocs = reader.TermDocs(enclosingInstance.term);
+                TermDocs termDocs = reader.TermDocs(enclosingInstance.term, state);
                 if (termDocs != null)
                 {
                     try
                     {
-                        if (termDocs.SkipTo(doc) && termDocs.Doc == doc)
+                        if (termDocs.SkipTo(doc, state) && termDocs.Doc == doc)
                         {
                             tf = termDocs.Freq;
                         }
@@ -164,7 +164,7 @@ namespace Lucene.Net.Search
 				fieldExpl.AddDetail(expl);
 				
 				Explanation fieldNormExpl = new Explanation();
-				byte[] fieldNorms = reader.Norms(field);
+				byte[] fieldNorms = reader.Norms(field, state);
 				float fieldNorm = fieldNorms != null?Similarity.DecodeNorm(fieldNorms[doc]):1.0f;
 				fieldNormExpl.Value = fieldNorm;
 				fieldNormExpl.Description = "fieldNorm(field=" + field + ", doc=" + doc + ")";
@@ -199,9 +199,9 @@ namespace Lucene.Net.Search
 	        get { return term; }
 	    }
 
-	    public override Weight CreateWeight(Searcher searcher)
+	    public override Weight CreateWeight(Searcher searcher, IState state)
 		{
-			return new TermWeight(this, searcher);
+			return new TermWeight(this, searcher, state);
 		}
 		
 		public override void  ExtractTerms(System.Collections.Generic.ISet<Term> terms)

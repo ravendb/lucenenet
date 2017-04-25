@@ -16,7 +16,7 @@
  */
 
 using System;
-
+using Lucene.Net.Store;
 using IndexReader = Lucene.Net.Index.IndexReader;
 using Term = Lucene.Net.Index.Term;
 
@@ -36,11 +36,11 @@ namespace Lucene.Net.Search
 		private Term prefix;
 		private bool endEnum = false;
 		
-		public PrefixTermEnum(IndexReader reader, Term prefix)
+		public PrefixTermEnum(IndexReader reader, Term prefix, IState state)
 		{
 			this.prefix = prefix;
 			
-			SetEnum(reader.Terms(new Term(prefix.Field, prefix.Text)));
+			SetEnum(reader.Terms(new Term(prefix.Field, prefix.Text), state), state);
 		}
 		
 		public override float Difference()

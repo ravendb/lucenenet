@@ -17,6 +17,7 @@
 
 using System;
 using Lucene.Net.Documents;
+using Lucene.Net.Store;
 using Document = Lucene.Net.Documents.Document;
 using FieldSelector = Lucene.Net.Documents.FieldSelector;
 using CorruptIndexException = Lucene.Net.Index.CorruptIndexException;
@@ -62,7 +63,7 @@ namespace Lucene.Net.Search
 		/// <param name="collector">to receive hits
 		/// </param>
 		/// <throws>  BooleanQuery.TooManyClauses </throws>
-		void  Search(Weight weight, Filter filter, Collector collector);
+		void  Search(Weight weight, Filter filter, Collector collector, IState state);
 		
 		/// <summary>Frees resources associated with this Searcher.
 		/// Be careful not to call this method while you are still using objects
@@ -75,13 +76,13 @@ namespace Lucene.Net.Search
 		/// </summary>
 		/// <seealso cref="Lucene.Net.Index.IndexReader.DocFreq(Term)">
 		/// </seealso>
-		int DocFreq(Term term);
+		int DocFreq(Term term, IState state);
 		
 		/// <summary>Expert: For each term in the terms array, calculates the number of
 		/// documents containing <c>term</c>. Returns an array with these
 		/// document frequencies. Used to minimize number of remote calls.
 		/// </summary>
-		int[] DocFreqs(Term[] terms);
+		int[] DocFreqs(Term[] terms, IState state);
 
 	    /// <summary>Expert: Returns one greater than the largest possible document number.
 	    /// Called by search code to compute term weights.
@@ -98,13 +99,13 @@ namespace Lucene.Net.Search
 		/// <see cref="Searcher.Search(Query,Filter,int)" /> instead.
 		/// </summary>
 		/// <throws>  BooleanQuery.TooManyClauses </throws>
-		TopDocs Search(Weight weight, Filter filter, int n);
+		TopDocs Search(Weight weight, Filter filter, int n, IState state);
 		
 		/// <summary>Expert: Returns the stored fields of document <c>i</c>.</summary>
 		/// <seealso cref="Lucene.Net.Index.IndexReader.Document(int)" />
 		/// <throws>  CorruptIndexException if the index is corrupt </throws>
 		/// <throws>  IOException if there is a low-level IO error </throws>
-		Document Doc(int i);
+		Document Doc(int i, IState state);
 
         /// <summary> Get the <see cref="Lucene.Net.Documents.Document" />at the <c>n</c><sup>th</sup> position. The <see cref="Lucene.Net.Documents.FieldSelector"/>
 		/// may be used to determine what <see cref="Lucene.Net.Documents.Field" />s to load and how they should be loaded.
@@ -135,11 +136,11 @@ namespace Lucene.Net.Search
 		/// </seealso>
 		/// <seealso cref="Lucene.Net.Documents.LoadFirstFieldSelector">
 		/// </seealso>
-		Document Doc(int n, FieldSelector fieldSelector);
+		Document Doc(int n, FieldSelector fieldSelector, IState state);
 		
 		/// <summary>Expert: called to re-write queries into primitive queries.</summary>
 		/// <throws>  BooleanQuery.TooManyClauses </throws>
-		Query Rewrite(Query query);
+		Query Rewrite(Query query, IState state);
 		
 		/// <summary>Expert: low-level implementation method
 		/// Returns an Explanation that describes how <c>doc</c> scored against
@@ -152,7 +153,7 @@ namespace Lucene.Net.Search
 		/// <p/>Applications should call <see cref="Searcher.Explain(Query, int)" />.
 		/// </summary>
 		/// <throws>  BooleanQuery.TooManyClauses </throws>
-		Explanation Explain(Weight weight, int doc);
+		Explanation Explain(Weight weight, int doc, IState state);
 		
 		/// <summary>Expert: Low-level search implementation with arbitrary sorting.  Finds
 		/// the top <c>n</c> hits for <c>query</c>, applying
@@ -164,6 +165,6 @@ namespace Lucene.Net.Search
 		/// 
 		/// </summary>
 		/// <throws>  BooleanQuery.TooManyClauses </throws>
-		TopFieldDocs Search(Weight weight, Filter filter, int n, Sort sort);
+		TopFieldDocs Search(Weight weight, Filter filter, int n, Sort sort, IState state);
 	}
 }

@@ -18,6 +18,7 @@
 using System;
 
 using System.Runtime.InteropServices;
+using Lucene.Net.Store;
 using IndexReader = Lucene.Net.Index.IndexReader;
 
 namespace Lucene.Net.Search
@@ -73,16 +74,16 @@ namespace Lucene.Net.Search
             }
         }
 		
-		public override DocIdSet GetDocIdSet(IndexReader reader)
+		public override DocIdSet GetDocIdSet(IndexReader reader, IState state)
 		{
-			SpanFilterResult result = GetCachedResult(reader);
+			SpanFilterResult result = GetCachedResult(reader, state);
 			return result != null?result.DocIdSet:null;
 		}
 
         // for testing
         public int hitCount, missCount;
 
-		private SpanFilterResult GetCachedResult(IndexReader reader)
+		private SpanFilterResult GetCachedResult(IndexReader reader, IState state)
 		{
             object coreKey = reader.FieldCacheKey;
             object delCoreKey = reader.HasDeletions ? reader.DeletesCacheKey : coreKey;
@@ -94,16 +95,16 @@ namespace Lucene.Net.Search
             }
 
             missCount++;
-            result = filter.BitSpans(reader);
+            result = filter.BitSpans(reader, state);
 
             cache.Put(coreKey, delCoreKey, result);
             return result;
 		}
 		
 		
-		public override SpanFilterResult BitSpans(IndexReader reader)
+		public override SpanFilterResult BitSpans(IndexReader reader, IState state)
 		{
-			return GetCachedResult(reader);
+			return GetCachedResult(reader, state);
 		}
 		
 		public override System.String ToString()

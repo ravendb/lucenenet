@@ -235,7 +235,7 @@ namespace Lucene.Net.Store
 				this.buffer = new System.IO.MemoryStream(data);
 			}
 			
-			public override byte ReadByte()
+			public override byte ReadByte(IState state)
 			{
 				try
 				{
@@ -247,7 +247,7 @@ namespace Lucene.Net.Store
 				}
 			}
 			
-			public override void  ReadBytes(byte[] b, int offset, int len)
+			public override void  ReadBytes(byte[] b, int offset, int len, IState state)
 			{
 				try
 				{
@@ -259,20 +259,17 @@ namespace Lucene.Net.Store
 				}
 			}
 
-		    public override long FilePointer
+		    public override long FilePointer(IState state)
 		    {
-		        get
-		        {
-		            return buffer.Position;
-		        }
+		        return buffer.Position;
 		    }
 
-		    public override void  Seek(long pos)
+		    public override void  Seek(long pos, IState state)
 			{
 				buffer.Seek(pos, System.IO.SeekOrigin.Begin);
 			}
 			
-			public override long Length()
+			public override long Length(IState state)
 			{
 				return length;
 			}
@@ -344,7 +341,7 @@ namespace Lucene.Net.Store
 			
 			private bool isClone = false;
 			
-			public MultiMMapIndexInput(MMapDirectory enclosingInstance, System.IO.FileStream raf, int maxBufSize)
+			public MultiMMapIndexInput(MMapDirectory enclosingInstance, System.IO.FileStream raf, int maxBufSize, IState state)
 			{
 				InitBlock(enclosingInstance);
 				this.length = raf.Length;
@@ -377,10 +374,10 @@ namespace Lucene.Net.Store
 					this.bufSizes[bufNr] = bufSize;
 					bufferStart += bufSize;
 				}
-				Seek(0L);
+				Seek(0L, state);
 			}
 			
-			public override byte ReadByte()
+			public override byte ReadByte(IState state)
 			{
 				// Performance might be improved by reading ahead into an array of
 				// e.g. 128 bytes and readByte() from there.
@@ -397,7 +394,7 @@ namespace Lucene.Net.Store
 				return (byte) curBuf.ReadByte();
 			}
 			
-			public override void  ReadBytes(byte[] b, int offset, int len)
+			public override void  ReadBytes(byte[] b, int offset, int len, IState state)
 			{
 				while (len > curAvail)
 				{
@@ -415,12 +412,12 @@ namespace Lucene.Net.Store
 				curAvail -= len;
 			}
 
-		    public override long FilePointer
+		    public override long FilePointer(IState state)
 		    {
-		        get { return ((long) curBufIndex*maxBufSize) + curBuf.Position; }
+		        return ((long) curBufIndex*maxBufSize) + curBuf.Position;
 		    }
 
-		    public override void  Seek(long pos)
+		    public override void  Seek(long pos, IState state)
 			{
 				curBufIndex = (int) (pos / maxBufSize);
 				curBuf = buffers[curBufIndex];
@@ -429,7 +426,7 @@ namespace Lucene.Net.Store
 				curAvail = bufSizes[curBufIndex] - bufOffset;
 			}
 			
-			public override long Length()
+			public override long Length(IState state)
 			{
 				return length;
 			}
@@ -448,7 +445,8 @@ namespace Lucene.Net.Store
 				}
 				try
 				{
-					clone.Seek(FilePointer);
+				    var state = StateHolder.Current.Value;
+					clone.Seek(FilePointer(state), state);
 				}
 				catch (System.IO.IOException ioe)
 				{
@@ -487,14 +485,14 @@ namespace Lucene.Net.Store
 		}
 		
 		/// <summary>Creates an IndexInput for the file with the given name. </summary>
-		public override IndexInput OpenInput(System.String name, int bufferSize)
+		public override IndexInput OpenInput(System.String name, int bufferSize, IState state)
 		{
 			EnsureOpen();
 			System.String path = System.IO.Path.Combine(Directory.FullName, name);
 			System.IO.FileStream raf = new System.IO.FileStream(path, System.IO.FileMode.Open, System.IO.FileAccess.Read);
 			try
 			{
-				return (raf.Length <= (long) maxBBuf)?(IndexInput) new MMapIndexInput(this, raf):(IndexInput) new MultiMMapIndexInput(this, raf, maxBBuf);
+				return (raf.Length <= (long) maxBBuf)?(IndexInput) new MMapIndexInput(this, raf):(IndexInput) new MultiMMapIndexInput(this, raf, maxBBuf, state);
 			}
 			finally
 			{
@@ -507,7 +505,7 @@ namespace Lucene.Net.Store
 		}
 		
 		/// <summary>Creates an IndexOutput for the file with the given name. </summary>
-		public override IndexOutput CreateOutput(System.String name)
+		public override IndexOutput CreateOutput(System.String name, IState state)
 		{
 			InitOutput(name);
 			return new SimpleFSDirectory.SimpleFSIndexOutput(new System.IO.FileInfo(System.IO.Path.Combine(internalDirectory.FullName, name)));

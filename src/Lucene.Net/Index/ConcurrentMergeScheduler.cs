@@ -16,6 +16,7 @@
  */
 
 using System.Collections.Generic;
+using Lucene.Net.Store;
 using Lucene.Net.Support;
 using Directory = Lucene.Net.Store.Directory;
 
@@ -187,7 +188,7 @@ namespace Lucene.Net.Index
             }
         }
 		
-		public override void  Merge(IndexWriter writer)
+		public override void  Merge(IndexWriter writer, IState state)
 		{
 			// TODO: .NET doesn't support this
 			// assert !Thread.holdsLock(writer);
@@ -210,7 +211,7 @@ namespace Lucene.Net.Index
 			if (Verbose())
 			{
 				Message("now merge");
-				Message("  index: " + writer.SegString());
+				Message("  index: " + writer.SegString(state));
 			}
 			
 			// Iterate, pulling from the IndexWriter's queue of
@@ -231,7 +232,7 @@ namespace Lucene.Net.Index
 				
 				// We do this w/ the primary thread to keep
 				// deterministic assignment of segment names
-				writer.MergeInit(merge);
+				writer.MergeInit(merge, state);
 				
 				bool success = false;
 				try
@@ -249,13 +250,13 @@ namespace Lucene.Net.Index
 						}
 						
 						if (Verbose())
-							Message("  consider merge " + merge.SegString(dir));
+							Message("  consider merge " + merge.SegString(dir, state));
 
 					    System.Diagnostics.Debug.Assert(MergeThreadCount() < _maxThreadCount);
 												
 						// OK to spawn a new merge thread to handle this
 						// merge:
-						MergeThread merger = GetMergeThread(writer, merge);
+						MergeThread merger = GetMergeThread(writer, merge, state);
 						mergeThreads.Add(merger);
 						if (Verbose())
 							Message("    launch new thread [" + merger.Name + "]");
@@ -275,17 +276,17 @@ namespace Lucene.Net.Index
 		}
 		
 		/// <summary>Does the actual merge, by calling <see cref="IndexWriter.Merge" /> </summary>
-		protected internal virtual void  DoMerge(MergePolicy.OneMerge merge)
+		protected internal virtual void  DoMerge(MergePolicy.OneMerge merge, IState state)
 		{
-			writer.Merge(merge);
+			writer.Merge(merge, state);
 		}
 		
 		/// <summary>Create and return a new MergeThread </summary>
-		protected internal virtual MergeThread GetMergeThread(IndexWriter writer, MergePolicy.OneMerge merge)
+		protected internal virtual MergeThread GetMergeThread(IndexWriter writer, MergePolicy.OneMerge merge, IState state)
 		{
 			lock (this)
 			{
-				var thread = new MergeThread(this, writer, merge);
+				var thread = new MergeThread(this, writer, merge, state);
 #if !DNXCORE50
                 thread.SetThreadPriority(mergeThreadPriority);
 #endif
@@ -314,12 +315,14 @@ namespace Lucene.Net.Index
 			internal IndexWriter writer;
 			internal MergePolicy.OneMerge startMerge;
 			internal MergePolicy.OneMerge runningMerge;
+		    internal IState state;
 			
-			public MergeThread(ConcurrentMergeScheduler enclosingInstance, IndexWriter writer, MergePolicy.OneMerge startMerge)
+			public MergeThread(ConcurrentMergeScheduler enclosingInstance, IndexWriter writer, MergePolicy.OneMerge startMerge, IState state)
 			{
 				InitBlock(enclosingInstance);
 				this.writer = writer;
 				this.startMerge = startMerge;
+			    this.state = state;
 			}
 			
 			public virtual void  SetRunningMerge(MergePolicy.OneMerge merge)
@@ -377,16 +380,16 @@ namespace Lucene.Net.Index
 					while (true)
 					{
 						SetRunningMerge(merge);
-						Enclosing_Instance.DoMerge(merge);
+						Enclosing_Instance.DoMerge(merge, state);
 						
 						// Subsequent times through the loop we do any new
 						// merge that writer says is necessary:
 						merge = writer.GetNextMerge();
 						if (merge != null)
 						{
-							writer.MergeInit(merge);
+							writer.MergeInit(merge, state);
 							if (Enclosing_Instance.Verbose())
-								Enclosing_Instance.Message("  merge thread: do another merge " + merge.SegString(Enclosing_Instance.dir));
+								Enclosing_Instance.Message("  merge thread: do another merge " + merge.SegString(Enclosing_Instance.dir, state));
 						}
 						else
 							break;
@@ -424,7 +427,7 @@ namespace Lucene.Net.Index
 			public override System.String ToString()
 			{
 				MergePolicy.OneMerge merge = RunningMerge ?? startMerge;
-				return "merge thread: " + merge.SegString(Enclosing_Instance.dir);
+				return "merge thread: " + merge.SegString(Enclosing_Instance.dir, state);
 			}
 		}
 		

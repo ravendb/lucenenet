@@ -18,6 +18,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using Lucene.Net.Store;
 using Lucene.Net.Support;
 using ChecksumIndexInput = Lucene.Net.Store.ChecksumIndexInput;
 using ChecksumIndexOutput = Lucene.Net.Store.ChecksumIndexOutput;
@@ -60,9 +61,9 @@ namespace Lucene.Net.Index
 				InitBlock(enclosingInstance);
 			}
 			
-			public /*protected internal*/ override System.Object DoBody(System.String segmentFileName)
+			public /*protected internal*/ override System.Object DoBody(System.String segmentFileName, IState state)
 			{
-				Enclosing_Instance.Read(directory, segmentFileName);
+				Enclosing_Instance.Read(directory, segmentFileName, state);
 				return null;
 			}
 		}
@@ -176,11 +177,11 @@ namespace Lucene.Net.Index
 		/// </summary>
 		/// <param name="directory">-- directory to search for the latest segments_N file
 		/// </param>
-		public static long GetCurrentSegmentGeneration(Directory directory)
+		public static long GetCurrentSegmentGeneration(Directory directory, IState state)
 		{
 			try
 			{
-				return GetCurrentSegmentGeneration(directory.ListAll());
+				return GetCurrentSegmentGeneration(directory.ListAll(state));
 			}
 			catch (NoSuchDirectoryException)
 			{
@@ -206,9 +207,9 @@ namespace Lucene.Net.Index
 		/// </summary>
 		/// <param name="directory">-- directory to search for the latest segments_N file
 		/// </param>
-		public static System.String GetCurrentSegmentFileName(Directory directory)
+		public static System.String GetCurrentSegmentFileName(Directory directory, IState state)
 		{
-			return IndexFileNames.FileNameFromGeneration(IndexFileNames.SEGMENTS, "", GetCurrentSegmentGeneration(directory));
+			return IndexFileNames.FileNameFromGeneration(IndexFileNames.SEGMENTS, "", GetCurrentSegmentGeneration(directory, state));
 		}
 		
 		/// <summary> Get the segments_N filename in use by this segment infos.</summary>
@@ -264,14 +265,14 @@ namespace Lucene.Net.Index
 		/// </param>
 		/// <throws>  CorruptIndexException if the index is corrupt </throws>
 		/// <throws>  IOException if there is a low-level IO error </throws>
-		public void  Read(Directory directory, System.String segmentFileName)
+		public void  Read(Directory directory, System.String segmentFileName, IState state)
 		{
 			bool success = false;
 			
 			// Clear any previous segments:
 			Clear();
 			
-			var input = new ChecksumIndexInput(directory.OpenInput(segmentFileName));
+			var input = new ChecksumIndexInput(directory.OpenInput(segmentFileName, state));
 			
 			generation = GenerationFromSegmentsFileName(segmentFileName);
 			
@@ -279,15 +280,15 @@ namespace Lucene.Net.Index
 			
 			try
 			{
-				int format = input.ReadInt();
+				int format = input.ReadInt(state);
 				if (format < 0)
 				{
 					// file contains explicit format info
 					// check that it is a format we can understand
 					if (format < CURRENT_FORMAT)
 						throw new CorruptIndexException("Unknown format version: " + format);
-					version = input.ReadLong(); // read version
-					counter = input.ReadInt(); // read counter
+					version = input.ReadLong(state); // read version
+					counter = input.ReadInt(state); // read counter
 				}
 				else
 				{
@@ -295,32 +296,32 @@ namespace Lucene.Net.Index
 					counter = format;
 				}
 				
-				for (int i = input.ReadInt(); i > 0; i--)
+				for (int i = input.ReadInt(state); i > 0; i--)
 				{
 					// read segmentInfos
-					Add(new SegmentInfo(directory, format, input));
+					Add(new SegmentInfo(directory, format, input, state));
 				}
 				
 				if (format >= 0)
 				{
 					// in old format the version number may be at the end of the file
-					if (input.FilePointer >= input.Length())
+					if (input.FilePointer(state) >= input.Length(state))
 						version = (DateTime.UtcNow.Ticks / TimeSpan.TicksPerMillisecond);
 					// old file format without version number
 					else
-						version = input.ReadLong(); // read version
+						version = input.ReadLong(state); // read version
 				}
 				
 				if (format <= FORMAT_USER_DATA)
 				{
 					if (format <= FORMAT_DIAGNOSTICS)
 					{
-						userData = input.ReadStringStringMap();
+						userData = input.ReadStringStringMap(state);
 					}
-					else if (0 != input.ReadByte())
+					else if (0 != input.ReadByte(state))
 					{
                         // TODO: Should be read-only map
-                        userData = new HashMap<string,string> {{"userData", input.ReadString()}};
+                        userData = new HashMap<string,string> {{"userData", input.ReadString(state)}};
 					}
 					else
 					{
@@ -337,7 +338,7 @@ namespace Lucene.Net.Index
 				if (format <= FORMAT_CHECKSUM)
 				{
 					long checksumNow = input.Checksum;
-					long checksumThen = input.ReadLong();
+					long checksumThen = input.ReadLong(state);
 					if (checksumNow != checksumThen)
 						throw new CorruptIndexException("checksum mismatch in segments file");
 				}
@@ -360,19 +361,19 @@ namespace Lucene.Net.Index
 		/// </summary>
 		/// <throws>  CorruptIndexException if the index is corrupt </throws>
 		/// <throws>  IOException if there is a low-level IO error </throws>
-		public void  Read(Directory directory)
+		public void  Read(Directory directory, IState state)
 		{
 			
 			generation = lastGeneration = - 1;
 			
-			new AnonymousClassFindSegmentsFile(this, directory).Run();
+			new AnonymousClassFindSegmentsFile(this, directory).Run(state);
 		}
 		
 		// Only non-null after prepareCommit has been called and
 		// before finishCommit is called
 		internal ChecksumIndexOutput pendingSegnOutput;
 		
-		private void  Write(Directory directory)
+		private void  Write(Directory directory, IState state)
 		{
 			
 			System.String segmentFileName = GetNextSegmentFileName();
@@ -387,7 +388,7 @@ namespace Lucene.Net.Index
 				generation++;
 			}
 			
-			var segnOutput = new ChecksumIndexOutput(directory.CreateOutput(segmentFileName));
+			var segnOutput = new ChecksumIndexOutput(directory.CreateOutput(segmentFileName, state));
 			
 			bool success = false;
 			
@@ -425,7 +426,7 @@ namespace Lucene.Net.Index
 					{
 						// Try not to leave a truncated segments_N file in
 						// the index:
-						directory.DeleteFile(segmentFileName);
+						directory.DeleteFile(segmentFileName, state);
 					}
 					catch (System.Exception)
 					{
@@ -474,7 +475,7 @@ namespace Lucene.Net.Index
 	    /// <summary> Current version number from segments file.</summary>
 		/// <throws>  CorruptIndexException if the index is corrupt </throws>
 		/// <throws>  IOException if there is a low-level IO error </throws>
-		public static long ReadCurrentVersion(Directory directory)
+		public static long ReadCurrentVersion(Directory directory, IState state)
 		{
             // Fully read the segments file: this ensures that it's
             // completely written so that if
@@ -482,7 +483,7 @@ namespace Lucene.Net.Index
             // yet commit), then the reader will still see itself as
             // current:
             var sis = new SegmentInfos();
-            sis.Read(directory);
+            sis.Read(directory, state);
             return sis.version;
 			//return (long) ((System.Int64) new AnonymousClassFindSegmentsFile1(directory).Run());
             //DIGY: AnonymousClassFindSegmentsFile1 can safely be deleted
@@ -491,10 +492,10 @@ namespace Lucene.Net.Index
 		/// <summary> Returns userData from latest segments file</summary>
 		/// <throws>  CorruptIndexException if the index is corrupt </throws>
 		/// <throws>  IOException if there is a low-level IO error </throws>
-        public static System.Collections.Generic.IDictionary<string, string> ReadCurrentUserData(Directory directory)
+        public static System.Collections.Generic.IDictionary<string, string> ReadCurrentUserData(Directory directory, IState state)
 		{
 			var sis = new SegmentInfos();
-			sis.Read(directory);
+			sis.Read(directory, state);
 			return sis.UserData;
 		}
 		
@@ -574,18 +575,18 @@ namespace Lucene.Net.Index
 				this.directory = directory;
 			}
 			
-			public System.Object Run()
+			public System.Object Run(IState state)
 			{
-				return Run(null);
+				return Run(null, state);
 			}
 			
-			public System.Object Run(IndexCommit commit)
+			public System.Object Run(IndexCommit commit, IState state)
 			{
 				if (commit != null)
 				{
 					if (directory != commit.Directory)
 						throw new System.IO.IOException("the specified commit does not match the specified Directory");
-					return DoBody(commit.SegmentsFileName);
+					return DoBody(commit.SegmentsFileName, state);
 				}
 				
 				System.String segmentFileName = null;
@@ -627,7 +628,7 @@ namespace Lucene.Net.Index
 						
 						long genA = - 1;
 						
-						files = directory.ListAll();
+						files = directory.ListAll(state);
 						
 						if (files != null)
 							genA = Lucene.Net.Index.SegmentInfos.GetCurrentSegmentGeneration(files);
@@ -645,7 +646,7 @@ namespace Lucene.Net.Index
 							IndexInput genInput = null;
 							try
 							{
-								genInput = directory.OpenInput(IndexFileNames.SEGMENTS_GEN);
+								genInput = directory.OpenInput(IndexFileNames.SEGMENTS_GEN, state);
 							}
 							catch (System.IO.FileNotFoundException e)
 							{
@@ -661,11 +662,11 @@ namespace Lucene.Net.Index
 							{
 								try
 								{
-									int version = genInput.ReadInt();
+									int version = genInput.ReadInt(state);
 									if (version == Lucene.Net.Index.SegmentInfos.FORMAT_LOCKLESS)
 									{
-										long gen0 = genInput.ReadLong();
-										long gen1 = genInput.ReadLong();
+										long gen0 = genInput.ReadLong(state);
+										long gen1 = genInput.ReadLong(state);
 										Lucene.Net.Index.SegmentInfos.Message("fallback check: " + gen0 + "; " + gen1);
 										if (gen0 == gen1)
 										{
@@ -753,7 +754,7 @@ namespace Lucene.Net.Index
 					
 					try
 					{
-						System.Object v = DoBody(segmentFileName);
+						System.Object v = DoBody(segmentFileName, state);
 						Lucene.Net.Index.SegmentInfos.Message("success on " + segmentFileName);
 						
 						return v;
@@ -780,14 +781,14 @@ namespace Lucene.Net.Index
 							System.String prevSegmentFileName = IndexFileNames.FileNameFromGeneration(IndexFileNames.SEGMENTS, "", gen - 1);
 							
 							bool prevExists;
-							prevExists = directory.FileExists(prevSegmentFileName);
+							prevExists = directory.FileExists(prevSegmentFileName, state);
 							
 							if (prevExists)
 							{
 								Lucene.Net.Index.SegmentInfos.Message("fallback to prior segment file '" + prevSegmentFileName + "'");
 								try
 								{
-									System.Object v = DoBody(prevSegmentFileName);
+									System.Object v = DoBody(prevSegmentFileName, state);
 									if (exc != null)
 									{
 										Lucene.Net.Index.SegmentInfos.Message("success on fallback " + prevSegmentFileName);
@@ -809,7 +810,7 @@ namespace Lucene.Net.Index
 			/// during the processing that could have been caused by
 			/// a writer committing.
 			/// </summary>
-			public /*internal*/ abstract System.Object DoBody(System.String segmentFileName);
+			public /*internal*/ abstract System.Object DoBody(System.String segmentFileName, IState state);
 		}
 		
 		/// <summary> Returns a new SegmentInfos containg the SegmentInfo
@@ -832,7 +833,7 @@ namespace Lucene.Net.Index
 			version = other.version;
 		}
 		
-		internal void  RollbackCommit(Directory dir)
+		internal void  RollbackCommit(Directory dir, IState state)
 		{
 			if (pendingSegnOutput != null)
 			{
@@ -851,7 +852,7 @@ namespace Lucene.Net.Index
 				try
 				{
 					System.String segmentFileName = IndexFileNames.FileNameFromGeneration(IndexFileNames.SEGMENTS, "", generation);
-					dir.DeleteFile(segmentFileName);
+					dir.DeleteFile(segmentFileName, state);
 				}
 				catch (System.Exception)
 				{
@@ -868,11 +869,11 @@ namespace Lucene.Net.Index
 		/// is called you must call <see cref="FinishCommit" /> to complete
 		/// the commit or <see cref="RollbackCommit" /> to abort it. 
 		/// </summary>
-		internal void  PrepareCommit(Directory dir)
+		internal void  PrepareCommit(Directory dir, IState state)
 		{
 			if (pendingSegnOutput != null)
 				throw new System.SystemException("prepareCommit was already called");
-			Write(dir);
+			Write(dir, state);
 		}
 		
 		/// <summary>Returns all file names referenced by SegmentInfo
@@ -881,7 +882,7 @@ namespace Lucene.Net.Index
 		/// The returned collection is recomputed on each
 		/// invocation.  
 		/// </summary>
-        public System.Collections.Generic.ICollection<string> Files(Directory dir, bool includeSegmentsFile)
+        public System.Collections.Generic.ICollection<string> Files(Directory dir, bool includeSegmentsFile, IState state)
 		{
             System.Collections.Generic.HashSet<string> files = new System.Collections.Generic.HashSet<string>();
 			if (includeSegmentsFile)
@@ -894,13 +895,13 @@ namespace Lucene.Net.Index
 				SegmentInfo info = Info(i);
 				if (info.dir == dir)
 				{
-                    files.UnionWith(Info(i).Files());
+                    files.UnionWith(Info(i).Files(state));
 				}
 			}
 			return files;
 		}
 		
-		internal void  FinishCommit(Directory dir)
+		internal void  FinishCommit(Directory dir, IState state)
 		{
 			if (pendingSegnOutput == null)
 				throw new System.SystemException("prepareCommit was not called");
@@ -915,7 +916,7 @@ namespace Lucene.Net.Index
 			finally
 			{
 				if (!success)
-					RollbackCommit(dir);
+					RollbackCommit(dir, state);
 			}
 			
 			// NOTE: if we crash here, we have left a segments_N
@@ -941,7 +942,7 @@ namespace Lucene.Net.Index
 				{
 					try
 					{
-						dir.DeleteFile(fileName);
+						dir.DeleteFile(fileName, state);
 					}
 					catch (System.Exception)
 					{
@@ -954,7 +955,7 @@ namespace Lucene.Net.Index
 			
 			try
 			{
-				IndexOutput genOutput = dir.CreateOutput(IndexFileNames.SEGMENTS_GEN);
+				IndexOutput genOutput = dir.CreateOutput(IndexFileNames.SEGMENTS_GEN, state);
 				try
 				{
 					genOutput.WriteInt(FORMAT_LOCKLESS);
@@ -976,13 +977,13 @@ namespace Lucene.Net.Index
 		/// <summary>Writes &amp; syncs to the Directory dir, taking care to
 		/// remove the segments file on exception 
 		/// </summary>
-		public /*internal*/ void  Commit(Directory dir)
+		public /*internal*/ void  Commit(Directory dir, IState state)
 		{
-			PrepareCommit(dir);
-			FinishCommit(dir);
+			PrepareCommit(dir, state);
+			FinishCommit(dir, state);
 		}
 		
-		public System.String SegString(Directory directory)
+		public System.String SegString(Directory directory, IState state)
 		{
 			lock (this)
 			{
@@ -995,7 +996,7 @@ namespace Lucene.Net.Index
 						buffer.Append(' ');
 					}
 					SegmentInfo info = Info(i);
-					buffer.Append(info.SegString(directory));
+					buffer.Append(info.SegString(directory, state));
 					if (info.dir != directory)
 						buffer.Append("**");
 				}

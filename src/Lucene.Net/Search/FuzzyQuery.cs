@@ -19,6 +19,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Lucene.Net.Index;
+using Lucene.Net.Store;
 using Lucene.Net.Support;
 using Lucene.Net.Util;
 using IndexReader = Lucene.Net.Index.IndexReader;
@@ -119,9 +120,9 @@ namespace Lucene.Net.Search
 	        get { return prefixLength; }
 	    }
 
-	    protected internal override FilteredTermEnum GetEnum(IndexReader reader)
+	    protected internal override FilteredTermEnum GetEnum(IndexReader reader, IState state)
 		{
-			return new FuzzyTermEnum(reader, Term, minimumSimilarity, prefixLength);
+			return new FuzzyTermEnum(reader, Term, minimumSimilarity, prefixLength, state);
 		}
 
 	    public override RewriteMethod RewriteMethod
@@ -129,7 +130,7 @@ namespace Lucene.Net.Search
 	        set { throw new System.NotSupportedException("FuzzyQuery cannot change rewrite method"); }
 	    }
 
-	    public override Query Rewrite(IndexReader reader)
+	    public override Query Rewrite(IndexReader reader, IState state)
 		{
 			if (!termLongEnough)
 			{
@@ -143,7 +144,7 @@ namespace Lucene.Net.Search
             //       however it's considerable slower than the java counterpart.
             //       this should be a temporary thing, fixed before release
             SortedList<ScoreTerm, ScoreTerm> stQueue = new SortedList<ScoreTerm, ScoreTerm>();
-			FilteredTermEnum enumerator = GetEnum(reader);
+			FilteredTermEnum enumerator = GetEnum(reader, state);
 			
 			try
 			{
@@ -171,7 +172,7 @@ namespace Lucene.Net.Search
                         st = new ScoreTerm();
                     }
 				}
-				while (enumerator.Next());
+				while (enumerator.Next(state));
 			}
 			finally
 			{

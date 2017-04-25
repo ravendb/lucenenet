@@ -16,7 +16,7 @@
  */
 
 using System;
-
+using Lucene.Net.Store;
 using Directory = Lucene.Net.Store.Directory;
 using IndexOutput = Lucene.Net.Store.IndexOutput;
 using UnicodeUtil = Lucene.Net.Util.UnicodeUtil;
@@ -84,24 +84,24 @@ namespace Lucene.Net.Index
 		private TermInfosWriter other;
 		private UnicodeUtil.UTF8Result utf8Result = new UnicodeUtil.UTF8Result();
 		
-		internal TermInfosWriter(Directory directory, System.String segment, FieldInfos fis, int interval)
+		internal TermInfosWriter(Directory directory, System.String segment, FieldInfos fis, int interval, IState state)
 		{
-			Initialize(directory, segment, fis, interval, false);
-			other = new TermInfosWriter(directory, segment, fis, interval, true);
+			Initialize(directory, segment, fis, interval, false, state);
+			other = new TermInfosWriter(directory, segment, fis, interval, true, state);
 			other.other = this;
 		}
 		
-		private TermInfosWriter(Directory directory, System.String segment, FieldInfos fis, int interval, bool isIndex)
+		private TermInfosWriter(Directory directory, System.String segment, FieldInfos fis, int interval, bool isIndex, IState state)
 		{
-			Initialize(directory, segment, fis, interval, isIndex);
+			Initialize(directory, segment, fis, interval, isIndex, state);
 		}
 		
-		private void  Initialize(Directory directory, System.String segment, FieldInfos fis, int interval, bool isi)
+		private void  Initialize(Directory directory, System.String segment, FieldInfos fis, int interval, bool isi, IState state)
 		{
 			indexInterval = interval;
 			fieldInfos = fis;
 			isIndex = isi;
-			output = directory.CreateOutput(segment + (isIndex?".tii":".tis"));
+			output = directory.CreateOutput(segment + (isIndex?".tii":".tis"), state);
 			output.WriteInt(FORMAT_CURRENT); // write format
 			output.WriteLong(0); // leave space for size
 			output.WriteInt(indexInterval); // write indexInterval

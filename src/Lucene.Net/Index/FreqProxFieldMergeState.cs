@@ -16,6 +16,7 @@
  */
 
 using System;
+using Lucene.Net.Store;
 using Lucene.Net.Support;
 
 namespace Lucene.Net.Index
@@ -56,7 +57,7 @@ namespace Lucene.Net.Index
 			this.postings = field.termsHashPerField.SortPostings();
 		}
 		
-		internal bool NextTerm()
+		internal bool NextTerm(IState state)
 		{
 			postingUpto++;
 			if (postingUpto == numPostings)
@@ -73,13 +74,13 @@ namespace Lucene.Net.Index
 				field.termsHashPerField.InitReader(prox, p, 1);
 			
 			// Should always be true
-			bool result = NextDoc();
+			bool result = NextDoc(state);
 			System.Diagnostics.Debug.Assert(result);
 			
 			return true;
 		}
 		
-		public bool NextDoc()
+		public bool NextDoc(IState state)
 		{
 			if (freq.Eof())
 			{
@@ -97,7 +98,7 @@ namespace Lucene.Net.Index
 					return false;
 			}
 			
-			int code = freq.ReadVInt();
+			int code = freq.ReadVInt(state);
 			if (field.omitTermFreqAndPositions)
 				docID += code;
 			else
@@ -106,7 +107,7 @@ namespace Lucene.Net.Index
 				if ((code & 1) != 0)
 					termFreq = 1;
 				else
-					termFreq = freq.ReadVInt();
+					termFreq = freq.ReadVInt(state);
 			}
 			
 			System.Diagnostics.Debug.Assert(docID != p.lastDocID);

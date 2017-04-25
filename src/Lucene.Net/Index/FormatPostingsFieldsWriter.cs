@@ -16,7 +16,7 @@
  */
 
 using System;
-
+using Lucene.Net.Store;
 using Directory = Lucene.Net.Store.Directory;
 
 namespace Lucene.Net.Index
@@ -33,14 +33,14 @@ namespace Lucene.Net.Index
 		internal DefaultSkipListWriter skipListWriter;
 		internal int totalNumDocs;
 		
-		public FormatPostingsFieldsWriter(SegmentWriteState state, FieldInfos fieldInfos):base()
+		public FormatPostingsFieldsWriter(SegmentWriteState state, FieldInfos fieldInfos, IState s) :base()
 		{
 			
 			dir = state.directory;
 			segment = state.segmentName;
 			totalNumDocs = state.numDocs;
 			this.fieldInfos = fieldInfos;
-			termsOut = new TermInfosWriter(dir, segment, fieldInfos, state.termIndexInterval);
+			termsOut = new TermInfosWriter(dir, segment, fieldInfos, state.termIndexInterval, s);
 			
 			// TODO: this is a nasty abstraction violation (that we
 			// peek down to find freqOut/proxOut) -- we need a
@@ -51,7 +51,7 @@ namespace Lucene.Net.Index
 			state.flushedFiles.Add(state.SegmentFileName(IndexFileNames.TERMS_EXTENSION));
 			state.flushedFiles.Add(state.SegmentFileName(IndexFileNames.TERMS_INDEX_EXTENSION));
 			
-			termsWriter = new FormatPostingsTermsWriter(state, this);
+			termsWriter = new FormatPostingsTermsWriter(state, this, s);
 		}
 		
 		/// <summary>Add a new field </summary>

@@ -17,6 +17,7 @@
 
 using System;
 using Lucene.Net.Documents;
+using Lucene.Net.Store;
 
 namespace Lucene.Net.Index
 {
@@ -24,7 +25,7 @@ namespace Lucene.Net.Index
 	abstract class DocFieldConsumerPerField
 	{
 		/// <summary>Processes all occurrences of a single field </summary>
-		public abstract void  ProcessFields(IFieldable[] fields, int count);
+		public abstract void  ProcessFields(IFieldable[] fields, int count, IState state);
 		public abstract void  Abort();
 	}
 }

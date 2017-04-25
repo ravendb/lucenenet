@@ -17,6 +17,7 @@
 
 using System;
 using System.Collections.Generic;
+using Lucene.Net.Store;
 using Term = Lucene.Net.Index.Term;
 using TermPositions = Lucene.Net.Index.TermPositions;
 
@@ -44,11 +45,11 @@ namespace Lucene.Net.Search.Spans
 			internalDoc = - 1;
 		}
 		
-		public override bool Next()
+		public override bool Next(IState state)
 		{
 			if (count == freq)
 			{
-				if (!internalPositions.Next())
+				if (!internalPositions.Next(state))
 				{
 					internalDoc = int.MaxValue;
 					return false;
@@ -57,14 +58,14 @@ namespace Lucene.Net.Search.Spans
 				freq = internalPositions.Freq;
 				count = 0;
 			}
-			position = internalPositions.NextPosition();
+			position = internalPositions.NextPosition(state);
 			count++;
 			return true;
 		}
 		
-		public override bool SkipTo(int target)
+		public override bool SkipTo(int target, IState state)
 		{
-			if (!internalPositions.SkipTo(target))
+			if (!internalPositions.SkipTo(target, state))
 			{
 				internalDoc = int.MaxValue;
 				return false;
@@ -74,7 +75,7 @@ namespace Lucene.Net.Search.Spans
 			freq = internalPositions.Freq;
 			count = 0;
 			
-			position = internalPositions.NextPosition();
+			position = internalPositions.NextPosition(state);
 			count++;
 			
 			return true;
@@ -97,10 +98,10 @@ namespace Lucene.Net.Search.Spans
 		
 		// TODO: Remove warning after API has been finalized
 
-	    public override ICollection<byte[]> GetPayload()
+	    public override ICollection<byte[]> GetPayload(IState state)
 	    {
 	        byte[] bytes = new byte[internalPositions.PayloadLength];
-	        bytes = internalPositions.GetPayload(bytes, 0);
+	        bytes = internalPositions.GetPayload(bytes, 0, state);
 	        var val = new System.Collections.Generic.List<byte[]>();
 	        val.Add(bytes);
 	        return val;

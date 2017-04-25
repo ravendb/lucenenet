@@ -16,6 +16,7 @@
  */
 
 using System;
+using Lucene.Net.Store;
 
 namespace Lucene.Net.Index
 {
@@ -37,7 +38,7 @@ namespace Lucene.Net.Index
         /// invalid until <see cref="TermDocs.Next()" /> is called for
 		/// the first time.
 		/// </summary>
-		int NextPosition();
+		int NextPosition(IState state);
 
 	    /// <summary> Returns the length of the payload at the current term position.
 	    /// This is invalid until <see cref="NextPosition()" /> is called for
@@ -65,7 +66,7 @@ namespace Lucene.Net.Index
 		/// <returns> a byte[] array containing the data of this payload
 		/// </returns>
 		/// <throws>  IOException </throws>
-		byte[] GetPayload(byte[] data, int offset);
+		byte[] GetPayload(byte[] data, int offset, IState state);
 
 	    /// <summary> Checks if a payload can be loaded at this position.
 	    /// <p/>

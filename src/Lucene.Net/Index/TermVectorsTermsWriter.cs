@@ -17,6 +17,7 @@
 
 using System;
 using System.Collections.Generic;
+using Lucene.Net.Store;
 using IndexOutput = Lucene.Net.Store.IndexOutput;
 using RAMOutputStream = Lucene.Net.Store.RAMOutputStream;
 using ArrayUtil = Lucene.Net.Util.ArrayUtil;
@@ -57,7 +58,7 @@ namespace Lucene.Net.Index
 				postings[i] = new PostingList();
 		}
 
-        public override void Flush(IDictionary<TermsHashConsumerPerThread, ICollection<TermsHashConsumerPerField>> threadsAndFields, SegmentWriteState state)
+        public override void Flush(IDictionary<TermsHashConsumerPerThread, ICollection<TermsHashConsumerPerField>> threadsAndFields, SegmentWriteState state, IState s)
 		{
 			lock (this)
 			{
@@ -96,7 +97,7 @@ namespace Lucene.Net.Index
 			}
 		}
 		
-		internal override void  CloseDocStore(SegmentWriteState state)
+		internal override void  CloseDocStore(SegmentWriteState state, IState s)
 		{
 			lock (this)
 			{
@@ -111,8 +112,8 @@ namespace Lucene.Net.Index
 					tvx = null;
 					System.Diagnostics.Debug.Assert(state.docStoreSegmentName != null);
 					System.String fileName = state.docStoreSegmentName + "." + IndexFileNames.VECTORS_INDEX_EXTENSION;
-					if (4 + ((long) state.numDocsInStore) * 16 != state.directory.FileLength(fileName))
-						throw new System.SystemException("after flush: tvx size mismatch: " + state.numDocsInStore + " docs vs " + state.directory.FileLength(fileName) + " length in bytes of " + fileName + " file exists?=" + state.directory.FileExists(fileName));
+					if (4 + ((long) state.numDocsInStore) * 16 != state.directory.FileLength(fileName, s))
+						throw new System.SystemException("after flush: tvx size mismatch: " + state.numDocsInStore + " docs vs " + state.directory.FileLength(fileName, s) + " length in bytes of " + fileName + " file exists?=" + state.directory.FileExists(fileName, s));
 					
 					state.flushedFiles.Add(state.docStoreSegmentName + "." + IndexFileNames.VECTORS_INDEX_EXTENSION);
                     state.flushedFiles.Add(state.docStoreSegmentName + "." + IndexFileNames.VECTORS_FIELDS_EXTENSION);
@@ -171,7 +172,7 @@ namespace Lucene.Net.Index
 			}
 		}
 		
-		internal void  InitTermVectorsWriter()
+		internal void  InitTermVectorsWriter(IState state)
 		{
 			lock (this)
 			{
@@ -189,9 +190,9 @@ namespace Lucene.Net.Index
 					// vector output files, we must abort this segment
 					// because those files will be in an unknown
 					// state:
-					tvx = docWriter.directory.CreateOutput(docStoreSegment + "." + IndexFileNames.VECTORS_INDEX_EXTENSION);
-					tvd = docWriter.directory.CreateOutput(docStoreSegment + "." + IndexFileNames.VECTORS_DOCUMENTS_EXTENSION);
-					tvf = docWriter.directory.CreateOutput(docStoreSegment + "." + IndexFileNames.VECTORS_FIELDS_EXTENSION);
+					tvx = docWriter.directory.CreateOutput(docStoreSegment + "." + IndexFileNames.VECTORS_INDEX_EXTENSION, state);
+					tvd = docWriter.directory.CreateOutput(docStoreSegment + "." + IndexFileNames.VECTORS_DOCUMENTS_EXTENSION, state);
+					tvf = docWriter.directory.CreateOutput(docStoreSegment + "." + IndexFileNames.VECTORS_FIELDS_EXTENSION, state);
 					
 					tvx.WriteInt(TermVectorsReader.FORMAT_CURRENT);
 					tvd.WriteInt(TermVectorsReader.FORMAT_CURRENT);
@@ -206,14 +207,14 @@ namespace Lucene.Net.Index
 			}
 		}
 		
-		internal void  FinishDocument(PerDoc perDoc)
+		internal void  FinishDocument(PerDoc perDoc, IState state)
 		{
 			lock (this)
 			{
 				
 				System.Diagnostics.Debug.Assert(docWriter.writer.TestPoint("TermVectorsTermsWriter.finishDocument start"));
 				
-				InitTermVectorsWriter();
+				InitTermVectorsWriter(state);
 				
 				Fill(perDoc.docID);
 				
@@ -359,9 +360,9 @@ namespace Lucene.Net.Index
                 return buffer.SizeInBytes;
 			}
 			
-			public override void  Finish()
+			public override void  Finish(IState state)
 			{
-				Enclosing_Instance.FinishDocument(this);
+				Enclosing_Instance.FinishDocument(this, state);
 			}
 		}
 		

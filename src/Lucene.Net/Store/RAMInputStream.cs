@@ -57,12 +57,12 @@ namespace Lucene.Net.Store
             // do nothing
         }
 		
-		public override long Length()
+		public override long Length(IState state)
 		{
 			return length;
 		}
 		
-		public override byte ReadByte()
+		public override byte ReadByte(IState state)
 		{
 			if (bufferPosition >= bufferLength)
 			{
@@ -72,7 +72,7 @@ namespace Lucene.Net.Store
 			return currentBuffer[bufferPosition++];
 		}
 		
-		public override void  ReadBytes(byte[] b, int offset, int len)
+		public override void  ReadBytes(byte[] b, int offset, int len, IState state)
 		{
 			while (len > 0)
 			{
@@ -115,12 +115,12 @@ namespace Lucene.Net.Store
 			}
 		}
 
-	    public override long FilePointer
+	    public override long FilePointer(IState state)
 	    {
-	        get { return currentBufferIndex < 0 ? 0 : bufferStart + bufferPosition; }
+	        return currentBufferIndex < 0 ? 0 : bufferStart + bufferPosition;
 	    }
 
-	    public override void  Seek(long pos)
+	    public override void  Seek(long pos, IState state)
 		{
 			if (currentBuffer == null || pos < bufferStart || pos >= bufferStart + BUFFER_SIZE)
 			{

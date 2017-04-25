@@ -18,6 +18,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Lucene.Net.Store;
 using Lucene.Net.Util;
 using IndexReader = Lucene.Net.Index.IndexReader;
 
@@ -111,14 +112,14 @@ namespace Lucene.Net.Search.Spans
 				this.index = index;
 			}
 			
-			public override bool Next()
+			public override bool Next(IState state)
 			{
-				return Adjust(spans.Next());
+				return Adjust(spans.Next(state));
 			}
 			
-			public override bool SkipTo(int target)
+			public override bool SkipTo(int target, IState state)
 			{
-				return Adjust(spans.SkipTo(target));
+				return Adjust(spans.SkipTo(target, state));
 			}
 			
 			private bool Adjust(bool condition)
@@ -155,9 +156,9 @@ namespace Lucene.Net.Search.Spans
 			}
 			// TODO: Remove warning after API has been finalized
 
-		    public override ICollection<byte[]> GetPayload()
+		    public override ICollection<byte[]> GetPayload(IState state)
 		    {
-		        return spans.GetPayload().ToArray();
+		        return spans.GetPayload(state).ToArray();
 		    }
 
 		    // TODO: Remove warning after API has been finalized
@@ -174,7 +175,7 @@ namespace Lucene.Net.Search.Spans
 		}
 		
 		
-		public NearSpansUnordered(SpanNearQuery query, IndexReader reader)
+		public NearSpansUnordered(SpanNearQuery query, IndexReader reader, IState state)
 		{
 			this.query = query;
 			this.slop = query.Slop;
@@ -184,7 +185,7 @@ namespace Lucene.Net.Search.Spans
 			subSpans = new Spans[clauses.Length];
 			for (int i = 0; i < clauses.Length; i++)
 			{
-				SpansCell cell = new SpansCell(this, clauses[i].GetSpans(reader), i);
+				SpansCell cell = new SpansCell(this, clauses[i].GetSpans(reader, state), i);
 				ordered.Add(cell);
 				subSpans[i] = cell.spans;
 			}
@@ -193,17 +194,17 @@ namespace Lucene.Net.Search.Spans
 		{
 			return subSpans;
 		}
-		public override bool Next()
+		public override bool Next(IState state)
 		{
 			if (firstTime)
 			{
-				InitList(true);
+				InitList(true, state);
 				ListToQueue(); // initialize queue
 				firstTime = false;
 			}
 			else if (more)
 			{
-				if (Min().Next())
+				if (Min().Next(state))
 				{
 					// trigger further scanning
 					queue.UpdateTop(); // maintain queue
@@ -230,7 +231,7 @@ namespace Lucene.Net.Search.Spans
 				
 				while (more && first.Doc() < last.Doc())
 				{
-					more = first.SkipTo(last.Doc()); // skip first upto last
+					more = first.SkipTo(last.Doc(), state); // skip first upto last
 					FirstToLast(); // and move it to the end
 					queueStale = true;
 				}
@@ -252,7 +253,7 @@ namespace Lucene.Net.Search.Spans
 					return true;
 				}
 				
-				more = Min().Next();
+				more = Min().Next(state);
 				if (more)
 				{
 					queue.UpdateTop(); // maintain queue
@@ -261,15 +262,15 @@ namespace Lucene.Net.Search.Spans
 			return false; // no more matches
 		}
 		
-		public override bool SkipTo(int target)
+		public override bool SkipTo(int target, IState state)
 		{
 			if (firstTime)
 			{
 				// initialize
-				InitList(false);
+				InitList(false, state);
 				for (SpansCell cell = first; more && cell != null; cell = cell.next)
 				{
-					more = cell.SkipTo(target); // skip all
+					more = cell.SkipTo(target, state); // skip all
 				}
 				if (more)
 				{
@@ -283,7 +284,7 @@ namespace Lucene.Net.Search.Spans
 				while (more && Min().Doc() < target)
 				{
 					// skip as needed
-					if (Min().SkipTo(target))
+					if (Min().SkipTo(target, state))
 					{
 						queue.UpdateTop();
 					}
@@ -293,7 +294,7 @@ namespace Lucene.Net.Search.Spans
 					}
 				}
 			}
-			return more && (AtMatch() || Next());
+			return more && (AtMatch() || Next(state));
 		}
 		
 		private SpansCell Min()
@@ -319,14 +320,14 @@ namespace Lucene.Net.Search.Spans
 	    /// <summary> WARNING: The List is not necessarily in order of the the positions</summary>
 	    /// <returns> Collection of &amp;lt;c&amp;gt;byte[]&amp;lt;/c&amp;gt; payloads </returns>
 	    /// <throws>  IOException </throws>
-	    public override ICollection<byte[]> GetPayload()
+	    public override ICollection<byte[]> GetPayload(IState state)
 	    {
             System.Collections.Generic.ISet<byte[]> matchPayload = Lucene.Net.Support.Compatibility.SetFactory.CreateHashSet<byte[]>();
 	        for (SpansCell cell = first; cell != null; cell = cell.next)
 	        {
 	            if (cell.IsPayloadAvailable())
 	            {
-	                matchPayload.UnionWith(cell.GetPayload());
+	                matchPayload.UnionWith(cell.GetPayload(state));
 	            }
 	        }
 	        return matchPayload;
@@ -354,13 +355,13 @@ namespace Lucene.Net.Search.Spans
 			return GetType().FullName + "(" + query.ToString() + ")@" + (firstTime?"START":(more?(Doc() + ":" + Start() + "-" + End()):"END"));
 		}
 		
-		private void  InitList(bool next)
+		private void  InitList(bool next, IState state)
 		{
 			for (int i = 0; more && i < ordered.Count; i++)
 			{
 				SpansCell cell = ordered[i];
 				if (next)
-					more = cell.Next(); // move to first entry
+					more = cell.Next(state); // move to first entry
 				if (more)
 				{
 					AddToList(cell); // add to list

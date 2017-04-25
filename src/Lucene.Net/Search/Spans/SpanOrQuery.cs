@@ -18,6 +18,7 @@
 using System;
 using System.Collections.Generic;
 using Lucene.Net.Index;
+using Lucene.Net.Store;
 using Lucene.Net.Support;
 using Lucene.Net.Util;
 using IndexReader = Lucene.Net.Index.IndexReader;
@@ -56,14 +57,14 @@ namespace Lucene.Net.Search.Spans
 			}
 			private SpanQueue queue = null;
 			
-			private bool InitSpanQueue(int target)
+			private bool InitSpanQueue(int target, IState state)
 			{
 				queue = new SpanQueue(enclosingInstance, Enclosing_Instance.clauses.Count);
 				System.Collections.Generic.IEnumerator<SpanQuery> i = Enclosing_Instance.clauses.GetEnumerator();
 				while (i.MoveNext())
 				{
-					Spans spans = i.Current.GetSpans(reader);
-					if (((target == - 1) && spans.Next()) || ((target != - 1) && spans.SkipTo(target)))
+					Spans spans = i.Current.GetSpans(reader, state);
+					if (((target == - 1) && spans.Next(state)) || ((target != - 1) && spans.SkipTo(target, state)))
 					{
 						queue.Add(spans);
 					}
@@ -71,11 +72,11 @@ namespace Lucene.Net.Search.Spans
 				return queue.Size() != 0;
 			}
 			
-			public override bool Next()
+			public override bool Next(IState state)
 			{
 				if (queue == null)
 				{
-					return InitSpanQueue(- 1);
+					return InitSpanQueue(- 1, state);
 				}
 				
 				if (queue.Size() == 0)
@@ -84,7 +85,7 @@ namespace Lucene.Net.Search.Spans
 					return false;
 				}
 				
-				if (Top().Next())
+				if (Top().Next(state))
 				{
 					// move to next
 					queue.UpdateTop();
@@ -100,17 +101,17 @@ namespace Lucene.Net.Search.Spans
 				return queue.Top();
 			}
 			
-			public override bool SkipTo(int target)
+			public override bool SkipTo(int target, IState state)
 			{
 				if (queue == null)
 				{
-					return InitSpanQueue(target);
+					return InitSpanQueue(target, state);
 				}
 				
 				bool skipCalled = false;
 				while (queue.Size() != 0 && Top().Doc() < target)
 				{
-					if (Top().SkipTo(target))
+					if (Top().SkipTo(target, state))
 					{
 						queue.UpdateTop();
 					}
@@ -125,7 +126,7 @@ namespace Lucene.Net.Search.Spans
 				{
 					return queue.Size() != 0;
 				}
-				return Next();
+				return Next(state);
 			}
 			
 			public override int Doc()
@@ -141,13 +142,13 @@ namespace Lucene.Net.Search.Spans
 				return Top().End();
 			}
 
-		    public override ICollection<byte[]> GetPayload()
+		    public override ICollection<byte[]> GetPayload(IState state)
 		    {
 		        System.Collections.Generic.ICollection<byte[]> result = null;
 		        Spans theTop = Top();
 		        if (theTop != null && theTop.IsPayloadAvailable())
 		        {
-		            result = theTop.GetPayload();
+		            result = theTop.GetPayload(state);
 		        }
 		        return result;
 		    }
@@ -222,13 +223,13 @@ namespace Lucene.Net.Search.Spans
 			return soq;
 		}
 		
-		public override Query Rewrite(IndexReader reader)
+		public override Query Rewrite(IndexReader reader, IState state)
 		{
 			SpanOrQuery clone = null;
 			for (int i = 0; i < clauses.Count; i++)
 			{
 				SpanQuery c = clauses[i];
-				SpanQuery query = (SpanQuery) c.Rewrite(reader);
+				SpanQuery query = (SpanQuery) c.Rewrite(reader, state);
 				if (query != c)
 				{
 					// clause rewrote: must clone
@@ -335,11 +336,11 @@ namespace Lucene.Net.Search.Spans
 			}
 		}
 		
-		public override Spans GetSpans(IndexReader reader)
+		public override Spans GetSpans(IndexReader reader, IState state)
 		{
 			if (clauses.Count == 1)
 			// optimize 1-clause case
-				return (clauses[0]).GetSpans(reader);
+				return (clauses[0]).GetSpans(reader, state);
 			
 			return new AnonymousClassSpans(reader, this);
 		}
