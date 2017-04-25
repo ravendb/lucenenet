@@ -64,13 +64,13 @@ namespace Lucene.Net.Store
 		/// </param>
 		/// <exception cref="System.IO.IOException">if an error occurs
 		/// </exception>
-		public RAMDirectory(Directory dir):this(dir, false)
+		public RAMDirectory(Directory dir, IState state) :this(dir, false, state)
 		{
 		}
 		
-		private RAMDirectory(Directory dir, bool closeDir):this()
+		private RAMDirectory(Directory dir, bool closeDir, IState state) :this()
 		{
-			Directory.Copy(dir, this, closeDir);
+			Directory.Copy(dir, this, closeDir, state);
 		}
 
          //https://issues.apache.org/jira/browse/LUCENENET-174
@@ -83,7 +83,7 @@ namespace Lucene.Net.Store
             }
         }
 		
-		public override System.String[] ListAll()
+		public override System.String[] ListAll(IState state)
 		{
 			lock (this)
 			{
@@ -101,7 +101,7 @@ namespace Lucene.Net.Store
 		}
 		
 		/// <summary>Returns true iff the named file exists in this directory. </summary>
-		public override bool FileExists(System.String name)
+		public override bool FileExists(System.String name, IState state)
 		{
 			EnsureOpen();
 			RAMFile file;
@@ -114,7 +114,7 @@ namespace Lucene.Net.Store
 		
 		/// <summary>Returns the time the named file was last modified.</summary>
 		/// <throws>  IOException if the file does not exist </throws>
-		public override long FileModified(System.String name)
+		public override long FileModified(System.String name, IState state)
 		{
 			EnsureOpen();
 			RAMFile file;
@@ -133,7 +133,7 @@ namespace Lucene.Net.Store
 		
 		/// <summary>Set the modified time of an existing file to now.</summary>
 		/// <throws>  IOException if the file does not exist </throws>
-		public override void  TouchFile(System.String name)
+		public override void  TouchFile(System.String name, IState state)
 		{
 			EnsureOpen();
 			RAMFile file;
@@ -169,7 +169,7 @@ namespace Lucene.Net.Store
 		
 		/// <summary>Returns the length in bytes of a file in the directory.</summary>
 		/// <throws>  IOException if the file does not exist </throws>
-		public override long FileLength(System.String name)
+		public override long FileLength(System.String name, IState state)
 		{
 			EnsureOpen();
 			RAMFile file;
@@ -197,7 +197,7 @@ namespace Lucene.Net.Store
 		
 		/// <summary>Removes an existing file in the directory.</summary>
 		/// <throws>  IOException if the file does not exist </throws>
-		public override void  DeleteFile(System.String name)
+		public override void  DeleteFile(System.String name, IState state)
 		{
 			lock (this)
 			{
@@ -215,7 +215,7 @@ namespace Lucene.Net.Store
 		}
 		
 		/// <summary>Creates a new, empty file in the directory with the given name. Returns a stream writing this file. </summary>
-		public override IndexOutput CreateOutput(System.String name)
+		public override IndexOutput CreateOutput(System.String name, IState state)
 		{
 			EnsureOpen();
 			RAMFile file = new RAMFile(this);
@@ -233,7 +233,7 @@ namespace Lucene.Net.Store
 		}
 		
 		/// <summary>Returns a stream reading an existing file. </summary>
-		public override IndexInput OpenInput(System.String name)
+		public override IndexInput OpenInput(System.String name, IState state)
 		{
 			EnsureOpen();
 			RAMFile file;

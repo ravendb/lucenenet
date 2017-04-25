@@ -16,6 +16,7 @@
  */
 
 using System;
+using Lucene.Net.Store;
 using Lucene.Net.Util;
 using IndexReader = Lucene.Net.Index.IndexReader;
 using Entry = Lucene.Net.Search.FieldValueHitQueue.Entry;
@@ -61,12 +62,12 @@ namespace Lucene.Net.Search
 				bottom = pq.UpdateTop();
 			}
 			
-			public override void Collect(int doc)
+			public override void Collect(int doc, IState state)
 			{
 				++internalTotalHits;
 				if (queueFull)
 				{
-					if ((reverseMul * comparator.CompareBottom(doc)) <= 0)
+					if ((reverseMul * comparator.CompareBottom(doc, state)) <= 0)
 					{
 						// since docs are visited in doc Id order, if compare is 0, it means
 						// this document is largest than anything else in the queue, and
@@ -75,7 +76,7 @@ namespace Lucene.Net.Search
 					}
 					
 					// This hit is competitive - replace bottom element in queue & adjustTop
-					comparator.Copy(bottom.slot, doc);
+					comparator.Copy(bottom.slot, doc, state);
 					UpdateBottom(doc);
 					comparator.SetBottom(bottom.slot);
 				}
@@ -84,7 +85,7 @@ namespace Lucene.Net.Search
 					// Startup transient: queue hasn't gathered numHits yet
 					int slot = internalTotalHits - 1;
 					// Copy hit into queue
-					comparator.Copy(slot, doc);
+					comparator.Copy(slot, doc, state);
 					Add(slot, doc, System.Single.NaN);
 					if (queueFull)
 					{
@@ -93,10 +94,10 @@ namespace Lucene.Net.Search
 				}
 			}
 			
-			public override void SetNextReader(IndexReader reader, int docBase)
+			public override void SetNextReader(IndexReader reader, int docBase, IState state)
 			{
 				this.docBase = docBase;
-				comparator.SetNextReader(reader, docBase);
+				comparator.SetNextReader(reader, docBase, state);
 			}
 			
 			public override void SetScorer(Scorer scorer)
@@ -117,20 +118,20 @@ namespace Lucene.Net.Search
 			{
 			}
 			
-			public override void Collect(int doc)
+			public override void Collect(int doc, IState state)
 			{
 				++internalTotalHits;
 				if (queueFull)
 				{
 					// Fastmatch: return if this hit is not competitive
-					int cmp = reverseMul * comparator.CompareBottom(doc);
+					int cmp = reverseMul * comparator.CompareBottom(doc, state);
 					if (cmp < 0 || (cmp == 0 && doc + docBase > bottom.Doc))
 					{
 						return ;
 					}
 					
 					// This hit is competitive - replace bottom element in queue & adjustTop
-					comparator.Copy(bottom.slot, doc);
+					comparator.Copy(bottom.slot, doc, state);
 					UpdateBottom(doc);
 					comparator.SetBottom(bottom.slot);
 				}
@@ -139,7 +140,7 @@ namespace Lucene.Net.Search
 					// Startup transient: queue hasn't gathered numHits yet
 					int slot = internalTotalHits - 1;
 					// Copy hit into queue
-					comparator.Copy(slot, doc);
+					comparator.Copy(slot, doc, state);
 					Add(slot, doc, System.Single.NaN);
 					if (queueFull)
 					{
@@ -174,12 +175,12 @@ namespace Lucene.Net.Search
 				bottom = pq.UpdateTop();
 			}
 			
-			public override void Collect(int doc)
+			public override void Collect(int doc, IState state)
 			{
 				++internalTotalHits;
 				if (queueFull)
 				{
-					if ((reverseMul * comparator.CompareBottom(doc)) <= 0)
+					if ((reverseMul * comparator.CompareBottom(doc, state)) <= 0)
 					{
 						// since docs are visited in doc Id order, if compare is 0, it means
 						// this document is largest than anything else in the queue, and
@@ -188,22 +189,22 @@ namespace Lucene.Net.Search
 					}
 					
 					// Compute the score only if the hit is competitive.
-					float score = scorer.Score();
+					float score = scorer.Score(state);
 					
 					// This hit is competitive - replace bottom element in queue & adjustTop
-					comparator.Copy(bottom.slot, doc);
+					comparator.Copy(bottom.slot, doc, state);
 					UpdateBottom(doc, score);
 					comparator.SetBottom(bottom.slot);
 				}
 				else
 				{
 					// Compute the score only if the hit is competitive.
-					float score = scorer.Score();
+					float score = scorer.Score(state);
 					
 					// Startup transient: queue hasn't gathered numHits yet
 					int slot = internalTotalHits - 1;
 					// Copy hit into queue
-					comparator.Copy(slot, doc);
+					comparator.Copy(slot, doc, state);
 					Add(slot, doc, score);
 					if (queueFull)
 					{
@@ -231,35 +232,35 @@ namespace Lucene.Net.Search
 			{
 			}
 			
-			public override void  Collect(int doc)
+			public override void  Collect(int doc, IState state)
 			{
 				++internalTotalHits;
 				if (queueFull)
 				{
 					// Fastmatch: return if this hit is not competitive
-					int cmp = reverseMul * comparator.CompareBottom(doc);
+					int cmp = reverseMul * comparator.CompareBottom(doc, state);
 					if (cmp < 0 || (cmp == 0 && doc + docBase > bottom.Doc))
 					{
 						return ;
 					}
 					
 					// Compute the score only if the hit is competitive.
-					float score = scorer.Score();
+					float score = scorer.Score(state);
 					
 					// This hit is competitive - replace bottom element in queue & adjustTop
-					comparator.Copy(bottom.slot, doc);
+					comparator.Copy(bottom.slot, doc, state);
 					UpdateBottom(doc, score);
 					comparator.SetBottom(bottom.slot);
 				}
 				else
 				{
 					// Compute the score only if the hit is competitive.
-					float score = scorer.Score();
+					float score = scorer.Score(state);
 					
 					// Startup transient: queue hasn't gathered numHits yet
 					int slot = internalTotalHits - 1;
 					// Copy hit into queue
-					comparator.Copy(slot, doc);
+					comparator.Copy(slot, doc, state);
 					Add(slot, doc, score);
 					if (queueFull)
 					{
@@ -296,9 +297,9 @@ namespace Lucene.Net.Search
 				bottom = pq.UpdateTop();
 			}
 			
-			public override void  Collect(int doc)
+			public override void  Collect(int doc, IState state)
 			{
-				float score = scorer.Score();
+				float score = scorer.Score(state);
 				if (score > maxScore)
 				{
 					maxScore = score;
@@ -306,7 +307,7 @@ namespace Lucene.Net.Search
 				++internalTotalHits;
 				if (queueFull)
 				{
-					if ((reverseMul * comparator.CompareBottom(doc)) <= 0)
+					if ((reverseMul * comparator.CompareBottom(doc, state)) <= 0)
 					{
 						// since docs are visited in doc Id order, if compare is 0, it means
 						// this document is largest than anything else in the queue, and
@@ -315,7 +316,7 @@ namespace Lucene.Net.Search
 					}
 					
 					// This hit is competitive - replace bottom element in queue & adjustTop
-					comparator.Copy(bottom.slot, doc);
+					comparator.Copy(bottom.slot, doc, state);
 					UpdateBottom(doc, score);
 					comparator.SetBottom(bottom.slot);
 				}
@@ -324,7 +325,7 @@ namespace Lucene.Net.Search
 					// Startup transient: queue hasn't gathered numHits yet
 					int slot = internalTotalHits - 1;
 					// Copy hit into queue
-					comparator.Copy(slot, doc);
+					comparator.Copy(slot, doc, state);
 					Add(slot, doc, score);
 					if (queueFull)
 					{
@@ -352,9 +353,9 @@ namespace Lucene.Net.Search
 			{
 			}
 			
-			public override void  Collect(int doc)
+			public override void  Collect(int doc, IState state)
 			{
-				float score = scorer.Score();
+				float score = scorer.Score(state);
 				if (score > maxScore)
 				{
 					maxScore = score;
@@ -363,14 +364,14 @@ namespace Lucene.Net.Search
 				if (queueFull)
 				{
 					// Fastmatch: return if this hit is not competitive
-					int cmp = reverseMul * comparator.CompareBottom(doc);
+					int cmp = reverseMul * comparator.CompareBottom(doc, state);
 					if (cmp < 0 || (cmp == 0 && doc + docBase > bottom.Doc))
 					{
 						return ;
 					}
 					
 					// This hit is competitive - replace bottom element in queue & adjustTop
-					comparator.Copy(bottom.slot, doc);
+					comparator.Copy(bottom.slot, doc, state);
 					UpdateBottom(doc, score);
 					comparator.SetBottom(bottom.slot);
 				}
@@ -379,7 +380,7 @@ namespace Lucene.Net.Search
 					// Startup transient: queue hasn't gathered numHits yet
 					int slot = internalTotalHits - 1;
 					// Copy hit into queue
-					comparator.Copy(slot, doc);
+					comparator.Copy(slot, doc, state);
 					Add(slot, doc, score);
 					if (queueFull)
 					{
@@ -416,7 +417,7 @@ namespace Lucene.Net.Search
 				bottom = pq.UpdateTop();
 			}
 			
-			public override void  Collect(int doc)
+			public override void  Collect(int doc, IState state)
 			{
 				++internalTotalHits;
 				if (queueFull)
@@ -424,7 +425,7 @@ namespace Lucene.Net.Search
 					// Fastmatch: return if this hit is not competitive
 					for (int i = 0; ; i++)
 					{
-						int c = reverseMul[i] * comparators[i].CompareBottom(doc);
+						int c = reverseMul[i] * comparators[i].CompareBottom(doc, state);
 						if (c < 0)
 						{
 							// Definitely not competitive.
@@ -447,7 +448,7 @@ namespace Lucene.Net.Search
 					// This hit is competitive - replace bottom element in queue & adjustTop
 					for (int i = 0; i < comparators.Length; i++)
 					{
-						comparators[i].Copy(bottom.slot, doc);
+						comparators[i].Copy(bottom.slot, doc, state);
 					}
 					
 					UpdateBottom(doc);
@@ -464,7 +465,7 @@ namespace Lucene.Net.Search
 					// Copy hit into queue
 					for (int i = 0; i < comparators.Length; i++)
 					{
-						comparators[i].Copy(slot, doc);
+						comparators[i].Copy(slot, doc, state);
 					}
 					Add(slot, doc, System.Single.NaN);
 					if (queueFull)
@@ -477,12 +478,12 @@ namespace Lucene.Net.Search
 				}
 			}
 			
-			public override void  SetNextReader(IndexReader reader, int docBase)
+			public override void  SetNextReader(IndexReader reader, int docBase, IState state)
 			{
 				this.docBase = docBase;
 				for (int i = 0; i < comparators.Length; i++)
 				{
-					comparators[i].SetNextReader(reader, docBase);
+					comparators[i].SetNextReader(reader, docBase, state);
 				}
 			}
 			
@@ -508,7 +509,7 @@ namespace Lucene.Net.Search
 			{
 			}
 			
-			public override void  Collect(int doc)
+			public override void  Collect(int doc, IState state)
 			{
 				++internalTotalHits;
 				if (queueFull)
@@ -516,7 +517,7 @@ namespace Lucene.Net.Search
 					// Fastmatch: return if this hit is not competitive
 					for (int i = 0; ; i++)
 					{
-						int c = reverseMul[i] * comparators[i].CompareBottom(doc);
+						int c = reverseMul[i] * comparators[i].CompareBottom(doc, state);
 						if (c < 0)
 						{
 							// Definitely not competitive.
@@ -542,7 +543,7 @@ namespace Lucene.Net.Search
 					// This hit is competitive - replace bottom element in queue & adjustTop
 					for (int i = 0; i < comparators.Length; i++)
 					{
-						comparators[i].Copy(bottom.slot, doc);
+						comparators[i].Copy(bottom.slot, doc, state);
 					}
 					
 					UpdateBottom(doc);
@@ -559,7 +560,7 @@ namespace Lucene.Net.Search
 					// Copy hit into queue
 					for (int i = 0; i < comparators.Length; i++)
 					{
-						comparators[i].Copy(slot, doc);
+						comparators[i].Copy(slot, doc, state);
 					}
 					Add(slot, doc, System.Single.NaN);
 					if (queueFull)
@@ -600,9 +601,9 @@ namespace Lucene.Net.Search
 				bottom = pq.UpdateTop();
 			}
 			
-			public override void  Collect(int doc)
+			public override void  Collect(int doc, IState state)
 			{
-				float score = scorer.Score();
+				float score = scorer.Score(state);
 				if (score > maxScore)
 				{
 					maxScore = score;
@@ -613,7 +614,7 @@ namespace Lucene.Net.Search
 					// Fastmatch: return if this hit is not competitive
 					for (int i = 0; ; i++)
 					{
-						int c = reverseMul[i] * comparators[i].CompareBottom(doc);
+						int c = reverseMul[i] * comparators[i].CompareBottom(doc, state);
 						if (c < 0)
 						{
 							// Definitely not competitive.
@@ -636,7 +637,7 @@ namespace Lucene.Net.Search
 					// This hit is competitive - replace bottom element in queue & adjustTop
 					for (int i = 0; i < comparators.Length; i++)
 					{
-						comparators[i].Copy(bottom.slot, doc);
+						comparators[i].Copy(bottom.slot, doc, state);
 					}
 					
 					UpdateBottom(doc, score);
@@ -653,7 +654,7 @@ namespace Lucene.Net.Search
 					// Copy hit into queue
 					for (int i = 0; i < comparators.Length; i++)
 					{
-						comparators[i].Copy(slot, doc);
+						comparators[i].Copy(slot, doc, state);
 					}
 					Add(slot, doc, score);
 					if (queueFull)
@@ -685,9 +686,9 @@ namespace Lucene.Net.Search
 			{
 			}
 			
-			public override void  Collect(int doc)
+			public override void  Collect(int doc, IState state)
 			{
-				float score = scorer.Score();
+				float score = scorer.Score(state);
 				if (score > maxScore)
 				{
 					maxScore = score;
@@ -698,7 +699,7 @@ namespace Lucene.Net.Search
 					// Fastmatch: return if this hit is not competitive
 					for (int i = 0; ; i++)
 					{
-						int c = reverseMul[i] * comparators[i].CompareBottom(doc);
+						int c = reverseMul[i] * comparators[i].CompareBottom(doc, state);
 						if (c < 0)
 						{
 							// Definitely not competitive.
@@ -724,7 +725,7 @@ namespace Lucene.Net.Search
 					// This hit is competitive - replace bottom element in queue & adjustTop
 					for (int i = 0; i < comparators.Length; i++)
 					{
-						comparators[i].Copy(bottom.slot, doc);
+						comparators[i].Copy(bottom.slot, doc, state);
 					}
 					
 					UpdateBottom(doc, score);
@@ -741,7 +742,7 @@ namespace Lucene.Net.Search
 					// Copy hit into queue
 					for (int i = 0; i < comparators.Length; i++)
 					{
-						comparators[i].Copy(slot, doc);
+						comparators[i].Copy(slot, doc, state);
 					}
 					Add(slot, doc, score);
 					if (queueFull)
@@ -780,7 +781,7 @@ namespace Lucene.Net.Search
 				bottom = pq.UpdateTop();
 			}
 			
-			public override void  Collect(int doc)
+			public override void  Collect(int doc, IState state)
 			{
 				++internalTotalHits;
 				if (queueFull)
@@ -788,7 +789,7 @@ namespace Lucene.Net.Search
 					// Fastmatch: return if this hit is not competitive
 					for (int i = 0; ; i++)
 					{
-						int c = reverseMul[i] * comparators[i].CompareBottom(doc);
+						int c = reverseMul[i] * comparators[i].CompareBottom(doc, state);
 						if (c < 0)
 						{
 							// Definitely not competitive.
@@ -811,11 +812,11 @@ namespace Lucene.Net.Search
 					// This hit is competitive - replace bottom element in queue & adjustTop
 					for (int i = 0; i < comparators.Length; i++)
 					{
-						comparators[i].Copy(bottom.slot, doc);
+						comparators[i].Copy(bottom.slot, doc, state);
 					}
 					
 					// Compute score only if it is competitive.
-					float score = scorer.Score();
+					float score = scorer.Score(state);
 					UpdateBottom(doc, score);
 					
 					for (int i = 0; i < comparators.Length; i++)
@@ -830,11 +831,11 @@ namespace Lucene.Net.Search
 					// Copy hit into queue
 					for (int i = 0; i < comparators.Length; i++)
 					{
-						comparators[i].Copy(slot, doc);
+						comparators[i].Copy(slot, doc, state);
 					}
 					
 					// Compute score only if it is competitive.
-					float score = scorer.Score();
+					float score = scorer.Score(state);
 					Add(slot, doc, score);
 					if (queueFull)
 					{
@@ -865,7 +866,7 @@ namespace Lucene.Net.Search
 			{
 			}
 			
-			public override void  Collect(int doc)
+			public override void  Collect(int doc, IState state)
 			{
 				++internalTotalHits;
 				if (queueFull)
@@ -873,7 +874,7 @@ namespace Lucene.Net.Search
 					// Fastmatch: return if this hit is not competitive
 					for (int i = 0; ; i++)
 					{
-						int c = reverseMul[i] * comparators[i].CompareBottom(doc);
+						int c = reverseMul[i] * comparators[i].CompareBottom(doc, state);
 						if (c < 0)
 						{
 							// Definitely not competitive.
@@ -899,11 +900,11 @@ namespace Lucene.Net.Search
 					// This hit is competitive - replace bottom element in queue & adjustTop
 					for (int i = 0; i < comparators.Length; i++)
 					{
-						comparators[i].Copy(bottom.slot, doc);
+						comparators[i].Copy(bottom.slot, doc, state);
 					}
 					
 					// Compute score only if it is competitive.
-					float score = scorer.Score();
+					float score = scorer.Score(state);
 					UpdateBottom(doc, score);
 					
 					for (int i = 0; i < comparators.Length; i++)
@@ -918,11 +919,11 @@ namespace Lucene.Net.Search
 					// Copy hit into queue
 					for (int i = 0; i < comparators.Length; i++)
 					{
-						comparators[i].Copy(slot, doc);
+						comparators[i].Copy(slot, doc, state);
 					}
 					
 					// Compute score only if it is competitive.
-					float score = scorer.Score();
+					float score = scorer.Score(state);
 					Add(slot, doc, score);
 					if (queueFull)
 					{

@@ -18,6 +18,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Lucene.Net.Store;
 using Lucene.Net.Support;
 using IndexReader = Lucene.Net.Index.IndexReader;
 using OpenBitSetDISI = Lucene.Net.Util.OpenBitSetDISI;
@@ -216,7 +217,7 @@ namespace Lucene.Net.Search
 		/// by the wrapped Filter.
 		/// This implementation returns the given DocIdSet.
 		/// </summary>
-		protected internal virtual DocIdSet DocIdSetToCache(DocIdSet docIdSet, IndexReader reader)
+		protected internal virtual DocIdSet DocIdSetToCache(DocIdSet docIdSet, IndexReader reader, IState state)
 		{
             if (docIdSet == null)
             {
@@ -228,18 +229,18 @@ namespace Lucene.Net.Search
 			}
 			else
 			{
-				DocIdSetIterator it = docIdSet.Iterator();
+				DocIdSetIterator it = docIdSet.Iterator(state);
 				// null is allowed to be returned by iterator(),
 				// in this case we wrap with the empty set,
 				// which is cacheable.
-				return (it == null) ? DocIdSet.EMPTY_DOCIDSET : new OpenBitSetDISI(it, reader.MaxDoc);
+				return (it == null) ? DocIdSet.EMPTY_DOCIDSET : new OpenBitSetDISI(it, reader.MaxDoc, state);
 			}
 		}
 
         // for testing
         public int hitCount, missCount;
 		
-		public override DocIdSet GetDocIdSet(IndexReader reader)
+		public override DocIdSet GetDocIdSet(IndexReader reader, IState state)
 		{
 			object coreKey = reader.FieldCacheKey;
             object delCoreKey = reader.HasDeletions ? reader.DeletesCacheKey : coreKey;
@@ -253,7 +254,7 @@ namespace Lucene.Net.Search
 			}
             missCount++;
             // cache miss
-			docIdSet = DocIdSetToCache(filter.GetDocIdSet(reader), reader);
+			docIdSet = DocIdSetToCache(filter.GetDocIdSet(reader, state), reader, state);
 			
 			if (docIdSet != null)
 			{

@@ -16,7 +16,7 @@
  */
 
 using System;
-
+using Lucene.Net.Store;
 using IndexReader = Lucene.Net.Index.IndexReader;
 
 namespace Lucene.Net.Search
@@ -141,7 +141,7 @@ namespace Lucene.Net.Search
 		/// <see cref="Lucene.Net.Index.IndexReader.Document(int)" /> on every hit.
 		/// Doing so can slow searches by an order of magnitude or more.
 		/// </summary>
-		public abstract void  Collect(int doc);
+		public abstract void  Collect(int doc, IState state);
 		
 		/// <summary> Called before collecting from each IndexReader. All doc ids in
 		/// <see cref="Collect(int)" /> will correspond to reader.
@@ -154,7 +154,7 @@ namespace Lucene.Net.Search
 		/// </param>
 		/// <param name="docBase">
 		/// </param>
-		public abstract void  SetNextReader(IndexReader reader, int docBase);
+		public abstract void  SetNextReader(IndexReader reader, int docBase, IState state);
 
 	    /// <summary>
 	    /// Return <c>true</c> if this collector does not

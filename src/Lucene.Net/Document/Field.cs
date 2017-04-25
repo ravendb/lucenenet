@@ -17,6 +17,7 @@
 
 using System;
 using System.IO;
+using Lucene.Net.Store;
 using TokenStream = Lucene.Net.Analysis.TokenStream;
 using IndexWriter = Lucene.Net.Index.IndexWriter;
 using StringHelper = Lucene.Net.Util.StringHelper;
@@ -140,9 +141,9 @@ namespace Lucene.Net.Documents
         /// binary value is used.  Exactly one of stringValue(),
         /// readerValue(), and getBinaryValue() must be set. 
         /// </summary>
-        public override string StringValue
+        public override string StringValue(IState state)
         {
-            get { return fieldsData is System.String ? (System.String) fieldsData : null; }
+            return fieldsData is System.String ? (System.String) fieldsData : null;
         }
 
         /// <summary>The value of the field as a Reader, or null.  If null, the String value or

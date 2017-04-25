@@ -16,7 +16,7 @@
  */
 
 using System;
-
+using Lucene.Net.Store;
 using IndexReader = Lucene.Net.Index.IndexReader;
 using Term = Lucene.Net.Index.Term;
 
@@ -63,7 +63,7 @@ namespace Lucene.Net.Search
 		/// <throws>  IOException </throws>
 		/// <seealso cref="FuzzyTermEnum(IndexReader, Term, float, int)">
 		/// </seealso>
-		public FuzzyTermEnum(IndexReader reader, Term term):this(reader, term, FuzzyQuery.defaultMinSimilarity, FuzzyQuery.defaultPrefixLength)
+		public FuzzyTermEnum(IndexReader reader, Term term, IState state) :this(reader, term, FuzzyQuery.defaultMinSimilarity, FuzzyQuery.defaultPrefixLength, state)
 		{
 		}
 		
@@ -82,7 +82,7 @@ namespace Lucene.Net.Search
 		/// <throws>  IOException </throws>
 		/// <seealso cref="FuzzyTermEnum(IndexReader, Term, float, int)">
 		/// </seealso>
-		public FuzzyTermEnum(IndexReader reader, Term term, float minSimilarity):this(reader, term, minSimilarity, FuzzyQuery.defaultPrefixLength)
+		public FuzzyTermEnum(IndexReader reader, Term term, float minSimilarity, IState state) :this(reader, term, minSimilarity, FuzzyQuery.defaultPrefixLength, state)
 		{
 		}
 		
@@ -103,7 +103,7 @@ namespace Lucene.Net.Search
 		/// <param name="prefixLength">Length of required common prefix. Default value is 0.
 		/// </param>
 		/// <throws>  IOException </throws>
-		public FuzzyTermEnum(IndexReader reader, Term term, float minSimilarity, int prefixLength):base()
+		public FuzzyTermEnum(IndexReader reader, Term term, float minSimilarity, int prefixLength, IState state) :base()
 		{
 			
 			if (minSimilarity >= 1.0f)
@@ -129,7 +129,7 @@ namespace Lucene.Net.Search
 		    this.p = new int[this.text.Length + 1];
             this.d = new int[this.text.Length + 1];
 			
-			SetEnum(reader.Terms(new Term(searchTerm.Field, prefix)));
+			SetEnum(reader.Terms(new Term(searchTerm.Field, prefix), state), state);
 		}
 		
 		/// <summary> The termCompare method in FuzzyTermEnum uses Levenshtein distance to 

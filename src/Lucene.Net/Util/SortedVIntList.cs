@@ -16,6 +16,7 @@
  */
 
 using System;
+using Lucene.Net.Store;
 using Lucene.Net.Support;
 using DocIdSet = Lucene.Net.Search.DocIdSet;
 using DocIdSetIterator = Lucene.Net.Search.DocIdSetIterator;
@@ -74,7 +75,7 @@ namespace Lucene.Net.Util
 				return doc;
 			}
 			
-			public override int NextDoc()
+			public override int NextDoc(IState state)
 			{
 				if (bytePos >= Enclosing_Instance.lastBytePos)
 				{
@@ -88,7 +89,7 @@ namespace Lucene.Net.Util
 				return doc;
 			}
 			
-			public override int Advance(int target)
+			public override int Advance(int target, IState state)
 			{
 				while (bytePos < Enclosing_Instance.lastBytePos)
 				{
@@ -171,11 +172,11 @@ namespace Lucene.Net.Util
 		/// is called and it must provide the integers in non
 		/// decreasing order.
 		/// </param>
-		public SortedVIntList(DocIdSetIterator docIdSetIterator)
+		public SortedVIntList(DocIdSetIterator docIdSetIterator, IState state)
 		{
 			SortedVIntListBuilder builder = new SortedVIntListBuilder(this);
 			int doc;
-			while ((doc = docIdSetIterator.NextDoc()) != DocIdSetIterator.NO_MORE_DOCS)
+			while ((doc = docIdSetIterator.NextDoc(state)) != DocIdSetIterator.NO_MORE_DOCS)
 			{
 				builder.AddInt(doc);
 			}
@@ -281,7 +282,7 @@ namespace Lucene.Net.Util
 
 	    /// <returns>    An iterator over the sorted integers.
 		/// </returns>
-		public override DocIdSetIterator Iterator()
+		public override DocIdSetIterator Iterator(IState state)
 		{
 			return new AnonymousClassDocIdSetIterator(this);
 		}

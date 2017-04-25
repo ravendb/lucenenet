@@ -16,7 +16,7 @@
  */
 
 using System;
-
+using Lucene.Net.Store;
 using BufferedIndexInput = Lucene.Net.Store.BufferedIndexInput;
 using Directory = Lucene.Net.Store.Directory;
 using IndexInput = Lucene.Net.Store.IndexInput;
@@ -60,41 +60,41 @@ namespace Lucene.Net.Index
 		private int format;
 	    private bool isDisposed;
 
-	    internal TermVectorsReader(Directory d, System.String segment, FieldInfos fieldInfos):this(d, segment, fieldInfos, BufferedIndexInput.BUFFER_SIZE)
+	    internal TermVectorsReader(Directory d, System.String segment, FieldInfos fieldInfos, IState state) :this(d, segment, fieldInfos, BufferedIndexInput.BUFFER_SIZE, state)
 		{
 		}
 		
-		internal TermVectorsReader(Directory d, System.String segment, FieldInfos fieldInfos, int readBufferSize):this(d, segment, fieldInfos, readBufferSize, - 1, 0)
+		internal TermVectorsReader(Directory d, System.String segment, FieldInfos fieldInfos, int readBufferSize, IState state) :this(d, segment, fieldInfos, readBufferSize, - 1, 0, state)
 		{
 		}
 		
-		internal TermVectorsReader(Directory d, System.String segment, FieldInfos fieldInfos, int readBufferSize, int docStoreOffset, int size)
+		internal TermVectorsReader(Directory d, System.String segment, FieldInfos fieldInfos, int readBufferSize, int docStoreOffset, int size, IState state)
 		{
 			bool success = false;
 			
 			try
 			{
-                if (d.FileExists(segment + "." + IndexFileNames.VECTORS_INDEX_EXTENSION))
+                if (d.FileExists(segment + "." + IndexFileNames.VECTORS_INDEX_EXTENSION, state))
                 {
-                    tvx = d.OpenInput(segment + "." + IndexFileNames.VECTORS_INDEX_EXTENSION, readBufferSize);
-                    format = CheckValidFormat(tvx);
-                    tvd = d.OpenInput(segment + "." + IndexFileNames.VECTORS_DOCUMENTS_EXTENSION, readBufferSize);
-                    int tvdFormat = CheckValidFormat(tvd);
-                    tvf = d.OpenInput(segment + "." + IndexFileNames.VECTORS_FIELDS_EXTENSION, readBufferSize);
-                    int tvfFormat = CheckValidFormat(tvf);
+                    tvx = d.OpenInput(segment + "." + IndexFileNames.VECTORS_INDEX_EXTENSION, readBufferSize, state);
+                    format = CheckValidFormat(tvx, state);
+                    tvd = d.OpenInput(segment + "." + IndexFileNames.VECTORS_DOCUMENTS_EXTENSION, readBufferSize, state);
+                    int tvdFormat = CheckValidFormat(tvd, state);
+                    tvf = d.OpenInput(segment + "." + IndexFileNames.VECTORS_FIELDS_EXTENSION, readBufferSize, state);
+                    int tvfFormat = CheckValidFormat(tvf, state);
 
                     System.Diagnostics.Debug.Assert(format == tvdFormat);
                     System.Diagnostics.Debug.Assert(format == tvfFormat);
 
                     if (format >= FORMAT_VERSION2)
                     {
-                        System.Diagnostics.Debug.Assert((tvx.Length() - FORMAT_SIZE) % 16 == 0);
-                        numTotalDocs = (int)(tvx.Length() >> 4);
+                        System.Diagnostics.Debug.Assert((tvx.Length(state) - FORMAT_SIZE) % 16 == 0);
+                        numTotalDocs = (int)(tvx.Length(state) >> 4);
                     }
                     else
                     {
-                        System.Diagnostics.Debug.Assert((tvx.Length() - FORMAT_SIZE) % 8 == 0);
-                        numTotalDocs = (int)(tvx.Length() >> 3);
+                        System.Diagnostics.Debug.Assert((tvx.Length(state) - FORMAT_SIZE) % 8 == 0);
+                        numTotalDocs = (int)(tvx.Length(state) >> 3);
                     }
 
                     if (-1 == docStoreOffset)
@@ -151,12 +151,12 @@ namespace Lucene.Net.Index
 			return tvf;
 		}
 		
-		private void  SeekTvx(int docNum)
+		private void  SeekTvx(int docNum, IState state)
 		{
 			if (format < FORMAT_VERSION2)
-				tvx.Seek((docNum + docStoreOffset) * 8L + FORMAT_SIZE);
+				tvx.Seek((docNum + docStoreOffset) * 8L + FORMAT_SIZE, state);
 			else
-				tvx.Seek((docNum + docStoreOffset) * 16L + FORMAT_SIZE);
+				tvx.Seek((docNum + docStoreOffset) * 16L + FORMAT_SIZE, state);
 		}
 		
 		internal virtual bool CanReadRawDocs()
@@ -171,7 +171,7 @@ namespace Lucene.Net.Index
 		/// congruent.  Once this returns, the tvf &amp; tvd streams
 		/// are seeked to the startDocID. 
 		/// </summary>
-		internal void  RawDocs(int[] tvdLengths, int[] tvfLengths, int startDocID, int numDocs)
+		internal void  RawDocs(int[] tvdLengths, int[] tvfLengths, int startDocID, int numDocs, IState state)
 		{
 			
 			if (tvx == null)
@@ -192,13 +192,13 @@ namespace Lucene.Net.Index
 			if (format < FORMAT_VERSION2)
 				throw new System.SystemException("cannot read raw docs with older term vector formats");
 			
-			SeekTvx(startDocID);
+			SeekTvx(startDocID, state);
 			
-			long tvdPosition = tvx.ReadLong();
-			tvd.Seek(tvdPosition);
+			long tvdPosition = tvx.ReadLong(state);
+			tvd.Seek(tvdPosition, state);
 			
-			long tvfPosition = tvx.ReadLong();
-			tvf.Seek(tvfPosition);
+			long tvfPosition = tvx.ReadLong(state);
+			tvf.Seek(tvfPosition, state);
 			
 			long lastTvdPosition = tvdPosition;
 			long lastTvfPosition = tvfPosition;
@@ -210,13 +210,13 @@ namespace Lucene.Net.Index
 				System.Diagnostics.Debug.Assert(docID <= numTotalDocs);
 				if (docID < numTotalDocs)
 				{
-					tvdPosition = tvx.ReadLong();
-					tvfPosition = tvx.ReadLong();
+					tvdPosition = tvx.ReadLong(state);
+					tvfPosition = tvx.ReadLong(state);
 				}
 				else
 				{
-					tvdPosition = tvd.Length();
-					tvfPosition = tvf.Length();
+					tvdPosition = tvd.Length(state);
+					tvfPosition = tvf.Length(state);
 					System.Diagnostics.Debug.Assert(count == numDocs - 1);
 				}
 				tvdLengths[count] = (int) (tvdPosition - lastTvdPosition);
@@ -227,9 +227,9 @@ namespace Lucene.Net.Index
 			}
 		}
 		
-		private int CheckValidFormat(IndexInput in_Renamed)
+		private int CheckValidFormat(IndexInput in_Renamed, IState state)
 		{
-			int format = in_Renamed.ReadInt();
+			int format = in_Renamed.ReadInt(state);
 			if (format > FORMAT_CURRENT)
 			{
 				throw new CorruptIndexException("Incompatible format version: " + format + " expected " + FORMAT_CURRENT + " or less");
@@ -298,7 +298,7 @@ namespace Lucene.Net.Index
 			return size;
 		}
 		
-		public virtual void  Get(int docNum, System.String field, TermVectorMapper mapper)
+		public virtual void  Get(int docNum, System.String field, TermVectorMapper mapper, IState state)
 		{
 			if (tvx != null)
 			{
@@ -307,12 +307,12 @@ namespace Lucene.Net.Index
 				//We don't need to do this in other seeks because we already have the
 				// file pointer
 				//that was written in another file
-				SeekTvx(docNum);
+				SeekTvx(docNum, state);
 				//System.out.println("TVX Pointer: " + tvx.getFilePointer());
-				long tvdPosition = tvx.ReadLong();
+				long tvdPosition = tvx.ReadLong(state);
 				
-				tvd.Seek(tvdPosition);
-				int fieldCount = tvd.ReadVInt();
+				tvd.Seek(tvdPosition, state);
+				int fieldCount = tvd.ReadVInt(state);
 				//System.out.println("Num Fields: " + fieldCount);
 				// There are only a few fields per document. We opt for a full scan
 				// rather then requiring that they be ordered. We need to read through
@@ -322,9 +322,9 @@ namespace Lucene.Net.Index
 				for (int i = 0; i < fieldCount; i++)
 				{
 					if (format >= FORMAT_VERSION)
-						number = tvd.ReadVInt();
+						number = tvd.ReadVInt(state);
 					else
-						number += tvd.ReadVInt();
+						number += tvd.ReadVInt(state);
 					
 					if (number == fieldNumber)
 						found = i;
@@ -337,14 +337,14 @@ namespace Lucene.Net.Index
 					// Compute position in the tvf file
 					long position;
 					if (format >= FORMAT_VERSION2)
-						position = tvx.ReadLong();
+						position = tvx.ReadLong(state);
 					else
-						position = tvd.ReadVLong();
+						position = tvd.ReadVLong(state);
 					for (int i = 1; i <= found; i++)
-						position += tvd.ReadVLong();
+						position += tvd.ReadVLong(state);
 
                     mapper.SetDocumentNumber(docNum);
-					ReadTermVector(field, position, mapper);
+					ReadTermVector(field, position, mapper, state);
 				}
 				else
 				{
@@ -367,18 +367,18 @@ namespace Lucene.Net.Index
 		/// <returns> The TermFreqVector for the document and field or null if there is no termVector for this field.
 		/// </returns>
 		/// <throws>  IOException if there is an error reading the term vector files </throws>
-		public /*internal*/ virtual ITermFreqVector Get(int docNum, System.String field)
+		public /*internal*/ virtual ITermFreqVector Get(int docNum, System.String field, IState state)
 		{
 			// Check if no term vectors are available for this segment at all
 			ParallelArrayTermVectorMapper mapper = new ParallelArrayTermVectorMapper();
-			Get(docNum, field, mapper);
+			Get(docNum, field, mapper, state);
 			
 			return mapper.MaterializeVector();
 		}
 		
 		// Reads the String[] fields; you have to pre-seek tvd to
 		// the right point
-		private System.String[] ReadFields(int fieldCount)
+		private System.String[] ReadFields(int fieldCount, IState state)
 		{
 			int number = 0;
 			System.String[] fields = new System.String[fieldCount];
@@ -386,9 +386,9 @@ namespace Lucene.Net.Index
 			for (int i = 0; i < fieldCount; i++)
 			{
 				if (format >= FORMAT_VERSION)
-					number = tvd.ReadVInt();
+					number = tvd.ReadVInt(state);
 				else
-					number += tvd.ReadVInt();
+					number += tvd.ReadVInt(state);
 				
 				fields[i] = fieldInfos.FieldName(number);
 			}
@@ -398,21 +398,21 @@ namespace Lucene.Net.Index
 		
 		// Reads the long[] offsets into TVF; you have to pre-seek
 		// tvx/tvd to the right point
-		private long[] ReadTvfPointers(int fieldCount)
+		private long[] ReadTvfPointers(int fieldCount, IState state)
 		{
 			// Compute position in the tvf file
 			long position;
 			if (format >= FORMAT_VERSION2)
-				position = tvx.ReadLong();
+				position = tvx.ReadLong(state);
 			else
-				position = tvd.ReadVLong();
+				position = tvd.ReadVLong(state);
 			
 			long[] tvfPointers = new long[fieldCount];
 			tvfPointers[0] = position;
 			
 			for (int i = 1; i < fieldCount; i++)
 			{
-				position += tvd.ReadVLong();
+				position += tvd.ReadVLong(state);
 				tvfPointers[i] = position;
 			}
 			
@@ -427,24 +427,24 @@ namespace Lucene.Net.Index
 		/// <returns> All term frequency vectors
 		/// </returns>
 		/// <throws>  IOException if there is an error reading the term vector files  </throws>
-		public /*internal*/ virtual ITermFreqVector[] Get(int docNum)
+		public /*internal*/ virtual ITermFreqVector[] Get(int docNum, IState state)
 		{
 			ITermFreqVector[] result = null;
 			if (tvx != null)
 			{
 				//We need to offset by
-				SeekTvx(docNum);
-				long tvdPosition = tvx.ReadLong();
+				SeekTvx(docNum, state);
+				long tvdPosition = tvx.ReadLong(state);
 				
-				tvd.Seek(tvdPosition);
-				int fieldCount = tvd.ReadVInt();
+				tvd.Seek(tvdPosition, state);
+				int fieldCount = tvd.ReadVInt(state);
 				
 				// No fields are vectorized for this document
 				if (fieldCount != 0)
 				{
-					System.String[] fields = ReadFields(fieldCount);
-					long[] tvfPointers = ReadTvfPointers(fieldCount);
-					result = ReadTermVectors(docNum, fields, tvfPointers);
+					System.String[] fields = ReadFields(fieldCount, state);
+					long[] tvfPointers = ReadTvfPointers(fieldCount, state);
+					result = ReadTermVectors(docNum, fields, tvfPointers, state);
 				}
 			}
 			else
@@ -454,26 +454,26 @@ namespace Lucene.Net.Index
 			return result;
 		}
 		
-		public virtual void  Get(int docNumber, TermVectorMapper mapper)
+		public virtual void  Get(int docNumber, TermVectorMapper mapper, IState state)
 		{
 			// Check if no term vectors are available for this segment at all
 			if (tvx != null)
 			{
 				//We need to offset by
 				
-				SeekTvx(docNumber);
-				long tvdPosition = tvx.ReadLong();
+				SeekTvx(docNumber, state);
+				long tvdPosition = tvx.ReadLong(state);
 				
-				tvd.Seek(tvdPosition);
-				int fieldCount = tvd.ReadVInt();
+				tvd.Seek(tvdPosition, state);
+				int fieldCount = tvd.ReadVInt(state);
 				
 				// No fields are vectorized for this document
 				if (fieldCount != 0)
 				{
-					System.String[] fields = ReadFields(fieldCount);
-					long[] tvfPointers = ReadTvfPointers(fieldCount);
+					System.String[] fields = ReadFields(fieldCount, state);
+					long[] tvfPointers = ReadTvfPointers(fieldCount, state);
 					mapper.SetDocumentNumber(docNumber);
-					ReadTermVectors(fields, tvfPointers, mapper);
+					ReadTermVectors(fields, tvfPointers, mapper, state);
 				}
 			}
 			else
@@ -483,24 +483,24 @@ namespace Lucene.Net.Index
 		}
 		
 		
-		private SegmentTermVector[] ReadTermVectors(int docNum, System.String[] fields, long[] tvfPointers)
+		private SegmentTermVector[] ReadTermVectors(int docNum, System.String[] fields, long[] tvfPointers, IState state)
 		{
 			SegmentTermVector[] res = new SegmentTermVector[fields.Length];
 			for (int i = 0; i < fields.Length; i++)
 			{
 				var mapper = new ParallelArrayTermVectorMapper();
 				mapper.SetDocumentNumber(docNum);
-				ReadTermVector(fields[i], tvfPointers[i], mapper);
+				ReadTermVector(fields[i], tvfPointers[i], mapper, state);
 				res[i] = (SegmentTermVector) mapper.MaterializeVector();
 			}
 			return res;
 		}
 		
-		private void  ReadTermVectors(System.String[] fields, long[] tvfPointers, TermVectorMapper mapper)
+		private void  ReadTermVectors(System.String[] fields, long[] tvfPointers, TermVectorMapper mapper, IState state)
 		{
 			for (int i = 0; i < fields.Length; i++)
 			{
-				ReadTermVector(fields[i], tvfPointers[i], mapper);
+				ReadTermVector(fields[i], tvfPointers[i], mapper, state);
 			}
 		}
 		
@@ -513,14 +513,14 @@ namespace Lucene.Net.Index
 		/// <param name="mapper">The mapper used to map the TermVector
 		/// </param>
 		/// <throws>  IOException </throws>
-		private void  ReadTermVector(System.String field, long tvfPointer, TermVectorMapper mapper)
+		private void  ReadTermVector(System.String field, long tvfPointer, TermVectorMapper mapper, IState state)
 		{
 			
 			// Now read the data from specified position
 			//We don't need to offset by the FORMAT here since the pointer already includes the offset
-			tvf.Seek(tvfPointer);
+			tvf.Seek(tvfPointer, state);
 			
-			int numTerms = tvf.ReadVInt();
+			int numTerms = tvf.ReadVInt(state);
 			//System.out.println("Num Terms: " + numTerms);
 			// If no terms - return a constant empty termvector. However, this should never occur!
 			if (numTerms == 0)
@@ -531,13 +531,13 @@ namespace Lucene.Net.Index
 			
 			if (format >= FORMAT_VERSION)
 			{
-				byte bits = tvf.ReadByte();
+				byte bits = tvf.ReadByte(state);
 				storePositions = (bits & STORE_POSITIONS_WITH_TERMVECTOR) != 0;
 				storeOffsets = (bits & STORE_OFFSET_WITH_TERMVECTOR) != 0;
 			}
 			else
 			{
-				tvf.ReadVInt();
+				tvf.ReadVInt(state);
 				storePositions = false;
 				storeOffsets = false;
 			}
@@ -563,8 +563,8 @@ namespace Lucene.Net.Index
 			
 			for (int i = 0; i < numTerms; i++)
 			{
-				start = tvf.ReadVInt();
-				deltaLength = tvf.ReadVInt();
+				start = tvf.ReadVInt(state);
+				deltaLength = tvf.ReadVInt(state);
 				totalLength = start + deltaLength;
 				
 				System.String term;
@@ -578,7 +578,7 @@ namespace Lucene.Net.Index
 						Array.Copy(charBuffer, 0, newCharBuffer, 0, start);
 						charBuffer = newCharBuffer;
 					}
-					tvf.ReadChars(charBuffer, start, deltaLength);
+					tvf.ReadChars(charBuffer, start, deltaLength, state);
 					term = new System.String(charBuffer, 0, totalLength);
 				}
 				else
@@ -590,10 +590,10 @@ namespace Lucene.Net.Index
 						Array.Copy(byteBuffer, 0, newByteBuffer, 0, start);
 						byteBuffer = newByteBuffer;
 					}
-					tvf.ReadBytes(byteBuffer, start, deltaLength);
+					tvf.ReadBytes(byteBuffer, start, deltaLength, state);
                     term = System.Text.Encoding.UTF8.GetString(byteBuffer, 0, totalLength);
 				}
-				int freq = tvf.ReadVInt();
+				int freq = tvf.ReadVInt(state);
 				int[] positions = null;
 				if (storePositions)
 				{
@@ -605,7 +605,7 @@ namespace Lucene.Net.Index
 						int prevPosition = 0;
 						for (int j = 0; j < freq; j++)
 						{
-							positions[j] = prevPosition + tvf.ReadVInt();
+							positions[j] = prevPosition + tvf.ReadVInt(state);
 							prevPosition = positions[j];
 						}
 					}
@@ -615,7 +615,7 @@ namespace Lucene.Net.Index
 						//
 						for (int j = 0; j < freq; j++)
 						{
-							tvf.ReadVInt();
+							tvf.ReadVInt(state);
 						}
 					}
 				}
@@ -629,8 +629,8 @@ namespace Lucene.Net.Index
 						int prevOffset = 0;
 						for (int j = 0; j < freq; j++)
 						{
-							int startOffset = prevOffset + tvf.ReadVInt();
-							int endOffset = startOffset + tvf.ReadVInt();
+							int startOffset = prevOffset + tvf.ReadVInt(state);
+							int endOffset = startOffset + tvf.ReadVInt(state);
 							offsets[j] = new TermVectorOffsetInfo(startOffset, endOffset);
 							prevOffset = endOffset;
 						}
@@ -639,8 +639,8 @@ namespace Lucene.Net.Index
 					{
 						for (int j = 0; j < freq; j++)
 						{
-							tvf.ReadVInt();
-							tvf.ReadVInt();
+							tvf.ReadVInt(state);
+							tvf.ReadVInt(state);
 						}
 					}
 				}

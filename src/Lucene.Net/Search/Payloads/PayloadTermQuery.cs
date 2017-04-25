@@ -16,7 +16,7 @@
  */
 
 using System;
-
+using Lucene.Net.Store;
 using IndexReader = Lucene.Net.Index.IndexReader;
 using Term = Lucene.Net.Index.Term;
 using TermPositions = Lucene.Net.Index.TermPositions;
@@ -64,9 +64,9 @@ namespace Lucene.Net.Search.Payloads
 			this.includeSpanScore = includeSpanScore;
 		}
 		
-		public override Weight CreateWeight(Searcher searcher)
+		public override Weight CreateWeight(Searcher searcher, IState state)
 		{
-			return new PayloadTermWeight(this, this, searcher);
+			return new PayloadTermWeight(this, this, searcher, state);
 		}
 
 #if !DNXCORE50
@@ -88,14 +88,14 @@ namespace Lucene.Net.Search.Payloads
 				
 			}
 			
-			public PayloadTermWeight(PayloadTermQuery enclosingInstance, PayloadTermQuery query, Searcher searcher):base(query, searcher)
+			public PayloadTermWeight(PayloadTermQuery enclosingInstance, PayloadTermQuery query, Searcher searcher, IState state) :base(query, searcher, state)
 			{
 				InitBlock(enclosingInstance);
 			}
 			
-			public override Scorer Scorer(IndexReader reader, bool scoreDocsInOrder, bool topScorer)
+			public override Scorer Scorer(IndexReader reader, bool scoreDocsInOrder, bool topScorer, IState state)
 			{
-				return new PayloadTermSpanScorer(this, (TermSpans) internalQuery.GetSpans(reader), this, similarity, reader.Norms(internalQuery.Field));
+				return new PayloadTermSpanScorer(this, (TermSpans) internalQuery.GetSpans(reader, state), this, similarity, reader.Norms(internalQuery.Field, state), state);
 			}
 			
 			protected internal class PayloadTermSpanScorer:SpanScorer
@@ -119,13 +119,13 @@ namespace Lucene.Net.Search.Payloads
 				protected internal float payloadScore;
 				protected internal int payloadsSeen;
 				
-				public PayloadTermSpanScorer(PayloadTermWeight enclosingInstance, TermSpans spans, Weight weight, Similarity similarity, byte[] norms):base(spans, weight, similarity, norms)
+				public PayloadTermSpanScorer(PayloadTermWeight enclosingInstance, TermSpans spans, Weight weight, Similarity similarity, byte[] norms, IState state) :base(spans, weight, similarity, norms, state)
 				{
 					InitBlock(enclosingInstance);
 					positions = spans.Positions;
 				}
 				
-				public /*protected internal*/ override bool SetFreqCurrentDoc()
+				public /*protected internal*/ override bool SetFreqCurrentDoc(IState state)
 				{
 					if (!more)
 					{
@@ -141,19 +141,19 @@ namespace Lucene.Net.Search.Payloads
 						int matchLength = spans.End() - spans.Start();
 						
 						freq += similarity1.SloppyFreq(matchLength);
-						ProcessPayload(similarity1);
+						ProcessPayload(similarity1, state);
 						
-						more = spans.Next(); // this moves positions to the next match in this
+						more = spans.Next(state); // this moves positions to the next match in this
 						// document
 					}
 					return more || (freq != 0);
 				}
 				
-				protected internal virtual void  ProcessPayload(Similarity similarity)
+				protected internal virtual void  ProcessPayload(Similarity similarity, IState state)
 				{
 					if (positions.IsPayloadAvailable)
 					{
-						payload = positions.GetPayload(payload, 0);
+						payload = positions.GetPayload(payload, 0, state);
 						payloadScore = Enclosing_Instance.Enclosing_Instance.function.CurrentScore(doc, Enclosing_Instance.Enclosing_Instance.internalTerm.Field, spans.Start(), spans.End(), payloadsSeen, payloadScore, similarity.ScorePayload(doc, Enclosing_Instance.Enclosing_Instance.internalTerm.Field, spans.Start(), spans.End(), payload, 0, positions.PayloadLength));
 						payloadsSeen++;
 					}
@@ -167,10 +167,10 @@ namespace Lucene.Net.Search.Payloads
 				/// <returns> <see cref="GetSpanScore()" /> * <see cref="GetPayloadScore()" />
 				/// </returns>
 				/// <throws>  IOException </throws>
-				public override float Score()
+				public override float Score(IState state)
 				{
 					
-					return Enclosing_Instance.Enclosing_Instance.includeSpanScore?GetSpanScore() * GetPayloadScore():GetPayloadScore();
+					return Enclosing_Instance.Enclosing_Instance.includeSpanScore?GetSpanScore(state) * GetPayloadScore():GetPayloadScore();
 				}
 				
 				/// <summary> Returns the SpanScorer score only.
@@ -186,9 +186,9 @@ namespace Lucene.Net.Search.Payloads
 				/// <seealso cref="Score()">
 				/// </seealso>
                 [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1024:UsePropertiesWhereAppropriate")]
-                protected internal virtual float GetSpanScore()
+                protected internal virtual float GetSpanScore(IState state)
 				{
-					return base.Score();
+					return base.Score(state);
 				}
 				
 				/// <summary> The score for the payload
@@ -203,10 +203,10 @@ namespace Lucene.Net.Search.Payloads
 					return Enclosing_Instance.Enclosing_Instance.function.DocScore(doc, Enclosing_Instance.Enclosing_Instance.internalTerm.Field, payloadsSeen, payloadScore);
 				}
 				
-				protected internal override Explanation Explain(int doc)
+				protected internal override Explanation Explain(int doc, IState state)
 				{
 					ComplexExplanation result = new ComplexExplanation();
-					Explanation nonPayloadExpl = base.Explain(doc);
+					Explanation nonPayloadExpl = base.Explain(doc, state);
 					result.AddDetail(nonPayloadExpl);
 					// QUESTION: Is there a way to avoid this skipTo call? We need to know
 					// whether to load the payload or not

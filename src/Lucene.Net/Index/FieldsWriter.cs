@@ -18,6 +18,7 @@
 using System;
 using System.Linq;
 using Lucene.Net.Documents;
+using Lucene.Net.Store;
 using Document = Lucene.Net.Documents.Document;
 using Directory = Lucene.Net.Store.Directory;
 using IndexInput = Lucene.Net.Store.IndexInput;
@@ -56,7 +57,7 @@ namespace Lucene.Net.Index
 		
 		private readonly bool doClose;
 		
-		internal FieldsWriter(Directory d, System.String segment, FieldInfos fn)
+		internal FieldsWriter(Directory d, System.String segment, FieldInfos fn, IState state)
 		{
 			fieldInfos = fn;
 			
@@ -64,7 +65,7 @@ namespace Lucene.Net.Index
 			String fieldsName = segment + "." + IndexFileNames.FIELDS_EXTENSION;
 			try
 			{
-				fieldsStream = d.CreateOutput(fieldsName);
+				fieldsStream = d.CreateOutput(fieldsName, state);
 				fieldsStream.WriteInt(FORMAT_CURRENT);
 				success = true;
 			}
@@ -82,7 +83,7 @@ namespace Lucene.Net.Index
 					}
 					try
 					{
-						d.DeleteFile(fieldsName);
+						d.DeleteFile(fieldsName, state);
 					}
 					catch (System.Exception)
 					{
@@ -95,7 +96,7 @@ namespace Lucene.Net.Index
 			String indexName = segment + "." + IndexFileNames.FIELDS_INDEX_EXTENSION;
 			try
 			{
-				indexStream = d.CreateOutput(indexName);
+				indexStream = d.CreateOutput(indexName, state);
 				indexStream.WriteInt(FORMAT_CURRENT);
 				success = true;
 			}
@@ -112,7 +113,7 @@ namespace Lucene.Net.Index
 					}
 					try
 					{
-						d.DeleteFile(fieldsName);
+						d.DeleteFile(fieldsName, state);
 					}
 					catch (System.Exception)
 					{
@@ -120,7 +121,7 @@ namespace Lucene.Net.Index
 					}
 					try
 					{
-						d.DeleteFile(indexName);
+						d.DeleteFile(indexName, state);
 					}
 					catch (System.Exception)
 					{
@@ -226,7 +227,7 @@ namespace Lucene.Net.Index
 			}
 		}
 		
-		internal void  WriteField(FieldInfo fi, IFieldable field)
+		internal void  WriteField(FieldInfo fi, IFieldable field, IState state)
 		{
 			fieldsStream.WriteVInt(fi.number);
 			byte bits = 0;
@@ -240,7 +241,7 @@ namespace Lucene.Net.Index
 			// compression is disabled for the current field
 			if (field.IsBinary)
 			{
-				byte[] data = field.GetBinaryValue();
+				byte[] data = field.GetBinaryValue(state);
 				int len = field.BinaryLength;
 				int offset = field.BinaryOffset;
 					
@@ -249,7 +250,7 @@ namespace Lucene.Net.Index
 			}
 			else
 			{
-				fieldsStream.WriteString(field.StringValue);
+				fieldsStream.WriteString(field.StringValue(state));
 			}
 		}
 		
@@ -259,7 +260,7 @@ namespace Lucene.Net.Index
 		/// fieldsStream from which we should bulk-copy all
 		/// bytes. 
 		/// </summary>
-		internal void  AddRawDocuments(IndexInput stream, int[] lengths, int numDocs)
+		internal void  AddRawDocuments(IndexInput stream, int[] lengths, int numDocs, IState state)
 		{
 			long position = fieldsStream.FilePointer;
 			long start = position;
@@ -268,11 +269,11 @@ namespace Lucene.Net.Index
 				indexStream.WriteLong(position);
 				position += lengths[i];
 			}
-			fieldsStream.CopyBytes(stream, position - start);
+			fieldsStream.CopyBytes(stream, position - start, state);
 			System.Diagnostics.Debug.Assert(fieldsStream.FilePointer == position);
 		}
 		
-		internal void  AddDocument(Document doc)
+		internal void  AddDocument(Document doc, IState state)
 		{
 			indexStream.WriteLong(fieldsStream.FilePointer);
 
@@ -283,7 +284,7 @@ namespace Lucene.Net.Index
 			foreach(IFieldable field in fields)
 			{
 				if (field.IsStored)
-					WriteField(fieldInfos.FieldInfo(field.Name), field);
+					WriteField(fieldInfos.FieldInfo(field.Name), field, state);
 			}
 		}
 	}

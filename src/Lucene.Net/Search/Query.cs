@@ -18,6 +18,7 @@
 using System;
 using System.Linq;
 using Lucene.Net.Index;
+using Lucene.Net.Store;
 using IndexReader = Lucene.Net.Index.IndexReader;
 
 namespace Lucene.Net.Search
@@ -87,16 +88,16 @@ namespace Lucene.Net.Search
 		/// <p/>
 		/// Only implemented by primitive queries, which re-write to themselves.
 		/// </summary>
-		public virtual Weight CreateWeight(Searcher searcher)
+		public virtual Weight CreateWeight(Searcher searcher, IState state)
 		{
 			throw new System.NotSupportedException();
 		}
 		
 		/// <summary> Expert: Constructs and initializes a Weight for a top-level query.</summary>
-		public virtual Weight Weight(Searcher searcher)
+		public virtual Weight Weight(Searcher searcher, IState state)
 		{
-			Query query = searcher.Rewrite(this);
-			Weight weight = query.CreateWeight(searcher);
+			Query query = searcher.Rewrite(this, state);
+			Weight weight = query.CreateWeight(searcher, state);
 		    float sum = weight.GetSumOfSquaredWeights();
             float norm = GetSimilarity(searcher).QueryNorm(sum);
             if (float.IsInfinity(norm) || float.IsNaN(norm))
@@ -110,7 +111,7 @@ namespace Lucene.Net.Search
 		/// a PrefixQuery will be rewritten into a BooleanQuery that consists
 		/// of TermQuerys.
 		/// </summary>
-		public virtual Query Rewrite(IndexReader reader)
+		public virtual Query Rewrite(IndexReader reader, IState state)
 		{
 			return this;
 		}

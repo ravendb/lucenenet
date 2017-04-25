@@ -17,6 +17,7 @@
 
 using System;
 using Lucene.Net.Documents;
+using Lucene.Net.Store;
 using Document = Lucene.Net.Documents.Document;
 using CorruptIndexException = Lucene.Net.Index.CorruptIndexException;
 using Term = Lucene.Net.Index.Term;
@@ -56,9 +57,9 @@ namespace Lucene.Net.Search
 		/// 
 		/// </summary>
 		/// <throws>  BooleanQuery.TooManyClauses </throws>
-		public virtual TopFieldDocs Search(Query query, Filter filter, int n, Sort sort)
+		public virtual TopFieldDocs Search(Query query, Filter filter, int n, Sort sort, IState state)
 		{
-			return Search(CreateWeight(query), filter, n, sort);
+			return Search(CreateWeight(query, state), filter, n, sort, state);
 		}
 		
 		/// <summary>Lower-level search API.
@@ -73,9 +74,9 @@ namespace Lucene.Net.Search
 		/// between 0 and 1.
 		/// </summary>
 		/// <throws>  BooleanQuery.TooManyClauses </throws>
-		public virtual void  Search(Query query, Collector results)
+		public virtual void  Search(Query query, Collector results, IState state)
 		{
-			Search(CreateWeight(query), null, results);
+			Search(CreateWeight(query, state), null, results, state);
 		}
 		
 		/// <summary>Lower-level search API.
@@ -97,9 +98,9 @@ namespace Lucene.Net.Search
 		/// <param name="results">to receive hits
 		/// </param>
 		/// <throws>  BooleanQuery.TooManyClauses </throws>
-		public virtual void  Search(Query query, Filter filter, Collector results)
+		public virtual void  Search(Query query, Filter filter, Collector results, IState state)
 		{
-			Search(CreateWeight(query), filter, results);
+			Search(CreateWeight(query, state), filter, results, state);
 		}
 		
 		/// <summary>Finds the top <c>n</c>
@@ -107,9 +108,9 @@ namespace Lucene.Net.Search
 		/// 
 		/// </summary>
 		/// <throws>  BooleanQuery.TooManyClauses </throws>
-		public virtual TopDocs Search(Query query, Filter filter, int n)
+		public virtual TopDocs Search(Query query, Filter filter, int n, IState state)
 		{
-			return Search(CreateWeight(query), filter, n);
+			return Search(CreateWeight(query, state), filter, n, state);
 		}
 		
 		/// <summary>Finds the top <c>n</c>
@@ -117,9 +118,9 @@ namespace Lucene.Net.Search
 		/// 
 		/// </summary>
 		/// <throws>  BooleanQuery.TooManyClauses </throws>
-		public virtual TopDocs Search(Query query, int n)
+		public virtual TopDocs Search(Query query, int n, IState state)
 		{
-			return Search(query, null, n);
+			return Search(query, null, n, state);
 		}
 		
 		/// <summary>Returns an Explanation that describes how <c>doc</c> scored against
@@ -130,9 +131,9 @@ namespace Lucene.Net.Search
 		/// Computing an explanation is as expensive as executing the query over the
 		/// entire index.
 		/// </summary>
-		public virtual Explanation Explain(Query query, int doc)
+		public virtual Explanation Explain(Query query, int doc, IState state)
 		{
-			return Explain(CreateWeight(query), doc);
+			return Explain(CreateWeight(query, state), doc, state);
 		}
 		
 		/// <summary>The Similarity implementation used by this searcher. </summary>
@@ -152,23 +153,23 @@ namespace Lucene.Net.Search
 	    /// <summary> creates a weight for <c>query</c></summary>
 		/// <returns> new weight
 		/// </returns>
-		public /*protected internal*/ virtual Weight CreateWeight(Query query)
+		public /*protected internal*/ virtual Weight CreateWeight(Query query, IState state)
 		{
-			return query.Weight(this);
+			return query.Weight(this, state);
 		}
 		
 		// inherit javadoc
-		public virtual int[] DocFreqs(Term[] terms)
+		public virtual int[] DocFreqs(Term[] terms, IState state)
 		{
 			int[] result = new int[terms.Length];
 			for (int i = 0; i < terms.Length; i++)
 			{
-				result[i] = DocFreq(terms[i]);
+				result[i] = DocFreq(terms[i], state);
 			}
 			return result;
 		}
 
-		public abstract void  Search(Weight weight, Filter filter, Collector results);
+		public abstract void  Search(Weight weight, Filter filter, Collector results, IState state);
 
         [Obsolete("Use Dispose() instead")]
 		public void Close()
@@ -183,14 +184,14 @@ namespace Lucene.Net.Search
 
 	    protected abstract void Dispose(bool disposing);
 
-		public abstract int DocFreq(Term term);
+		public abstract int DocFreq(Term term, IState state);
 	    public abstract int MaxDoc { get; }
-		public abstract TopDocs Search(Weight weight, Filter filter, int n);
-		public abstract Document Doc(int i);
-	    public abstract Document Doc(int docid, FieldSelector fieldSelector);
-		public abstract Query Rewrite(Query query);
-		public abstract Explanation Explain(Weight weight, int doc);
-		public abstract TopFieldDocs Search(Weight weight, Filter filter, int n, Sort sort);
+		public abstract TopDocs Search(Weight weight, Filter filter, int n, IState state);
+		public abstract Document Doc(int i, IState state);
+	    public abstract Document Doc(int docid, FieldSelector fieldSelector, IState state);
+		public abstract Query Rewrite(Query query, IState state);
+		public abstract Explanation Explain(Weight weight, int doc, IState state);
+		public abstract TopFieldDocs Search(Weight weight, Filter filter, int n, Sort sort, IState state);
 		/* End patch for GCJ bug #15411. */
 	}
 }

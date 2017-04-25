@@ -16,7 +16,7 @@
  */
 
 using System;
-
+using Lucene.Net.Store;
 using IndexReader = Lucene.Net.Index.IndexReader;
 using Term = Lucene.Net.Index.Term;
 using ToStringUtils = Lucene.Net.Util.ToStringUtils;
@@ -50,9 +50,9 @@ namespace Lucene.Net.Search
 	        get { return prefix; }
 	    }
 
-	    protected internal override FilteredTermEnum GetEnum(IndexReader reader)
+	    protected internal override FilteredTermEnum GetEnum(IndexReader reader, IState state)
 		{
-			return new PrefixTermEnum(reader, prefix);
+			return new PrefixTermEnum(reader, prefix, state);
 		}
 		
 		/// <summary>Prints a user-readable version of this query. </summary>

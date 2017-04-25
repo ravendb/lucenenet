@@ -92,11 +92,11 @@ namespace Lucene.Net.Store
             isDisposed = true;
         }
 		
-		public override System.String[] ListAll()
+		public override System.String[] ListAll(IState state)
 		{
             var files = new System.Collections.Generic.List<string>();
-            files.AddRange(primaryDir.ListAll());
-            files.AddRange(secondaryDir.ListAll());
+            files.AddRange(primaryDir.ListAll(state));
+            files.AddRange(secondaryDir.ListAll(state));
             return files.ToArray();
 		}
 		
@@ -124,34 +124,34 @@ namespace Lucene.Net.Store
 			}
 		}
 		
-		public override bool FileExists(System.String name)
+		public override bool FileExists(System.String name, IState state)
 		{
-			return GetDirectory(name).FileExists(name);
+			return GetDirectory(name).FileExists(name, state);
 		}
 		
-		public override long FileModified(System.String name)
+		public override long FileModified(System.String name, IState state)
 		{
-			return GetDirectory(name).FileModified(name);
+			return GetDirectory(name).FileModified(name, state);
 		}
 		
-		public override void  TouchFile(System.String name)
+		public override void  TouchFile(System.String name, IState state)
 		{
-			GetDirectory(name).TouchFile(name);
+			GetDirectory(name).TouchFile(name, state);
 		}
 		
-		public override void  DeleteFile(System.String name)
+		public override void  DeleteFile(System.String name, IState state)
 		{
-			GetDirectory(name).DeleteFile(name);
+			GetDirectory(name).DeleteFile(name, state);
 		}
 		
-		public override long FileLength(System.String name)
+		public override long FileLength(System.String name, IState state)
 		{
-			return GetDirectory(name).FileLength(name);
+			return GetDirectory(name).FileLength(name, state);
 		}
 		
-		public override IndexOutput CreateOutput(System.String name)
+		public override IndexOutput CreateOutput(System.String name, IState state)
 		{
-			return GetDirectory(name).CreateOutput(name);
+			return GetDirectory(name).CreateOutput(name, state);
 		}
 		
 		public override void  Sync(System.String name)
@@ -159,9 +159,9 @@ namespace Lucene.Net.Store
 			GetDirectory(name).Sync(name);
 		}
 		
-		public override IndexInput OpenInput(System.String name)
+		public override IndexInput OpenInput(System.String name, IState state)
 		{
-			return GetDirectory(name).OpenInput(name);
+			return GetDirectory(name).OpenInput(name, state);
 		}
 	}
 }

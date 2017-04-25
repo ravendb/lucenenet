@@ -16,7 +16,7 @@
  */
 
 using System;
-
+using Lucene.Net.Store;
 using Directory = Lucene.Net.Store.Directory;
 
 namespace Lucene.Net.Index
@@ -24,20 +24,20 @@ namespace Lucene.Net.Index
 	
 	public class ReadOnlyDirectoryReader:DirectoryReader
 	{
-		internal ReadOnlyDirectoryReader(Directory directory, SegmentInfos sis, IndexDeletionPolicy deletionPolicy, int termInfosIndexDivisor):base(directory, sis, deletionPolicy, true, termInfosIndexDivisor)
+		internal ReadOnlyDirectoryReader(Directory directory, SegmentInfos sis, IndexDeletionPolicy deletionPolicy, int termInfosIndexDivisor, IState state) :base(directory, sis, deletionPolicy, true, termInfosIndexDivisor, state)
 		{
 		}
 
-        internal ReadOnlyDirectoryReader(Directory directory, SegmentInfos infos, SegmentReader[] oldReaders, int[] oldStarts, System.Collections.Generic.IDictionary<string, byte[]> oldNormsCache, bool doClone, int termInfosIndexDivisor)
-            : base(directory, infos, oldReaders, oldStarts, oldNormsCache, true, doClone, termInfosIndexDivisor)
+        internal ReadOnlyDirectoryReader(Directory directory, SegmentInfos infos, SegmentReader[] oldReaders, int[] oldStarts, System.Collections.Generic.IDictionary<string, byte[]> oldNormsCache, bool doClone, int termInfosIndexDivisor, IState state)
+            : base(directory, infos, oldReaders, oldStarts, oldNormsCache, true, doClone, termInfosIndexDivisor, state)
         {
         }
 
-	    internal ReadOnlyDirectoryReader(IndexWriter writer, SegmentInfos infos, int termInfosIndexDivisor):base(writer, infos, termInfosIndexDivisor)
+	    internal ReadOnlyDirectoryReader(IndexWriter writer, SegmentInfos infos, int termInfosIndexDivisor, IState state) :base(writer, infos, termInfosIndexDivisor, state)
 		{
 		}
 		
-		protected internal override void  AcquireWriteLock()
+		protected internal override void  AcquireWriteLock(IState state)
 		{
 			ReadOnlySegmentReader.NoWrite();
 		}

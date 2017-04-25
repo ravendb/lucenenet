@@ -16,7 +16,7 @@
  */
 
 using System;
-
+using Lucene.Net.Store;
 using IndexReader = Lucene.Net.Index.IndexReader;
 
 namespace Lucene.Net.Search
@@ -73,7 +73,7 @@ namespace Lucene.Net.Search
 				this.mask = mask;
 				this.bucketTable = bucketTable;
 			}
-			public override void  Collect(int doc)
+			public override void  Collect(int doc, IState state)
 			{
 				BucketTable table = bucketTable;
 				int i = doc & Lucene.Net.Search.BooleanScorer.BucketTable.MASK;
@@ -85,7 +85,7 @@ namespace Lucene.Net.Search
 				{
 					// invalid bucket
 					bucket.doc = doc; // set doc
-					bucket.score = scorer.Score(); // initialize score
+					bucket.score = scorer.Score(state); // initialize score
 					bucket.bits = mask; // initialize mask
 					bucket.coord = 1; // initialize coord
 					
@@ -95,13 +95,13 @@ namespace Lucene.Net.Search
 				else
 				{
 					// valid bucket
-					bucket.score += scorer.Score(); // increment score
+					bucket.score += scorer.Score(state); // increment score
 					bucket.bits |= mask; // add bits in mask
 					bucket.coord++; // increment coord
 				}
 			}
 			
-			public override void  SetNextReader(IndexReader reader, int docBase)
+			public override void  SetNextReader(IndexReader reader, int docBase, IState state)
 			{
 				// not needed by this implementation
 			}
@@ -131,7 +131,7 @@ namespace Lucene.Net.Search
 			{
 			}
 			
-			public override int Advance(int target)
+			public override int Advance(int target, IState state)
 			{
 				return NO_MORE_DOCS;
 			}
@@ -141,12 +141,12 @@ namespace Lucene.Net.Search
 				return doc;
 			}
 			
-			public override int NextDoc()
+			public override int NextDoc(IState state)
 			{
 				return NO_MORE_DOCS;
 			}
 			
-			public override float Score()
+			public override float Score(IState state)
 			{
 				return score;
 			}
@@ -225,7 +225,7 @@ namespace Lucene.Net.Search
 		private int doc = - 1;
 		
 		public /*internal*/ BooleanScorer(Similarity similarity, int minNrShouldMatch,
-            System.Collections.Generic.List<Scorer> optionalScorers, System.Collections.Generic.List<Scorer> prohibitedScorers)
+            System.Collections.Generic.List<Scorer> optionalScorers, System.Collections.Generic.List<Scorer> prohibitedScorers, IState state)
             : base(similarity)
 		{
 			InitBlock();
@@ -236,7 +236,7 @@ namespace Lucene.Net.Search
 				foreach (Scorer scorer in optionalScorers)
 				{
 					maxCoord++;
-					if (scorer.NextDoc() != NO_MORE_DOCS)
+					if (scorer.NextDoc(state) != NO_MORE_DOCS)
 					{
 						scorers = new SubScorer(scorer, false, false, bucketTable.NewCollector(0), scorers);
 					}
@@ -250,7 +250,7 @@ namespace Lucene.Net.Search
 					int mask = nextMask;
 					nextMask = nextMask << 1;
 					prohibitedMask |= mask; // update prohibited mask
-					if (scorer.NextDoc() != NO_MORE_DOCS)
+					if (scorer.NextDoc(state) != NO_MORE_DOCS)
 					{
 						scorers = new SubScorer(scorer, false, true, bucketTable.NewCollector(mask), scorers);
 					}
@@ -266,7 +266,7 @@ namespace Lucene.Net.Search
 		}
 		
 		// firstDocID is ignored since nextDoc() initializes 'current'
-		public /*protected internal*/ override bool Score(Collector collector, int max, int firstDocID)
+		public /*protected internal*/ override bool Score(Collector collector, int max, int firstDocID, IState state)
 		{
 			bool more;
 			Bucket tmp;
@@ -298,7 +298,7 @@ namespace Lucene.Net.Search
 						{
 							bs.score = current.score * coordFactors[current.coord];
 							bs.doc = current.doc;
-							collector.Collect(current.doc);
+							collector.Collect(current.doc, state);
 						}
 					}
 					
@@ -320,7 +320,7 @@ namespace Lucene.Net.Search
 					int subScorerDocID = sub.scorer.DocID();
 					if (subScorerDocID != NO_MORE_DOCS)
 					{
-						more |= sub.scorer.Score(sub.collector, end, subScorerDocID);
+						more |= sub.scorer.Score(sub.collector, end, subScorerDocID, state);
 					}
 				}
 				current = bucketTable.first;
@@ -330,7 +330,7 @@ namespace Lucene.Net.Search
 			return false;
 		}
 		
-		public override int Advance(int target)
+		public override int Advance(int target, IState state)
 		{
 			throw new System.NotSupportedException();
 		}
@@ -340,7 +340,7 @@ namespace Lucene.Net.Search
 			return doc;
 		}
 
-		public override int NextDoc()
+		public override int NextDoc(IState state)
 		{
 			bool more;
 			do 
@@ -368,8 +368,8 @@ namespace Lucene.Net.Search
 					int doc = scorer.DocID();
 					while (doc < end)
 					{
-						sub.collector.Collect(doc);
-						doc = scorer.NextDoc();
+						sub.collector.Collect(doc, state);
+						doc = scorer.NextDoc(state);
 					}
 					more |= (doc != NO_MORE_DOCS);
 				}
@@ -379,14 +379,14 @@ namespace Lucene.Net.Search
 			return this.doc = NO_MORE_DOCS;
 		}
 		
-		public override float Score()
+		public override float Score(IState state)
 		{
 			return current.score * coordFactors[current.coord];
 		}
 		
-		public override void  Score(Collector collector)
+		public override void  Score(Collector collector, IState state)
 		{
-			Score(collector, System.Int32.MaxValue, NextDoc());
+			Score(collector, System.Int32.MaxValue, NextDoc(state), state);
 		}
 		
 		public override System.String ToString()

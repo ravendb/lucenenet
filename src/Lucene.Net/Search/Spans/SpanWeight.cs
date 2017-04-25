@@ -20,6 +20,7 @@ using System.Collections.Generic;
 using Lucene.Net.Index;
 using IndexReader = Lucene.Net.Index.IndexReader;
 using Lucene.Net.Search;
+using Lucene.Net.Store;
 using IDFExplanation = Lucene.Net.Search.Explanation.IDFExplanation;
 
 namespace Lucene.Net.Search.Spans
@@ -41,7 +42,7 @@ namespace Lucene.Net.Search.Spans
 		protected internal SpanQuery internalQuery;
 		private IDFExplanation idfExp;
 		
-		public SpanWeight(SpanQuery query, Searcher searcher)
+		public SpanWeight(SpanQuery query, Searcher searcher, IState state)
 		{
 			this.similarity = query.GetSimilarity(searcher);
 			this.internalQuery = query;
@@ -49,7 +50,7 @@ namespace Lucene.Net.Search.Spans
 		    terms = Lucene.Net.Support.Compatibility.SetFactory.CreateHashSet<Term>();
 			query.ExtractTerms(terms);
 
-			idfExp = similarity.IdfExplain(terms, searcher);
+			idfExp = similarity.IdfExplain(terms, searcher, state);
 			idf = idfExp.Idf;
 		}
 
@@ -76,12 +77,12 @@ namespace Lucene.Net.Search.Spans
 			value_Renamed = queryWeight * idf; // idf for document
 		}
 		
-		public override Scorer Scorer(IndexReader reader, bool scoreDocsInOrder, bool topScorer)
+		public override Scorer Scorer(IndexReader reader, bool scoreDocsInOrder, bool topScorer, IState state)
 		{
-			return new SpanScorer(internalQuery.GetSpans(reader), this, similarity, reader.Norms(internalQuery.Field));
+			return new SpanScorer(internalQuery.GetSpans(reader, state), this, similarity, reader.Norms(internalQuery.Field, state), state);
 		}
 		
-		public override Explanation Explain(IndexReader reader, int doc)
+		public override Explanation Explain(IndexReader reader, int doc, IState state)
 		{
 			
 			ComplexExplanation result = new ComplexExplanation();
@@ -110,12 +111,12 @@ namespace Lucene.Net.Search.Spans
 			ComplexExplanation fieldExpl = new ComplexExplanation();
 			fieldExpl.Description = "fieldWeight(" + field + ":" + internalQuery.ToString(field) + " in " + doc + "), product of:";
 			
-			Explanation tfExpl = ((SpanScorer)Scorer(reader, true, false)).Explain(doc);
+			Explanation tfExpl = ((SpanScorer)Scorer(reader, true, false, state)).Explain(doc, state);
 			fieldExpl.AddDetail(tfExpl);
 			fieldExpl.AddDetail(idfExpl);
 			
 			Explanation fieldNormExpl = new Explanation();
-			byte[] fieldNorms = reader.Norms(field);
+			byte[] fieldNorms = reader.Norms(field, state);
 			float fieldNorm = fieldNorms != null?Similarity.DecodeNorm(fieldNorms[doc]):1.0f;
 			fieldNormExpl.Value = fieldNorm;
 			fieldNormExpl.Description = "fieldNorm(field=" + field + ", doc=" + doc + ")";

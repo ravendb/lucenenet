@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 
+using Lucene.Net.Store;
 using DocIdSetIterator = Lucene.Net.Search.DocIdSetIterator;
 
 namespace Lucene.Net.Util
@@ -156,7 +157,7 @@ namespace Lucene.Net.Util
 		/// ****
 		/// </summary>*/
 		
-		public override int NextDoc()
+		public override int NextDoc(IState state)
 		{
 			if (indexArray == 0)
 			{
@@ -188,7 +189,7 @@ namespace Lucene.Net.Util
 			return curDocId = (i << 6) + bitIndex;
 		}
 		
-		public override int Advance(int target)
+		public override int Advance(int target, IState state)
 		{
 			indexArray = 0;
 			i = target >> 6;

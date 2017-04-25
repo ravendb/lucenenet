@@ -17,6 +17,7 @@
 
 using System;
 using Lucene.Net.Index;
+using Lucene.Net.Store;
 using IndexReader = Lucene.Net.Index.IndexReader;
 using ToStringUtils = Lucene.Net.Util.ToStringUtils;
 
@@ -75,41 +76,41 @@ namespace Lucene.Net.Search
 				
 				private int doc = - 1;
 				
-				private int AdvanceToCommon(int scorerDoc, int disiDoc)
+				private int AdvanceToCommon(int scorerDoc, int disiDoc, IState state)
 				{
 					while (scorerDoc != disiDoc)
 					{
 						if (scorerDoc < disiDoc)
 						{
-							scorerDoc = scorer.Advance(disiDoc);
+							scorerDoc = scorer.Advance(disiDoc, state);
 						}
 						else
 						{
-							disiDoc = docIdSetIterator.Advance(scorerDoc);
+							disiDoc = docIdSetIterator.Advance(scorerDoc, state);
 						}
 					}
 					return scorerDoc;
 				}
 				
-				public override int NextDoc()
+				public override int NextDoc(IState state)
 				{
 					int scorerDoc, disiDoc;
-					return doc = (disiDoc = docIdSetIterator.NextDoc()) != NO_MORE_DOCS && (scorerDoc = scorer.NextDoc()) != NO_MORE_DOCS && AdvanceToCommon(scorerDoc, disiDoc) != NO_MORE_DOCS?scorer.DocID():NO_MORE_DOCS;
+					return doc = (disiDoc = docIdSetIterator.NextDoc(state)) != NO_MORE_DOCS && (scorerDoc = scorer.NextDoc(state)) != NO_MORE_DOCS && AdvanceToCommon(scorerDoc, disiDoc, state) != NO_MORE_DOCS?scorer.DocID():NO_MORE_DOCS;
 				}
 				public override int DocID()
 				{
 					return doc;
 				}
 				
-				public override int Advance(int target)
+				public override int Advance(int target, IState state)
 				{
 					int disiDoc, scorerDoc;
-					return doc = (disiDoc = docIdSetIterator.Advance(target)) != NO_MORE_DOCS && (scorerDoc = scorer.Advance(disiDoc)) != NO_MORE_DOCS && AdvanceToCommon(scorerDoc, disiDoc) != NO_MORE_DOCS?scorer.DocID():NO_MORE_DOCS;
+					return doc = (disiDoc = docIdSetIterator.Advance(target, state)) != NO_MORE_DOCS && (scorerDoc = scorer.Advance(disiDoc, state)) != NO_MORE_DOCS && AdvanceToCommon(scorerDoc, disiDoc, state) != NO_MORE_DOCS?scorer.DocID():NO_MORE_DOCS;
 				}
 				
-				public override float Score()
+				public override float Score(IState state)
 				{
-					return Enclosing_Instance.Enclosing_Instance.Boost * scorer.Score();
+					return Enclosing_Instance.Enclosing_Instance.Boost * scorer.Score(state);
 				}
 			}
 			private void  InitBlock(Lucene.Net.Search.Weight weight, Lucene.Net.Search.Similarity similarity, FilteredQuery enclosingInstance)
@@ -148,9 +149,9 @@ namespace Lucene.Net.Search
 				weight.Normalize(v);
 				value_Renamed = weight.Value * Enclosing_Instance.Boost;
 			}
-			public override Explanation Explain(IndexReader ir, int i)
+			public override Explanation Explain(IndexReader ir, int i, IState state)
 			{
-				Explanation inner = weight.Explain(ir, i);
+				Explanation inner = weight.Explain(ir, i, state);
 				if (Enclosing_Instance.Boost != 1)
 				{
 					Explanation preBoost = inner;
@@ -159,13 +160,13 @@ namespace Lucene.Net.Search
 					inner.AddDetail(preBoost);
 				}
 				Filter f = Enclosing_Instance.filter;
-				DocIdSet docIdSet = f.GetDocIdSet(ir);
-				DocIdSetIterator docIdSetIterator = docIdSet == null?DocIdSet.EMPTY_DOCIDSET.Iterator():docIdSet.Iterator();
+				DocIdSet docIdSet = f.GetDocIdSet(ir, state);
+				DocIdSetIterator docIdSetIterator = docIdSet == null?DocIdSet.EMPTY_DOCIDSET.Iterator(state):docIdSet.Iterator(state);
 				if (docIdSetIterator == null)
 				{
-					docIdSetIterator = DocIdSet.EMPTY_DOCIDSET.Iterator();
+					docIdSetIterator = DocIdSet.EMPTY_DOCIDSET.Iterator(state);
 				}
-				if (docIdSetIterator.Advance(i) == i)
+				if (docIdSetIterator.Advance(i, state) == i)
 				{
 					return inner;
 				}
@@ -185,19 +186,19 @@ namespace Lucene.Net.Search
 		    }
 
 		    // return a filtering scorer
-			public override Scorer Scorer(IndexReader indexReader, bool scoreDocsInOrder, bool topScorer)
+			public override Scorer Scorer(IndexReader indexReader, bool scoreDocsInOrder, bool topScorer, IState state)
 			{
-				Scorer scorer = weight.Scorer(indexReader, true, false);
+				Scorer scorer = weight.Scorer(indexReader, true, false, state);
 				if (scorer == null)
 				{
 					return null;
 				}
-				DocIdSet docIdSet = Enclosing_Instance.filter.GetDocIdSet(indexReader);
+				DocIdSet docIdSet = Enclosing_Instance.filter.GetDocIdSet(indexReader, state);
 				if (docIdSet == null)
 				{
 					return null;
 				}
-				DocIdSetIterator docIdSetIterator = docIdSet.Iterator();
+				DocIdSetIterator docIdSetIterator = docIdSet.Iterator(state);
 				if (docIdSetIterator == null)
 				{
 					return null;
@@ -226,17 +227,17 @@ namespace Lucene.Net.Search
 		/// <summary> Returns a Weight that applies the filter to the enclosed query's Weight.
 		/// This is accomplished by overriding the Scorer returned by the Weight.
 		/// </summary>
-		public override Weight CreateWeight(Searcher searcher)
+		public override Weight CreateWeight(Searcher searcher, IState state)
 		{
-			Weight weight = query.CreateWeight(searcher);
+			Weight weight = query.CreateWeight(searcher, state);
 			Similarity similarity = query.GetSimilarity(searcher);
 			return new AnonymousClassWeight(weight, similarity, this);
 		}
 		
 		/// <summary>Rewrites the wrapped query. </summary>
-		public override Query Rewrite(IndexReader reader)
+		public override Query Rewrite(IndexReader reader, IState state)
 		{
-			Query rewritten = query.Rewrite(reader);
+			Query rewritten = query.Rewrite(reader, state);
 			if (rewritten != query)
 			{
 				FilteredQuery clone = (FilteredQuery) this.Clone();

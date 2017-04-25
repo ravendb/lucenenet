@@ -16,6 +16,7 @@
  */
 
 using System;
+using Lucene.Net.Store;
 
 namespace Lucene.Net.Index
 {
@@ -43,9 +44,9 @@ namespace Lucene.Net.Index
 			//maxMergeSize = (long) (DEFAULT_MAX_MERGE_MB * 1024 * 1024);
             maxMergeSize = DEFAULT_MAX_MERGE_MB;
 		}
-		protected internal override long Size(SegmentInfo info)
+		protected internal override long Size(SegmentInfo info, IState state)
 		{
-			return SizeBytes(info);
+			return SizeBytes(info, state);
 		}
 
         protected override void Dispose(bool disposing)

@@ -17,6 +17,7 @@
 
 using System;
 using System.Collections.Generic;
+using Lucene.Net.Store;
 using Lucene.Net.Support;
 using Directory = Lucene.Net.Store.Directory;
 using IndexInput = Lucene.Net.Store.IndexInput;
@@ -168,21 +169,21 @@ namespace Lucene.Net.Index
 		/// </param>
 		/// <param name="input">input handle to read segment info from
 		/// </param>
-		internal SegmentInfo(Directory dir, int format, IndexInput input)
+		internal SegmentInfo(Directory dir, int format, IndexInput input, IState state)
 		{
 			this.dir = dir;
-			name = input.ReadString();
-			docCount = input.ReadInt();
+			name = input.ReadString(state);
+			docCount = input.ReadInt(state);
 			if (format <= SegmentInfos.FORMAT_LOCKLESS)
 			{
-				delGen = input.ReadLong();
+				delGen = input.ReadLong(state);
 				if (format <= SegmentInfos.FORMAT_SHARED_DOC_STORE)
 				{
-					docStoreOffset = input.ReadInt();
+					docStoreOffset = input.ReadInt(state);
 					if (docStoreOffset != - 1)
 					{
-						docStoreSegment = input.ReadString();
-						docStoreIsCompoundFile = (1 == input.ReadByte());
+						docStoreSegment = input.ReadString(state);
+						docStoreIsCompoundFile = (1 == input.ReadByte(state));
 					}
 					else
 					{
@@ -198,13 +199,13 @@ namespace Lucene.Net.Index
 				}
 				if (format <= SegmentInfos.FORMAT_SINGLE_NORM_FILE)
 				{
-					hasSingleNormFile = (1 == input.ReadByte());
+					hasSingleNormFile = (1 == input.ReadByte(state));
 				}
 				else
 				{
 					hasSingleNormFile = false;
 				}
-				int numNormGen = input.ReadInt();
+				int numNormGen = input.ReadInt(state);
 				if (numNormGen == NO)
 				{
 					normGen = null;
@@ -214,26 +215,26 @@ namespace Lucene.Net.Index
 					normGen = new long[numNormGen];
 					for (int j = 0; j < numNormGen; j++)
 					{
-						normGen[j] = input.ReadLong();
+						normGen[j] = input.ReadLong(state);
 					}
 				}
-				isCompoundFile = (sbyte) input.ReadByte();
+				isCompoundFile = (sbyte) input.ReadByte(state);
 				preLockless = (isCompoundFile == CHECK_DIR);
 				if (format <= SegmentInfos.FORMAT_DEL_COUNT)
 				{
-					delCount = input.ReadInt();
+					delCount = input.ReadInt(state);
 					System.Diagnostics.Debug.Assert(delCount <= docCount);
 				}
 				else
 					delCount = - 1;
 				if (format <= SegmentInfos.FORMAT_HAS_PROX)
-					hasProx = input.ReadByte() == 1;
+					hasProx = input.ReadByte(state) == 1;
 				else
 					hasProx = true;
 				
 				if (format <= SegmentInfos.FORMAT_DIAGNOSTICS)
 				{
-					diagnostics = input.ReadStringStringMap();
+					diagnostics = input.ReadStringStringMap(state);
 				}
 				else
 				{
@@ -285,11 +286,11 @@ namespace Lucene.Net.Index
 		/// <summary>Returns total size in bytes of all of files used by
 		/// this segment. 
 		/// </summary>
-        public long SizeInBytes()
+        public long SizeInBytes(IState state)
 		{
 			if (sizeInBytes == - 1)
 			{
-				IList<string> files = Files();
+				IList<string> files = Files(state);
 				int size = files.Count;
 				sizeInBytes = 0;
 				for (int i = 0; i < size; i++)
@@ -298,13 +299,13 @@ namespace Lucene.Net.Index
 					// We don't count bytes used by a shared doc store
 					// against this segment:
 					if (docStoreOffset == - 1 || !IndexFileNames.IsDocStoreFile(fileName))
-						sizeInBytes += dir.FileLength(fileName);
+						sizeInBytes += dir.FileLength(fileName, state);
 				}
 			}
 			return sizeInBytes;
 		}
 
-        public bool HasDeletions()
+        public bool HasDeletions(IState state)
 		{
 			// Cases:
 			//
@@ -330,7 +331,7 @@ namespace Lucene.Net.Index
 			}
 			else
 			{
-				return dir.FileExists(GetDelFileName());
+				return dir.FileExists(GetDelFileName(), state);
 			}
 		}
 		
@@ -413,13 +414,13 @@ namespace Lucene.Net.Index
 		/// </summary>
 		/// <param name="fieldNumber">the field index to check
 		/// </param>
-		public bool HasSeparateNorms(int fieldNumber)
+		public bool HasSeparateNorms(int fieldNumber, IState state)
 		{
 			if ((normGen == null && preLockless) || (normGen != null && normGen[fieldNumber] == CHECK_DIR))
 			{
 				// Must fallback to directory file exists check:
 				System.String fileName = name + ".s" + fieldNumber;
-				return dir.FileExists(fileName);
+				return dir.FileExists(fileName, state);
 			}
 			else if (normGen == null || normGen[fieldNumber] == NO)
 			{
@@ -432,7 +433,7 @@ namespace Lucene.Net.Index
 		}
 		
 		/// <summary> Returns true if any fields in this segment have separate norms.</summary>
-		public bool HasSeparateNorms()
+		public bool HasSeparateNorms(IState state)
 		{
 			if (normGen == null)
 			{
@@ -447,7 +448,7 @@ namespace Lucene.Net.Index
 					// This means this segment was saved with pre-LOCKLESS
 					// code.  So we must fallback to the original
 					// directory list check:
-					System.String[] result = dir.ListAll();
+					System.String[] result = dir.ListAll(state);
 					if (result == null)
 					{
                         throw new System.IO.IOException("cannot read directory " + dir + ": ListAll() returned null");
@@ -484,7 +485,7 @@ namespace Lucene.Net.Index
 				{
 					if (normGen[i] == CHECK_DIR)
 					{
-						if (HasSeparateNorms(i))
+						if (HasSeparateNorms(i, state))
 						{
 							return true;
 						}
@@ -519,7 +520,7 @@ namespace Lucene.Net.Index
 		/// </summary>
 		/// <param name="number">field index
 		/// </param>
-		public System.String GetNormFileName(int number)
+		public System.String GetNormFileName(int number, IState state)
 		{
 			System.String prefix;
 			
@@ -533,7 +534,7 @@ namespace Lucene.Net.Index
 				gen = normGen[number];
 			}
 			
-			if (HasSeparateNorms(number))
+			if (HasSeparateNorms(number, state))
 			{
 				// case 1: separate norm
 				prefix = ".s";
@@ -572,7 +573,7 @@ namespace Lucene.Net.Index
 	    /// file; else, false.
 	    /// </summary>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1024:UsePropertiesWhereAppropriate")]
-        public bool GetUseCompoundFile()
+        public bool GetUseCompoundFile(IState state)
 	    {
 	        if (isCompoundFile == NO)
 	        {
@@ -582,18 +583,18 @@ namespace Lucene.Net.Index
 	        {
 	            return true;
 	        }
-	        return dir.FileExists(name + "." + IndexFileNames.COMPOUND_FILE_EXTENSION);
+	        return dir.FileExists(name + "." + IndexFileNames.COMPOUND_FILE_EXTENSION, state);
 	    }
 
 	    [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1024:UsePropertiesWhereAppropriate")]
-        public int GetDelCount()
+        public int GetDelCount(IState state)
 		{
 			if (delCount == - 1)
 			{
-				if (HasDeletions())
+				if (HasDeletions(state))
 				{
 					System.String delFileName = GetDelFileName();
-					delCount = new BitVector(dir, delFileName).Count();
+					delCount = new BitVector(dir, delFileName, state).Count();
 				}
 				else
 					delCount = 0;
@@ -682,9 +683,9 @@ namespace Lucene.Net.Index
 	        }
 	    }
 
-	    private void  AddIfExists(IList<string> files, System.String fileName)
+	    private void  AddIfExists(IList<string> files, System.String fileName, IState state)
 		{
-			if (dir.FileExists(fileName))
+			if (dir.FileExists(fileName, state))
 				files.Add(fileName);
 		}
 		
@@ -694,7 +695,7 @@ namespace Lucene.Net.Index
 		* modify it.
 		*/
 		
-		public IList<string> Files()
+		public IList<string> Files(IState state)
 		{
 			
 			if (files != null)
@@ -705,7 +706,7 @@ namespace Lucene.Net.Index
 
             var fileList = new System.Collections.Generic.List<string>();
 			
-			bool useCompoundFile = GetUseCompoundFile();
+			bool useCompoundFile = GetUseCompoundFile(state);
 			
 			if (useCompoundFile)
 			{
@@ -715,7 +716,7 @@ namespace Lucene.Net.Index
 			{
 				System.String[] exts = IndexFileNames.NON_STORE_INDEX_EXTENSIONS;
 				for (int i = 0; i < exts.Length; i++)
-                    AddIfExists(fileList, name + "." + exts[i]);
+                    AddIfExists(fileList, name + "." + exts[i], state);
 			}
 			
 			if (docStoreOffset != - 1)
@@ -731,7 +732,7 @@ namespace Lucene.Net.Index
 				{
 					System.String[] exts = IndexFileNames.STORE_INDEX_EXTENSIONS;
 					for (int i = 0; i < exts.Length; i++)
-                        AddIfExists(fileList, docStoreSegment + "." + exts[i]);
+                        AddIfExists(fileList, docStoreSegment + "." + exts[i], state);
 				}
 			}
 			else if (!useCompoundFile)
@@ -740,11 +741,11 @@ namespace Lucene.Net.Index
 				// included in the compound file
 				System.String[] exts = IndexFileNames.STORE_INDEX_EXTENSIONS;
 				for (int i = 0; i < exts.Length; i++)
-                    AddIfExists(fileList, name + "." + exts[i]);
+                    AddIfExists(fileList, name + "." + exts[i], state);
 			}
 			
 			System.String delFileName = IndexFileNames.FileNameFromGeneration(name, "." + IndexFileNames.DELETES_EXTENSION, delGen);
-			if (delFileName != null && (delGen >= YES || dir.FileExists(delFileName)))
+			if (delFileName != null && (delGen >= YES || dir.FileExists(delFileName, state)))
 			{
                 fileList.Add(delFileName);
 			}
@@ -767,7 +768,7 @@ namespace Lucene.Net.Index
 						if (!hasSingleNormFile && !useCompoundFile)
 						{
 							System.String fileName = name + "." + IndexFileNames.PLAIN_NORMS_EXTENSION + i;
-							if (dir.FileExists(fileName))
+							if (dir.FileExists(fileName, state))
 							{
                                 fileList.Add(fileName);
 							}
@@ -785,7 +786,7 @@ namespace Lucene.Net.Index
 						{
 							fileName = name + "." + IndexFileNames.PLAIN_NORMS_EXTENSION + i;
 						}
-						if (fileName != null && dir.FileExists(fileName))
+						if (fileName != null && dir.FileExists(fileName, state))
 						{
                             fileList.Add(fileName);
 						}
@@ -802,7 +803,7 @@ namespace Lucene.Net.Index
 				else
 					prefix = name + "." + IndexFileNames.PLAIN_NORMS_EXTENSION;
 				int prefixLength = prefix.Length;
-				System.String[] allFiles = dir.ListAll();
+				System.String[] allFiles = dir.ListAll(state);
 				IndexFileNameFilter filter = IndexFileNameFilter.Filter;
 				for (int i = 0; i < allFiles.Length; i++)
 				{
@@ -827,12 +828,12 @@ namespace Lucene.Net.Index
 		}
 		
 		/// <summary>Used for debugging </summary>
-		public System.String SegString(Directory dir)
+		public System.String SegString(Directory dir, IState state)
 		{
 			System.String cfs;
 			try
 			{
-				if (GetUseCompoundFile())
+				if (GetUseCompoundFile(state))
 					cfs = "c";
 				else
 					cfs = "C";

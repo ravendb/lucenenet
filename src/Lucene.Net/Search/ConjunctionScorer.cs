@@ -17,6 +17,7 @@
 
 using System;
 using System.Linq;
+using Lucene.Net.Store;
 
 namespace Lucene.Net.Search
 {
@@ -28,19 +29,19 @@ namespace Lucene.Net.Search
 		private float coord;
 		private int lastDoc = - 1;
 		
-		public ConjunctionScorer(Similarity similarity, System.Collections.Generic.ICollection<Scorer> scorers)
-            : this(similarity, scorers.ToArray())
+		public ConjunctionScorer(Similarity similarity, IState state, System.Collections.Generic.ICollection<Scorer> scorers)
+            : this(similarity, state, scorers.ToArray())
 		{
 		}
 		
-		public ConjunctionScorer(Similarity similarity, params Scorer[] scorers):base(similarity)
+		public ConjunctionScorer(Similarity similarity, IState state, params Scorer[] scorers):base(similarity)
 		{
 			this.scorers = scorers;
 			coord = similarity.Coord(scorers.Length, scorers.Length);
 			
 			for (int i = 0; i < scorers.Length; i++)
 			{
-				if (scorers[i].NextDoc() == NO_MORE_DOCS)
+				if (scorers[i].NextDoc(state) == NO_MORE_DOCS)
 				{
 					// If even one of the sub-scorers does not have any documents, this
 					// scorer should not attempt to do any more work.
@@ -65,7 +66,7 @@ namespace Lucene.Net.Search
 			// 2, 1, 5 and then doNext() will stop immediately, since the first scorer's
 			// docs equals the last one. So the invariant that after calling doNext() 
 			// all scorers are on the same doc ID is broken.);
-			if (DoNext() == NO_MORE_DOCS)
+			if (DoNext(state) == NO_MORE_DOCS)
 			{
 				// The scorers did not agree on any document.
 				lastDoc = NO_MORE_DOCS;
@@ -89,20 +90,20 @@ namespace Lucene.Net.Search
 			}
 		}
 		
-		private int DoNext()
+		private int DoNext(IState state)
 		{
 			int first = 0;
 			int doc = scorers[scorers.Length - 1].DocID();
 			Scorer firstScorer;
 			while ((firstScorer = scorers[first]).DocID() < doc)
 			{
-				doc = firstScorer.Advance(doc);
+				doc = firstScorer.Advance(doc, state);
 				first = first == scorers.Length - 1?0:first + 1;
 			}
 			return doc;
 		}
 		
-		public override int Advance(int target)
+		public override int Advance(int target, IState state)
 		{
 			if (lastDoc == NO_MORE_DOCS)
 			{
@@ -110,9 +111,9 @@ namespace Lucene.Net.Search
 			}
 			else if (scorers[(scorers.Length - 1)].DocID() < target)
 			{
-				scorers[(scorers.Length - 1)].Advance(target);
+				scorers[(scorers.Length - 1)].Advance(target, state);
 			}
-			return lastDoc = DoNext();
+			return lastDoc = DoNext(state);
 		}
 		
 		public override int DocID()
@@ -120,7 +121,7 @@ namespace Lucene.Net.Search
 			return lastDoc;
 		}
 		
-		public override int NextDoc()
+		public override int NextDoc(IState state)
 		{
 			if (lastDoc == NO_MORE_DOCS)
 			{
@@ -130,16 +131,16 @@ namespace Lucene.Net.Search
 			{
 				return lastDoc = scorers[scorers.Length - 1].DocID();
 			}
-			scorers[(scorers.Length - 1)].NextDoc();
-			return lastDoc = DoNext();
+			scorers[(scorers.Length - 1)].NextDoc(state);
+			return lastDoc = DoNext(state);
 		}
 		
-		public override float Score()
+		public override float Score(IState state)
 		{
 			float sum = 0.0f;
 			for (int i = 0; i < scorers.Length; i++)
 			{
-				sum += scorers[i].Score();
+				sum += scorers[i].Score(state);
 			}
 			return sum * coord;
 		}

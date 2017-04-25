@@ -75,9 +75,9 @@ namespace Lucene.Net.Index
 			{
 				InitBlock(directory2);
 			}
-			public override System.Object DoBody(System.String segmentFileName)
+			public override System.Object DoBody(System.String segmentFileName, IState state)
 			{
-				return (long) directory2.FileModified(segmentFileName);
+				return (long) directory2.FileModified(segmentFileName, state);
 			}
 		}
 		
@@ -126,7 +126,7 @@ namespace Lucene.Net.Index
 		protected internal bool hasChanges;
 		
 		private int refCount;
-		
+
 		protected internal static int DEFAULT_TERMS_INDEX_DIVISOR = 1;
 
 	    /// <summary>Expert: returns the current refCount for this reader </summary>
@@ -176,7 +176,7 @@ namespace Lucene.Net.Index
 		/// </summary>
 		/// <seealso cref="IncRef">
 		/// </seealso>
-		public virtual void  DecRef()
+		public virtual void  DecRef(IState state)
 		{
 			lock (this)
 			{
@@ -184,8 +184,8 @@ namespace Lucene.Net.Index
 				EnsureOpen();
 				if (refCount == 1)
 				{
-					Commit();
-					DoClose();
+					Commit(state);
+					DoClose(state);
 				}
 				refCount--;
 			}
@@ -215,9 +215,9 @@ namespace Lucene.Net.Index
         /// <param name="readOnly">true if no changes (deletions, norms) will be made with this IndexReader</param>
         /// <exception cref="CorruptIndexException">CorruptIndexException if the index is corrupt</exception>
         /// <exception cref="System.IO.IOException">IOException if there is a low-level IO error</exception>
-		public static IndexReader Open(Directory directory, bool readOnly)
+		public static IndexReader Open(Directory directory, bool readOnly, IState state)
 		{
-			return Open(directory, null, null, readOnly, DEFAULT_TERMS_INDEX_DIVISOR);
+			return Open(directory, null, null, readOnly, DEFAULT_TERMS_INDEX_DIVISOR, state);
 		}
 		
 		/// <summary>Expert: returns an IndexReader reading the index in the given
@@ -232,9 +232,9 @@ namespace Lucene.Net.Index
 		/// </param>
 		/// <throws>  CorruptIndexException if the index is corrupt </throws>
 		/// <exception cref="System.IO.IOException">If there is a low-level IO error</exception>
-		public static IndexReader Open(IndexCommit commit, bool readOnly)
+		public static IndexReader Open(IndexCommit commit, bool readOnly, IState state)
 		{
-			return Open(commit.Directory, null, commit, readOnly, DEFAULT_TERMS_INDEX_DIVISOR);
+			return Open(commit.Directory, null, commit, readOnly, DEFAULT_TERMS_INDEX_DIVISOR, state);
 		}
 		
 		/// <summary>Expert: returns an IndexReader reading the index in
@@ -254,9 +254,9 @@ namespace Lucene.Net.Index
 		/// </param>
 		/// <throws>  CorruptIndexException if the index is corrupt </throws>
 		/// <exception cref="System.IO.IOException">If there is a low-level IO error</exception>
-		public static IndexReader Open(Directory directory, IndexDeletionPolicy deletionPolicy, bool readOnly)
+		public static IndexReader Open(Directory directory, IndexDeletionPolicy deletionPolicy, bool readOnly, IState state)
 		{
-			return Open(directory, deletionPolicy, null, readOnly, DEFAULT_TERMS_INDEX_DIVISOR);
+			return Open(directory, deletionPolicy, null, readOnly, DEFAULT_TERMS_INDEX_DIVISOR, state);
 		}
 
 		/// <summary>Expert: returns an IndexReader reading the index in
@@ -288,9 +288,9 @@ namespace Lucene.Net.Index
 		/// </param>
 		/// <throws>  CorruptIndexException if the index is corrupt </throws>
 		/// <exception cref="System.IO.IOException">If there is a low-level IO error</exception>
-		public static IndexReader Open(Directory directory, IndexDeletionPolicy deletionPolicy, bool readOnly, int termInfosIndexDivisor)
+		public static IndexReader Open(Directory directory, IndexDeletionPolicy deletionPolicy, bool readOnly, int termInfosIndexDivisor, IState state)
 		{
-			return Open(directory, deletionPolicy, null, readOnly, termInfosIndexDivisor);
+			return Open(directory, deletionPolicy, null, readOnly, termInfosIndexDivisor, state);
 		}
 		
 		/// <summary>Expert: returns an IndexReader reading the index in
@@ -312,9 +312,9 @@ namespace Lucene.Net.Index
 		/// </param>
 		/// <throws>  CorruptIndexException if the index is corrupt </throws>
 		/// <exception cref="System.IO.IOException">If there is a low-level IO error</exception>
-		public static IndexReader Open(IndexCommit commit, IndexDeletionPolicy deletionPolicy, bool readOnly)
+		public static IndexReader Open(IndexCommit commit, IndexDeletionPolicy deletionPolicy, bool readOnly, IState state)
 		{
-			return Open(commit.Directory, deletionPolicy, commit, readOnly, DEFAULT_TERMS_INDEX_DIVISOR);
+			return Open(commit.Directory, deletionPolicy, commit, readOnly, DEFAULT_TERMS_INDEX_DIVISOR, state);
 		}
 
 		/// <summary>Expert: returns an IndexReader reading the index in
@@ -348,14 +348,14 @@ namespace Lucene.Net.Index
 		/// </param>
 		/// <throws>  CorruptIndexException if the index is corrupt </throws>
 		/// <exception cref="System.IO.IOException">If there is a low-level IO error</exception>
-		public static IndexReader Open(IndexCommit commit, IndexDeletionPolicy deletionPolicy, bool readOnly, int termInfosIndexDivisor)
+		public static IndexReader Open(IndexCommit commit, IndexDeletionPolicy deletionPolicy, bool readOnly, int termInfosIndexDivisor, IState state)
 		{
-			return Open(commit.Directory, deletionPolicy, commit, readOnly, termInfosIndexDivisor);
+			return Open(commit.Directory, deletionPolicy, commit, readOnly, termInfosIndexDivisor, state);
 		}
 		
-		private static IndexReader Open(Directory directory, IndexDeletionPolicy deletionPolicy, IndexCommit commit, bool readOnly, int termInfosIndexDivisor)
+		private static IndexReader Open(Directory directory, IndexDeletionPolicy deletionPolicy, IndexCommit commit, bool readOnly, int termInfosIndexDivisor, IState state)
 		{
-			return DirectoryReader.Open(directory, deletionPolicy, commit, readOnly, termInfosIndexDivisor);
+			return DirectoryReader.Open(directory, deletionPolicy, commit, readOnly, termInfosIndexDivisor, state);
 		}
 		
 		/// <summary> Refreshes an IndexReader if the index has changed since this instance 
@@ -402,7 +402,7 @@ namespace Lucene.Net.Index
 		/// </summary>
 		/// <throws>  CorruptIndexException if the index is corrupt </throws>
 		/// <exception cref="System.IO.IOException">If there is a low-level IO error</exception>
-		public virtual IndexReader Reopen()
+		public virtual IndexReader Reopen(IState state)
 		{
 			lock (this)
 			{
@@ -416,7 +416,7 @@ namespace Lucene.Net.Index
 		/// unchanged but readOnly is different then a new reader
 		/// will be returned. 
 		/// </summary>
-		public virtual IndexReader Reopen(bool openReadOnly)
+		public virtual IndexReader Reopen(bool openReadOnly, IState state)
 		{
 			lock (this)
 			{
@@ -431,7 +431,7 @@ namespace Lucene.Net.Index
 		/// this same instance is returned; if it is not already
 		/// readOnly, a readOnly clone is returned. 
 		/// </summary>
-		public virtual IndexReader Reopen(IndexCommit commit)
+		public virtual IndexReader Reopen(IndexCommit commit, IState state)
 		{
 			lock (this)
 			{
@@ -467,7 +467,7 @@ namespace Lucene.Net.Index
 		/// </summary>
 		/// <throws>  CorruptIndexException if the index is corrupt </throws>
 		/// <exception cref="System.IO.IOException">If there is a low-level IO error</exception>
-		public virtual IndexReader Clone(bool openReadOnly)
+		public virtual IndexReader Clone(bool openReadOnly, IState state)
 		{
 			lock (this)
 			{
@@ -493,9 +493,9 @@ namespace Lucene.Net.Index
 		/// </summary>
 		/// <throws>  CorruptIndexException if the index is corrupt </throws>
 		/// <exception cref="System.IO.IOException">If there is a low-level IO error</exception>
-		public static long LastModified(Directory directory2)
+		public static long LastModified(Directory directory2, IState state)
 		{
-			return (long) ((System.Int64) new AnonymousClassFindSegmentsFile(directory2, directory2).Run());
+			return (long) ((System.Int64) new AnonymousClassFindSegmentsFile(directory2, directory2).Run(state));
 		}
 		
 		/// <summary> Reads version number from segments files. The version number is
@@ -509,9 +509,9 @@ namespace Lucene.Net.Index
 		/// </returns>
 		/// <throws>  CorruptIndexException if the index is corrupt </throws>
 		/// <exception cref="System.IO.IOException">If there is a low-level IO error</exception>
-		public static long GetCurrentVersion(Directory directory)
+		public static long GetCurrentVersion(Directory directory, IState state)
 		{
-			return SegmentInfos.ReadCurrentVersion(directory);
+			return SegmentInfos.ReadCurrentVersion(directory, state);
 		}
 
         /// <summary> Reads commitUserData, previously passed to 
@@ -530,9 +530,9 @@ namespace Lucene.Net.Index
 		/// </summary>
 		/// <seealso cref="GetCommitUserData(Store.Directory)">
 		/// </seealso>
-        public static System.Collections.Generic.IDictionary<string, string> GetCommitUserData(Directory directory)
+        public static System.Collections.Generic.IDictionary<string, string> GetCommitUserData(Directory directory, IState state)
 		{
-			return SegmentInfos.ReadCurrentUserData(directory);
+			return SegmentInfos.ReadCurrentUserData(directory, state);
 		}
 
 	    /// <summary> Version number when this IndexReader was opened. Not implemented in the
@@ -609,7 +609,7 @@ namespace Lucene.Net.Index
 		/// <throws>  CorruptIndexException if the index is corrupt </throws>
 		/// <exception cref="System.IO.IOException">If there is a low-level IO error</exception>
 		/// <throws>  UnsupportedOperationException unless overridden in subclass </throws>
-		public virtual bool IsCurrent()
+		public virtual bool IsCurrent(IState state)
 	    {
 	        throw new NotSupportedException("This reader does not support this method.");
 	    }
@@ -641,7 +641,7 @@ namespace Lucene.Net.Index
 		/// <throws>  IOException if index cannot be accessed </throws>
 		/// <seealso cref="Lucene.Net.Documents.Field.TermVector">
 		/// </seealso>
-		abstract public ITermFreqVector[] GetTermFreqVectors(int docNumber);
+		abstract public ITermFreqVector[] GetTermFreqVectors(int docNumber, IState state);
 		
 		
 		/// <summary> Return a term frequency vector for the specified document and field. The
@@ -661,7 +661,7 @@ namespace Lucene.Net.Index
 		/// <throws>  IOException if index cannot be accessed </throws>
 		/// <seealso cref="Lucene.Net.Documents.Field.TermVector">
 		/// </seealso>
-		abstract public ITermFreqVector GetTermFreqVector(int docNumber, String field);
+		abstract public ITermFreqVector GetTermFreqVector(int docNumber, String field, IState state);
 		
 		/// <summary> Load the Term Vector into a user-defined data structure instead of relying on the parallel arrays of
 		/// the <see cref="ITermFreqVector" />.
@@ -675,7 +675,7 @@ namespace Lucene.Net.Index
 		/// <throws>  IOException if term vectors cannot be accessed or if they do not exist on the field and doc. specified. </throws>
 		/// <summary> 
 		/// </summary>
-		abstract public void  GetTermFreqVector(int docNumber, String field, TermVectorMapper mapper);
+		abstract public void  GetTermFreqVector(int docNumber, String field, TermVectorMapper mapper, IState state);
 		
 		/// <summary> Map all the term vectors for all fields in a Document</summary>
 		/// <param name="docNumber">The number of the document to load the vector for
@@ -683,7 +683,7 @@ namespace Lucene.Net.Index
 		/// <param name="mapper">The <see cref="TermVectorMapper" /> to process the vector.  Must not be null
 		/// </param>
 		/// <throws>  IOException if term vectors cannot be accessed or if they do not exist on the field and doc. specified. </throws>
-		abstract public void  GetTermFreqVector(int docNumber, TermVectorMapper mapper);
+		abstract public void  GetTermFreqVector(int docNumber, TermVectorMapper mapper, IState state);
 		
 		/// <summary> Returns <c>true</c> if an index exists at the specified directory.
 		/// If the directory does not exist or if there is no index in it.
@@ -693,9 +693,9 @@ namespace Lucene.Net.Index
 		/// <returns> <c>true</c> if an index exists; <c>false</c> otherwise
 		/// </returns>
 		/// <throws>  IOException if there is a problem with accessing the index </throws>
-		public static bool IndexExists(Directory directory)
+		public static bool IndexExists(Directory directory, IState state)
 		{
-			return SegmentInfos.GetCurrentSegmentGeneration(directory) != - 1;
+			return SegmentInfos.GetCurrentSegmentGeneration(directory, state) != - 1;
 		}
 
 	    /// <summary>Returns the number of documents in this index. </summary>
@@ -726,28 +726,11 @@ namespace Lucene.Net.Index
 		/// </summary>
 		/// <throws>  CorruptIndexException if the index is corrupt </throws>
 		/// <exception cref="System.IO.IOException">If there is a low-level IO error</exception>
-		public virtual Document Document(int n)
+		public virtual Document Document(int n, IState state)
 		{
 			EnsureOpen();
-			return Document(n, null);
+			return Document(n, null, state);
 		}
-
-        /// <summary> Returns the stored fields of the <c>n</c><sup>th</sup>
-        /// <c>Document</c> in this index.
-        /// <p/>
-        /// <b>NOTE:</b> for performance reasons, this method does not check if the
-        /// requested document is deleted, and therefore asking for a deleted document
-        /// may yield unspecified results. Usually this is not required, however you
-        /// can call <see cref="IsDeleted(int)" /> with the requested document ID to verify
-        /// the document is not deleted.
-        /// 
-        /// </summary>
-        /// <throws>  CorruptIndexException if the index is corrupt </throws>
-        /// <exception cref="System.IO.IOException">If there is a low-level IO error</exception>
-	    public Document this[int doc]
-	    {
-	        get { return Document(doc); }
-	    }
 		
 		/// <summary> Get the <see cref="Lucene.Net.Documents.Document" /> at the <c>n</c>
 		/// <sup>th</sup> position. The <see cref="FieldSelector" /> may be used to determine
@@ -786,7 +769,7 @@ namespace Lucene.Net.Index
 		/// <seealso cref="Lucene.Net.Documents.LoadFirstFieldSelector">
 		/// </seealso>
 		// TODO (1.5): When we convert to JDK 1.5 make this Set<String>
-		public abstract Document Document(int n, FieldSelector fieldSelector);
+		public abstract Document Document(int n, FieldSelector fieldSelector, IState state);
 		
 		/// <summary>Returns true if document <i>n</i> has been deleted </summary>
 		public abstract bool IsDeleted(int n);
@@ -795,12 +778,12 @@ namespace Lucene.Net.Index
 	    public abstract bool HasDeletions { get; }
 
 	    /// <summary>Returns true if there are norms stored for this field. </summary>
-		public virtual bool HasNorms(System.String field)
+		public virtual bool HasNorms(System.String field, IState state)
 		{
 			// backward compatible implementation.
 			// SegmentReader has an efficient implementation.
 			EnsureOpen();
-			return Norms(field) != null;
+			return Norms(field, state) != null;
 		}
 
 		/// <summary>
@@ -808,14 +791,14 @@ namespace Lucene.Net.Index
 		/// every document.  This is used by the search code to score documents.
 		/// </summary>
         /// <seealso cref="Lucene.Net.Documents.AbstractField.Boost" />
-		public abstract byte[] Norms(System.String field);
+		public abstract byte[] Norms(System.String field, IState state);
 		
 		/// <summary>
 		/// Reads the byte-encoded normalization factor for the named field of every
 		/// document.  This is used by the search code to score documents.
 		/// </summary>
 		/// <seealso cref="Lucene.Net.Documents.AbstractField.Boost" />
-		public abstract void  Norms(System.String field, byte[] bytes, int offset);
+		public abstract void  Norms(System.String field, byte[] bytes, int offset, IState state);
 		
 		/// <summary>Expert: Resets the normalization factor for the named field of the named
 		/// document.  The norm represents the product of the field's <see cref="IFieldable.Boost">boost</see>
@@ -839,19 +822,19 @@ namespace Lucene.Net.Index
 		/// <exception cref="System.IO.IOException">
         /// If there is a low-level IO error
 		/// </exception>
-		public virtual void  SetNorm(int doc, String field, byte value)
+		public virtual void  SetNorm(int doc, String field, byte value, IState state)
 		{
 			lock (this)
 			{
 				EnsureOpen();
-				AcquireWriteLock();
+				AcquireWriteLock(state);
 				hasChanges = true;
-				DoSetNorm(doc, field, value);
+				DoSetNorm(doc, field, value, state);
 			}
 		}
 		
 		/// <summary>Implements setNorm in subclass.</summary>
-		protected internal abstract void  DoSetNorm(int doc, System.String field, byte value_Renamed);
+		protected internal abstract void  DoSetNorm(int doc, System.String field, byte value_Renamed, IState state);
 		
 		/// <summary>
 		/// Expert: Resets the normalization factor for the named field of the named document.
@@ -886,7 +869,7 @@ namespace Lucene.Net.Index
 		/// <exception cref="System.IO.IOException">
         /// If there is a low-level IO error 
 		/// </exception>
-		public abstract TermEnum Terms();
+		public abstract TermEnum Terms(IState state);
 		
 		/// <summary>Returns an enumeration of all terms starting at a given term. If
 		/// the given term does not exist, the enumeration is positioned at the
@@ -897,11 +880,11 @@ namespace Lucene.Net.Index
         /// <exception cref="System.IO.IOException">
         /// If there is a low-level IO error
         /// </exception>
-		public abstract TermEnum Terms(Term t);
+		public abstract TermEnum Terms(Term t, IState state);
 
         /// <summary>Returns the number of documents containing the term <c>t</c>.</summary>
         /// <exception cref="System.IO.IOException">If there is a low-level IO error</exception>
-		public abstract int DocFreq(Term t);
+		public abstract int DocFreq(Term t, IState state);
 		
 		/// <summary>Returns an enumeration of all the documents which contain
 		/// <c>term</c>. For each document, the document number, the frequency of
@@ -916,17 +899,17 @@ namespace Lucene.Net.Index
 		/// is greater than all that precede it in the enumeration.
         /// </summary>
         /// <exception cref="System.IO.IOException">If there is a low-level IO error</exception>
-		public virtual TermDocs TermDocs(Term term)
+		public virtual TermDocs TermDocs(Term term, IState state)
 		{
 			EnsureOpen();
-			TermDocs termDocs = TermDocs();
-			termDocs.Seek(term);
+			TermDocs termDocs = TermDocs(state);
+			termDocs.Seek(term, state);
 			return termDocs;
 		}
 
         /// <summary>Returns an unpositioned <see cref="Lucene.Net.Index.TermDocs" /> enumerator.</summary>
         /// <exception cref="System.IO.IOException">If there is a low-level IO error</exception>
-		public abstract TermDocs TermDocs();
+		public abstract TermDocs TermDocs(IState state);
 		
 		/// <summary>Returns an enumeration of all the documents which contain
 		/// <c>term</c>.  For each document, in addition to the document number
@@ -945,17 +928,17 @@ namespace Lucene.Net.Index
 		/// greater than all that precede it in the enumeration.
         /// </summary>
         /// <exception cref="System.IO.IOException">If there is a low-level IO error</exception>
-		public virtual TermPositions TermPositions(Term term)
+		public virtual TermPositions TermPositions(Term term, IState state)
 		{
 			EnsureOpen();
-			TermPositions termPositions = TermPositions();
-			termPositions.Seek(term);
+			TermPositions termPositions = TermPositions(state);
+			termPositions.Seek(term, state);
 			return termPositions;
 		}
 
         /// <summary>Returns an unpositioned <see cref="Lucene.Net.Index.TermPositions" /> enumerator.</summary>
         /// <exception cref="System.IO.IOException">If there is a low-level IO error</exception>
-		public abstract TermPositions TermPositions();
+		public abstract TermPositions TermPositions(IState state);
 		
 		
 		
@@ -975,14 +958,14 @@ namespace Lucene.Net.Index
         /// If another writer has this index open (<c>write.lock</c> could not be obtained)
         /// </exception>
         /// <exception cref="System.IO.IOException">If there is a low-level IO error</exception>
-		public virtual void  DeleteDocument(int docNum)
+		public virtual void  DeleteDocument(int docNum, IState state)
 		{
 			lock (this)
 			{
 				EnsureOpen();
-				AcquireWriteLock();
+				AcquireWriteLock(state);
 				hasChanges = true;
-				DoDelete(docNum);
+				DoDelete(docNum, state);
 			}
 		}
 		
@@ -990,7 +973,7 @@ namespace Lucene.Net.Index
 		/// <summary>Implements deletion of the document numbered <c>docNum</c>.
 		/// Applications should call <see cref="DeleteDocument(int)" /> or <see cref="DeleteDocuments(Term)" />.
 		/// </summary>
-		protected internal abstract void  DoDelete(int docNum);
+		protected internal abstract void  DoDelete(int docNum, IState state);
 		
 		
 		/// <summary>
@@ -1011,18 +994,18 @@ namespace Lucene.Net.Index
         /// If another writer has this index open (<c>write.lock</c> could not be obtained)
         /// </exception>
         /// <exception cref="System.IO.IOException">If there is a low-level IO error</exception>
-		public virtual int DeleteDocuments(Term term)
+		public virtual int DeleteDocuments(Term term, IState state)
 		{
 			EnsureOpen();
-			TermDocs docs = TermDocs(term);
+			TermDocs docs = TermDocs(term, state);
 			if (docs == null)
 				return 0;
 			int n = 0;
 			try
 			{
-				while (docs.Next())
+				while (docs.Next(state))
 				{
-					DeleteDocument(docs.Doc);
+					DeleteDocument(docs.Doc, state);
 					n++;
 				}
 			}
@@ -1044,25 +1027,25 @@ namespace Lucene.Net.Index
         /// If another writer has this index open (<c>write.lock</c> could not be obtained)
         /// </exception>
         /// <exception cref="System.IO.IOException">If there is a low-level IO error</exception>
-		public virtual void  UndeleteAll()
+		public virtual void  UndeleteAll(IState state)
 		{
 			lock (this)
 			{
 				EnsureOpen();
-				AcquireWriteLock();
+				AcquireWriteLock(state);
 				hasChanges = true;
-				DoUndeleteAll();
+				DoUndeleteAll(state);
 			}
 		}
 		
 		/// <summary>Implements actual undeleteAll() in subclass. </summary>
-		protected internal abstract void  DoUndeleteAll();
+		protected internal abstract void  DoUndeleteAll(IState state);
 		
 		/// <summary>
 		/// Does nothing by default. Subclasses that require a write lock for
 		/// index modifications must implement this method. 
 		/// </summary>
-		protected internal virtual void  AcquireWriteLock()
+		protected internal virtual void  AcquireWriteLock(IState state)
 		{
 			lock (this)
 			{
@@ -1072,12 +1055,12 @@ namespace Lucene.Net.Index
 		
 		/// <summary> </summary>
 		/// <exception cref="System.IO.IOException" />
-		public void  Flush()
+		public void  Flush(IState state)
 		{
 			lock (this)
 			{
 				EnsureOpen();
-				Commit();
+				Commit(state);
 			}
 		}
 		
@@ -1086,12 +1069,12 @@ namespace Lucene.Net.Index
 		/// and retrievable by <see cref="IndexReader.GetCommitUserData" />
         /// </param>
         /// <exception cref="System.IO.IOException" />
-        public void Flush(IDictionary<string, string> commitUserData)
+        public void Flush(IDictionary<string, string> commitUserData, IState state)
 		{
 			lock (this)
 			{
 				EnsureOpen();
-				Commit(commitUserData);
+				Commit(commitUserData, state);
 			}
 		}
 		
@@ -1103,11 +1086,11 @@ namespace Lucene.Net.Index
 		/// (transactional semantics).
 		/// </summary>
         /// <exception cref="System.IO.IOException">If there is a low-level IO error</exception>
-		public /*protected internal*/ void  Commit()
+		public /*protected internal*/ void  Commit(IState state)
 		{
 			lock (this)
 			{
-				Commit(null);
+				Commit(null, state);
 			}
 		}
 		
@@ -1119,20 +1102,20 @@ namespace Lucene.Net.Index
 		/// (transactional semantics).
 		/// </summary>
 		/// <exception cref="System.IO.IOException">If there is a low-level IO error</exception>
-        public void Commit(IDictionary<string, string> commitUserData)
+        public void Commit(IDictionary<string, string> commitUserData, IState state)
 		{
 			lock (this)
 			{
 				if (hasChanges)
 				{
-					DoCommit(commitUserData);
+					DoCommit(commitUserData, state);
 				}
 				hasChanges = false;
 			}
 		}
 		
 		/// <summary>Implements commit.</summary>
-	    protected internal abstract void DoCommit(IDictionary<string, string> commitUserData);
+	    protected internal abstract void DoCommit(IDictionary<string, string> commitUserData, IState state);
 
         [Obsolete("Use Dispose() instead")]
 		public void Close()
@@ -1158,7 +1141,7 @@ namespace Lucene.Net.Index
                 {
                     if (!closed)
                     {
-                        DecRef();
+                        DecRef(StateHolder.Current.Value);
                         closed = true;
                     }
                 }
@@ -1166,7 +1149,7 @@ namespace Lucene.Net.Index
         }
 		
 		/// <summary>Implements close. </summary>
-		protected internal abstract void  DoClose();
+		protected internal abstract void  DoClose(IState state);
 		
 		
 		/// <summary> Get a list of unique field names that exist in this index and have the specified
@@ -1188,9 +1171,9 @@ namespace Lucene.Net.Index
 	    /// <p/><b>WARNING</b>: this API is new and experimental and
 	    /// may suddenly change.<p/>
 	    /// </summary>
-	    public virtual IndexCommit IndexCommit
+	    public virtual IndexCommit IndexCommit(IState state)
 	    {
-	        get { throw new NotSupportedException("This reader does not support this method."); }
+	        throw new NotSupportedException("This reader does not support this method.");
 	    }
 
 #if !DNXCORE50
@@ -1234,19 +1217,19 @@ namespace Lucene.Net.Index
 				System.String dirname = new System.IO.FileInfo(file.FullName).DirectoryName;
 				filename = file.Name;
 				dir = FSDirectory.Open(new System.IO.DirectoryInfo(dirname));
-				cfr = new CompoundFileReader(dir, filename);
+				cfr = new CompoundFileReader(dir, filename, null);
 				
-				System.String[] files = cfr.ListAll();
+				System.String[] files = cfr.ListAll(null);
 				System.Array.Sort(files); // sort the array of filename so that the output is more readable
 				
 				foreach (string t in files)
 				{
-					long len = cfr.FileLength(t);
+					long len = cfr.FileLength(t, null);
 					
 					if (extract)
 					{
 						System.Console.Out.WriteLine("extract " + t + " with " + len + " bytes to local directory...");
-						IndexInput ii = cfr.OpenInput(t);
+						IndexInput ii = cfr.OpenInput(t, null);
 						
 						var f = new System.IO.FileStream(t, System.IO.FileMode.Create);
 						
@@ -1256,7 +1239,7 @@ namespace Lucene.Net.Index
 						while (len > 0)
 						{
 							var bufLen = (int) System.Math.Min(chunk, len);
-							ii.ReadBytes(buffer, 0, bufLen);
+							ii.ReadBytes(buffer, 0, bufLen, null);
 							f.Write(buffer, 0, bufLen);
 							len -= bufLen;
 						}

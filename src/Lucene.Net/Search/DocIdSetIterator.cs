@@ -15,6 +15,8 @@
  * limitations under the License.
  */
 
+using Lucene.Net.Store;
+
 namespace Lucene.Net.Search
 {
 	
@@ -52,7 +54,7 @@ namespace Lucene.Net.Search
 	    /// method, as it may result in unpredicted behavior.
 	    /// 
 	    /// </summary>
-	    public abstract int NextDoc();
+	    public abstract int NextDoc(IState state);
 
 	    /// <summary> Advances to the first beyond the current whose document number is greater
 	    /// than or equal to <i>target</i>. Returns the current document number or
@@ -85,6 +87,6 @@ namespace Lucene.Net.Search
 	    /// 
 	    /// </summary>
 	    /// <since>2.9</since>
-	    public abstract int Advance(int target);
+	    public abstract int Advance(int target, IState state);
 	}
 }

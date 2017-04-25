@@ -18,6 +18,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Lucene.Net.Store;
 using Lucene.Net.Support;
 using Document = Lucene.Net.Documents.Document;
 using FieldSelector = Lucene.Net.Documents.FieldSelector;
@@ -133,7 +134,7 @@ namespace Lucene.Net.Index
 		{
 			try
 			{
-				return DoReopen(true);
+				return DoReopen(true, StateHolder.Current.Value);
 			}
 			catch (System.Exception ex)
 			{
@@ -159,15 +160,15 @@ namespace Lucene.Net.Index
 		/// </summary>
 		/// <throws>  CorruptIndexException if the index is corrupt </throws>
 		/// <throws>  IOException if there is a low-level IO error  </throws>
-		public override IndexReader Reopen()
+		public override IndexReader Reopen(IState state)
 		{
 			lock (this)
 			{
-				return DoReopen(false);
+				return DoReopen(false, state);
 			}
 		}
 		
-		protected internal virtual IndexReader DoReopen(bool doClone)
+		protected internal virtual IndexReader DoReopen(bool doClone, IState state)
 		{
 			EnsureOpen();
 			
@@ -187,7 +188,7 @@ namespace Lucene.Net.Index
 					}
 					else
 					{
-						newReader = oldReader.Reopen();
+						newReader = oldReader.Reopen(state);
 					}
 					newReaders.Add(newReader);
 					// if at least one of the subreaders was updated we remember that
@@ -288,27 +289,27 @@ namespace Lucene.Net.Index
 		}
 		
 		// delete in all readers
-		protected internal override void  DoDelete(int n)
+		protected internal override void  DoDelete(int n, IState state)
 		{
 			foreach(var reader in readers)
 			{
-				reader.DeleteDocument(n);
+				reader.DeleteDocument(n, state);
 			}
 			hasDeletions = true;
 		}
 		
 		// undeleteAll in all readers
-		protected internal override void  DoUndeleteAll()
+		protected internal override void  DoUndeleteAll(IState state)
 		{
 			foreach(var reader in readers)
 			{
-				reader.UndeleteAll();
+				reader.UndeleteAll(state);
 			}
 			hasDeletions = false;
 		}
 		
 		// append fields from storedFieldReaders
-		public override Document Document(int n, FieldSelector fieldSelector)
+		public override Document Document(int n, FieldSelector fieldSelector, IState state)
 		{
 			EnsureOpen();
 			Document result = new Document();
@@ -329,7 +330,7 @@ namespace Lucene.Net.Index
 				}
 				if (include)
 				{
-				    var fields = reader.Document(n, fieldSelector).GetFields();
+				    var fields = reader.Document(n, fieldSelector, state).GetFields();
 					foreach(var field in fields)
 					{
                         result.Add(field);
@@ -340,7 +341,7 @@ namespace Lucene.Net.Index
 		}
 		
 		// get all vectors
-		public override ITermFreqVector[] GetTermFreqVectors(int n)
+		public override ITermFreqVector[] GetTermFreqVectors(int n, IState state)
 		{
 			EnsureOpen();
 			IList<ITermFreqVector> results = new List<ITermFreqVector>();
@@ -349,32 +350,32 @@ namespace Lucene.Net.Index
 				System.String field = e.Key;
 				IndexReader reader = e.Value;
 
-				ITermFreqVector vector = reader.GetTermFreqVector(n, field);
+				ITermFreqVector vector = reader.GetTermFreqVector(n, field, state);
 				if (vector != null)
 					results.Add(vector);
 			}
 			return results.ToArray();
 		}
 		
-		public override ITermFreqVector GetTermFreqVector(int n, System.String field)
+		public override ITermFreqVector GetTermFreqVector(int n, System.String field, IState state)
 		{
 			EnsureOpen();
 			IndexReader reader = (fieldToReader[field]);
-			return reader == null?null:reader.GetTermFreqVector(n, field);
+			return reader == null?null:reader.GetTermFreqVector(n, field, state);
 		}
 		
 		
-		public override void  GetTermFreqVector(int docNumber, System.String field, TermVectorMapper mapper)
+		public override void  GetTermFreqVector(int docNumber, System.String field, TermVectorMapper mapper, IState state)
 		{
 			EnsureOpen();
 			IndexReader reader = (fieldToReader[field]);
 			if (reader != null)
 			{
-				reader.GetTermFreqVector(docNumber, field, mapper);
+				reader.GetTermFreqVector(docNumber, field, mapper, state);
 			}
 		}
 		
-		public override void  GetTermFreqVector(int docNumber, TermVectorMapper mapper)
+		public override void  GetTermFreqVector(int docNumber, TermVectorMapper mapper, IState state)
 		{
 			EnsureOpen();
 
@@ -382,88 +383,88 @@ namespace Lucene.Net.Index
 			{
 				System.String field = e.Key;
 				IndexReader reader = e.Value;
-				reader.GetTermFreqVector(docNumber, field, mapper);
+				reader.GetTermFreqVector(docNumber, field, mapper, state);
 			}
 		}
 		
-		public override bool HasNorms(System.String field)
+		public override bool HasNorms(System.String field, IState state)
 		{
 			EnsureOpen();
 			IndexReader reader = fieldToReader[field];
-		    return reader != null && reader.HasNorms(field);
+		    return reader != null && reader.HasNorms(field, state);
 		}
 		
-		public override byte[] Norms(System.String field)
+		public override byte[] Norms(System.String field, IState state)
 		{
 			EnsureOpen();
 			IndexReader reader = fieldToReader[field];
-			return reader == null?null:reader.Norms(field);
+			return reader == null?null:reader.Norms(field, state);
 		}
 		
-		public override void  Norms(System.String field, byte[] result, int offset)
+		public override void  Norms(System.String field, byte[] result, int offset, IState state)
 		{
 			EnsureOpen();
-			IndexReader reader = fieldToReader[field];
-			if (reader != null)
-				reader.Norms(field, result, offset);
-		}
-		
-		protected internal override void  DoSetNorm(int n, System.String field, byte value_Renamed)
-		{
 			IndexReader reader = fieldToReader[field];
 			if (reader != null)
-				reader.DoSetNorm(n, field, value_Renamed);
+				reader.Norms(field, result, offset, state);
 		}
 		
-		public override TermEnum Terms()
+		protected internal override void  DoSetNorm(int n, System.String field, byte value_Renamed, IState state)
+		{
+			IndexReader reader = fieldToReader[field];
+			if (reader != null)
+				reader.DoSetNorm(n, field, value_Renamed, state);
+		}
+		
+		public override TermEnum Terms(IState state)
 		{
 			EnsureOpen();
-			return new ParallelTermEnum(this);
+			return new ParallelTermEnum(this, state);
 		}
 		
-		public override TermEnum Terms(Term term)
+		public override TermEnum Terms(Term term, IState state)
 		{
 			EnsureOpen();
-			return new ParallelTermEnum(this, term);
+			return new ParallelTermEnum(this, term, state);
 		}
 		
-		public override int DocFreq(Term term)
+		public override int DocFreq(Term term, IState state)
 		{
 			EnsureOpen();
 			IndexReader reader = fieldToReader[term.Field];
-			return reader == null?0:reader.DocFreq(term);
+			return reader == null?0:reader.DocFreq(term, state);
 		}
 		
-		public override TermDocs TermDocs(Term term)
+		public override TermDocs TermDocs(Term term, IState state)
 		{
 			EnsureOpen();
-			return new ParallelTermDocs(this, term);
+			return new ParallelTermDocs(this, term, state);
 		}
 		
-		public override TermDocs TermDocs()
+		public override TermDocs TermDocs(IState state)
 		{
 			EnsureOpen();
 			return new ParallelTermDocs(this);
 		}
 		
-		public override TermPositions TermPositions(Term term)
+		public override TermPositions TermPositions(Term term, IState state)
 		{
 			EnsureOpen();
-			return new ParallelTermPositions(this, term);
+			return new ParallelTermPositions(this, term, state);
 		}
 		
-		public override TermPositions TermPositions()
+		public override TermPositions TermPositions(IState state)
 		{
 			EnsureOpen();
 			return new ParallelTermPositions(this);
 		}
 
 	    /// <summary> Checks recursively if all subreaders are up to date. </summary>
-	    public override bool IsCurrent()
+	    public override bool IsCurrent(IState state)
 	    {
 	        foreach (var reader in readers)
 	        {
-	            if (!reader.IsCurrent())
+	            if (!reader.IsCurrent(state))
 	            {
 	                return false;
 	            }
@@ -502,13 +503,13 @@ namespace Lucene.Net.Index
 			return readers.ToArray();
 		}
 
-        protected internal override void DoCommit(IDictionary<string, string> commitUserData)
+        protected internal override void DoCommit(IDictionary<string, string> commitUserData, IState state)
 		{
 			foreach(var reader in readers)
-				reader.Commit(commitUserData);
+				reader.Commit(commitUserData, state);
 		}
 		
-		protected internal override void  DoClose()
+		protected internal override void  DoClose(IState state)
 		{
 			lock (this)
 			{
@@ -516,7 +517,7 @@ namespace Lucene.Net.Index
 				{
 					if (decrefOnClose[i])
 					{
-						readers[i].DecRef();
+						readers[i].DecRef(state);
 					}
 					else
 					{
@@ -561,7 +562,7 @@ namespace Lucene.Net.Index
 
 		    private bool isDisposed;
 			
-			public ParallelTermEnum(ParallelReader enclosingInstance)
+			public ParallelTermEnum(ParallelReader enclosingInstance, IState state)
 			{
 				InitBlock(enclosingInstance);
 				try
@@ -574,25 +575,25 @@ namespace Lucene.Net.Index
 					return;
 				}
 				if (field != null)
-					termEnum = Enclosing_Instance.fieldToReader[field].Terms();
+					termEnum = Enclosing_Instance.fieldToReader[field].Terms(state);
 			}
 			
-			public ParallelTermEnum(ParallelReader enclosingInstance, Term term)
+			public ParallelTermEnum(ParallelReader enclosingInstance, Term term, IState state)
 			{
 				InitBlock(enclosingInstance);
 				field = term.Field;
 				IndexReader reader = Enclosing_Instance.fieldToReader[field];
 				if (reader != null)
-					termEnum = reader.Terms(term);
+					termEnum = reader.Terms(term, state);
 			}
 			
-			public override bool Next()
+			public override bool Next(IState state)
 			{
 				if (termEnum == null)
 					return false;
 				
 				// another term in this field?
-				if (termEnum.Next() && (System.Object) termEnum.Term.Field == (System.Object) field)
+				if (termEnum.Next(state) && (System.Object) termEnum.Term.Field == (System.Object) field)
 					return true; // yes, keep going
 				
 				termEnum.Close(); // close old termEnum
@@ -613,7 +614,7 @@ namespace Lucene.Net.Index
 				while (fieldIterator.MoveNext())
 				{
 					field = fieldIterator.Current;
-					termEnum = Enclosing_Instance.fieldToReader[field].Terms(new Term(field));
+					termEnum = Enclosing_Instance.fieldToReader[field].Terms(new Term(field), state);
 					Term term = termEnum.Term;
 					if (term != null && (System.Object) term.Field == (System.Object) field)
 						return true;
@@ -681,15 +682,15 @@ namespace Lucene.Net.Index
 			{
 				InitBlock(enclosingInstance);
 			}
-			public ParallelTermDocs(ParallelReader enclosingInstance, Term term)
+			public ParallelTermDocs(ParallelReader enclosingInstance, Term term, IState state)
 			{
 				InitBlock(enclosingInstance);
                 if(term == null)
                     termDocs = (Enclosing_Instance.readers.Count == 0)
                                    ? null
-                                   : Enclosing_Instance.readers[0].TermDocs(null);
+                                   : Enclosing_Instance.readers[0].TermDocs(null, state);
                 else
-                    Seek(term);
+                    Seek(term, state);
 			}
 
 		    public virtual int Doc
@@ -702,39 +703,39 @@ namespace Lucene.Net.Index
 		        get { return termDocs.Freq; }
 		    }
 
-		    public virtual void  Seek(Term term)
+		    public virtual void  Seek(Term term, IState state)
 			{
 				IndexReader reader = Enclosing_Instance.fieldToReader[term.Field];
-				termDocs = reader != null?reader.TermDocs(term):null;
+				termDocs = reader != null?reader.TermDocs(term, state):null;
 			}
 			
-			public virtual void  Seek(TermEnum termEnum)
+			public virtual void  Seek(TermEnum termEnum, IState state)
 			{
-				Seek(termEnum.Term);
+				Seek(termEnum.Term, state);
 			}
 			
-			public virtual bool Next()
+			public virtual bool Next(IState state)
 			{
 				if (termDocs == null)
 					return false;
 				
-				return termDocs.Next();
+				return termDocs.Next(state);
 			}
 			
-			public virtual int Read(int[] docs, int[] freqs)
+			public virtual int Read(int[] docs, int[] freqs, IState state)
 			{
 				if (termDocs == null)
 					return 0;
 				
-				return termDocs.Read(docs, freqs);
+				return termDocs.Read(docs, freqs, state);
 			}
 			
-			public virtual bool SkipTo(int target)
+			public virtual bool SkipTo(int target, IState state)
 			{
 				if (termDocs == null)
 					return false;
 				
-				return termDocs.SkipTo(target);
+				return termDocs.SkipTo(target, state);
 			}
 
             [Obsolete("Use Dispose() instead")]
@@ -782,22 +783,22 @@ namespace Lucene.Net.Index
 			{
 				InitBlock(enclosingInstance);
 			}
-			public ParallelTermPositions(ParallelReader enclosingInstance, Term term):base(enclosingInstance)
+			public ParallelTermPositions(ParallelReader enclosingInstance, Term term, IState state) :base(enclosingInstance)
 			{
 				InitBlock(enclosingInstance);
-				Seek(term);
+				Seek(term, state);
 			}
 			
-			public override void  Seek(Term term)
+			public override void  Seek(Term term, IState state)
 			{
 				IndexReader reader = Enclosing_Instance.fieldToReader[term.Field];
-				termDocs = reader != null?reader.TermPositions(term):null;
+				termDocs = reader != null?reader.TermPositions(term, state):null;
 			}
 			
-			public virtual int NextPosition()
+			public virtual int NextPosition(IState state)
 			{
 				// It is an error to call this if there is no next position, e.g. if termDocs==null
-				return ((TermPositions) termDocs).NextPosition();
+				return ((TermPositions) termDocs).NextPosition(state);
 			}
 
 		    public virtual int PayloadLength
@@ -805,9 +806,9 @@ namespace Lucene.Net.Index
 		        get { return ((TermPositions) termDocs).PayloadLength; }
 		    }
 
-		    public virtual byte[] GetPayload(byte[] data, int offset)
+		    public virtual byte[] GetPayload(byte[] data, int offset, IState state)
 			{
-				return ((TermPositions) termDocs).GetPayload(data, offset);
+				return ((TermPositions) termDocs).GetPayload(data, offset, state);
 			}
 			
 			

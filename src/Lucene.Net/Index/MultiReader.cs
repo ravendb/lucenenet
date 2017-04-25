@@ -17,6 +17,7 @@
 
 using System;
 using System.Linq;
+using Lucene.Net.Store;
 using Lucene.Net.Support;
 using Document = Lucene.Net.Documents.Document;
 using FieldSelector = Lucene.Net.Documents.FieldSelector;
@@ -114,11 +115,11 @@ namespace Lucene.Net.Index
         /// </summary>
         /// <throws>  CorruptIndexException if the index is corrupt </throws>
         /// <throws>  IOException if there is a low-level IO error  </throws>
-        public override IndexReader Reopen()
+        public override IndexReader Reopen(IState state)
         {
             lock (this)
             {
-                return DoReopen(false);
+                return DoReopen(false, state);
             }
         }
         
@@ -134,7 +135,7 @@ namespace Lucene.Net.Index
         {
             try
             {
-                return DoReopen(true);
+                return DoReopen(true, StateHolder.Current.Value);
             }
             catch (System.Exception ex)
             {
@@ -150,7 +151,7 @@ namespace Lucene.Net.Index
         /// </returns>
         /// <throws>  CorruptIndexException </throws>
         /// <throws>  IOException </throws>
-        protected internal virtual IndexReader DoReopen(bool doClone)
+        protected internal virtual IndexReader DoReopen(bool doClone, IState state)
         {
             EnsureOpen();
             
@@ -165,7 +166,7 @@ namespace Lucene.Net.Index
                     if (doClone)
                         newSubReaders[i] = (IndexReader) subReaders[i].Clone();
                     else
-                        newSubReaders[i] = subReaders[i].Reopen();
+                        newSubReaders[i] = subReaders[i].Reopen(state);
                     // if at least one of the subreaders was updated we remember that
                     // and return a new MultiReader
                     if (newSubReaders[i] != subReaders[i])
@@ -217,33 +218,33 @@ namespace Lucene.Net.Index
             }
         }
         
-        public override ITermFreqVector[] GetTermFreqVectors(int n)
+        public override ITermFreqVector[] GetTermFreqVectors(int n, IState state)
         {
             EnsureOpen();
             int i = ReaderIndex(n); // find segment num
-            return subReaders[i].GetTermFreqVectors(n - starts[i]); // dispatch to segment
+            return subReaders[i].GetTermFreqVectors(n - starts[i], state); // dispatch to segment
         }
         
-        public override ITermFreqVector GetTermFreqVector(int n, System.String field)
+        public override ITermFreqVector GetTermFreqVector(int n, System.String field, IState state)
         {
             EnsureOpen();
             int i = ReaderIndex(n); // find segment num
-            return subReaders[i].GetTermFreqVector(n - starts[i], field);
+            return subReaders[i].GetTermFreqVector(n - starts[i], field, state);
         }
         
         
-        public override void  GetTermFreqVector(int docNumber, System.String field, TermVectorMapper mapper)
+        public override void  GetTermFreqVector(int docNumber, System.String field, TermVectorMapper mapper, IState state)
         {
             EnsureOpen();
             int i = ReaderIndex(docNumber); // find segment num
-            subReaders[i].GetTermFreqVector(docNumber - starts[i], field, mapper);
+            subReaders[i].GetTermFreqVector(docNumber - starts[i], field, mapper, state);
         }
         
-        public override void  GetTermFreqVector(int docNumber, TermVectorMapper mapper)
+        public override void  GetTermFreqVector(int docNumber, TermVectorMapper mapper, IState state)
         {
             EnsureOpen();
             int i = ReaderIndex(docNumber); // find segment num
-            subReaders[i].GetTermFreqVector(docNumber - starts[i], mapper);
+            subReaders[i].GetTermFreqVector(docNumber - starts[i], mapper, state);
         }
 
         public override bool IsOptimized()
@@ -277,11 +278,11 @@ namespace Lucene.Net.Index
         }
 
         // inherit javadoc
-        public override Document Document(int n, FieldSelector fieldSelector)
+        public override Document Document(int n, FieldSelector fieldSelector, IState state)
         {
             EnsureOpen();
             int i = ReaderIndex(n); // find segment num
-            return subReaders[i].Document(n - starts[i], fieldSelector); // dispatch to segment reader
+            return subReaders[i].Document(n - starts[i], fieldSelector, state); // dispatch to segment reader
         }
         
         public override bool IsDeleted(int n)
@@ -300,18 +301,18 @@ namespace Lucene.Net.Index
             }
         }
 
-        protected internal override void  DoDelete(int n)
+        protected internal override void  DoDelete(int n, IState state)
         {
             numDocs = - 1; // invalidate cache
             int i = ReaderIndex(n); // find segment num
-            subReaders[i].DeleteDocument(n - starts[i]); // dispatch to segment reader
+            subReaders[i].DeleteDocument(n - starts[i], state); // dispatch to segment reader
             hasDeletions = true;
         }
         
-        protected internal override void  DoUndeleteAll()
+        protected internal override void  DoUndeleteAll(IState state)
         {
             for (int i = 0; i < subReaders.Length; i++)
-                subReaders[i].UndeleteAll();
+                subReaders[i].UndeleteAll(state);
             
             hasDeletions = false;
             numDocs = - 1; // invalidate cache
@@ -323,18 +324,18 @@ namespace Lucene.Net.Index
             return DirectoryReader.ReaderIndex(n, this.starts, this.subReaders.Length);
         }
         
-        public override bool HasNorms(System.String field)
+        public override bool HasNorms(System.String field, IState state)
         {
             EnsureOpen();
             for (int i = 0; i < subReaders.Length; i++)
             {
-                if (subReaders[i].HasNorms(field))
+                if (subReaders[i].HasNorms(field, state))
                     return true;
             }
             return false;
         }
         
-        public override byte[] Norms(System.String field)
+        public override byte[] Norms(System.String field, IState state)
         {
             lock (this)
             {
@@ -342,18 +343,18 @@ namespace Lucene.Net.Index
                 byte[] bytes = normsCache[field];
                 if (bytes != null)
                     return bytes; // cache hit
-                if (!HasNorms(field))
+                if (!HasNorms(field, state))
                     return null;
                 
                 bytes = new byte[MaxDoc];
                 for (int i = 0; i < subReaders.Length; i++)
-                    subReaders[i].Norms(field, bytes, starts[i]);
+                    subReaders[i].Norms(field, bytes, starts[i], state);
                 normsCache[field] = bytes; // update cache
                 return bytes;
             }
         }
         
-        public override void  Norms(System.String field, byte[] result, int offset)
+        public override void  Norms(System.String field, byte[] result, int offset, IState state)
         {
             lock (this)
             {
@@ -361,9 +362,9 @@ namespace Lucene.Net.Index
                 byte[] bytes = normsCache[field];
                 for (int i = 0; i < subReaders.Length; i++)
                 // read from segments
-                    subReaders[i].Norms(field, result, offset + starts[i]);
+                    subReaders[i].Norms(field, result, offset + starts[i], state);
                 
-                if (bytes == null && !HasNorms(field))
+                if (bytes == null && !HasNorms(field, state))
                 {
                     for (int i = offset; i < result.Length; i++)
                     {
@@ -380,13 +381,13 @@ namespace Lucene.Net.Index
                     for (int i = 0; i < subReaders.Length; i++)
                     {
                         // read from segments
-                        subReaders[i].Norms(field, result, offset + starts[i]);
+                        subReaders[i].Norms(field, result, offset + starts[i], state);
                     }
                 }
             }
         }
         
-        protected internal override void  DoSetNorm(int n, System.String field, byte value_Renamed)
+        protected internal override void  DoSetNorm(int n, System.String field, byte value_Renamed, IState state)
         {
             lock (normsCache)
             {
@@ -396,46 +397,46 @@ namespace Lucene.Net.Index
             subReaders[i].SetNorm(n - starts[i], field, value_Renamed); // dispatch
         }
         
-        public override TermEnum Terms()
+        public override TermEnum Terms(IState state)
         {
             EnsureOpen();
-            return new MultiTermEnum(this, subReaders, starts, null);
+            return new MultiTermEnum(this, subReaders, starts, null, state);
         }
         
-        public override TermEnum Terms(Term term)
+        public override TermEnum Terms(Term term, IState state)
         {
             EnsureOpen();
-            return new MultiTermEnum(this, subReaders, starts, term);
+            return new MultiTermEnum(this, subReaders, starts, term, state);
         }
         
-        public override int DocFreq(Term t)
+        public override int DocFreq(Term t, IState state)
         {
             EnsureOpen();
             int total = 0; // sum freqs in segments
             for (int i = 0; i < subReaders.Length; i++)
-                total += subReaders[i].DocFreq(t);
+                total += subReaders[i].DocFreq(t, state);
             return total;
         }
         
-        public override TermDocs TermDocs()
+        public override TermDocs TermDocs(IState state)
         {
             EnsureOpen();
             return new MultiTermDocs(this, subReaders, starts);
         }
         
-        public override TermPositions TermPositions()
+        public override TermPositions TermPositions(IState state)
         {
             EnsureOpen();
             return new MultiTermPositions(this, subReaders, starts);
         }
 
-        protected internal override void DoCommit(System.Collections.Generic.IDictionary<string, string> commitUserData)
+        protected internal override void DoCommit(System.Collections.Generic.IDictionary<string, string> commitUserData, IState state)
         {
             for (int i = 0; i < subReaders.Length; i++)
-                subReaders[i].Commit(commitUserData);
+                subReaders[i].Commit(commitUserData, state);
         }
         
-        protected internal override void  DoClose()
+        protected internal override void  DoClose(IState state)
         {
             lock (this)
             {
@@ -443,7 +444,7 @@ namespace Lucene.Net.Index
                 {
                     if (decrefOnClose[i])
                     {
-                        subReaders[i].DecRef();
+                        subReaders[i].DecRef(state);
                     }
                     else
                     {
@@ -465,11 +466,11 @@ namespace Lucene.Net.Index
         }
 
         /// <summary> Checks recursively if all subreaders are up to date. </summary>
-        public override bool IsCurrent()
+        public override bool IsCurrent(IState state)
         {
             for (int i = 0; i < subReaders.Length; i++)
             {
-                if (!subReaders[i].IsCurrent())
+                if (!subReaders[i].IsCurrent(state))
                 {
                     return false;
                 }

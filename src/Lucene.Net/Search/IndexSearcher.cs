@@ -18,6 +18,7 @@
 using System;
 using System.Linq;
 using Lucene.Net.Index;
+using Lucene.Net.Store;
 using Document = Lucene.Net.Documents.Document;
 using FieldSelector = Lucene.Net.Documents.FieldSelector;
 using CorruptIndexException = Lucene.Net.Index.CorruptIndexException;
@@ -61,8 +62,8 @@ namespace Lucene.Net.Search
 		/// directory, with readOnly=true</summary>
 		/// <throws>CorruptIndexException if the index is corrupt</throws>
 		/// <throws>IOException if there is a low-level IO error</throws>
-        public IndexSearcher(Directory path)
-            : this(IndexReader.Open(path, true), true)
+        public IndexSearcher(Directory path, IState state)
+            : this(IndexReader.Open(path, true, state), true)
 		{
 		}
 		
@@ -79,7 +80,7 @@ namespace Lucene.Net.Search
 		/// <param name="readOnly">if true, the underlying IndexReader
 		/// will be opened readOnly
 		/// </param>
-		public IndexSearcher(Directory path, bool readOnly):this(IndexReader.Open(path, readOnly), true)
+		public IndexSearcher(Directory path, bool readOnly, IState state) :this(IndexReader.Open(path, readOnly, state), true)
 		{
 		}
 
@@ -153,21 +154,21 @@ namespace Lucene.Net.Search
         }
 		
 		// inherit javadoc
-		public override int DocFreq(Term term)
+		public override int DocFreq(Term term, IState state)
 		{
-			return reader.DocFreq(term);
+			return reader.DocFreq(term, state);
 		}
 		
 		// inherit javadoc
-		public override Document Doc(int i)
+		public override Document Doc(int i, IState state)
 		{
-			return reader.Document(i);
+			return reader.Document(i, state);
 		}
 		
 		// inherit javadoc
-		public override Document Doc(int i, FieldSelector fieldSelector)
+		public override Document Doc(int i, FieldSelector fieldSelector, IState state)
 		{
-			return reader.Document(i, fieldSelector);
+			return reader.Document(i, fieldSelector, state);
 		}
 		
 		// inherit javadoc
@@ -177,7 +178,7 @@ namespace Lucene.Net.Search
 		}
 		
 		// inherit javadoc
-		public override TopDocs Search(Weight weight, Filter filter, int nDocs)
+		public override TopDocs Search(Weight weight, Filter filter, int nDocs, IState state)
 		{
 			
 			if (nDocs <= 0)
@@ -187,13 +188,13 @@ namespace Lucene.Net.Search
             nDocs = Math.Min(nDocs, reader.MaxDoc);
 
 			TopScoreDocCollector collector = TopScoreDocCollector.Create(nDocs, !weight.GetScoresDocsOutOfOrder());
-			Search(weight, filter, collector);
+			Search(weight, filter, collector, state);
 			return collector.TopDocs();
 		}
 		
-		public override TopFieldDocs Search(Weight weight, Filter filter, int nDocs, Sort sort)
+		public override TopFieldDocs Search(Weight weight, Filter filter, int nDocs, Sort sort, IState state)
 		{
-			return Search(weight, filter, nDocs, sort, true);
+			return Search(weight, filter, nDocs, sort, true, state);
 		}
 		
 		/// <summary> Just like <see cref="Search(Weight, Filter, int, Sort)" />, but you choose
@@ -206,16 +207,16 @@ namespace Lucene.Net.Search
 		/// <see cref="Search(Weight, Filter, Collector)" />.
 		/// <p/>
 		/// </summary>
-		public virtual TopFieldDocs Search(Weight weight, Filter filter, int nDocs, Sort sort, bool fillFields)
+		public virtual TopFieldDocs Search(Weight weight, Filter filter, int nDocs, Sort sort, bool fillFields, IState state)
 		{
             nDocs = Math.Min(nDocs, reader.MaxDoc);
 
 			TopFieldCollector collector2 = TopFieldCollector.Create(sort, nDocs, fillFields, fieldSortDoTrackScores, fieldSortDoMaxScore, !weight.GetScoresDocsOutOfOrder());
-			Search(weight, filter, collector2);
+			Search(weight, filter, collector2, state);
 			return (TopFieldDocs) collector2.TopDocs();
 		}
 		
-		public override void  Search(Weight weight, Filter filter, Collector collector)
+		public override void  Search(Weight weight, Filter filter, Collector collector, IState state)
 		{
 			
 			if (filter == null)
@@ -223,11 +224,11 @@ namespace Lucene.Net.Search
 				for (int i = 0; i < subReaders.Length; i++)
 				{
 					// search each subreader
-					collector.SetNextReader(subReaders[i], docStarts[i]);
-					Scorer scorer = weight.Scorer(subReaders[i], !collector.AcceptsDocsOutOfOrder, true);
+					collector.SetNextReader(subReaders[i], docStarts[i], state);
+					Scorer scorer = weight.Scorer(subReaders[i], !collector.AcceptsDocsOutOfOrder, true, state);
 					if (scorer != null)
 					{
-						scorer.Score(collector);
+						scorer.Score(collector, state);
 					}
 				}
 			}
@@ -236,18 +237,18 @@ namespace Lucene.Net.Search
 				for (int i = 0; i < subReaders.Length; i++)
 				{
 					// search each subreader
-					collector.SetNextReader(subReaders[i], docStarts[i]);
-					SearchWithFilter(subReaders[i], weight, filter, collector);
+					collector.SetNextReader(subReaders[i], docStarts[i], state);
+					SearchWithFilter(subReaders[i], weight, filter, collector, state);
 				}
 			}
 		}
 		
-		private void  SearchWithFilter(IndexReader reader, Weight weight, Filter filter, Collector collector)
+		private void  SearchWithFilter(IndexReader reader, Weight weight, Filter filter, Collector collector, IState state)
 		{
 			
 			System.Diagnostics.Debug.Assert(filter != null);
 			
-			Scorer scorer = weight.Scorer(reader, true, false);
+			Scorer scorer = weight.Scorer(reader, true, false, state);
 			if (scorer == null)
 			{
 				return ;
@@ -257,21 +258,21 @@ namespace Lucene.Net.Search
 			System.Diagnostics.Debug.Assert(docID == - 1 || docID == DocIdSetIterator.NO_MORE_DOCS);
 			
 			// CHECKME: use ConjunctionScorer here?
-			DocIdSet filterDocIdSet = filter.GetDocIdSet(reader);
+			DocIdSet filterDocIdSet = filter.GetDocIdSet(reader, state);
 			if (filterDocIdSet == null)
 			{
 				// this means the filter does not accept any documents.
 				return ;
 			}
 			
-			DocIdSetIterator filterIter = filterDocIdSet.Iterator();
+			DocIdSetIterator filterIter = filterDocIdSet.Iterator(state);
 			if (filterIter == null)
 			{
 				// this means the filter does not accept any documents.
 				return ;
 			}
-			int filterDoc = filterIter.NextDoc();
-			int scorerDoc = scorer.Advance(filterDoc);
+			int filterDoc = filterIter.NextDoc(state);
+			int scorerDoc = scorer.Advance(filterDoc, state);
 			
 			collector.SetScorer(scorer);
 			while (true)
@@ -283,37 +284,37 @@ namespace Lucene.Net.Search
 					{
 						break;
 					}
-					collector.Collect(scorerDoc);
-					filterDoc = filterIter.NextDoc();
-					scorerDoc = scorer.Advance(filterDoc);
+					collector.Collect(scorerDoc, state);
+					filterDoc = filterIter.NextDoc(state);
+					scorerDoc = scorer.Advance(filterDoc, state);
 				}
 				else if (scorerDoc > filterDoc)
 				{
-					filterDoc = filterIter.Advance(scorerDoc);
+					filterDoc = filterIter.Advance(scorerDoc, state);
 				}
 				else
 				{
-					scorerDoc = scorer.Advance(filterDoc);
+					scorerDoc = scorer.Advance(filterDoc, state);
 				}
 			}
 		}
 		
-		public override Query Rewrite(Query original)
+		public override Query Rewrite(Query original, IState state)
 		{
 			Query query = original;
-			for (Query rewrittenQuery = query.Rewrite(reader); rewrittenQuery != query; rewrittenQuery = query.Rewrite(reader))
+			for (Query rewrittenQuery = query.Rewrite(reader, state); rewrittenQuery != query; rewrittenQuery = query.Rewrite(reader, state))
 			{
 				query = rewrittenQuery;
 			}
 			return query;
 		}
 		
-		public override Explanation Explain(Weight weight, int doc)
+		public override Explanation Explain(Weight weight, int doc, IState state)
 		{
 			int n = ReaderUtil.SubIndex(doc, docStarts);
 			int deBasedDoc = doc - docStarts[n];
 			
-			return weight.Explain(subReaders[n], deBasedDoc);
+			return weight.Explain(subReaders[n], deBasedDoc, state);
 		}
 		
 		private bool fieldSortDoTrackScores;

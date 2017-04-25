@@ -16,6 +16,7 @@
  */
 
 using System;
+using Lucene.Net.Store;
 using Lucene.Net.Support;
 using IndexReader = Lucene.Net.Index.IndexReader;
 using ByteParser = Lucene.Net.Search.ByteParser;
@@ -123,7 +124,7 @@ namespace Lucene.Net.Search
         /// doc's value is sorted before the bottom entry and 0 if
         /// they are equal.
         /// </returns>
-        public abstract int CompareBottom(int doc);
+        public abstract int CompareBottom(int doc, IState state);
 
         /// <summary> This method is called when a new hit is competitive.
         /// You should copy any state associated with this document
@@ -135,7 +136,7 @@ namespace Lucene.Net.Search
         /// </param>
         /// <param name="doc">docID relative to current reader
         /// </param>
-        public abstract void Copy(int slot, int doc);
+        public abstract void Copy(int slot, int doc, IState state);
 
         /// <summary> Set a new Reader. All doc correspond to the current Reader.
         /// 
@@ -146,7 +147,7 @@ namespace Lucene.Net.Search
         /// </param>
         /// <throws>  IOException </throws>
         /// <throws>  IOException </throws>
-        public abstract void SetNextReader(IndexReader reader, int docBase);
+        public abstract void SetNextReader(IndexReader reader, int docBase, IState state);
 
         /// <summary>Sets the Scorer to use in case a document's score is
         /// needed.
@@ -193,19 +194,19 @@ namespace Lucene.Net.Search
 				return values[slot1] - values[slot2];
 			}
 			
-			public override int CompareBottom(int doc)
+			public override int CompareBottom(int doc, IState state)
 			{
 				return bottom - currentReaderValues[doc];
 			}
 			
-			public override void  Copy(int slot, int doc)
+			public override void  Copy(int slot, int doc, IState state)
 			{
 				values[slot] = currentReaderValues[doc];
 			}
 			
-			public override void  SetNextReader(IndexReader reader, int docBase)
+			public override void  SetNextReader(IndexReader reader, int docBase, IState state)
 			{
-				currentReaderValues = Lucene.Net.Search.FieldCache_Fields.DEFAULT.GetBytes(reader, field, parser);
+				currentReaderValues = Lucene.Net.Search.FieldCache_Fields.DEFAULT.GetBytes(reader, field, parser, state);
 			}
 			
 			public override void  SetBottom(int bottom)
@@ -237,18 +238,18 @@ namespace Lucene.Net.Search
 				return docIDs[slot1] - docIDs[slot2];
 			}
 			
-			public override int CompareBottom(int doc)
+			public override int CompareBottom(int doc, IState state)
 			{
 				// No overflow risk because docIDs are non-negative
 				return bottom - (docBase + doc);
 			}
 			
-			public override void  Copy(int slot, int doc)
+			public override void  Copy(int slot, int doc, IState state)
 			{
 				docIDs[slot] = docBase + doc;
 			}
 			
-			public override void  SetNextReader(IndexReader reader, int docBase)
+			public override void  SetNextReader(IndexReader reader, int docBase, IState state)
 			{
 				// TODO: can we "map" our docIDs to the current
 				// reader? saves having to then subtract on every
@@ -303,7 +304,7 @@ namespace Lucene.Net.Search
 				}
 			}
 			
-			public override int CompareBottom(int doc)
+			public override int CompareBottom(int doc, IState state)
 			{
 				double v2 = currentReaderValues[doc];
 				if (bottom > v2)
@@ -320,14 +321,14 @@ namespace Lucene.Net.Search
 				}
 			}
 			
-			public override void  Copy(int slot, int doc)
+			public override void  Copy(int slot, int doc, IState state)
 			{
 				values[slot] = currentReaderValues[doc];
 			}
 			
-			public override void  SetNextReader(IndexReader reader, int docBase)
+			public override void  SetNextReader(IndexReader reader, int docBase, IState state)
 			{
-				currentReaderValues = Lucene.Net.Search.FieldCache_Fields.DEFAULT.GetDoubles(reader, field, parser);
+				currentReaderValues = Lucene.Net.Search.FieldCache_Fields.DEFAULT.GetDoubles(reader, field, parser, state);
 			}
 			
 			public override void  SetBottom(int bottom)
@@ -379,7 +380,7 @@ namespace Lucene.Net.Search
 				}
 			}
 			
-			public override int CompareBottom(int doc)
+			public override int CompareBottom(int doc, IState state)
 			{
 				// TODO: are there sneaky non-branch ways to compute
 				// sign of float?
@@ -398,14 +399,14 @@ namespace Lucene.Net.Search
 				}
 			}
 			
-			public override void  Copy(int slot, int doc)
+			public override void  Copy(int slot, int doc, IState state)
 			{
 				values[slot] = currentReaderValues[doc];
 			}
 			
-			public override void  SetNextReader(IndexReader reader, int docBase)
+			public override void  SetNextReader(IndexReader reader, int docBase, IState state)
 			{
-				currentReaderValues = Lucene.Net.Search.FieldCache_Fields.DEFAULT.GetFloats(reader, field, parser);
+				currentReaderValues = Lucene.Net.Search.FieldCache_Fields.DEFAULT.GetFloats(reader, field, parser, state);
 			}
 			
 			public override void  SetBottom(int bottom)
@@ -459,7 +460,7 @@ namespace Lucene.Net.Search
 				}
 			}
 			
-			public override int CompareBottom(int doc)
+			public override int CompareBottom(int doc, IState state)
 			{
 				// TODO: there are sneaky non-branch ways to compute
 				// -1/+1/0 sign
@@ -480,14 +481,14 @@ namespace Lucene.Net.Search
 				}
 			}
 			
-			public override void  Copy(int slot, int doc)
+			public override void  Copy(int slot, int doc, IState state)
 			{
 				values[slot] = currentReaderValues[doc];
 			}
 			
-			public override void  SetNextReader(IndexReader reader, int docBase)
+			public override void  SetNextReader(IndexReader reader, int docBase, IState state)
 			{
-				currentReaderValues = Lucene.Net.Search.FieldCache_Fields.DEFAULT.GetInts(reader, field, parser);
+				currentReaderValues = Lucene.Net.Search.FieldCache_Fields.DEFAULT.GetInts(reader, field, parser, state);
 			}
 			
 			public override void  SetBottom(int bottom)
@@ -539,7 +540,7 @@ namespace Lucene.Net.Search
 				}
 			}
 			
-			public override int CompareBottom(int doc)
+			public override int CompareBottom(int doc, IState state)
 			{
 				// TODO: there are sneaky non-branch ways to compute
 				// -1/+1/0 sign
@@ -558,14 +559,14 @@ namespace Lucene.Net.Search
 				}
 			}
 			
-			public override void  Copy(int slot, int doc)
+			public override void  Copy(int slot, int doc, IState state)
 			{
 				values[slot] = currentReaderValues[doc];
 			}
 			
-			public override void  SetNextReader(IndexReader reader, int docBase)
+			public override void  SetNextReader(IndexReader reader, int docBase, IState state)
 			{
-				currentReaderValues = Lucene.Net.Search.FieldCache_Fields.DEFAULT.GetLongs(reader, field, parser);
+				currentReaderValues = Lucene.Net.Search.FieldCache_Fields.DEFAULT.GetLongs(reader, field, parser, state);
 			}
 			
 			public override void  SetBottom(int bottom)
@@ -604,18 +605,18 @@ namespace Lucene.Net.Search
 				return score1 > score2?- 1:(score1 < score2?1:0);
 			}
 			
-			public override int CompareBottom(int doc)
+			public override int CompareBottom(int doc, IState state)
 			{
-				float score = scorer.Score();
+				float score = scorer.Score(state);
 				return bottom > score?- 1:(bottom < score?1:0);
 			}
 			
-			public override void  Copy(int slot, int doc)
+			public override void  Copy(int slot, int doc, IState state)
 			{
-				scores[slot] = scorer.Score();
+				scores[slot] = scorer.Score(state);
 			}
 			
-			public override void  SetNextReader(IndexReader reader, int docBase)
+			public override void  SetNextReader(IndexReader reader, int docBase, IState state)
 			{
 			}
 			
@@ -660,19 +661,19 @@ namespace Lucene.Net.Search
 				return values[slot1] - values[slot2];
 			}
 			
-			public override int CompareBottom(int doc)
+			public override int CompareBottom(int doc, IState state)
 			{
 				return bottom - currentReaderValues[doc];
 			}
 			
-			public override void  Copy(int slot, int doc)
+			public override void  Copy(int slot, int doc, IState state)
 			{
 				values[slot] = currentReaderValues[doc];
 			}
 			
-			public override void  SetNextReader(IndexReader reader, int docBase)
+			public override void  SetNextReader(IndexReader reader, int docBase, IState state)
 			{
-				currentReaderValues = Lucene.Net.Search.FieldCache_Fields.DEFAULT.GetShorts(reader, field, parser);
+				currentReaderValues = Lucene.Net.Search.FieldCache_Fields.DEFAULT.GetShorts(reader, field, parser, state);
 			}
 			
 			public override void  SetBottom(int bottom)
@@ -724,7 +725,7 @@ namespace Lucene.Net.Search
 				return collator.Compare(val1.ToString(), val2.ToString());
 			}
 			
-			public override int CompareBottom(int doc)
+			public override int CompareBottom(int doc, IState state)
 			{
 				System.String val2 = currentReaderValues[doc];
 				if (bottom == null)
@@ -742,14 +743,14 @@ namespace Lucene.Net.Search
 				return collator.Compare(bottom.ToString(), val2.ToString());
 			}
 			
-			public override void  Copy(int slot, int doc)
+			public override void  Copy(int slot, int doc, IState state)
 			{
 				values[slot] = currentReaderValues[doc];
 			}
 			
-			public override void  SetNextReader(IndexReader reader, int docBase)
+			public override void  SetNextReader(IndexReader reader, int docBase, IState state)
 			{
-				currentReaderValues = Lucene.Net.Search.FieldCache_Fields.DEFAULT.GetStrings(reader, field);
+				currentReaderValues = Lucene.Net.Search.FieldCache_Fields.DEFAULT.GetStrings(reader, field, state);
 			}
 			
 			public override void  SetBottom(int bottom)
@@ -829,7 +830,7 @@ namespace Lucene.Net.Search
 				return String.CompareOrdinal(val1, val2);
 			}
 			
-			public override int CompareBottom(int doc)
+			public override int CompareBottom(int doc, IState state)
 			{
 				System.Diagnostics.Debug.Assert(bottomSlot != - 1);
 				int order = this.order[doc];
@@ -895,7 +896,7 @@ namespace Lucene.Net.Search
 				ords[slot] = index;
 			}
 			
-			public override void  Copy(int slot, int doc)
+			public override void  Copy(int slot, int doc, IState state)
 			{
 				int ord = order[doc];
 				ords[slot] = ord;
@@ -904,9 +905,9 @@ namespace Lucene.Net.Search
 				readerGen[slot] = currentReaderGen;
 			}
 			
-			public override void  SetNextReader(IndexReader reader, int docBase)
+			public override void  SetNextReader(IndexReader reader, int docBase, IState state)
 			{
-				StringIndex currentReaderValues = Lucene.Net.Search.FieldCache_Fields.DEFAULT.GetStringIndex(reader, field);
+				StringIndex currentReaderValues = Lucene.Net.Search.FieldCache_Fields.DEFAULT.GetStringIndex(reader, field, state);
 				currentReaderGen++;
 				order = currentReaderValues.order;
 				lookup = currentReaderValues.lookup;
@@ -991,7 +992,7 @@ namespace Lucene.Net.Search
 				return String.CompareOrdinal(val1, val2);
 			}
 			
-			public override int CompareBottom(int doc)
+			public override int CompareBottom(int doc, IState state)
 			{
 				System.String val2 = currentReaderValues[doc];
 				if (bottom == null)
@@ -1009,14 +1010,14 @@ namespace Lucene.Net.Search
 				return String.CompareOrdinal(bottom, val2);
 			}
 			
-			public override void  Copy(int slot, int doc)
+			public override void  Copy(int slot, int doc, IState state)
 			{
 				values[slot] = currentReaderValues[doc];
 			}
 			
-			public override void  SetNextReader(IndexReader reader, int docBase)
+			public override void  SetNextReader(IndexReader reader, int docBase, IState state)
 			{
-				currentReaderValues = Lucene.Net.Search.FieldCache_Fields.DEFAULT.GetStrings(reader, field);
+				currentReaderValues = Lucene.Net.Search.FieldCache_Fields.DEFAULT.GetStrings(reader, field, state);
 			}
 			
 			public override void  SetBottom(int bottom)

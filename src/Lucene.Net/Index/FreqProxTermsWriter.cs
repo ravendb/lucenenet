@@ -17,6 +17,7 @@
 
 using System;
 using System.Collections.Generic;
+using Lucene.Net.Store;
 using UnicodeUtil = Lucene.Net.Util.UnicodeUtil;
 
 namespace Lucene.Net.Index
@@ -55,7 +56,7 @@ namespace Lucene.Net.Index
 			}
 		}
 		
-		internal override void  CloseDocStore(SegmentWriteState state)
+		internal override void  CloseDocStore(SegmentWriteState state, IState s)
 		{
 		}
 		public override void  Abort()
@@ -67,7 +68,7 @@ namespace Lucene.Net.Index
 		// FreqProxFieldMergeState, and code to visit all Fields
 		// under the same FieldInfo together, up into TermsHash*.
 		// Other writers would presumably share alot of this...
-        public override void Flush(IDictionary<TermsHashConsumerPerThread, ICollection<TermsHashConsumerPerField>> threadsAndFields, SegmentWriteState state)
+        public override void Flush(IDictionary<TermsHashConsumerPerThread, ICollection<TermsHashConsumerPerField>> threadsAndFields, SegmentWriteState state, IState s)
 		{
 			
 			// Gather all FieldData's that have postings, across all
@@ -91,7 +92,7 @@ namespace Lucene.Net.Index
 			int numAllFields = allFields.Count;
 			
 			// TODO: allow Lucene user to customize this consumer:
-			FormatPostingsFieldsConsumer consumer = new FormatPostingsFieldsWriter(state, fieldInfos);
+			FormatPostingsFieldsConsumer consumer = new FormatPostingsFieldsWriter(state, fieldInfos, s);
 			/*
 			Current writer chain:
 			FormatPostingsFieldsConsumer
@@ -127,7 +128,7 @@ namespace Lucene.Net.Index
 
 			        // If this field has postings then add them to the
 			        // segment
-			        AppendPostings(fields, consumer);
+			        AppendPostings(fields, consumer, s);
 
 			        for (int i = 0; i < fields.Length; i++)
 			        {
@@ -158,7 +159,7 @@ namespace Lucene.Net.Index
 		/* Walk through all unique text tokens (Posting
 		* instances) found in this field and serialize them
 		* into a single RAM segment. */
-		internal void  AppendPostings(FreqProxTermsWriterPerField[] fields, FormatPostingsFieldsConsumer consumer)
+		internal void  AppendPostings(FreqProxTermsWriterPerField[] fields, FormatPostingsFieldsConsumer consumer, IState state)
 		{
 			
 			int numFields = fields.Length;
@@ -172,7 +173,7 @@ namespace Lucene.Net.Index
 				System.Diagnostics.Debug.Assert(fms.field.fieldInfo == fields [0].fieldInfo);
 				
 				// Should always be true
-				bool result = fms.NextTerm();
+				bool result = fms.NextTerm(state);
 				System.Diagnostics.Debug.Assert(result);
 			}
 			
@@ -233,19 +234,19 @@ namespace Lucene.Net.Index
 						int position = 0;
 						for (int j = 0; j < termDocFreq; j++)
 						{
-							int code = prox.ReadVInt();
+							int code = prox.ReadVInt(state);
 							position += (code >> 1);
 							
 							int payloadLength;
 							if ((code & 1) != 0)
 							{
 								// This position has a payload
-								payloadLength = prox.ReadVInt();
+								payloadLength = prox.ReadVInt(state);
 								
 								if (payloadBuffer == null || payloadBuffer.Length < payloadLength)
 									payloadBuffer = new byte[payloadLength];
 								
-								prox.ReadBytes(payloadBuffer, 0, payloadLength);
+								prox.ReadBytes(payloadBuffer, 0, payloadLength, state);
 							}
 							else
 								payloadLength = 0;
@@ -256,7 +257,7 @@ namespace Lucene.Net.Index
 						posConsumer.Finish();
 					}
 					
-					if (!minState.NextDoc())
+					if (!minState.NextDoc(state))
 					{
 						
 						// Remove from termStates
@@ -269,7 +270,7 @@ namespace Lucene.Net.Index
 						
 						// Advance this state to the next term
 						
-						if (!minState.NextTerm())
+						if (!minState.NextTerm(state))
 						{
 							// OK, no more terms, so remove from mergeStates
 							// as well

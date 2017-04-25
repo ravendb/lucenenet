@@ -16,7 +16,7 @@
  */
 
 using System;
-
+using Lucene.Net.Store;
 using IndexReader = Lucene.Net.Index.IndexReader;
 using DocIdBitSet = Lucene.Net.Util.DocIdBitSet;
 
@@ -51,6 +51,6 @@ namespace Lucene.Net.Search
 	    /// </param>
 	    /// <seealso cref="DocIdBitSet">
 	    /// </seealso>
-	    public abstract DocIdSet GetDocIdSet(IndexReader reader);
+	    public abstract DocIdSet GetDocIdSet(IndexReader reader, IState state);
 	}
 }

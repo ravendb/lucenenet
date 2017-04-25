@@ -16,7 +16,7 @@
  */
 
 using System;
-
+using Lucene.Net.Store;
 using DocIdSetIterator = Lucene.Net.Search.DocIdSetIterator;
 
 namespace Lucene.Net.Util
@@ -33,9 +33,9 @@ namespace Lucene.Net.Util
 		/// Also give a maximum size one larger than the largest doc id for which a
 		/// bit may ever be set on this OpenBitSetDISI.
 		/// </summary>
-		public OpenBitSetDISI(DocIdSetIterator disi, int maxSize):base(maxSize)
+		public OpenBitSetDISI(DocIdSetIterator disi, int maxSize, IState state) :base(maxSize)
 		{
-			InPlaceOr(disi);
+			InPlaceOr(disi, state);
 		}
 		
 		/// <summary>Construct an OpenBitSetDISI with no bits set, and a given maximum size
@@ -51,11 +51,11 @@ namespace Lucene.Net.Util
 		/// These doc ids should be smaller than the maximum size passed to the
 		/// constructor.
 		/// </summary>
-		public virtual void  InPlaceOr(DocIdSetIterator disi)
+		public virtual void  InPlaceOr(DocIdSetIterator disi, IState state)
 		{
 			int doc;
 			long size = Size();
-			while ((doc = disi.NextDoc()) < size)
+			while ((doc = disi.NextDoc(state)) < size)
 			{
 				FastSet(doc);
 			}
@@ -66,11 +66,11 @@ namespace Lucene.Net.Util
 		/// These doc ids should be smaller than the maximum size passed to the
 		/// constructor.
 		/// </summary>
-		public virtual void  InPlaceAnd(DocIdSetIterator disi)
+		public virtual void  InPlaceAnd(DocIdSetIterator disi, IState state)
 		{
 			int bitSetDoc = NextSetBit(0);
 			int disiDoc;
-			while (bitSetDoc != - 1 && (disiDoc = disi.Advance(bitSetDoc)) != DocIdSetIterator.NO_MORE_DOCS)
+			while (bitSetDoc != - 1 && (disiDoc = disi.Advance(bitSetDoc, state)) != DocIdSetIterator.NO_MORE_DOCS)
 			{
 				Clear(bitSetDoc, disiDoc);
 				bitSetDoc = NextSetBit(disiDoc + 1);
@@ -86,11 +86,11 @@ namespace Lucene.Net.Util
 		/// These doc ids should be smaller than the maximum size passed to the
 		/// constructor.
 		/// </summary>
-		public virtual void  InPlaceNot(DocIdSetIterator disi)
+		public virtual void  InPlaceNot(DocIdSetIterator disi, IState state)
 		{
 			int doc;
 			long size = Size();
-			while ((doc = disi.NextDoc()) < size)
+			while ((doc = disi.NextDoc(state)) < size)
 			{
 				FastClear(doc);
 			}
@@ -101,11 +101,11 @@ namespace Lucene.Net.Util
 		/// These doc ids should be smaller than the maximum size passed to the
 		/// constructor.
 		/// </summary>
-		public virtual void  InPlaceXor(DocIdSetIterator disi)
+		public virtual void  InPlaceXor(DocIdSetIterator disi, IState state)
 		{
 			int doc;
 			long size = Size();
-			while ((doc = disi.NextDoc()) < size)
+			while ((doc = disi.NextDoc(state)) < size)
 			{
 				FastFlip(doc);
 			}

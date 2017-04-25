@@ -17,6 +17,7 @@
 
 using System;
 using System.Collections.Generic;
+using Lucene.Net.Store;
 using Directory = Lucene.Net.Store.Directory;
 
 namespace Lucene.Net.Index
@@ -136,16 +137,16 @@ namespace Lucene.Net.Index
 				}
 			}
 			
-			internal virtual void  CheckAborted(Directory dir)
+			internal virtual void  CheckAborted(Directory dir, IState state)
 			{
 				lock (this)
 				{
 					if (aborted)
-						throw new MergeAbortedException("merge is aborted: " + SegString(dir));
+						throw new MergeAbortedException("merge is aborted: " + SegString(dir, state));
 				}
 			}
 			
-			internal virtual String SegString(Directory dir)
+			internal virtual String SegString(Directory dir, IState state)
 			{
 				var b = new System.Text.StringBuilder();
 				int numSegments = segments.Count;
@@ -153,7 +154,7 @@ namespace Lucene.Net.Index
 				{
 					if (i > 0)
 						b.Append(' ');
-					b.Append(segments.Info(i).SegString(dir));
+					b.Append(segments.Info(i).SegString(dir, state));
 				}
 				if (info != null)
 					b.Append(" into ").Append(info.name);
@@ -189,13 +190,13 @@ namespace Lucene.Net.Index
 				merges.Add(merge);
 			}
 			
-			public virtual String SegString(Directory dir)
+			public virtual String SegString(Directory dir, IState state)
 			{
 				var b = new System.Text.StringBuilder();
 				b.Append("MergeSpec:\n");
 				int count = merges.Count;
 				for (int i = 0; i < count; i++)
-					b.Append("  ").Append(1 + i).Append(": ").Append(merges[i].SegString(dir));
+					b.Append("  ").Append(1 + i).Append(": ").Append(merges[i].SegString(dir, state));
 				return b.ToString();
 			}
 		}
@@ -257,7 +258,7 @@ namespace Lucene.Net.Index
 		/// </summary>
 		/// <param name="segmentInfos">the total set of segments in the index
 		/// </param>
-		public abstract MergeSpecification FindMerges(SegmentInfos segmentInfos);
+		public abstract MergeSpecification FindMerges(SegmentInfos segmentInfos, IState state);
 
 	    /// <summary> Determine what set of merge operations is necessary in order to optimize
 	    /// the index. <see cref="IndexWriter" /> calls this when its
@@ -275,7 +276,7 @@ namespace Lucene.Net.Index
 	    /// away. This may be a subset of all SegmentInfos.
 	    /// </param>
 	    public abstract MergeSpecification FindMergesForOptimize(SegmentInfos segmentInfos, int maxSegmentCount,
-	                                                             ISet<SegmentInfo> segmentsToOptimize);
+	                                                             ISet<SegmentInfo> segmentsToOptimize, IState state);
 		
 		/// <summary> Determine what set of merge operations is necessary in order to expunge all
 		/// deletes from the index.
@@ -283,7 +284,7 @@ namespace Lucene.Net.Index
 		/// </summary>
 		/// <param name="segmentInfos">the total set of segments in the index
 		/// </param>
-		public abstract MergeSpecification FindMergesToExpungeDeletes(SegmentInfos segmentInfos);
+		public abstract MergeSpecification FindMergesToExpungeDeletes(SegmentInfos segmentInfos, IState state);
 
         /// <summary> Release all resources for the policy.</summary>
         [Obsolete("Use Dispose() instead")]

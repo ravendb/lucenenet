@@ -17,6 +17,7 @@
 
 using System;
 using System.Collections.Generic;
+using Lucene.Net.Store;
 
 namespace Lucene.Net.Index
 {
@@ -33,10 +34,10 @@ namespace Lucene.Net.Index
 	    /// <summary>Flush a new segment </summary>
 	    internal abstract void Flush(
 	        IDictionary<InvertedDocConsumerPerThread, ICollection<InvertedDocConsumerPerField>> threadsAndFields,
-	        SegmentWriteState state);
+	        SegmentWriteState state, IState s);
 		
 		/// <summary>Close doc stores </summary>
-		internal abstract void  CloseDocStore(SegmentWriteState state);
+		internal abstract void  CloseDocStore(SegmentWriteState state, IState s);
 		
 		/// <summary>Attempt to free RAM, returning true if any RAM was
 		/// freed 

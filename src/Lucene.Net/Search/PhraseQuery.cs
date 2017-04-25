@@ -16,6 +16,7 @@
  */
 
 using System;
+using Lucene.Net.Store;
 using Lucene.Net.Support;
 using IndexReader = Lucene.Net.Index.IndexReader;
 using Term = Lucene.Net.Index.Term;
@@ -142,12 +143,12 @@ namespace Lucene.Net.Search
 			private float queryWeight;
 			private IDFExplanation idfExp;
 			
-			public PhraseWeight(PhraseQuery enclosingInstance, Searcher searcher)
+			public PhraseWeight(PhraseQuery enclosingInstance, Searcher searcher, IState state)
 			{
 				InitBlock(enclosingInstance);
 				this.similarity = Enclosing_Instance.GetSimilarity(searcher);
 				
-				idfExp = similarity.IdfExplain(Enclosing_Instance.terms, searcher);
+				idfExp = similarity.IdfExplain(Enclosing_Instance.terms, searcher, state);
 				idf = idfExp.Idf;
 			}
 			
@@ -179,7 +180,7 @@ namespace Lucene.Net.Search
 				value_Renamed = queryWeight * idf; // idf for document 
 			}
 			
-			public override Scorer Scorer(IndexReader reader, bool scoreDocsInOrder, bool topScorer)
+			public override Scorer Scorer(IndexReader reader, bool scoreDocsInOrder, bool topScorer, IState state)
 			{
 				if (Enclosing_Instance.terms.Count == 0)
 				// optimize zero-term case
@@ -188,7 +189,7 @@ namespace Lucene.Net.Search
 				TermPositions[] tps = new TermPositions[Enclosing_Instance.terms.Count];
 				for (int i = 0; i < Enclosing_Instance.terms.Count; i++)
 				{
-					TermPositions p = reader.TermPositions(Enclosing_Instance.terms[i]);
+					TermPositions p = reader.TermPositions(Enclosing_Instance.terms[i], state);
 					if (p == null)
 						return null;
 					tps[i] = p;
@@ -196,12 +197,12 @@ namespace Lucene.Net.Search
 				
 				if (Enclosing_Instance.slop == 0)
 				// optimize exact case
-					return new ExactPhraseScorer(this, tps, Enclosing_Instance.GetPositions(), similarity, reader.Norms(Enclosing_Instance.field));
+					return new ExactPhraseScorer(this, tps, Enclosing_Instance.GetPositions(), similarity, reader.Norms(Enclosing_Instance.field, state));
 				else
-					return new SloppyPhraseScorer(this, tps, Enclosing_Instance.GetPositions(), similarity, Enclosing_Instance.slop, reader.Norms(Enclosing_Instance.field));
+					return new SloppyPhraseScorer(this, tps, Enclosing_Instance.GetPositions(), similarity, Enclosing_Instance.slop, reader.Norms(Enclosing_Instance.field, state));
 			}
 			
-			public override Explanation Explain(IndexReader reader, int doc)
+			public override Explanation Explain(IndexReader reader, int doc, IState state)
 			{
 				
 				Explanation result = new Explanation();
@@ -246,13 +247,13 @@ namespace Lucene.Net.Search
 				Explanation fieldExpl = new Explanation();
 				fieldExpl.Description = "fieldWeight(" + Enclosing_Instance.field + ":" + query + " in " + doc + "), product of:";
 				
-				PhraseScorer scorer = (PhraseScorer)Scorer(reader, true, false);
+				PhraseScorer scorer = (PhraseScorer)Scorer(reader, true, false, state);
 				if (scorer == null)
 				{
 					return new Explanation(0.0f, "no matching docs");
 				}
                 Explanation tfExplanation = new Explanation();
-                int d = scorer.Advance(doc);
+                int d = scorer.Advance(doc, state);
                 float phraseFreq = (d == doc) ? scorer.CurrentFreq() : 0.0f;
                 tfExplanation.Value = similarity.Tf(phraseFreq);
                 tfExplanation.Description = "tf(phraseFreq=" + phraseFreq + ")";
@@ -261,7 +262,7 @@ namespace Lucene.Net.Search
 				fieldExpl.AddDetail(idfExpl);
 				
 				Explanation fieldNormExpl = new Explanation();
-				byte[] fieldNorms = reader.Norms(Enclosing_Instance.field);
+				byte[] fieldNorms = reader.Norms(Enclosing_Instance.field, state);
 				float fieldNorm = fieldNorms != null?Similarity.DecodeNorm(fieldNorms[doc]):1.0f;
 				fieldNormExpl.Value = fieldNorm;
 				fieldNormExpl.Description = "fieldNorm(field=" + Enclosing_Instance.field + ", doc=" + doc + ")";
@@ -281,7 +282,7 @@ namespace Lucene.Net.Search
 			}
 		}
 		
-		public override Weight CreateWeight(Searcher searcher)
+		public override Weight CreateWeight(Searcher searcher, IState state)
 		{
 			if (terms.Count == 1)
 			{
@@ -289,9 +290,9 @@ namespace Lucene.Net.Search
 				Term term = terms[0];
 				Query termQuery = new TermQuery(term);
 				termQuery.Boost = Boost;
-				return termQuery.CreateWeight(searcher);
+				return termQuery.CreateWeight(searcher, state);
 			}
-			return new PhraseWeight(this, searcher);
+			return new PhraseWeight(this, searcher, state);
 		}
 		
 		/// <seealso cref="Lucene.Net.Search.Query.ExtractTerms(System.Collections.Generic.ISet{Term})">

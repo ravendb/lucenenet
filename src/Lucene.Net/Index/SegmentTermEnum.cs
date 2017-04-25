@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 
+using Lucene.Net.Store;
 using IndexInput = Lucene.Net.Store.IndexInput;
 
 namespace Lucene.Net.Index
@@ -40,14 +41,14 @@ namespace Lucene.Net.Index
 		internal int maxSkipLevels;
 		private readonly int formatM1SkipInterval;
 		
-		internal SegmentTermEnum(IndexInput i, FieldInfos fis, bool isi)
+		internal SegmentTermEnum(IndexInput i, FieldInfos fis, bool isi, IState state)
 		{
 			input = i;
 			fieldInfos = fis;
 			isIndex = isi;
 			maxSkipLevels = 1; // use single-level skip lists for formats > -3 
 			
-			int firstInt = input.ReadInt();
+			int firstInt = input.ReadInt(state);
 			if (firstInt >= 0)
 			{
 				// original-format file, without explicit format version number
@@ -67,14 +68,14 @@ namespace Lucene.Net.Index
 				if (format < TermInfosWriter.FORMAT_CURRENT)
 					throw new CorruptIndexException("Unknown format version:" + format + " expected " + TermInfosWriter.FORMAT_CURRENT + " or higher");
 				
-				size = input.ReadLong(); // read the size
+				size = input.ReadLong(state); // read the size
 				
 				if (format == - 1)
 				{
 					if (!isIndex)
 					{
-						indexInterval = input.ReadInt();
-						formatM1SkipInterval = input.ReadInt();
+						indexInterval = input.ReadInt(state);
+						formatM1SkipInterval = input.ReadInt(state);
 					}
 					// switch off skipTo optimization for file format prior to 1.4rc2 in order to avoid a bug in 
 					// skipTo implementation of these versions
@@ -82,12 +83,12 @@ namespace Lucene.Net.Index
 				}
 				else
 				{
-					indexInterval = input.ReadInt();
-					skipInterval = input.ReadInt();
+					indexInterval = input.ReadInt(state);
+					skipInterval = input.ReadInt(state);
 					if (format <= TermInfosWriter.FORMAT)
 					{
 						// this new format introduces multi-level skipping
-						maxSkipLevels = input.ReadInt();
+						maxSkipLevels = input.ReadInt(state);
 					}
 				}
 				System.Diagnostics.Debug.Assert(indexInterval > 0, "indexInterval=" + indexInterval + " is negative; must be > 0");
@@ -122,9 +123,9 @@ namespace Lucene.Net.Index
 			return clone;
 		}
 		
-		internal void  Seek(long pointer, long p, Term t, TermInfo ti)
+		internal void  Seek(long pointer, long p, Term t, TermInfo ti, IState state)
 		{
-			input.Seek(pointer);
+			input.Seek(pointer, state);
 			position = p;
 			termBuffer.Set(t);
 			prevBuffer.Reset();
@@ -132,7 +133,7 @@ namespace Lucene.Net.Index
 		}
 		
 		/// <summary>Increments the enumeration to the next element.  True if one exists.</summary>
-		public override bool Next()
+		public override bool Next(IState state)
 		{
 			if (position++ >= size - 1)
 			{
@@ -142,11 +143,11 @@ namespace Lucene.Net.Index
 			}
 			
 			prevBuffer.Set(termBuffer);
-			termBuffer.Read(input, fieldInfos);
+			termBuffer.Read(input, fieldInfos, state);
 			
-			termInfo.docFreq = input.ReadVInt(); // read doc freq
-			termInfo.freqPointer += input.ReadVLong(); // read freq pointer
-			termInfo.proxPointer += input.ReadVLong(); // read prox pointer
+			termInfo.docFreq = input.ReadVInt(state); // read doc freq
+			termInfo.freqPointer += input.ReadVLong(state); // read freq pointer
+			termInfo.proxPointer += input.ReadVLong(state); // read prox pointer
 			
 			if (format == - 1)
 			{
@@ -156,18 +157,18 @@ namespace Lucene.Net.Index
 				{
 					if (termInfo.docFreq > formatM1SkipInterval)
 					{
-						termInfo.skipOffset = input.ReadVInt();
+						termInfo.skipOffset = input.ReadVInt(state);
 					}
 				}
 			}
 			else
 			{
 				if (termInfo.docFreq >= skipInterval)
-					termInfo.skipOffset = input.ReadVInt();
+					termInfo.skipOffset = input.ReadVInt(state);
 			}
 			
 			if (isIndex)
-				indexPointer += input.ReadVLong(); // read index pointer
+				indexPointer += input.ReadVLong(state); // read index pointer
 			
 			return true;
 		}
@@ -175,11 +176,11 @@ namespace Lucene.Net.Index
 		/// <summary>Optimized scan, without allocating new terms. 
 		/// Return number of invocations to next(). 
 		/// </summary>
-		internal int ScanTo(Term term)
+		internal int ScanTo(Term term, IState state)
 		{
 			scanBuffer.Set(term);
 			int count = 0;
-			while (scanBuffer.CompareTo(termBuffer) > 0 && Next())
+			while (scanBuffer.CompareTo(termBuffer) > 0 && Next(state))
 			{
 				count++;
 			}

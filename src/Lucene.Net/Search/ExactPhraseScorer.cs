@@ -18,6 +18,7 @@
 using System;
 
 using Lucene.Net.Index;
+using Lucene.Net.Store;
 
 namespace Lucene.Net.Search
 {
@@ -29,13 +30,13 @@ namespace Lucene.Net.Search
 		{
 		}
 		
-		protected internal override float PhraseFreq()
+		protected internal override float PhraseFreq(IState state)
 		{
 			// sort list with pq
 			pq.Clear();
 			for (PhrasePositions pp = first; pp != null; pp = pp.next)
 			{
-				pp.FirstPosition();
+				pp.FirstPosition(state);
 				pq.Add(pp); // build pq from list
 			}
 			PqToList(); // rebuild list from pq
@@ -51,7 +52,7 @@ namespace Lucene.Net.Search
 					// scan forward in first
 					do 
 					{
-						if (!first.NextPosition())
+						if (!first.NextPosition(state))
 							return freq;
 					}
 					while (first.position < last.position);
@@ -59,7 +60,7 @@ namespace Lucene.Net.Search
 				}
 				freq++; // all equal: a match
 			}
-			while (last.NextPosition());
+			while (last.NextPosition(state));
 			
 			return freq;
 		}

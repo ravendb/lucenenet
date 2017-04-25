@@ -17,6 +17,7 @@
 
 using System;
 using System.Collections.Generic;
+using Lucene.Net.Store;
 using Directory = Lucene.Net.Store.Directory;
 using IndexInput = Lucene.Net.Store.IndexInput;
 using IndexOutput = Lucene.Net.Store.IndexOutput;
@@ -161,7 +162,8 @@ namespace Lucene.Net.Index
             IndexOutput os = null;
             try
             {
-                os = directory.CreateOutput(fileName);
+                var state = StateHolder.Current.Value;
+                os = directory.CreateOutput(fileName, state);
 
                 // Write the number of entries
                 os.WriteVInt(entries.Count);
@@ -175,7 +177,7 @@ namespace Lucene.Net.Index
                     fe.directoryOffset = os.FilePointer;
                     os.WriteLong(0); // for now
                     os.WriteString(fe.file);
-                    totalSize += directory.FileLength(fe.file);
+                    totalSize += directory.FileLength(fe.file, state);
                 }
 
                 // Pre-allocate size of file as optimization --
@@ -193,7 +195,7 @@ namespace Lucene.Net.Index
                 foreach (FileEntry fe in entries)
                 {
                     fe.dataOffset = os.FilePointer;
-                    CopyFile(fe, os, buffer);
+                    CopyFile(fe, os, buffer, state);
                 }
 
                 // Write the data offsets into the directory of the compound stream
@@ -231,28 +233,28 @@ namespace Lucene.Net.Index
 		/// provided output stream. Use the provided buffer for moving data
 		/// to reduce memory allocation.
 		/// </summary>
-		private void  CopyFile(FileEntry source, IndexOutput os, byte[] buffer)
+		private void  CopyFile(FileEntry source, IndexOutput os, byte[] buffer, IState state)
 		{
 			IndexInput isRenamed = null;
 			try
 			{
 				long startPtr = os.FilePointer;
 				
-				isRenamed = directory.OpenInput(source.file);
-				long length = isRenamed.Length();
+				isRenamed = directory.OpenInput(source.file, state);
+				long length = isRenamed.Length(state);
 				long remainder = length;
 				int chunk = buffer.Length;
 				
 				while (remainder > 0)
 				{
 					var len = (int) Math.Min(chunk, remainder);
-					isRenamed.ReadBytes(buffer, 0, len, false);
+					isRenamed.ReadBytes(buffer, 0, len, false, state);
 					os.WriteBytes(buffer, len);
 					remainder -= len;
 					if (checkAbort != null)
 					// Roughly every 2 MB we will check if
 					// it's time to abort
-						checkAbort.Work(80);
+						checkAbort.Work(80, state);
 				}
 				
 				// Verify that remainder is 0

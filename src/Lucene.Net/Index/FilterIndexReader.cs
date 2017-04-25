@@ -16,7 +16,7 @@
  */
 
 using System;
-
+using Lucene.Net.Store;
 using Document = Lucene.Net.Documents.Document;
 using FieldSelector = Lucene.Net.Documents.FieldSelector;
 using Directory = Lucene.Net.Store.Directory;
@@ -46,13 +46,13 @@ namespace Lucene.Net.Index
 				this.in_Renamed = in_Renamed;
 			}
 			
-			public virtual void  Seek(Term term)
+			public virtual void  Seek(Term term, IState state)
 			{
-				in_Renamed.Seek(term);
+				in_Renamed.Seek(term, state);
 			}
-			public virtual void  Seek(TermEnum termEnum)
+			public virtual void  Seek(TermEnum termEnum, IState state)
 			{
-				in_Renamed.Seek(termEnum);
+				in_Renamed.Seek(termEnum, state);
 			}
 
             public virtual int Doc
@@ -65,17 +65,17 @@ namespace Lucene.Net.Index
                 get { return in_Renamed.Freq; }
             }
 
-            public virtual bool Next()
+            public virtual bool Next(IState state)
 			{
-				return in_Renamed.Next();
+				return in_Renamed.Next(state);
 			}
-			public virtual int Read(int[] docs, int[] freqs)
+			public virtual int Read(int[] docs, int[] freqs, IState state)
 			{
-				return in_Renamed.Read(docs, freqs);
+				return in_Renamed.Read(docs, freqs, state);
 			}
-			public virtual bool SkipTo(int i)
+			public virtual bool SkipTo(int i, IState state)
 			{
-				return in_Renamed.SkipTo(i);
+				return in_Renamed.SkipTo(i, state);
 			}
 
 			public void Close()
@@ -105,9 +105,9 @@ namespace Lucene.Net.Index
 			{
 			}
 			
-			public virtual int NextPosition()
+			public virtual int NextPosition(IState state)
 			{
-				return ((TermPositions) this.in_Renamed).NextPosition();
+				return ((TermPositions) this.in_Renamed).NextPosition(state);
 			}
 
 		    public virtual int PayloadLength
@@ -115,9 +115,9 @@ namespace Lucene.Net.Index
 		        get { return ((TermPositions) this.in_Renamed).PayloadLength; }
 		    }
 
-		    public virtual byte[] GetPayload(byte[] data, int offset)
+		    public virtual byte[] GetPayload(byte[] data, int offset, IState state)
 			{
-				return ((TermPositions) this.in_Renamed).GetPayload(data, offset);
+				return ((TermPositions) this.in_Renamed).GetPayload(data, offset, state);
 			}
 			
 			
@@ -139,9 +139,9 @@ namespace Lucene.Net.Index
 				this.in_Renamed = in_Renamed;
 			}
 			
-			public override bool Next()
+			public override bool Next(IState state)
 			{
-				return in_Renamed.Next();
+				return in_Renamed.Next(state);
 			}
 
 		    public override Term Term
@@ -182,29 +182,29 @@ namespace Lucene.Net.Index
 			return in_Renamed.Directory();
 		}
 		
-		public override ITermFreqVector[] GetTermFreqVectors(int docNumber)
+		public override ITermFreqVector[] GetTermFreqVectors(int docNumber, IState state)
 		{
 			EnsureOpen();
-			return in_Renamed.GetTermFreqVectors(docNumber);
+			return in_Renamed.GetTermFreqVectors(docNumber, state);
 		}
 		
-		public override ITermFreqVector GetTermFreqVector(int docNumber, System.String field)
+		public override ITermFreqVector GetTermFreqVector(int docNumber, System.String field, IState state)
 		{
 			EnsureOpen();
-			return in_Renamed.GetTermFreqVector(docNumber, field);
+			return in_Renamed.GetTermFreqVector(docNumber, field, state);
 		}
 		
 		
-		public override void  GetTermFreqVector(int docNumber, System.String field, TermVectorMapper mapper)
+		public override void  GetTermFreqVector(int docNumber, System.String field, TermVectorMapper mapper, IState state)
 		{
 			EnsureOpen();
-			in_Renamed.GetTermFreqVector(docNumber, field, mapper);
+			in_Renamed.GetTermFreqVector(docNumber, field, mapper, state);
 		}
 		
-		public override void  GetTermFreqVector(int docNumber, TermVectorMapper mapper)
+		public override void  GetTermFreqVector(int docNumber, TermVectorMapper mapper, IState state)
 		{
 			EnsureOpen();
-			in_Renamed.GetTermFreqVector(docNumber, mapper);
+			in_Renamed.GetTermFreqVector(docNumber, mapper, state);
 		}
 
 	    public override int NumDocs()
@@ -222,10 +222,10 @@ namespace Lucene.Net.Index
 	        }
 	    }
 
-	    public override Document Document(int n, FieldSelector fieldSelector)
+	    public override Document Document(int n, FieldSelector fieldSelector, IState state)
 		{
 			EnsureOpen();
-			return in_Renamed.Document(n, fieldSelector);
+			return in_Renamed.Document(n, fieldSelector, state);
 		}
 		
 		public override bool IsDeleted(int n)
@@ -243,81 +243,81 @@ namespace Lucene.Net.Index
 	        }
 	    }
 
-	    protected internal override void  DoUndeleteAll()
+	    protected internal override void  DoUndeleteAll(IState state)
 		{
-			in_Renamed.UndeleteAll();
+			in_Renamed.UndeleteAll(state);
 		}
 		
-		public override bool HasNorms(System.String field)
-		{
-			EnsureOpen();
-			return in_Renamed.HasNorms(field);
-		}
-		
-		public override byte[] Norms(System.String f)
+		public override bool HasNorms(System.String field, IState state)
 		{
 			EnsureOpen();
-			return in_Renamed.Norms(f);
+			return in_Renamed.HasNorms(field, state);
 		}
 		
-		public override void  Norms(System.String f, byte[] bytes, int offset)
+		public override byte[] Norms(System.String f, IState state)
 		{
 			EnsureOpen();
-			in_Renamed.Norms(f, bytes, offset);
+			return in_Renamed.Norms(f, state);
 		}
 		
-		protected internal override void  DoSetNorm(int d, System.String f, byte b)
+		public override void  Norms(System.String f, byte[] bytes, int offset, IState state)
+		{
+			EnsureOpen();
+			in_Renamed.Norms(f, bytes, offset, state);
+		}
+		
+		protected internal override void  DoSetNorm(int d, System.String f, byte b, IState state)
 		{
 			in_Renamed.SetNorm(d, f, b);
 		}
 		
-		public override TermEnum Terms()
+		public override TermEnum Terms(IState state)
 		{
 			EnsureOpen();
-			return in_Renamed.Terms();
+			return in_Renamed.Terms(state);
 		}
 		
-		public override TermEnum Terms(Term t)
+		public override TermEnum Terms(Term t, IState state)
 		{
 			EnsureOpen();
-			return in_Renamed.Terms(t);
+			return in_Renamed.Terms(t, state);
 		}
 		
-		public override int DocFreq(Term t)
+		public override int DocFreq(Term t, IState state)
 		{
 			EnsureOpen();
-			return in_Renamed.DocFreq(t);
+			return in_Renamed.DocFreq(t, state);
 		}
 		
-		public override TermDocs TermDocs()
+		public override TermDocs TermDocs(IState state)
 		{
 			EnsureOpen();
-			return in_Renamed.TermDocs();
+			return in_Renamed.TermDocs(state);
 		}
 		
-		public override TermDocs TermDocs(Term term)
+		public override TermDocs TermDocs(Term term, IState state)
 		{
 			EnsureOpen();
-			return in_Renamed.TermDocs(term);
+			return in_Renamed.TermDocs(term, state);
 		}
 		
-		public override TermPositions TermPositions()
+		public override TermPositions TermPositions(IState state)
 		{
 			EnsureOpen();
-			return in_Renamed.TermPositions();
+			return in_Renamed.TermPositions(state);
 		}
 		
-		protected internal override void  DoDelete(int n)
+		protected internal override void  DoDelete(int n, IState state)
 		{
-			in_Renamed.DeleteDocument(n);
+			in_Renamed.DeleteDocument(n, state);
 		}
 
-        protected internal override void DoCommit(System.Collections.Generic.IDictionary<string, string> commitUserData)
+        protected internal override void DoCommit(System.Collections.Generic.IDictionary<string, string> commitUserData, IState state)
 		{
-			in_Renamed.Commit(commitUserData);
+			in_Renamed.Commit(commitUserData, state);
 		}
 		
-		protected internal override void  DoClose()
+		protected internal override void  DoClose(IState state)
 		{
 			in_Renamed.Close();
             // NOTE: only needed in case someone had asked for
@@ -342,10 +342,10 @@ namespace Lucene.Net.Index
 	        }
 	    }
 
-	    public override bool IsCurrent()
+	    public override bool IsCurrent(IState state)
 	    {
 	        EnsureOpen();
-	        return in_Renamed.IsCurrent();
+	        return in_Renamed.IsCurrent(state);
 	    }
 
 	    public override bool IsOptimized()

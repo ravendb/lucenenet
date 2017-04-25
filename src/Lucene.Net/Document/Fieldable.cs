@@ -17,6 +17,7 @@
 
 using System;
 using System.IO;
+using Lucene.Net.Store;
 using TokenStream = Lucene.Net.Analysis.TokenStream;
 using FieldInvertState = Lucene.Net.Index.FieldInvertState;
 
@@ -52,7 +53,7 @@ namespace Lucene.Net.Documents
         /// <p/>The default value is 1.0.
         /// 
         /// <p/>Note: this value is not stored directly with the document in the index.
-        /// Documents returned from <see cref="Lucene.Net.Index.IndexReader.Document(int)" /> and
+        /// Documents returned from <see cref="Document" /> and
         /// <see cref="Lucene.Net.Search.Searcher.Doc(int)" /> may thus not have the same value present as when
         /// this field was indexed.
         /// 
@@ -79,7 +80,7 @@ namespace Lucene.Net.Documents
 	    /// If isIndexed()==true and isTokenized()==true, then tokenStreamValue() will be used to generate indexed tokens if not null,
 	    /// else readerValue() will be used to generate indexed tokens if not null, else stringValue() will be used to generate tokens.
 	    /// </summary>
-	    string StringValue { get; }
+	    string StringValue(IState state);
 
 	    /// <summary>The value of the field as a Reader, which can be used at index time to generate indexed tokens.</summary>
 	    /// <seealso cref="StringValue()">
@@ -166,7 +167,7 @@ namespace Lucene.Net.Documents
 	    /// returned array belong to the field.
 	    /// </summary>
 	    /// <returns> reference to the Field value as byte[]. </returns>
-	    byte[] GetBinaryValue();
+	    byte[] GetBinaryValue(IState state);
 
 	    /// <summary> Return the raw byte[] for the binary field.  Note that
         /// you must also call <see cref="BinaryLength" /> and <see cref="BinaryOffset" />
@@ -185,7 +186,7 @@ namespace Lucene.Net.Documents
 		/// </param>
 		/// <returns> reference to the Field value as byte[].
 		/// </returns>
-		byte[] GetBinaryValue(byte[] result);
+		byte[] GetBinaryValue(byte[] result, IState state);
 
 	    /// Expert:
 	    /// <para>

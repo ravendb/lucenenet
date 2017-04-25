@@ -17,6 +17,7 @@
 
 using System;
 using Lucene.Net.Index;
+using Lucene.Net.Store;
 using IndexReader = Lucene.Net.Index.IndexReader;
 using ToStringUtils = Lucene.Net.Util.ToStringUtils;
 using Query = Lucene.Net.Search.Query;
@@ -95,9 +96,9 @@ namespace Lucene.Net.Search.Spans
 	    // :NOTE: getBoost and setBoost are not proxied to the maskedQuery
 		// ...this is done to be more consistent with thigns like SpanFirstQuery
 		
-		public override Spans GetSpans(IndexReader reader)
+		public override Spans GetSpans(IndexReader reader, IState state)
 		{
-			return maskedQuery.GetSpans(reader);
+			return maskedQuery.GetSpans(reader, state);
 		}
 		
 		public override void  ExtractTerms(System.Collections.Generic.ISet<Term> terms)
@@ -105,9 +106,9 @@ namespace Lucene.Net.Search.Spans
 			maskedQuery.ExtractTerms(terms);
 		}
 		
-		public override Weight CreateWeight(Searcher searcher)
+		public override Weight CreateWeight(Searcher searcher, IState state)
 		{
-			return maskedQuery.CreateWeight(searcher);
+			return maskedQuery.CreateWeight(searcher, state);
 		}
 		
 		public override Similarity GetSimilarity(Searcher searcher)
@@ -115,11 +116,11 @@ namespace Lucene.Net.Search.Spans
 			return maskedQuery.GetSimilarity(searcher);
 		}
 		
-		public override Query Rewrite(IndexReader reader)
+		public override Query Rewrite(IndexReader reader, IState state)
 		{
 			FieldMaskingSpanQuery clone = null;
 			
-			SpanQuery rewritten = (SpanQuery) maskedQuery.Rewrite(reader);
+			SpanQuery rewritten = (SpanQuery) maskedQuery.Rewrite(reader, state);
 			if (rewritten != maskedQuery)
 			{
 				clone = (FieldMaskingSpanQuery) this.Clone();

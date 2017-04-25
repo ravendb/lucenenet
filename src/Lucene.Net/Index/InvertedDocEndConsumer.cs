@@ -16,6 +16,7 @@
  */
 
 using System;
+using Lucene.Net.Store;
 using System.Collections.Generic;
 
 namespace Lucene.Net.Index
@@ -24,7 +25,7 @@ namespace Lucene.Net.Index
 	abstract class InvertedDocEndConsumer
 	{
 		public abstract InvertedDocEndConsumerPerThread AddThread(DocInverterPerThread docInverterPerThread);
-        public abstract void Flush(IDictionary<InvertedDocEndConsumerPerThread, ICollection<InvertedDocEndConsumerPerField>> threadsAndFields, SegmentWriteState state);
+        public abstract void Flush(IDictionary<InvertedDocEndConsumerPerThread, ICollection<InvertedDocEndConsumerPerField>> threadsAndFields, SegmentWriteState state, IState s);
 		internal abstract void  CloseDocStore(SegmentWriteState state);
 		public abstract void  Abort();
 		internal abstract void  SetFieldInfos(FieldInfos fieldInfos);

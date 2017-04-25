@@ -18,6 +18,7 @@
 using System;
 using System.Collections;
 using Lucene.Net.Index;
+using Lucene.Net.Store;
 using Lucene.Net.Support;
 using IndexReader = Lucene.Net.Index.IndexReader;
 using ToStringUtils = Lucene.Net.Util.ToStringUtils;
@@ -239,14 +240,14 @@ namespace Lucene.Net.Search
 			protected internal Similarity similarity;
 			protected internal System.Collections.Generic.List<Weight> weights;
 			
-			public BooleanWeight(BooleanQuery enclosingInstance, Searcher searcher)
+			public BooleanWeight(BooleanQuery enclosingInstance, Searcher searcher, IState state)
 			{
 				InitBlock(enclosingInstance);
 				this.similarity = Enclosing_Instance.GetSimilarity(searcher);
                 weights = new System.Collections.Generic.List<Weight>(Enclosing_Instance.clauses.Count);
 				for (int i = 0; i < Enclosing_Instance.clauses.Count; i++)
 				{
-				    weights.Add(Enclosing_Instance.clauses[i].Query.CreateWeight(searcher));
+				    weights.Add(Enclosing_Instance.clauses[i].Query.CreateWeight(searcher, state));
 				}
 			}
 
@@ -288,7 +289,7 @@ namespace Lucene.Net.Search
 				}
 			}
 			
-			public override Explanation Explain(IndexReader reader, int doc)
+			public override Explanation Explain(IndexReader reader, int doc, IState state)
 			{
 				int minShouldMatch = Enclosing_Instance.MinimumNumberShouldMatch;
 				ComplexExplanation sumExpl = new ComplexExplanation();
@@ -304,11 +305,11 @@ namespace Lucene.Net.Search
                     cIter.MoveNext();
                     Weight w = wIter.Current;
 					BooleanClause c = cIter.Current;
-					if (w.Scorer(reader, true, true) == null)
+					if (w.Scorer(reader, true, true, state) == null)
 					{
 						continue;
 					}
-					Explanation e = w.Explain(reader, doc);
+					Explanation e = w.Explain(reader, doc, state);
                     if (!c.IsProhibited)
 						maxCoord++;
 					if (e.IsMatch)
@@ -371,7 +372,7 @@ namespace Lucene.Net.Search
 				}
 			}
 			
-			public override Scorer Scorer(IndexReader reader, bool scoreDocsInOrder, bool topScorer)
+			public override Scorer Scorer(IndexReader reader, bool scoreDocsInOrder, bool topScorer, IState state)
 			{
 				var required = new System.Collections.Generic.List<Scorer>();
                 var prohibited = new System.Collections.Generic.List<Scorer>();
@@ -382,7 +383,7 @@ namespace Lucene.Net.Search
 				{
                     cIter.MoveNext();
 					BooleanClause c = (BooleanClause) cIter.Current;
-					Scorer subScorer = w.Scorer(reader, true, false);
+					Scorer subScorer = w.Scorer(reader, true, false, state);
 					if (subScorer == null)
 					{
                         if (c.IsRequired)
@@ -407,7 +408,7 @@ namespace Lucene.Net.Search
 				// Check if we can return a BooleanScorer
 				if (!scoreDocsInOrder && topScorer && required.Count == 0 && prohibited.Count < 32)
 				{
-					return new BooleanScorer(similarity, Enclosing_Instance.minNrShouldMatch, optional, prohibited);
+					return new BooleanScorer(similarity, Enclosing_Instance.minNrShouldMatch, optional, prohibited, state);
 				}
 				
 				if (required.Count == 0 && optional.Count == 0)
@@ -424,7 +425,7 @@ namespace Lucene.Net.Search
 				}
 				
 				// Return a BooleanScorer2
-				return new BooleanScorer2(similarity, Enclosing_Instance.minNrShouldMatch, required, prohibited, optional);
+				return new BooleanScorer2(similarity, Enclosing_Instance.minNrShouldMatch, required, prohibited, optional, state);
 			}
 
 		    public override bool GetScoresDocsOutOfOrder()
@@ -453,12 +454,12 @@ namespace Lucene.Net.Search
 		    }
 		}
 		
-		public override Weight CreateWeight(Searcher searcher)
+		public override Weight CreateWeight(Searcher searcher, IState state)
 		{
-			return new BooleanWeight(this, searcher);
+			return new BooleanWeight(this, searcher, state);
 		}
 		
-		public override Query Rewrite(IndexReader reader)
+		public override Query Rewrite(IndexReader reader, IState state)
 		{
 			if (minNrShouldMatch == 0 && clauses.Count == 1)
 			{
@@ -468,7 +469,7 @@ namespace Lucene.Net.Search
 				{
 					// just return clause
 
-                    Query query = c.Query.Rewrite(reader); // rewrite first
+                    Query query = c.Query.Rewrite(reader, state); // rewrite first
 					
 					if (Boost != 1.0f)
 					{
@@ -487,7 +488,7 @@ namespace Lucene.Net.Search
 			for (int i = 0; i < clauses.Count; i++)
 			{
 				BooleanClause c = clauses[i];
-                Query query = c.Query.Rewrite(reader);
+                Query query = c.Query.Rewrite(reader, state);
                 if (query != c.Query)
 				{
 					// clause rewrote: must clone

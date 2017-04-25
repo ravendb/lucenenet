@@ -17,6 +17,7 @@
 
 using System;
 using Lucene.Net.Index;
+using Lucene.Net.Store;
 
 namespace Lucene.Net.Search
 {
@@ -38,10 +39,10 @@ namespace Lucene.Net.Search
         /// After calling the constructor the enumeration is already pointing to the term,
         ///  if it exists.
         /// </summary>
-        public SingleTermEnum(IndexReader reader, Term singleTerm)
+        public SingleTermEnum(IndexReader reader, Term singleTerm, IState state)
         {
             this.singleTerm = singleTerm;
-            SetEnum(reader.Terms(singleTerm));
+            SetEnum(reader.Terms(singleTerm, state), state);
         }
 
         public override float Difference()

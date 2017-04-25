@@ -16,7 +16,7 @@
  */
 
 using System;
-
+using Lucene.Net.Store;
 using ScorerDocQueue = Lucene.Net.Util.ScorerDocQueue;
 
 namespace Lucene.Net.Search
@@ -69,7 +69,7 @@ namespace Lucene.Net.Search
 		/// <br/>When minimumNrMatchers equals the number of subScorers,
 		/// it more efficient to use <c>ConjunctionScorer</c>.
 		/// </param>
-		public DisjunctionSumScorer(System.Collections.Generic.IList<Scorer> subScorers, int minimumNrMatchers):base(null)
+		public DisjunctionSumScorer(System.Collections.Generic.IList<Scorer> subScorers, int minimumNrMatchers, IState state) :base(null)
 		{
 			
 			nrScorers = subScorers.Count;
@@ -86,26 +86,26 @@ namespace Lucene.Net.Search
 			this.minimumNrMatchers = minimumNrMatchers;
 			this.subScorers = subScorers;
 			
-			InitScorerDocQueue();
+			InitScorerDocQueue(state);
 		}
 		
 		/// <summary>Construct a <c>DisjunctionScorer</c>, using one as the minimum number
 		/// of matching subscorers.
 		/// </summary>
-        public DisjunctionSumScorer(System.Collections.Generic.IList<Scorer> subScorers)
-            : this(subScorers, 1)
+        public DisjunctionSumScorer(System.Collections.Generic.IList<Scorer> subScorers, IState state)
+            : this(subScorers, 1, state)
 		{
 		}
 		
 		/// <summary>Called the first time next() or skipTo() is called to
 		/// initialize <c>scorerDocQueue</c>.
 		/// </summary>
-		private void  InitScorerDocQueue()
+		private void  InitScorerDocQueue(IState state)
 		{
 			scorerDocQueue = new ScorerDocQueue(nrScorers);
 			foreach(Scorer se in subScorers)
 			{
-				if (se.NextDoc() != NO_MORE_DOCS)
+				if (se.NextDoc(state) != NO_MORE_DOCS)
 				{
 					// doc() method will be used in scorerDocQueue.
 					scorerDocQueue.Insert(se);
@@ -115,12 +115,12 @@ namespace Lucene.Net.Search
 		
 		/// <summary>Scores and collects all matching documents.</summary>
 		/// <param name="collector">The collector to which all matching documents are passed through.</param>
-		public override void  Score(Collector collector)
+		public override void  Score(Collector collector, IState state)
 		{
 			collector.SetScorer(this);
-			while (NextDoc() != NO_MORE_DOCS)
+			while (NextDoc(state) != NO_MORE_DOCS)
 			{
-				collector.Collect(currentDoc);
+				collector.Collect(currentDoc, state);
 			}
 		}
 
@@ -135,14 +135,14 @@ namespace Lucene.Net.Search
 	    /// <param name="firstDocID"></param>
 	    /// <returns> true if more matching documents may remain.
 	    /// </returns>
-	    public /*protected internal*/ override bool Score(Collector collector, int max, int firstDocID)
+	    public /*protected internal*/ override bool Score(Collector collector, int max, int firstDocID, IState state)
 		{
 			// firstDocID is ignored since nextDoc() sets 'currentDoc'
 			collector.SetScorer(this);
 			while (currentDoc < max)
 			{
-				collector.Collect(currentDoc);
-				if (NextDoc() == NO_MORE_DOCS)
+				collector.Collect(currentDoc, state);
+				if (NextDoc(state) == NO_MORE_DOCS)
 				{
 					return false;
 				}
@@ -150,9 +150,9 @@ namespace Lucene.Net.Search
 			return true;
 		}
 		
-		public override int NextDoc()
+		public override int NextDoc(IState state)
 		{
-			if (scorerDocQueue.Size() < minimumNrMatchers || !AdvanceAfterCurrent())
+			if (scorerDocQueue.Size() < minimumNrMatchers || !AdvanceAfterCurrent(state))
 			{
 				currentDoc = NO_MORE_DOCS;
 			}
@@ -178,18 +178,18 @@ namespace Lucene.Net.Search
 		/// <br/>For this, a Scorer array with minimumNrMatchers elements might
 		/// hold Scorers at currentDoc that are temporarily popped from scorerQueue.
 		/// </returns>
-		protected internal virtual bool AdvanceAfterCurrent()
+		protected internal virtual bool AdvanceAfterCurrent(IState state)
 		{
 			do 
 			{
 				// repeat until minimum nr of matchers
 				currentDoc = scorerDocQueue.TopDoc();
-				currentScore = scorerDocQueue.TopScore();
+				currentScore = scorerDocQueue.TopScore(state);
 				nrMatchers = 1;
 				do 
 				{
 					// Until all subscorers are after currentDoc
-					if (!scorerDocQueue.TopNextAndAdjustElsePop())
+					if (!scorerDocQueue.TopNextAndAdjustElsePop(state))
 					{
 						if (scorerDocQueue.Size() == 0)
 						{
@@ -200,7 +200,7 @@ namespace Lucene.Net.Search
 					{
 						break; // All remaining subscorers are after currentDoc.
 					}
-					currentScore += scorerDocQueue.TopScore();
+					currentScore += scorerDocQueue.TopScore(state);
 					nrMatchers++;
 				}
 				while (true);
@@ -220,7 +220,7 @@ namespace Lucene.Net.Search
 		/// <summary>Returns the score of the current document matching the query.
 		/// Initially invalid, until <see cref="NextDoc()" /> is called the first time.
 		/// </summary>
-		public override float Score()
+		public override float Score(IState state)
 		{
 			return currentScore;
 		}
@@ -248,7 +248,7 @@ namespace Lucene.Net.Search
 		/// <returns> the document whose number is greater than or equal to the given
 		/// target, or -1 if none exist.
 		/// </returns>
-		public override int Advance(int target)
+		public override int Advance(int target, IState state)
 		{
 			if (scorerDocQueue.Size() < minimumNrMatchers)
 			{
@@ -262,9 +262,9 @@ namespace Lucene.Net.Search
 			{
 				if (scorerDocQueue.TopDoc() >= target)
 				{
-					return AdvanceAfterCurrent()?currentDoc:(currentDoc = NO_MORE_DOCS);
+					return AdvanceAfterCurrent(state)?currentDoc:(currentDoc = NO_MORE_DOCS);
 				}
-				else if (!scorerDocQueue.TopSkipToAndAdjustElsePop(target))
+				else if (!scorerDocQueue.TopSkipToAndAdjustElsePop(target, state))
 				{
 					if (scorerDocQueue.Size() < minimumNrMatchers)
 					{

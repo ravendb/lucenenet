@@ -17,6 +17,7 @@
 
 using System;
 using Lucene.Net.Index;
+using Lucene.Net.Store;
 using Lucene.Net.Support;
 using NumericField = Lucene.Net.Documents.NumericField;
 using IndexReader = Lucene.Net.Index.IndexReader;
@@ -95,9 +96,9 @@ namespace Lucene.Net.Search
                 : base(field, parser, lowerVal, upperVal, includeLower, includeUpper)
             {
             }
-            public override DocIdSet GetDocIdSet(IndexReader reader)
+            public override DocIdSet GetDocIdSet(IndexReader reader, IState state)
             {
-                Lucene.Net.Search.StringIndex fcsi = Lucene.Net.Search.FieldCache_Fields.DEFAULT.GetStringIndex(reader, field);
+                Lucene.Net.Search.StringIndex fcsi = Lucene.Net.Search.FieldCache_Fields.DEFAULT.GetStringIndex(reader, field, state);
                 int lowerPoint = fcsi.BinarySearchLookup(lowerVal);
                 int upperPoint = fcsi.BinarySearchLookup(upperVal);
 
@@ -194,7 +195,7 @@ namespace Lucene.Net.Search
                 : base(field, parser, lowerVal, upperVal, includeLower, includeUpper)
             {
             }
-            public override DocIdSet GetDocIdSet(IndexReader reader)
+            public override DocIdSet GetDocIdSet(IndexReader reader, IState state)
             {
                 sbyte inclusiveLowerPoint;
                 sbyte inclusiveUpperPoint;
@@ -224,7 +225,7 @@ namespace Lucene.Net.Search
                 if (inclusiveLowerPoint > inclusiveUpperPoint)
                     return DocIdSet.EMPTY_DOCIDSET;
 
-                sbyte[] values = Lucene.Net.Search.FieldCache_Fields.DEFAULT.GetBytes(reader, field, (Lucene.Net.Search.ByteParser)parser);
+                sbyte[] values = Lucene.Net.Search.FieldCache_Fields.DEFAULT.GetBytes(reader, field, (Lucene.Net.Search.ByteParser)parser, state);
                 // we only request the usage of termDocs, if the range contains 0
                 return new AnonymousClassFieldCacheDocIdSet(values, inclusiveLowerPoint, inclusiveUpperPoint, this, reader, (inclusiveLowerPoint <= 0 && inclusiveUpperPoint >= 0));
             }
@@ -269,7 +270,7 @@ namespace Lucene.Net.Search
                 : base(field, parser, lowerVal, upperVal, includeLower, includeUpper)
             {
             }
-            public override DocIdSet GetDocIdSet(IndexReader reader)
+            public override DocIdSet GetDocIdSet(IndexReader reader, IState state)
             {
                 short inclusiveLowerPoint;
                 short inclusiveUpperPoint;
@@ -299,7 +300,7 @@ namespace Lucene.Net.Search
                 if (inclusiveLowerPoint > inclusiveUpperPoint)
                     return DocIdSet.EMPTY_DOCIDSET;
 
-                short[] values = Lucene.Net.Search.FieldCache_Fields.DEFAULT.GetShorts(reader, field, (Lucene.Net.Search.ShortParser)parser);
+                short[] values = Lucene.Net.Search.FieldCache_Fields.DEFAULT.GetShorts(reader, field, (Lucene.Net.Search.ShortParser)parser, state);
                 // we only request the usage of termDocs, if the range contains 0
                 return new AnonymousClassFieldCacheDocIdSet(values, inclusiveLowerPoint, inclusiveUpperPoint, this, reader, (inclusiveLowerPoint <= 0 && inclusiveUpperPoint >= 0));
             }
@@ -344,7 +345,7 @@ namespace Lucene.Net.Search
                 : base(field, parser, lowerVal, upperVal, includeLower, includeUpper)
             {
             }
-            public override DocIdSet GetDocIdSet(IndexReader reader)
+            public override DocIdSet GetDocIdSet(IndexReader reader, IState state)
             {
                 int inclusiveLowerPoint;
                 int inclusiveUpperPoint;
@@ -374,7 +375,7 @@ namespace Lucene.Net.Search
                 if (inclusiveLowerPoint > inclusiveUpperPoint)
                     return DocIdSet.EMPTY_DOCIDSET;
 
-                int[] values = Lucene.Net.Search.FieldCache_Fields.DEFAULT.GetInts(reader, field, (Lucene.Net.Search.IntParser)parser);
+                int[] values = Lucene.Net.Search.FieldCache_Fields.DEFAULT.GetInts(reader, field, (Lucene.Net.Search.IntParser)parser, state);
                 // we only request the usage of termDocs, if the range contains 0
                 return new AnonymousClassFieldCacheDocIdSet(values, inclusiveLowerPoint, inclusiveUpperPoint, this, reader, (inclusiveLowerPoint <= 0 && inclusiveUpperPoint >= 0));
             }
@@ -419,7 +420,7 @@ namespace Lucene.Net.Search
                 : base(field, parser, lowerVal, upperVal, includeLower, includeUpper)
             {
             }
-            public override DocIdSet GetDocIdSet(IndexReader reader)
+            public override DocIdSet GetDocIdSet(IndexReader reader, IState state)
             {
                 long inclusiveLowerPoint;
                 long inclusiveUpperPoint;
@@ -449,7 +450,7 @@ namespace Lucene.Net.Search
                 if (inclusiveLowerPoint > inclusiveUpperPoint)
                     return DocIdSet.EMPTY_DOCIDSET;
 
-                long[] values = Lucene.Net.Search.FieldCache_Fields.DEFAULT.GetLongs(reader, field, (Lucene.Net.Search.LongParser)parser);
+                long[] values = Lucene.Net.Search.FieldCache_Fields.DEFAULT.GetLongs(reader, field, (Lucene.Net.Search.LongParser)parser, state);
                 // we only request the usage of termDocs, if the range contains 0
                 return new AnonymousClassFieldCacheDocIdSet(values, inclusiveLowerPoint, inclusiveUpperPoint, this, reader, (inclusiveLowerPoint <= 0L && inclusiveUpperPoint >= 0L));
             }
@@ -494,7 +495,7 @@ namespace Lucene.Net.Search
                 : base(field, parser, lowerVal, upperVal, includeLower, includeUpper)
             {
             }
-            public override DocIdSet GetDocIdSet(IndexReader reader)
+            public override DocIdSet GetDocIdSet(IndexReader reader, IState state)
             {
                 // we transform the floating point numbers to sortable integers
                 // using NumericUtils to easier find the next bigger/lower value
@@ -528,7 +529,7 @@ namespace Lucene.Net.Search
                 if (inclusiveLowerPoint > inclusiveUpperPoint)
                     return DocIdSet.EMPTY_DOCIDSET;
 
-                float[] values = Lucene.Net.Search.FieldCache_Fields.DEFAULT.GetFloats(reader, field, (Lucene.Net.Search.FloatParser)parser);
+                float[] values = Lucene.Net.Search.FieldCache_Fields.DEFAULT.GetFloats(reader, field, (Lucene.Net.Search.FloatParser)parser, state);
                 // we only request the usage of termDocs, if the range contains 0
                 return new AnonymousClassFieldCacheDocIdSet(values, inclusiveLowerPoint, inclusiveUpperPoint, this, reader, (inclusiveLowerPoint <= 0.0f && inclusiveUpperPoint >= 0.0f));
             }
@@ -573,7 +574,7 @@ namespace Lucene.Net.Search
                 : base(field, parser, lowerVal, upperVal, includeLower, includeUpper)
             {
             }
-            public override DocIdSet GetDocIdSet(IndexReader reader)
+            public override DocIdSet GetDocIdSet(IndexReader reader, IState state)
             {
                 // we transform the floating point numbers to sortable integers
                 // using NumericUtils to easier find the next bigger/lower value
@@ -607,7 +608,7 @@ namespace Lucene.Net.Search
                 if (inclusiveLowerPoint > inclusiveUpperPoint)
                     return DocIdSet.EMPTY_DOCIDSET;
 
-                double[] values = Lucene.Net.Search.FieldCache_Fields.DEFAULT.GetDoubles(reader, field, (Lucene.Net.Search.DoubleParser)parser);
+                double[] values = Lucene.Net.Search.FieldCache_Fields.DEFAULT.GetDoubles(reader, field, (Lucene.Net.Search.DoubleParser)parser, state);
                 // we only request the usage of termDocs, if the range contains 0
                 return new AnonymousClassFieldCacheDocIdSet(values, inclusiveLowerPoint, inclusiveUpperPoint, this, reader, (inclusiveLowerPoint <= 0.0 && inclusiveUpperPoint >= 0.0));
             }
@@ -754,7 +755,7 @@ namespace Lucene.Net.Search
 		}
 		
 		/// <summary>This method is implemented for each data type </summary>
-		public abstract override DocIdSet GetDocIdSet(IndexReader reader);
+		public abstract override DocIdSet GetDocIdSet(IndexReader reader, IState state);
 		
 		public override System.String ToString()
 		{
@@ -851,24 +852,24 @@ namespace Lucene.Net.Search
 					return doc;
 				}
 				
-				public override int NextDoc()
+				public override int NextDoc(IState state)
 				{
 					do 
 					{
-						if (!termDocs.Next())
+						if (!termDocs.Next(state))
 							return doc = NO_MORE_DOCS;
 					}
 					while (!Enclosing_Instance.MatchDoc(doc = termDocs.Doc));
 					return doc;
 				}
 				
-				public override int Advance(int target)
+				public override int Advance(int target, IState state)
 				{
-					if (!termDocs.SkipTo(target))
+					if (!termDocs.SkipTo(target, state))
 						return doc = NO_MORE_DOCS;
 					while (!Enclosing_Instance.MatchDoc(doc = termDocs.Doc))
 					{
-						if (!termDocs.Next())
+						if (!termDocs.Next(state))
 							return doc = NO_MORE_DOCS;
 					}
 					return doc;
@@ -900,7 +901,7 @@ namespace Lucene.Net.Search
 					return doc;
 				}
 				
-				public override int NextDoc()
+				public override int NextDoc(IState state)
 				{
 					try
 					{
@@ -917,7 +918,7 @@ namespace Lucene.Net.Search
 					}
 				}
 				
-				public override int Advance(int target)
+				public override int Advance(int target, IState state)
 				{
 					try
 					{
@@ -952,7 +953,7 @@ namespace Lucene.Net.Search
 		        get { return !(mayUseTermDocs && reader.HasDeletions); }
 		    }
 
-		    public override DocIdSetIterator Iterator()
+		    public override DocIdSetIterator Iterator(IState state)
 			{
 				// Synchronization needed because deleted docs BitVector
 				// can change after call to hasDeletions until TermDocs creation.
@@ -961,7 +962,7 @@ namespace Lucene.Net.Search
 				TermDocs termDocs;
 				lock (reader)
 				{
-					termDocs = IsCacheable ? null : reader.TermDocs(null);
+					termDocs = IsCacheable ? null : reader.TermDocs(null, state);
 				}
 				if (termDocs != null)
 				{

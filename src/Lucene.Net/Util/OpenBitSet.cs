@@ -16,6 +16,7 @@
  */
 
 using System;
+using Lucene.Net.Store;
 using Lucene.Net.Support;
 using DocIdSet = Lucene.Net.Search.DocIdSet;
 using DocIdSetIterator = Lucene.Net.Search.DocIdSetIterator;
@@ -119,7 +120,7 @@ namespace Lucene.Net.Util
 			this.wlen = numWords;
 		}
 		
-		public override DocIdSetIterator Iterator()
+		public override DocIdSetIterator Iterator(IState state)
 		{
 			return new OpenBitSetIterator(internalbits, wlen);
 		}

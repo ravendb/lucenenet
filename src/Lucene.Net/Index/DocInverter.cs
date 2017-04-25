@@ -16,6 +16,7 @@
  */
 
 using System.Collections.Generic;
+using Lucene.Net.Store;
 using Lucene.Net.Support;
 
 namespace Lucene.Net.Index
@@ -45,7 +46,7 @@ namespace Lucene.Net.Index
 			endConsumer.SetFieldInfos(fieldInfos);
 		}
 
-        public override void Flush(IDictionary<DocFieldConsumerPerThread, ICollection<DocFieldConsumerPerField>> threadsAndFields, SegmentWriteState state)
+        public override void Flush(IDictionary<DocFieldConsumerPerThread, ICollection<DocFieldConsumerPerField>> threadsAndFields, SegmentWriteState state, IState s)
 		{
 
             var childThreadsAndFields = new HashMap<InvertedDocConsumerPerThread, ICollection<InvertedDocConsumerPerField>>();
@@ -68,13 +69,13 @@ namespace Lucene.Net.Index
 				endChildThreadsAndFields[perThread.endConsumer] = endChildFields;
 			}
 			
-			consumer.Flush(childThreadsAndFields, state);
-			endConsumer.Flush(endChildThreadsAndFields, state);
+			consumer.Flush(childThreadsAndFields, state, s);
+			endConsumer.Flush(endChildThreadsAndFields, state, s);
 		}
 
-	    public override void  CloseDocStore(SegmentWriteState state)
+	    public override void  CloseDocStore(SegmentWriteState state, IState s)
 		{
-			consumer.CloseDocStore(state);
+			consumer.CloseDocStore(state, s);
 			endConsumer.CloseDocStore(state);
 		}
 		

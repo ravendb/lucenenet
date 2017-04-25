@@ -105,9 +105,9 @@ namespace Lucene.Net.Index
 	    /// commit, equivalent to
 	    /// getDirectory().fileModified(getSegmentsFileName()). 
 	    /// </summary>
-	    public virtual long Timestamp
+	    public virtual long Timestamp(IState state)
 	    {
-	        get { return Directory.FileModified(SegmentsFileName); }
+	        return Directory.FileModified(SegmentsFileName, state);
 	    }
 
 	    /// <summary>Returns userData, previously passed to 

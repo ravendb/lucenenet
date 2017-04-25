@@ -17,6 +17,7 @@
 
 using System;
 using System.Collections.Generic;
+using Lucene.Net.Store;
 using Lucene.Net.Util;
 
 namespace Lucene.Net.Index
@@ -30,12 +31,12 @@ namespace Lucene.Net.Index
 	{
 		private sealed class TermPositionsQueue : PriorityQueue<TermPositions>
 		{
-			internal TermPositionsQueue(LinkedList<TermPositions> termPositions)
+			internal TermPositionsQueue(LinkedList<TermPositions> termPositions, IState state)
 			{
 				Initialize(termPositions.Count);
 				
 				foreach(TermPositions tp in termPositions)
-					if (tp.Next())
+					if (tp.Next(state))
 						Add(tp);
 			}
 			
@@ -114,18 +115,18 @@ namespace Lucene.Net.Index
 		/// </summary>
 		/// <exception cref="System.IO.IOException">
 		/// </exception>
-		public MultipleTermPositions(IndexReader indexReader, Term[] terms)
+		public MultipleTermPositions(IndexReader indexReader, Term[] terms, IState state)
 		{
 			var termPositions = new System.Collections.Generic.LinkedList<TermPositions>();
 			
 			for (int i = 0; i < terms.Length; i++)
-				termPositions.AddLast(indexReader.TermPositions(terms[i]));
+				termPositions.AddLast(indexReader.TermPositions(terms[i], state));
 			
-			_termPositionsQueue = new TermPositionsQueue(termPositions);
+			_termPositionsQueue = new TermPositionsQueue(termPositions, state);
 			_posList = new IntQueue();
 		}
 		
-		public bool Next()
+		public bool Next(IState state)
 		{
 			if (_termPositionsQueue.Size() == 0)
 				return false;
@@ -139,9 +140,9 @@ namespace Lucene.Net.Index
 				tp = _termPositionsQueue.Peek();
 				
 				for (int i = 0; i < tp.Freq; i++)
-					_posList.add(tp.NextPosition());
+					_posList.add(tp.NextPosition(state));
 				
-				if (tp.Next())
+				if (tp.Next(state))
 					_termPositionsQueue.UpdateTop();
 				else
 				{
@@ -157,22 +158,22 @@ namespace Lucene.Net.Index
 			return true;
 		}
 		
-		public int NextPosition()
+		public int NextPosition(IState state)
 		{
 			return _posList.next();
 		}
 		
-		public bool SkipTo(int target)
+		public bool SkipTo(int target, IState state)
 		{
 			while (_termPositionsQueue.Peek() != null && target > _termPositionsQueue.Peek().Doc)
 			{
 				TermPositions tp = _termPositionsQueue.Pop();
-				if (tp.SkipTo(target))
+				if (tp.SkipTo(target, state))
 					_termPositionsQueue.Add(tp);
 				else
 					tp.Close();
 			}
-			return Next();
+			return Next(state);
 		}
 
 	    public int Doc
@@ -211,21 +212,21 @@ namespace Lucene.Net.Index
 		
 		/// <summary> Not implemented.</summary>
 		/// <throws>  UnsupportedOperationException </throws>
-		public virtual void Seek(Term arg0)
+		public virtual void Seek(Term arg0, IState state)
 		{
 			throw new System.NotSupportedException();
 		}
 		
 		/// <summary> Not implemented.</summary>
 		/// <throws>  UnsupportedOperationException </throws>
-		public virtual void Seek(TermEnum termEnum)
+		public virtual void Seek(TermEnum termEnum, IState state)
 		{
 			throw new System.NotSupportedException();
 		}
 		
 		/// <summary> Not implemented.</summary>
 		/// <throws>  UnsupportedOperationException </throws>
-		public virtual int Read(int[] arg0, int[] arg1)
+		public virtual int Read(int[] arg0, int[] arg1, IState state)
 		{
 			throw new System.NotSupportedException();
 		}
@@ -240,7 +241,7 @@ namespace Lucene.Net.Index
 
 	    /// <summary> Not implemented.</summary>
 		/// <throws>  UnsupportedOperationException </throws>
-		public virtual byte[] GetPayload(byte[] data, int offset)
+		public virtual byte[] GetPayload(byte[] data, int offset, IState state)
 		{
 			throw new System.NotSupportedException();
 		}

@@ -16,6 +16,7 @@
  */
 
 using System;
+using Lucene.Net.Store;
 using Lucene.Net.Support;
 using IndexInput = Lucene.Net.Store.IndexInput;
 using BitVector = Lucene.Net.Util.BitVector;
@@ -60,13 +61,13 @@ namespace Lucene.Net.Index
 			this.maxSkipLevels = parent.core.GetTermsReader().MaxSkipLevels;
 		}
 		
-		public virtual void  Seek(Term term)
+		public virtual void  Seek(Term term, IState state)
 		{
-			TermInfo ti = parent.core.GetTermsReader().Get(term);
-			Seek(ti, term);
+			TermInfo ti = parent.core.GetTermsReader().Get(term, state);
+			Seek(ti, term, state);
 		}
 		
-		public virtual void  Seek(TermEnum termEnum)
+		public virtual void  Seek(TermEnum termEnum, IState state)
 		{
 			TermInfo ti;
 			Term term;
@@ -83,13 +84,13 @@ namespace Lucene.Net.Index
 			{
 				// punt case
 				term = termEnum.Term;
-				ti = parent.core.GetTermsReader().Get(term);
+				ti = parent.core.GetTermsReader().Get(term, state);
 			}
 			
-			Seek(ti, term);
+			Seek(ti, term, state);
 		}
 		
-		internal virtual void  Seek(TermInfo ti, Term term)
+		internal virtual void  Seek(TermInfo ti, Term term, IState state)
 		{
 			count = 0;
 			FieldInfo fi = parent.core.fieldInfos.FieldInfo(term.Field);
@@ -106,7 +107,7 @@ namespace Lucene.Net.Index
 				freqBasePointer = ti.freqPointer;
 				proxBasePointer = ti.proxPointer;
 				skipPointer = freqBasePointer + ti.skipOffset;
-				freqStream.Seek(freqBasePointer);
+				freqStream.Seek(freqBasePointer, state);
 				haveSkipped = false;
 			}
 		}
@@ -147,13 +148,13 @@ namespace Lucene.Net.Index
 		{
 		}
 		
-		public virtual bool Next()
+		public virtual bool Next(IState state)
 		{
 			while (true)
 			{
 				if (count == df)
 					return false;
-				int docCode = freqStream.ReadVInt();
+				int docCode = freqStream.ReadVInt(state);
 				
 				if (currentFieldOmitTermFreqAndPositions)
 				{
@@ -168,7 +169,7 @@ namespace Lucene.Net.Index
 						freq = 1;
 					// freq is one
 					else
-						freq = freqStream.ReadVInt(); // else read freq
+						freq = freqStream.ReadVInt(state); // else read freq
 				}
 				
 				count++;
@@ -181,12 +182,12 @@ namespace Lucene.Net.Index
 		}
 		
 		/// <summary>Optimized implementation. </summary>
-		public virtual int Read(int[] docs, int[] freqs)
+		public virtual int Read(int[] docs, int[] freqs, IState state)
 		{
 			int length = docs.Length;
 			if (currentFieldOmitTermFreqAndPositions)
 			{
-				return ReadNoTf(docs, freqs, length);
+				return ReadNoTf(docs, freqs, length, state);
 			}
 			else
 			{
@@ -194,14 +195,14 @@ namespace Lucene.Net.Index
 				while (i < length && count < df)
 				{
 					// manually inlined call to next() for speed
-					int docCode = freqStream.ReadVInt();
+					int docCode = freqStream.ReadVInt(state);
 					doc += Number.URShift(docCode, 1); // shift off low bit
 					if ((docCode & 1) != 0)
 					// if low bit is set
 						freq = 1;
 					// freq is one
 					else
-						freq = freqStream.ReadVInt(); // else read freq
+						freq = freqStream.ReadVInt(state); // else read freq
 					count++;
 					
 					if (deletedDocs == null || !deletedDocs.Get(doc))
@@ -215,13 +216,13 @@ namespace Lucene.Net.Index
 			}
 		}
 		
-		private int ReadNoTf(int[] docs, int[] freqs, int length)
+		private int ReadNoTf(int[] docs, int[] freqs, int length, IState state)
 		{
 			int i = 0;
 			while (i < length && count < df)
 			{
 				// manually inlined call to next() for speed
-				doc += freqStream.ReadVInt();
+				doc += freqStream.ReadVInt(state);
 				count++;
 				
 				if (deletedDocs == null || !deletedDocs.Get(doc))
@@ -243,7 +244,7 @@ namespace Lucene.Net.Index
 		}
 		
 		/// <summary>Optimized implementation. </summary>
-		public virtual bool SkipTo(int target)
+		public virtual bool SkipTo(int target, IState state)
 		{
 			if (df >= skipInterval)
 			{
@@ -258,10 +259,10 @@ namespace Lucene.Net.Index
 					haveSkipped = true;
 				}
 				
-				int newCount = skipListReader.SkipTo(target);
+				int newCount = skipListReader.SkipTo(target, state);
 				if (newCount > count)
 				{
-					freqStream.Seek(skipListReader.GetFreqPointer());
+					freqStream.Seek(skipListReader.GetFreqPointer(), state);
 					SkipProx(skipListReader.GetProxPointer(), skipListReader.GetPayloadLength());
 					
 					doc = skipListReader.GetDoc();
@@ -272,7 +273,7 @@ namespace Lucene.Net.Index
 			// done skipping, now just scan
 			do 
 			{
-				if (!Next())
+				if (!Next(state))
 					return false;
 			}
 			while (target > doc);

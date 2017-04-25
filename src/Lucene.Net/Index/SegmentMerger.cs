@@ -17,6 +17,7 @@
 
 using System;
 using System.Collections.Generic;
+using Lucene.Net.Store;
 using Document = Lucene.Net.Documents.Document;
 using FieldSelector = Lucene.Net.Documents.FieldSelector;
 using FieldSelectorResult = Lucene.Net.Documents.FieldSelectorResult;
@@ -62,7 +63,7 @@ namespace Lucene.Net.Index
 			{
 				InitBlock(enclosingInstance);
 			}
-			public override void  Work(double units)
+			public override void  Work(double units, IState state)
 			{
 				// do nothing
 			}
@@ -86,7 +87,7 @@ namespace Lucene.Net.Index
 			{
 				InitBlock(enclosingInstance);
 			}
-			public override void  Work(double units)
+			public override void  Work(double units, IState state)
 			{
 				// do nothing
 			}
@@ -181,9 +182,9 @@ namespace Lucene.Net.Index
 		/// </returns>
 		/// <throws>  CorruptIndexException if the index is corrupt </throws>
 		/// <throws>  IOException if there is a low-level IO error </throws>
-		public /*internal*/ int Merge()
+		public /*internal*/ int Merge(IState state)
 		{
-			return Merge(true);
+			return Merge(true, state);
 		}
 		
 		/// <summary> Merges the readers specified by the <see cref="Add" /> method
@@ -196,7 +197,7 @@ namespace Lucene.Net.Index
 		/// </returns>
 		/// <throws>  CorruptIndexException if the index is corrupt </throws>
 		/// <throws>  IOException if there is a low-level IO error </throws>
-		internal int Merge(bool mergeDocStores)
+		internal int Merge(bool mergeDocStores, IState state)
 		{
 			
 			this.mergeDocStores = mergeDocStores;
@@ -208,12 +209,12 @@ namespace Lucene.Net.Index
 			// IndexWriter.close(false) takes to actually stop the
 			// threads.
 			
-			mergedDocs = MergeFields();
-			MergeTerms();
-			MergeNorms();
+			mergedDocs = MergeFields(state);
+			MergeTerms(state);
+			MergeNorms(state);
 			
 			if (mergeDocStores && fieldInfos.HasVectors())
-				MergeVectors();
+				MergeVectors(state);
 			
 			return mergedDocs;
 		}
@@ -286,12 +287,12 @@ namespace Lucene.Net.Index
             return files;
 		}
 
-        private void AddIndexed(IndexReader reader, FieldInfos fInfos, ICollection<string> names, bool storeTermVectors, bool storePositionWithTermVector, bool storeOffsetWithTermVector, bool storePayloads, bool omitTFAndPositions)
+        private void AddIndexed(IndexReader reader, FieldInfos fInfos, ICollection<string> names, bool storeTermVectors, bool storePositionWithTermVector, bool storeOffsetWithTermVector, bool storePayloads, bool omitTFAndPositions, IState state)
         {
             foreach (var field in names)
             {
                 fInfos.Add(field, true, storeTermVectors, storePositionWithTermVector, storeOffsetWithTermVector,
-                           !reader.HasNorms(field), storePayloads, omitTFAndPositions);
+                           !reader.HasNorms(field, state), storePayloads, omitTFAndPositions);
             }
         }
 
@@ -341,7 +342,7 @@ namespace Lucene.Net.Index
 		/// </returns>
 		/// <throws>  CorruptIndexException if the index is corrupt </throws>
 		/// <throws>  IOException if there is a low-level IO error </throws>
-		private int MergeFields()
+		private int MergeFields(IState state)
 		{
 			
 			if (!mergeDocStores)
@@ -368,22 +369,22 @@ namespace Lucene.Net.Index
 					for (int j = 0; j < numReaderFieldInfos; j++)
 					{
 						FieldInfo fi = readerFieldInfos.FieldInfo(j);
-						fieldInfos.Add(fi.name, fi.isIndexed, fi.storeTermVector, fi.storePositionWithTermVector, fi.storeOffsetWithTermVector, !reader.HasNorms(fi.name), fi.storePayloads, fi.omitTermFreqAndPositions);
+						fieldInfos.Add(fi.name, fi.isIndexed, fi.storeTermVector, fi.storePositionWithTermVector, fi.storeOffsetWithTermVector, !reader.HasNorms(fi.name, state), fi.storePayloads, fi.omitTermFreqAndPositions);
 					}
 				}
 				else
 				{
-					AddIndexed(reader, fieldInfos, reader.GetFieldNames(FieldOption.TERMVECTOR_WITH_POSITION_OFFSET), true, true, true, false, false);
-					AddIndexed(reader, fieldInfos, reader.GetFieldNames(FieldOption.TERMVECTOR_WITH_POSITION), true, true, false, false, false);
-					AddIndexed(reader, fieldInfos, reader.GetFieldNames(FieldOption.TERMVECTOR_WITH_OFFSET), true, false, true, false, false);
-					AddIndexed(reader, fieldInfos, reader.GetFieldNames(FieldOption.TERMVECTOR), true, false, false, false, false);
-					AddIndexed(reader, fieldInfos, reader.GetFieldNames(FieldOption.OMIT_TERM_FREQ_AND_POSITIONS), false, false, false, false, true);
-					AddIndexed(reader, fieldInfos, reader.GetFieldNames(FieldOption.STORES_PAYLOADS), false, false, false, true, false);
-					AddIndexed(reader, fieldInfos, reader.GetFieldNames(FieldOption.INDEXED), false, false, false, false, false);
+					AddIndexed(reader, fieldInfos, reader.GetFieldNames(FieldOption.TERMVECTOR_WITH_POSITION_OFFSET), true, true, true, false, false, state);
+					AddIndexed(reader, fieldInfos, reader.GetFieldNames(FieldOption.TERMVECTOR_WITH_POSITION), true, true, false, false, false, state);
+					AddIndexed(reader, fieldInfos, reader.GetFieldNames(FieldOption.TERMVECTOR_WITH_OFFSET), true, false, true, false, false, state);
+					AddIndexed(reader, fieldInfos, reader.GetFieldNames(FieldOption.TERMVECTOR), true, false, false, false, false, state);
+					AddIndexed(reader, fieldInfos, reader.GetFieldNames(FieldOption.OMIT_TERM_FREQ_AND_POSITIONS), false, false, false, false, true, state);
+					AddIndexed(reader, fieldInfos, reader.GetFieldNames(FieldOption.STORES_PAYLOADS), false, false, false, true, false, state);
+					AddIndexed(reader, fieldInfos, reader.GetFieldNames(FieldOption.INDEXED), false, false, false, false, false, state);
 					fieldInfos.Add(reader.GetFieldNames(FieldOption.UNINDEXED), false);
 				}
 			}
-			fieldInfos.Write(directory, segment + ".fnm");
+			fieldInfos.Write(directory, segment + ".fnm", state);
 			
 			int docCount = 0;
 			
@@ -392,7 +393,7 @@ namespace Lucene.Net.Index
 			if (mergeDocStores)
 			{
 				// merge field values
-				FieldsWriter fieldsWriter = new FieldsWriter(directory, segment, fieldInfos);
+				FieldsWriter fieldsWriter = new FieldsWriter(directory, segment, fieldInfos, state);
 				
 				try
 				{
@@ -411,11 +412,11 @@ namespace Lucene.Net.Index
 						}
 						if (reader.HasDeletions)
 						{
-							docCount += CopyFieldsWithDeletions(fieldsWriter, reader, matchingFieldsReader);
+							docCount += CopyFieldsWithDeletions(fieldsWriter, reader, matchingFieldsReader, state);
 						}
 						else
 						{
-							docCount += CopyFieldsNoDeletions(fieldsWriter, reader, matchingFieldsReader);
+							docCount += CopyFieldsNoDeletions(fieldsWriter, reader, matchingFieldsReader, state);
 						}
 					}
 				}
@@ -425,7 +426,7 @@ namespace Lucene.Net.Index
 				}
 				
 				System.String fileName = segment + "." + IndexFileNames.FIELDS_INDEX_EXTENSION;
-				long fdxFileLength = directory.FileLength(fileName);
+				long fdxFileLength = directory.FileLength(fileName, state);
 				
 				if (4 + ((long) docCount) * 8 != fdxFileLength)
 				// This is most likely a bug in Sun JRE 1.6.0_04/_05;
@@ -433,7 +434,7 @@ namespace Lucene.Net.Index
 				// throw an exception to prevent the corruption from
 				// entering the index.  See LUCENE-1282 for
 				// details.
-					throw new System.SystemException("mergeFields produced an invalid result: docCount is " + docCount + " but fdx file size is " + fdxFileLength + " file=" + fileName + " file exists?=" + directory.FileExists(fileName) + "; now aborting this merge to prevent index corruption");
+					throw new System.SystemException("mergeFields produced an invalid result: docCount is " + docCount + " but fdx file size is " + fdxFileLength + " file=" + fileName + " file exists?=" + directory.FileExists(fileName, state) + "; now aborting this merge to prevent index corruption");
 			}
 			// If we are skipping the doc stores, that means there
 			// are no deletions in any of these segments, so we
@@ -449,7 +450,7 @@ namespace Lucene.Net.Index
 			return docCount;
 		}
 		
-		private int CopyFieldsWithDeletions(FieldsWriter fieldsWriter, IndexReader reader, FieldsReader matchingFieldsReader)
+		private int CopyFieldsWithDeletions(FieldsWriter fieldsWriter, IndexReader reader, FieldsReader matchingFieldsReader, IState state)
 		{
 			int docCount = 0;
 			int maxDoc = reader.MaxDoc;
@@ -481,10 +482,10 @@ namespace Lucene.Net.Index
 					}
 					while (numDocs < MAX_RAW_MERGE_DOCS);
 					
-					IndexInput stream = matchingFieldsReader.RawDocs(rawDocLengths, start, numDocs);
-					fieldsWriter.AddRawDocuments(stream, rawDocLengths, numDocs);
+					IndexInput stream = matchingFieldsReader.RawDocs(rawDocLengths, start, numDocs, state);
+					fieldsWriter.AddRawDocuments(stream, rawDocLengths, numDocs, state);
 					docCount += numDocs;
-					checkAbort.Work(300 * numDocs);
+					checkAbort.Work(300 * numDocs, state);
 				}
 			}
 			else
@@ -498,16 +499,16 @@ namespace Lucene.Net.Index
 					}
 					// NOTE: it's very important to first assign to doc then pass it to
 					// termVectorsWriter.addAllDocVectors; see LUCENE-1282
-					Document doc = reader.Document(j);
-					fieldsWriter.AddDocument(doc);
+					Document doc = reader.Document(j, state);
+					fieldsWriter.AddDocument(doc, state);
 					docCount++;
-					checkAbort.Work(300);
+					checkAbort.Work(300, state);
 				}
 			}
 			return docCount;
 		}
 		
-		private int CopyFieldsNoDeletions(FieldsWriter fieldsWriter, IndexReader reader, FieldsReader matchingFieldsReader)
+		private int CopyFieldsNoDeletions(FieldsWriter fieldsWriter, IndexReader reader, FieldsReader matchingFieldsReader, IState state)
 		{
 			int maxDoc = reader.MaxDoc;
 			int docCount = 0;
@@ -517,10 +518,10 @@ namespace Lucene.Net.Index
 				while (docCount < maxDoc)
 				{
 					int len = System.Math.Min(MAX_RAW_MERGE_DOCS, maxDoc - docCount);
-					IndexInput stream = matchingFieldsReader.RawDocs(rawDocLengths, docCount, len);
-					fieldsWriter.AddRawDocuments(stream, rawDocLengths, len);
+					IndexInput stream = matchingFieldsReader.RawDocs(rawDocLengths, docCount, len, state);
+					fieldsWriter.AddRawDocuments(stream, rawDocLengths, len, state);
 					docCount += len;
-					checkAbort.Work(300 * len);
+					checkAbort.Work(300 * len, state);
 				}
 			}
 			else
@@ -529,9 +530,9 @@ namespace Lucene.Net.Index
 				{
 					// NOTE: it's very important to first assign to doc then pass it to
 					// termVectorsWriter.addAllDocVectors; see LUCENE-1282
-					Document doc = reader.Document(docCount);
-					fieldsWriter.AddDocument(doc);
-					checkAbort.Work(300);
+					Document doc = reader.Document(docCount, state);
+					fieldsWriter.AddDocument(doc, state);
+					checkAbort.Work(300, state);
 				}
 			}
 			return docCount;
@@ -539,9 +540,9 @@ namespace Lucene.Net.Index
 		
 		/// <summary> Merge the TermVectors from each of the segments into the new one.</summary>
 		/// <throws>  IOException </throws>
-		private void  MergeVectors()
+		private void  MergeVectors(IState state)
 		{
-			TermVectorsWriter termVectorsWriter = new TermVectorsWriter(directory, segment, fieldInfos);
+			TermVectorsWriter termVectorsWriter = new TermVectorsWriter(directory, segment, fieldInfos, state);
 			
 			try
 			{
@@ -562,11 +563,11 @@ namespace Lucene.Net.Index
 					}
 					if (reader.HasDeletions)
 					{
-						CopyVectorsWithDeletions(termVectorsWriter, matchingVectorsReader, reader);
+						CopyVectorsWithDeletions(termVectorsWriter, matchingVectorsReader, reader, state);
 					}
 					else
 					{
-						CopyVectorsNoDeletions(termVectorsWriter, matchingVectorsReader, reader);
+						CopyVectorsNoDeletions(termVectorsWriter, matchingVectorsReader, reader, state);
 					}
 				}
 			}
@@ -576,7 +577,7 @@ namespace Lucene.Net.Index
 			}
 			
 			System.String fileName = segment + "." + IndexFileNames.VECTORS_INDEX_EXTENSION;
-			long tvxSize = directory.FileLength(fileName);
+			long tvxSize = directory.FileLength(fileName, state);
 			
 			if (4 + ((long) mergedDocs) * 16 != tvxSize)
 			// This is most likely a bug in Sun JRE 1.6.0_04/_05;
@@ -584,10 +585,10 @@ namespace Lucene.Net.Index
 			// throw an exception to prevent the corruption from
 			// entering the index.  See LUCENE-1282 for
 			// details.
-				throw new System.SystemException("mergeVectors produced an invalid result: mergedDocs is " + mergedDocs + " but tvx size is " + tvxSize + " file=" + fileName + " file exists?=" + directory.FileExists(fileName) + "; now aborting this merge to prevent index corruption");
+				throw new System.SystemException("mergeVectors produced an invalid result: mergedDocs is " + mergedDocs + " but tvx size is " + tvxSize + " file=" + fileName + " file exists?=" + directory.FileExists(fileName, state) + "; now aborting this merge to prevent index corruption");
 		}
 		
-		private void  CopyVectorsWithDeletions(TermVectorsWriter termVectorsWriter, TermVectorsReader matchingVectorsReader, IndexReader reader)
+		private void  CopyVectorsWithDeletions(TermVectorsWriter termVectorsWriter, TermVectorsReader matchingVectorsReader, IndexReader reader, IState state)
 		{
 			int maxDoc = reader.MaxDoc;
 			if (matchingVectorsReader != null)
@@ -618,9 +619,9 @@ namespace Lucene.Net.Index
 					}
 					while (numDocs < MAX_RAW_MERGE_DOCS);
 					
-					matchingVectorsReader.RawDocs(rawDocLengths, rawDocLengths2, start, numDocs);
-					termVectorsWriter.AddRawDocuments(matchingVectorsReader, rawDocLengths, rawDocLengths2, numDocs);
-					checkAbort.Work(300 * numDocs);
+					matchingVectorsReader.RawDocs(rawDocLengths, rawDocLengths2, start, numDocs, state);
+					termVectorsWriter.AddRawDocuments(matchingVectorsReader, rawDocLengths, rawDocLengths2, numDocs, state);
+					checkAbort.Work(300 * numDocs, state);
 				}
 			}
 			else
@@ -635,14 +636,14 @@ namespace Lucene.Net.Index
 					
 					// NOTE: it's very important to first assign to vectors then pass it to
 					// termVectorsWriter.addAllDocVectors; see LUCENE-1282
-					ITermFreqVector[] vectors = reader.GetTermFreqVectors(docNum);
+					ITermFreqVector[] vectors = reader.GetTermFreqVectors(docNum, state);
 					termVectorsWriter.AddAllDocVectors(vectors);
-					checkAbort.Work(300);
+					checkAbort.Work(300, state);
 				}
 			}
 		}
 		
-		private void  CopyVectorsNoDeletions(TermVectorsWriter termVectorsWriter, TermVectorsReader matchingVectorsReader, IndexReader reader)
+		private void  CopyVectorsNoDeletions(TermVectorsWriter termVectorsWriter, TermVectorsReader matchingVectorsReader, IndexReader reader, IState state)
 		{
 			int maxDoc = reader.MaxDoc;
 			if (matchingVectorsReader != null)
@@ -652,10 +653,10 @@ namespace Lucene.Net.Index
 				while (docCount < maxDoc)
 				{
 					int len = System.Math.Min(MAX_RAW_MERGE_DOCS, maxDoc - docCount);
-					matchingVectorsReader.RawDocs(rawDocLengths, rawDocLengths2, docCount, len);
-					termVectorsWriter.AddRawDocuments(matchingVectorsReader, rawDocLengths, rawDocLengths2, len);
+					matchingVectorsReader.RawDocs(rawDocLengths, rawDocLengths2, docCount, len, state);
+					termVectorsWriter.AddRawDocuments(matchingVectorsReader, rawDocLengths, rawDocLengths2, len, state);
 					docCount += len;
-					checkAbort.Work(300 * len);
+					checkAbort.Work(300 * len, state);
 				}
 			}
 			else
@@ -664,27 +665,27 @@ namespace Lucene.Net.Index
 				{
 					// NOTE: it's very important to first assign to vectors then pass it to
 					// termVectorsWriter.addAllDocVectors; see LUCENE-1282
-					ITermFreqVector[] vectors = reader.GetTermFreqVectors(docNum);
+					ITermFreqVector[] vectors = reader.GetTermFreqVectors(docNum, state);
 					termVectorsWriter.AddAllDocVectors(vectors);
-					checkAbort.Work(300);
+					checkAbort.Work(300, state);
 				}
 			}
 		}
 		
 		private SegmentMergeQueue queue = null;
 		
-		private void  MergeTerms()
+		private void  MergeTerms(IState s)
 		{
 			
 			SegmentWriteState state = new SegmentWriteState(null, directory, segment, null, mergedDocs, 0, termIndexInterval);
 			
-			FormatPostingsFieldsConsumer consumer = new FormatPostingsFieldsWriter(state, fieldInfos);
+			FormatPostingsFieldsConsumer consumer = new FormatPostingsFieldsWriter(state, fieldInfos, s);
 			
 			try
 			{
 				queue = new SegmentMergeQueue(readers.Count);
 				
-				MergeTermInfos(consumer);
+				MergeTermInfos(consumer, s);
 			}
 			finally
 			{
@@ -696,14 +697,14 @@ namespace Lucene.Net.Index
 		
 		internal bool omitTermFreqAndPositions;
 		
-		private void  MergeTermInfos(FormatPostingsFieldsConsumer consumer)
+		private void  MergeTermInfos(FormatPostingsFieldsConsumer consumer, IState state)
 		{
 			int base_Renamed = 0;
 			int readerCount = readers.Count;
 			for (int i = 0; i < readerCount; i++)
 			{
 				IndexReader reader = readers[i];
-				TermEnum termEnum = reader.Terms();
+				TermEnum termEnum = reader.Terms(state);
 				SegmentMergeInfo smi = new SegmentMergeInfo(base_Renamed, termEnum, reader);
 				int[] docMap = smi.GetDocMap();
 				if (docMap != null)
@@ -721,7 +722,7 @@ namespace Lucene.Net.Index
 				
 				System.Diagnostics.Debug.Assert(reader.NumDocs() == reader.MaxDoc - smi.delCount);
 				
-				if (smi.Next())
+				if (smi.Next(state))
 					queue.Add(smi);
 				// initialize queue
 				else
@@ -756,14 +757,14 @@ namespace Lucene.Net.Index
 					omitTermFreqAndPositions = fieldInfo.omitTermFreqAndPositions;
 				}
 				
-				int df = AppendPostings(termsConsumer, match, matchSize); // add new TermInfo
+				int df = AppendPostings(termsConsumer, match, matchSize, state); // add new TermInfo
 				
-				checkAbort.Work(df / 3.0);
+				checkAbort.Work(df / 3.0, state);
 				
 				while (matchSize > 0)
 				{
 					SegmentMergeInfo smi = match[--matchSize];
-					if (smi.Next())
+					if (smi.Next(state))
 						queue.Add(smi);
 					// restore queue
 					else
@@ -797,7 +798,7 @@ namespace Lucene.Net.Index
 		/// </returns>
 		/// <throws>  CorruptIndexException if the index is corrupt </throws>
 		/// <throws>  IOException if there is a low-level IO error </throws>
-		private int AppendPostings(FormatPostingsTermsConsumer termsConsumer, SegmentMergeInfo[] smis, int n)
+		private int AppendPostings(FormatPostingsTermsConsumer termsConsumer, SegmentMergeInfo[] smis, int n, IState state)
 		{
 			
 			FormatPostingsDocsConsumer docConsumer = termsConsumer.AddTerm(smis[0].term.Text);
@@ -805,13 +806,13 @@ namespace Lucene.Net.Index
 			for (int i = 0; i < n; i++)
 			{
 				SegmentMergeInfo smi = smis[i];
-				TermPositions postings = smi.GetPositions();
+				TermPositions postings = smi.GetPositions(state);
 				System.Diagnostics.Debug.Assert(postings != null);
 				int base_Renamed = smi.base_Renamed;
 				int[] docMap = smi.GetDocMap();
-				postings.Seek(smi.termEnum);
+				postings.Seek(smi.termEnum, state);
 				
-				while (postings.Next())
+				while (postings.Next(state))
 				{
 					df++;
 					int doc = postings.Doc;
@@ -826,13 +827,13 @@ namespace Lucene.Net.Index
 					{
 						for (int j = 0; j < freq; j++)
 						{
-							int position = postings.NextPosition();
+							int position = postings.NextPosition(state);
 							int payloadLength = postings.PayloadLength;
 							if (payloadLength > 0)
 							{
 								if (payloadBuffer == null || payloadBuffer.Length < payloadLength)
 									payloadBuffer = new byte[payloadLength];
-								postings.GetPayload(payloadBuffer, 0);
+								postings.GetPayload(payloadBuffer, 0, state);
 							}
 							posConsumer.AddPosition(position, payloadBuffer, 0, payloadLength);
 						}
@@ -845,7 +846,7 @@ namespace Lucene.Net.Index
 			return df;
 		}
 		
-		private void  MergeNorms()
+		private void  MergeNorms(IState state)
 		{
 			byte[] normBuffer = null;
 			IndexOutput output = null;
@@ -859,7 +860,7 @@ namespace Lucene.Net.Index
 					{
 						if (output == null)
 						{
-							output = directory.CreateOutput(segment + "." + IndexFileNames.NORMS_EXTENSION);
+							output = directory.CreateOutput(segment + "." + IndexFileNames.NORMS_EXTENSION, state);
 							output.WriteBytes(NORMS_HEADER, NORMS_HEADER.Length);
 						}
 						foreach(IndexReader reader in readers)
@@ -870,7 +871,7 @@ namespace Lucene.Net.Index
 								// the buffer is too small for the current segment
 								normBuffer = new byte[maxDoc];
 							}
-							reader.Norms(fi.name, normBuffer, 0);
+							reader.Norms(fi.name, normBuffer, 0, state);
 							if (!reader.HasDeletions)
 							{
 								//optimized case for segments without deleted docs
@@ -888,7 +889,7 @@ namespace Lucene.Net.Index
 									}
 								}
 							}
-							checkAbort.Work(maxDoc);
+							checkAbort.Work(maxDoc, state);
 						}
 					}
 				}
@@ -920,12 +921,12 @@ namespace Lucene.Net.Index
 			/// that the time in between calls to merge.checkAborted
 			/// is up to ~ 1 second.
 			/// </summary>
-			public virtual void  Work(double units)
+			public virtual void  Work(double units, IState state)
 			{
 				workCount += units;
 				if (workCount >= 10000.0)
 				{
-					merge.CheckAborted(dir);
+					merge.CheckAborted(dir, state);
 					workCount = 0;
 				}
 			}

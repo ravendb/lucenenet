@@ -21,6 +21,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Linq;
+using Lucene.Net.Store;
 using Lucene.Net.Support;
 using Lucene.Net.Util;
 using IndexReader = Lucene.Net.Index.IndexReader;
@@ -62,13 +63,13 @@ namespace Lucene.Net.Search
 			{
 				collector.SetScorer(scorer);
 			}
-			public override void  Collect(int doc)
+			public override void  Collect(int doc, IState state)
 			{
-				collector.Collect(doc);
+				collector.Collect(doc, state);
 			}
-			public override void  SetNextReader(IndexReader reader, int docBase)
+			public override void  SetNextReader(IndexReader reader, int docBase, IState state)
 			{
-				collector.SetNextReader(reader, start + docBase);
+				collector.SetNextReader(reader, start + docBase, state);
 			}
 
 		    public override bool AcceptsDocsOutOfOrder
@@ -92,13 +93,13 @@ namespace Lucene.Net.Search
 	    /// Executes each <see cref="Searchable"/>'s docFreq() in its own thread and 
 	    /// waits for each search to complete and merge the results back together.
 	    /// </summary>
-		public override int DocFreq(Term term)
+		public override int DocFreq(Term term, IState state)
 	    {
 	        Task<int>[] tasks = new Task<int>[searchables.Length];
             for (int i = 0; i < searchables.Length; i++)
             {
                 Searchable searchable = searchables[i];
-                tasks[i] = Task.Factory.StartNew(() => searchable.DocFreq(term));
+                tasks[i] = Task.Factory.StartNew(() => searchable.DocFreq(term, state));
             }
 
 	        Task.WaitAll(tasks);
@@ -109,7 +110,7 @@ namespace Lucene.Net.Search
 		/// <see cref="Searchable"/> in its own thread and waits for each search to complete
 		/// and merge the results back together.
 		/// </summary>
-		public override TopDocs Search(Weight weight, Filter filter, int nDocs)
+		public override TopDocs Search(Weight weight, Filter filter, int nDocs, IState state)
 		{
 		    HitQueue hq = new HitQueue(nDocs, false);
             object lockObj = new object();
@@ -121,7 +122,7 @@ namespace Lucene.Net.Search
                 int cur = i;
                 tasks[i] =
                     Task.Factory.StartNew(() => MultiSearcherCallableNoSort(ThreadLock.MonitorLock, lockObj, searchables[cur], weight, filter,
-                                                                            nDocs, hq, cur, starts));
+                                                                            nDocs, hq, cur, starts, state));
             }
 
 		    int totalHits = 0;
@@ -146,7 +147,7 @@ namespace Lucene.Net.Search
 		/// Searchable, waits for each search to complete and merges
 		/// the results back together.
 		/// </summary>
-		public override TopFieldDocs Search(Weight weight, Filter filter, int nDocs, Sort sort)
+		public override TopFieldDocs Search(Weight weight, Filter filter, int nDocs, Sort sort, IState state)
 		{
             if (sort == null) throw new ArgumentNullException("sort");
 
@@ -160,7 +161,7 @@ namespace Lucene.Net.Search
                 tasks[i] =
                     Task<TopFieldDocs>.Factory.StartNew(
                         () => MultiSearcherCallableWithSort(ThreadLock.MonitorLock, lockObj, searchables[cur], weight, filter, nDocs, hq, sort, cur,
-                                                      starts));
+                                                      starts, state));
             }
 
 		    int totalHits = 0;
@@ -199,7 +200,7 @@ namespace Lucene.Net.Search
 		/// 
 		/// TODO: parallelize this one too
 		/// </param>
-		public override void  Search(Weight weight, Filter filter, Collector collector)
+		public override void  Search(Weight weight, Filter filter, Collector collector, IState state)
 		{
 			for (int i = 0; i < searchables.Length; i++)
 			{
@@ -208,7 +209,7 @@ namespace Lucene.Net.Search
 				
 				Collector hc = new AnonymousClassCollector1(collector, start, this);
 				
-				searchables[i].Search(weight, filter, hc);
+				searchables[i].Search(weight, filter, hc, state);
 			}
 		}
 	}

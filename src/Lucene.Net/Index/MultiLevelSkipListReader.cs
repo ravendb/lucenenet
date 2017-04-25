@@ -16,7 +16,7 @@
  */
 
 using System;
-
+using Lucene.Net.Store;
 using BufferedIndexInput = Lucene.Net.Store.BufferedIndexInput;
 using IndexInput = Lucene.Net.Store.IndexInput;
 
@@ -97,12 +97,12 @@ namespace Lucene.Net.Index
 		/// <summary>Skips entries to the first beyond the current whose document number is
 		/// greater than or equal to <i>target</i>. Returns the current doc count. 
 		/// </summary>
-		internal virtual int SkipTo(int target)
+		internal virtual int SkipTo(int target, IState state)
 		{
 			if (!haveSkipped)
 			{
 				// first time, load skip levels
-				LoadSkipLevels();
+				LoadSkipLevels(state);
 				haveSkipped = true;
 			}
 			
@@ -118,7 +118,7 @@ namespace Lucene.Net.Index
 			{
 				if (target > skipDoc[level])
 				{
-					if (!LoadNextSkip(level))
+					if (!LoadNextSkip(level, state))
 					{
 						continue;
 					}
@@ -126,9 +126,9 @@ namespace Lucene.Net.Index
 				else
 				{
 					// no more skips on this level, go down one level
-					if (level > 0 && lastChildPointer > skipStream[level - 1].FilePointer)
+					if (level > 0 && lastChildPointer > skipStream[level - 1].FilePointer(state))
 					{
-						SeekChild(level - 1);
+						SeekChild(level - 1, state);
 					}
 					level--;
 				}
@@ -137,7 +137,7 @@ namespace Lucene.Net.Index
 			return numSkipped[0] - skipInterval[0] - 1;
 		}
 		
-		private bool LoadNextSkip(int level)
+		private bool LoadNextSkip(int level, IState state)
 		{
 			// we have to skip, the target document is greater than the current
 			// skip list entry        
@@ -155,26 +155,26 @@ namespace Lucene.Net.Index
 			}
 			
 			// read next skip entry
-			skipDoc[level] += ReadSkipData(level, skipStream[level]);
+			skipDoc[level] += ReadSkipData(level, skipStream[level], state);
 			
 			if (level != 0)
 			{
 				// read the child pointer if we are not on the leaf level
-				childPointer[level] = skipStream[level].ReadVLong() + skipPointer[level - 1];
+				childPointer[level] = skipStream[level].ReadVLong(state) + skipPointer[level - 1];
 			}
 			
 			return true;
 		}
 		
 		/// <summary>Seeks the skip entry on the given level </summary>
-		protected internal virtual void  SeekChild(int level)
+		protected internal virtual void  SeekChild(int level, IState state)
 		{
-			skipStream[level].Seek(lastChildPointer);
+			skipStream[level].Seek(lastChildPointer, state);
 			numSkipped[level] = numSkipped[level + 1] - skipInterval[level + 1];
 			skipDoc[level] = lastDoc;
 			if (level > 0)
 			{
-				childPointer[level] = skipStream[level].ReadVLong() + skipPointer[level - 1];
+				childPointer[level] = skipStream[level].ReadVLong(state) + skipPointer[level - 1];
 			}
 		}
 
@@ -218,7 +218,7 @@ namespace Lucene.Net.Index
 		}
 		
 		/// <summary>Loads the skip levels  </summary>
-		private void  LoadSkipLevels()
+		private void  LoadSkipLevels(IState state)
 		{
 			numberOfSkipLevels = docCount == 0?0:(int) System.Math.Floor(System.Math.Log(docCount) / System.Math.Log(skipInterval[0]));
 			if (numberOfSkipLevels > maxNumberOfSkipLevels)
@@ -226,21 +226,21 @@ namespace Lucene.Net.Index
 				numberOfSkipLevels = maxNumberOfSkipLevels;
 			}
 			
-			skipStream[0].Seek(skipPointer[0]);
+			skipStream[0].Seek(skipPointer[0], state);
 			
 			int toBuffer = numberOfLevelsToBuffer;
 			
 			for (int i = numberOfSkipLevels - 1; i > 0; i--)
 			{
 				// the length of the current level
-				long length = skipStream[0].ReadVLong();
+				long length = skipStream[0].ReadVLong(state);
 				
 				// the start pointer of the current level
-				skipPointer[i] = skipStream[0].FilePointer;
+				skipPointer[i] = skipStream[0].FilePointer(state);
 				if (toBuffer > 0)
 				{
 					// buffer this level
-					skipStream[i] = new SkipBuffer(skipStream[0], (int) length);
+					skipStream[i] = new SkipBuffer(skipStream[0], (int) length, state);
 					toBuffer--;
 				}
 				else
@@ -253,12 +253,12 @@ namespace Lucene.Net.Index
 					}
 					
 					// move base stream beyond the current level
-					skipStream[0].Seek(skipStream[0].FilePointer + length);
+					skipStream[0].Seek(skipStream[0].FilePointer(state) + length, state);
 				}
 			}
 			
 			// use base stream for the lowest level
-			skipPointer[0] = skipStream[0].FilePointer;
+			skipPointer[0] = skipStream[0].FilePointer(state);
 		}
 		
 		/// <summary> Subclasses must implement the actual skip data encoding in this method.
@@ -268,7 +268,7 @@ namespace Lucene.Net.Index
 		/// </param>
 		/// <param name="skipStream">the skip stream to read from
 		/// </param>
-		protected internal abstract int ReadSkipData(int level, IndexInput skipStream);
+		protected internal abstract int ReadSkipData(int level, IndexInput skipStream, IState state);
 		
 		/// <summary>Copies the values of the last read skip entry on this level </summary>
 		protected internal virtual void  SetLastSkipData(int level)
@@ -287,11 +287,11 @@ namespace Lucene.Net.Index
 
 		    private bool isDisposed;
 			
-			internal SkipBuffer(IndexInput input, int length)
+			internal SkipBuffer(IndexInput input, int length, IState state)
 			{
 				data = new byte[length];
-				pointer = input.FilePointer;
-				input.ReadBytes(data, 0, length);
+				pointer = input.FilePointer(state);
+				input.ReadBytes(data, 0, length, state);
 			}
 
             protected override void Dispose(bool disposing)
@@ -305,28 +305,28 @@ namespace Lucene.Net.Index
                 isDisposed = true;
             }
 
-		    public override long FilePointer
+		    public override long FilePointer(IState state)
 		    {
-		        get { return pointer + pos; }
+		        return pointer + pos;
 		    }
 
-		    public override long Length()
+		    public override long Length(IState state)
 			{
 				return data.Length;
 			}
 			
-			public override byte ReadByte()
+			public override byte ReadByte(IState state)
 			{
 				return data[pos++];
 			}
 			
-			public override void  ReadBytes(byte[] b, int offset, int len)
+			public override void  ReadBytes(byte[] b, int offset, int len, IState state)
 			{
 				Array.Copy(data, pos, b, offset, len);
 				pos += len;
 			}
 			
-			public override void  Seek(long pos)
+			public override void  Seek(long pos, IState state)
 			{
 				this.pos = (int) (pos - pointer);
 			}

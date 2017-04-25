@@ -195,7 +195,7 @@ namespace Lucene.Net.Store
 		private byte[] copyBuffer;
 		
 		/// <summary>Copy numBytes bytes from input to ourself. </summary>
-		public virtual void  CopyBytes(IndexInput input, long numBytes)
+		public virtual void  CopyBytes(IndexInput input, long numBytes, IState state)
 		{
 			System.Diagnostics.Debug.Assert(numBytes >= 0, "numBytes=" + numBytes);
 			long left = numBytes;
@@ -208,7 +208,7 @@ namespace Lucene.Net.Store
 					toCopy = COPY_BUFFER_SIZE;
 				else
 					toCopy = (int) left;
-				input.ReadBytes(copyBuffer, 0, toCopy);
+				input.ReadBytes(copyBuffer, 0, toCopy, state);
 				WriteBytes(copyBuffer, 0, toCopy);
 				left -= toCopy;
 			}

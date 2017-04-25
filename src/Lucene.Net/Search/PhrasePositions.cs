@@ -18,6 +18,7 @@
 using System;
 
 using Lucene.Net.Index;
+using Lucene.Net.Store;
 
 namespace Lucene.Net.Search
 {
@@ -39,10 +40,10 @@ namespace Lucene.Net.Search
 			offset = o;
 		}
 		
-		internal bool Next()
+		internal bool Next(IState state)
 		{
 			// increments to next doc
-			if (!tp.Next())
+			if (!tp.Next(state))
 			{
 				tp.Close(); // close stream
 				doc = System.Int32.MaxValue; // sentinel value
@@ -53,9 +54,9 @@ namespace Lucene.Net.Search
 			return true;
 		}
 		
-		internal bool SkipTo(int target)
+		internal bool SkipTo(int target, IState state)
 		{
-			if (!tp.SkipTo(target))
+			if (!tp.SkipTo(target, state))
 			{
 				tp.Close(); // close stream
 				doc = System.Int32.MaxValue; // sentinel value
@@ -67,10 +68,10 @@ namespace Lucene.Net.Search
 		}
 		
 		
-		internal void  FirstPosition()
+		internal void  FirstPosition(IState state)
 		{
 			count = tp.Freq; // read first pos
-			NextPosition();
+			NextPosition(state);
 		}
 		
 		/// <summary> Go to next location of this term current document, and set 
@@ -78,12 +79,12 @@ namespace Lucene.Net.Search
 		/// matching exact phrase is easily identified when all PhrasePositions 
 		/// have exactly the same <c>position</c>.
 		/// </summary>
-		internal bool NextPosition()
+		internal bool NextPosition(IState state)
 		{
 			if (count-- > 0)
 			{
 				// read subsequent pos's
-				position = tp.NextPosition() - offset;
+				position = tp.NextPosition(state) - offset;
 				return true;
 			}
 			else

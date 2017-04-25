@@ -17,6 +17,7 @@
 
 using System;
 using Lucene.Net.Documents;
+using Lucene.Net.Store;
 
 namespace Lucene.Net.Index
 {
@@ -35,10 +36,10 @@ namespace Lucene.Net.Index
 			this.two = two;
 		}
 		
-		public override void  ProcessFields(IFieldable[] fields, int count)
+		public override void  ProcessFields(IFieldable[] fields, int count, IState state)
 		{
-			one.ProcessFields(fields, count);
-			two.ProcessFields(fields, count);
+			one.ProcessFields(fields, count, state);
+			two.ProcessFields(fields, count, state);
 		}
 		
 		public override void  Abort()

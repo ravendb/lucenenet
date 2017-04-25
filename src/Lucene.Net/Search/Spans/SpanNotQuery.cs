@@ -18,6 +18,7 @@
 using System;
 using System.Collections.Generic;
 using Lucene.Net.Index;
+using Lucene.Net.Store;
 using Lucene.Net.Support;
 using IndexReader = Lucene.Net.Index.IndexReader;
 using ToStringUtils = Lucene.Net.Util.ToStringUtils;
@@ -34,17 +35,17 @@ namespace Lucene.Net.Search.Spans
 	{
 		private class AnonymousClassSpans : Spans
 		{
-			public AnonymousClassSpans(Lucene.Net.Index.IndexReader reader, SpanNotQuery enclosingInstance)
+			public AnonymousClassSpans(Lucene.Net.Index.IndexReader reader, SpanNotQuery enclosingInstance, IState state)
 			{
-				InitBlock(reader, enclosingInstance);
+				InitBlock(reader, enclosingInstance, state);
 			}
-			private void  InitBlock(Lucene.Net.Index.IndexReader reader, SpanNotQuery enclosingInstance)
+			private void  InitBlock(Lucene.Net.Index.IndexReader reader, SpanNotQuery enclosingInstance, IState state)
 			{
 				this.reader = reader;
 				this.enclosingInstance = enclosingInstance;
-				includeSpans = Enclosing_Instance.include.GetSpans(reader);
-				excludeSpans = Enclosing_Instance.exclude.GetSpans(reader);
-				moreExclude = excludeSpans.Next();
+				includeSpans = Enclosing_Instance.include.GetSpans(reader, state);
+				excludeSpans = Enclosing_Instance.exclude.GetSpans(reader, state);
+				moreExclude = excludeSpans.Next(state);
 			}
 			private Lucene.Net.Index.IndexReader reader;
 			private SpanNotQuery enclosingInstance;
@@ -62,53 +63,53 @@ namespace Lucene.Net.Search.Spans
 			private Spans excludeSpans;
 			private bool moreExclude;
 			
-			public override bool Next()
+			public override bool Next(IState state)
 			{
 				if (moreInclude)
 				// move to next include
-					moreInclude = includeSpans.Next();
+					moreInclude = includeSpans.Next(state);
 				
 				while (moreInclude && moreExclude)
 				{
 					
 					if (includeSpans.Doc() > excludeSpans.Doc())
 					// skip exclude
-						moreExclude = excludeSpans.SkipTo(includeSpans.Doc());
+						moreExclude = excludeSpans.SkipTo(includeSpans.Doc(), state);
 					
 					while (moreExclude && includeSpans.Doc() == excludeSpans.Doc() && excludeSpans.End() <= includeSpans.Start())
 					{
-						moreExclude = excludeSpans.Next(); // increment exclude
+						moreExclude = excludeSpans.Next(state); // increment exclude
 					}
 					
 					if (!moreExclude || includeSpans.Doc() != excludeSpans.Doc() || includeSpans.End() <= excludeSpans.Start())
 						break; // we found a match
 					
-					moreInclude = includeSpans.Next(); // intersected: keep scanning
+					moreInclude = includeSpans.Next(state); // intersected: keep scanning
 				}
 				return moreInclude;
 			}
 			
-			public override bool SkipTo(int target)
+			public override bool SkipTo(int target, IState state)
 			{
 				if (moreInclude)
 				// skip include
-					moreInclude = includeSpans.SkipTo(target);
+					moreInclude = includeSpans.SkipTo(target, state);
 				
 				if (!moreInclude)
 					return false;
 				
 				if (moreExclude && includeSpans.Doc() > excludeSpans.Doc())
-					moreExclude = excludeSpans.SkipTo(includeSpans.Doc());
+					moreExclude = excludeSpans.SkipTo(includeSpans.Doc(), state);
 				
 				while (moreExclude && includeSpans.Doc() == excludeSpans.Doc() && excludeSpans.End() <= includeSpans.Start())
 				{
-					moreExclude = excludeSpans.Next(); // increment exclude
+					moreExclude = excludeSpans.Next(state); // increment exclude
 				}
 				
 				if (!moreExclude || includeSpans.Doc() != excludeSpans.Doc() || includeSpans.End() <= excludeSpans.Start())
 					return true; // we found a match
 				
-				return Next(); // scan to next match
+				return Next(state); // scan to next match
 			}
 			
 			public override int Doc()
@@ -126,12 +127,12 @@ namespace Lucene.Net.Search.Spans
 			
 			// TODO: Remove warning after API has been finalizedb
 
-		    public override ICollection<byte[]> GetPayload()
+		    public override ICollection<byte[]> GetPayload(IState state)
 		    {
 		        System.Collections.Generic.ICollection<byte[]> result = null;
 		        if (includeSpans.IsPayloadAvailable())
 		        {
-		            result = includeSpans.GetPayload();
+		            result = includeSpans.GetPayload(state);
 		        }
 		        return result;
 		    }
@@ -204,22 +205,22 @@ namespace Lucene.Net.Search.Spans
 			return spanNotQuery;
 		}
 		
-		public override Spans GetSpans(IndexReader reader)
+		public override Spans GetSpans(IndexReader reader, IState state)
 		{
-			return new AnonymousClassSpans(reader, this);
+			return new AnonymousClassSpans(reader, this, state);
 		}
 		
-		public override Query Rewrite(IndexReader reader)
+		public override Query Rewrite(IndexReader reader, IState state)
 		{
 			SpanNotQuery clone = null;
 			
-			SpanQuery rewrittenInclude = (SpanQuery) include.Rewrite(reader);
+			SpanQuery rewrittenInclude = (SpanQuery) include.Rewrite(reader, state);
 			if (rewrittenInclude != include)
 			{
 				clone = (SpanNotQuery) this.Clone();
 				clone.include = rewrittenInclude;
 			}
-			SpanQuery rewrittenExclude = (SpanQuery) exclude.Rewrite(reader);
+			SpanQuery rewrittenExclude = (SpanQuery) exclude.Rewrite(reader, state);
 			if (rewrittenExclude != exclude)
 			{
 				if (clone == null)

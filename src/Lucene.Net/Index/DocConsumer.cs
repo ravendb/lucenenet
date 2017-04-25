@@ -16,6 +16,7 @@
  */
 
 using System;
+using Lucene.Net.Store;
 
 namespace Lucene.Net.Index
 {
@@ -23,8 +24,8 @@ namespace Lucene.Net.Index
 	abstract class DocConsumer
 	{
 		public abstract DocConsumerPerThread AddThread(DocumentsWriterThreadState perThread);
-		public abstract void  Flush(System.Collections.Generic.ICollection<DocConsumerPerThread> threads, SegmentWriteState state);
-		public abstract void  CloseDocStore(SegmentWriteState state);
+		public abstract void  Flush(System.Collections.Generic.ICollection<DocConsumerPerThread> threads, SegmentWriteState state, IState s);
+		public abstract void  CloseDocStore(SegmentWriteState state, IState s);
 		public abstract void  Abort();
 		public abstract bool FreeRAM();
 	}

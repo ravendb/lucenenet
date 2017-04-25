@@ -53,14 +53,14 @@ namespace Lucene.Net.Store
 	    }
 
 	    /// <summary>Creates an IndexOutput for the file with the given name. </summary>
-		public override IndexOutput CreateOutput(System.String name)
+		public override IndexOutput CreateOutput(System.String name, IState state)
 		{
 			InitOutput(name);
 			return new SimpleFSIndexOutput(new System.IO.FileInfo(System.IO.Path.Combine(internalDirectory.FullName, name)));
 		}
 		
 		/// <summary>Creates an IndexInput for the file with the given name. </summary>
-		public override IndexInput OpenInput(System.String name, int bufferSize)
+		public override IndexInput OpenInput(System.String name, int bufferSize, IState state)
 		{
 			EnsureOpen();
 
@@ -144,11 +144,11 @@ namespace Lucene.Net.Store
             }
 
 		    /// <summary>IndexInput methods </summary>
-			public override void  ReadInternal(byte[] b, int offset, int len)
+			public override void  ReadInternal(byte[] b, int offset, int len, IState state)
 			{
 				lock (file)
 				{
-					long position = FilePointer;
+					long position = FilePointer(state);
 					if (position != file.position)
 					{
 						file.BaseStream.Seek(position, System.IO.SeekOrigin.Begin);
@@ -214,7 +214,7 @@ namespace Lucene.Net.Store
 			{
 			}
 			
-			public override long Length()
+			public override long Length(IState state)
 			{
 				return file.length;
 			}

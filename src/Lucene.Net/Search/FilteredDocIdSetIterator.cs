@@ -16,6 +16,7 @@
  */
 
 using System;
+using Lucene.Net.Store;
 
 namespace Lucene.Net.Search
 {
@@ -57,9 +58,9 @@ namespace Lucene.Net.Search
 			return doc;
 		}
 		
-		public override int NextDoc()
+		public override int NextDoc(IState state)
 		{
-			while ((doc = internalInnerIter.NextDoc()) != NO_MORE_DOCS)
+			while ((doc = internalInnerIter.NextDoc(state)) != NO_MORE_DOCS)
 			{
 				if (Match(doc))
 				{
@@ -69,9 +70,9 @@ namespace Lucene.Net.Search
 			return doc;
 		}
 		
-		public override int Advance(int target)
+		public override int Advance(int target, IState state)
 		{
-			doc = internalInnerIter.Advance(target);
+			doc = internalInnerIter.Advance(target, state);
 			if (doc != NO_MORE_DOCS)
 			{
 				if (Match(doc))
@@ -80,7 +81,7 @@ namespace Lucene.Net.Search
 				}
 				else
 				{
-					while ((doc = internalInnerIter.NextDoc()) != NO_MORE_DOCS)
+					while ((doc = internalInnerIter.NextDoc(state)) != NO_MORE_DOCS)
 					{
 						if (Match(doc))
 						{

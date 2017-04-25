@@ -16,6 +16,7 @@
  */
 
 using System;
+using Lucene.Net.Store;
 using Lucene.Net.Support;
 using IndexInput = Lucene.Net.Store.IndexInput;
 
@@ -43,9 +44,9 @@ namespace Lucene.Net.Index
 			this.proxStream = null; // the proxStream will be cloned lazily when nextPosition() is called for the first time
 		}
 		
-		internal override void  Seek(TermInfo ti, Term term)
+		internal override void  Seek(TermInfo ti, Term term, IState state)
 		{
-			base.Seek(ti, term);
+			base.Seek(ti, term, state);
 			if (ti != null)
 				lazySkipPointer = ti.proxPointer;
 			
@@ -62,20 +63,20 @@ namespace Lucene.Net.Index
                 proxStream.Dispose();
         }
 		
-		public int NextPosition()
+		public int NextPosition(IState state)
 		{
 			if (currentFieldOmitTermFreqAndPositions)
 			// This field does not store term freq, positions, payloads
 				return 0;
 			// perform lazy skips if neccessary
-			LazySkip();
+			LazySkip(state);
 			proxCount--;
-			return position += ReadDeltaPosition();
+			return position += ReadDeltaPosition(state);
 		}
 		
-		private int ReadDeltaPosition()
+		private int ReadDeltaPosition(IState state)
 		{
-			int delta = proxStream.ReadVInt();
+			int delta = proxStream.ReadVInt(state);
 			if (currentFieldStoresPayloads)
 			{
 				// if the current field stores payloads then
@@ -84,7 +85,7 @@ namespace Lucene.Net.Index
 				// payload length
 				if ((delta & 1) != 0)
 				{
-					payloadLength = proxStream.ReadVInt();
+					payloadLength = proxStream.ReadVInt(state);
 				}
 				delta = Number.URShift(delta, 1);
 				needToLoadPayload = true;
@@ -98,13 +99,13 @@ namespace Lucene.Net.Index
 			lazySkipProxCount += freq;
 		}
 		
-		public override bool Next()
+		public override bool Next(IState state)
 		{
 			// we remember to skip the remaining positions of the current
 			// document lazily
 			lazySkipProxCount += proxCount;
 			
-			if (base.Next())
+			if (base.Next(state))
 			{
 				// run super
 				proxCount = freq; // note frequency
@@ -114,7 +115,7 @@ namespace Lucene.Net.Index
 			return false;
 		}
 		
-		public override int Read(int[] docs, int[] freqs)
+		public override int Read(int[] docs, int[] freqs, IState state)
 		{
 			throw new System.NotSupportedException("TermPositions does not support processing multiple documents in one call. Use TermDocs instead.");
 		}
@@ -131,22 +132,22 @@ namespace Lucene.Net.Index
 			needToLoadPayload = false;
 		}
 		
-		private void  SkipPositions(int n)
+		private void  SkipPositions(int n, IState state)
 		{
 			System.Diagnostics.Debug.Assert(!currentFieldOmitTermFreqAndPositions);
 			for (int f = n; f > 0; f--)
 			{
 				// skip unread positions
-				ReadDeltaPosition();
-				SkipPayload();
+				ReadDeltaPosition(state);
+				SkipPayload(state);
 			}
 		}
 		
-		private void  SkipPayload()
+		private void  SkipPayload(IState state)
 		{
 			if (needToLoadPayload && payloadLength > 0)
 			{
-				proxStream.Seek(proxStream.FilePointer + payloadLength);
+				proxStream.Seek(proxStream.FilePointer(state) + payloadLength, state);
 			}
 			needToLoadPayload = false;
 		}
@@ -161,7 +162,7 @@ namespace Lucene.Net.Index
 		// to each other in document x and thus satisfy the query.
 		// So we move the prox pointer lazily to the document
 		// as soon as positions are requested.
-		private void  LazySkip()
+		private void  LazySkip(IState state)
 		{
 			if (proxStream == null)
 			{
@@ -171,17 +172,17 @@ namespace Lucene.Net.Index
 			
 			// we might have to skip the current payload
 			// if it was not read yet
-			SkipPayload();
+			SkipPayload(state);
 			
 			if (lazySkipPointer != - 1)
 			{
-				proxStream.Seek(lazySkipPointer);
+				proxStream.Seek(lazySkipPointer, state);
 				lazySkipPointer = - 1;
 			}
 			
 			if (lazySkipProxCount != 0)
 			{
-				SkipPositions(lazySkipProxCount);
+				SkipPositions(lazySkipProxCount, state);
 				lazySkipProxCount = 0;
 			}
 		}
@@ -191,7 +192,7 @@ namespace Lucene.Net.Index
 	        get { return payloadLength; }
 	    }
 
-	    public byte[] GetPayload(byte[] data, int offset)
+	    public byte[] GetPayload(byte[] data, int offset, IState state)
 		{
 			if (!needToLoadPayload)
 			{
@@ -213,7 +214,7 @@ namespace Lucene.Net.Index
 				retArray = data;
 				retOffset = offset;
 			}
-			proxStream.ReadBytes(retArray, retOffset, payloadLength);
+			proxStream.ReadBytes(retArray, retOffset, payloadLength, state);
 			needToLoadPayload = false;
 			return retArray;
 		}

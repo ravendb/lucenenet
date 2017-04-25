@@ -21,6 +21,7 @@ using Lucene.Net.Support;
 using Lucene.Net.Util;
 using TokenStream = Lucene.Net.Analysis.TokenStream;
 using Lucene.Net.Documents;
+using Lucene.Net.Store;
 using AlreadyClosedException = Lucene.Net.Store.AlreadyClosedException;
 using BufferedIndexInput = Lucene.Net.Store.BufferedIndexInput;
 using Directory = Lucene.Net.Store.Directory;
@@ -87,15 +88,15 @@ namespace Lucene.Net.Index
 			indexStream = (IndexInput) cloneableIndexStream.Clone();
 		}
 		
-		public /*internal*/ FieldsReader(Directory d, String segment, FieldInfos fn):this(d, segment, fn, BufferedIndexInput.BUFFER_SIZE, - 1, 0)
+		public /*internal*/ FieldsReader(Directory d, String segment, FieldInfos fn, IState state) :this(d, segment, fn, BufferedIndexInput.BUFFER_SIZE, - 1, 0, state)
 		{
 		}
 		
-		internal FieldsReader(Directory d, System.String segment, FieldInfos fn, int readBufferSize):this(d, segment, fn, readBufferSize, - 1, 0)
+		internal FieldsReader(Directory d, System.String segment, FieldInfos fn, int readBufferSize, IState state) :this(d, segment, fn, readBufferSize, - 1, 0, state)
 		{
 		}
 		
-		internal FieldsReader(Directory d, System.String segment, FieldInfos fn, int readBufferSize, int docStoreOffset, int size)
+		internal FieldsReader(Directory d, System.String segment, FieldInfos fn, int readBufferSize, int docStoreOffset, int size, IState state)
 		{
 			bool success = false;
 			isOriginal = true;
@@ -103,13 +104,13 @@ namespace Lucene.Net.Index
 			{
 				fieldInfos = fn;
 				
-				cloneableFieldsStream = d.OpenInput(segment + "." + IndexFileNames.FIELDS_EXTENSION, readBufferSize);
-				cloneableIndexStream = d.OpenInput(segment + "." + IndexFileNames.FIELDS_INDEX_EXTENSION, readBufferSize);
+				cloneableFieldsStream = d.OpenInput(segment + "." + IndexFileNames.FIELDS_EXTENSION, readBufferSize, state);
+				cloneableIndexStream = d.OpenInput(segment + "." + IndexFileNames.FIELDS_INDEX_EXTENSION, readBufferSize, state);
 				
 				// First version of fdx did not include a format
 				// header, but, the first int will always be 0 in that
 				// case
-				int firstInt = cloneableIndexStream.ReadInt();
+				int firstInt = cloneableIndexStream.ReadInt(state);
 				format = firstInt == 0 ? 0 : firstInt;
 				
 				if (format > FieldsWriter.FORMAT_CURRENT)
@@ -122,7 +123,7 @@ namespace Lucene.Net.Index
 				
 				fieldsStream = (IndexInput) cloneableFieldsStream.Clone();
 				
-				long indexSize = cloneableIndexStream.Length() - formatSize;
+				long indexSize = cloneableIndexStream.Length(state) - formatSize;
 				
 				if (docStoreOffset != - 1)
 				{
@@ -206,9 +207,9 @@ namespace Lucene.Net.Index
 			return size;
 		}
 		
-		private void  SeekIndex(int docID)
+		private void  SeekIndex(int docID, IState state)
 		{
-			indexStream.Seek(formatSize + (docID + docStoreOffset) * 8L);
+			indexStream.Seek(formatSize + (docID + docStoreOffset) * 8L, state);
 		}
 		
 		internal bool CanReadRawDocs()
@@ -220,21 +221,21 @@ namespace Lucene.Net.Index
 			return format >= FieldsWriter.FORMAT_LUCENE_3_0_NO_COMPRESSED_FIELDS;
 		}
 		
-		public /*internal*/ Document Doc(int n, FieldSelector fieldSelector)
+		public /*internal*/ Document Doc(int n, FieldSelector fieldSelector, IState state)
 		{
-			SeekIndex(n);
-			long position = indexStream.ReadLong();
-			fieldsStream.Seek(position);
+			SeekIndex(n, state);
+			long position = indexStream.ReadLong(state);
+			fieldsStream.Seek(position, state);
 			
 			var doc = new Document();
-			int numFields = fieldsStream.ReadVInt();
+			int numFields = fieldsStream.ReadVInt(state);
 			for (int i = 0; i < numFields; i++)
 			{
-				int fieldNumber = fieldsStream.ReadVInt();
+				int fieldNumber = fieldsStream.ReadVInt(state);
 				FieldInfo fi = fieldInfos.FieldInfo(fieldNumber);
 				FieldSelectorResult acceptField = fieldSelector == null?FieldSelectorResult.LOAD:fieldSelector.Accept(fi.name);
 				
-				byte bits = fieldsStream.ReadByte();
+				byte bits = fieldsStream.ReadByte(state);
 				System.Diagnostics.Debug.Assert(bits <= FieldsWriter.FIELD_IS_COMPRESSED + FieldsWriter.FIELD_IS_TOKENIZED + FieldsWriter.FIELD_IS_BINARY);
 				
 				bool compressed = (bits & FieldsWriter.FIELD_IS_COMPRESSED) != 0;
@@ -247,29 +248,29 @@ namespace Lucene.Net.Index
 				//list of 5 or 6 currently here.  See Lucene 762 for discussion
 				if (acceptField.Equals(FieldSelectorResult.LOAD))
 				{
-					AddField(doc, fi, binary, compressed, tokenize);
+					AddField(doc, fi, binary, compressed, tokenize, state);
 				}
 				else if (acceptField.Equals(FieldSelectorResult.LOAD_AND_BREAK))
 				{
-					AddField(doc, fi, binary, compressed, tokenize);
+					AddField(doc, fi, binary, compressed, tokenize, state);
 					break; //Get out of this loop
 				}
 				else if (acceptField.Equals(FieldSelectorResult.LAZY_LOAD))
 				{
-					AddFieldLazy(doc, fi, binary, compressed, tokenize);
+					AddFieldLazy(doc, fi, binary, compressed, tokenize, state);
 				}
 				else if (acceptField.Equals(FieldSelectorResult.SIZE))
 				{
-					SkipField(binary, compressed, AddFieldSize(doc, fi, binary, compressed));
+					SkipField(binary, compressed, AddFieldSize(doc, fi, binary, compressed, state), state);
 				}
 				else if (acceptField.Equals(FieldSelectorResult.SIZE_AND_BREAK))
 				{
-					AddFieldSize(doc, fi, binary, compressed);
+					AddFieldSize(doc, fi, binary, compressed, state);
 					break;
 				}
 				else
 				{
-					SkipField(binary, compressed);
+					SkipField(binary, compressed, state);
 				}
 			}
 			
@@ -281,10 +282,10 @@ namespace Lucene.Net.Index
 		/// startDocID.  Returns the IndexInput (the fieldStream),
 		/// already seeked to the starting point for startDocID.
 		/// </summary>
-		internal IndexInput RawDocs(int[] lengths, int startDocID, int numDocs)
+		internal IndexInput RawDocs(int[] lengths, int startDocID, int numDocs, IState state)
 		{
-			SeekIndex(startDocID);
-			long startOffset = indexStream.ReadLong();
+			SeekIndex(startDocID, state);
+			long startOffset = indexStream.ReadLong(state);
 			long lastOffset = startOffset;
 			int count = 0;
 			while (count < numDocs)
@@ -293,14 +294,14 @@ namespace Lucene.Net.Index
 				int docID = docStoreOffset + startDocID + count + 1;
 				System.Diagnostics.Debug.Assert(docID <= numTotalDocs);
 				if (docID < numTotalDocs)
-					offset = indexStream.ReadLong();
+					offset = indexStream.ReadLong(state);
 				else
-					offset = fieldsStream.Length();
+					offset = fieldsStream.Length(state);
 				lengths[count++] = (int) (offset - lastOffset);
 				lastOffset = offset;
 			}
 			
-			fieldsStream.Seek(startOffset);
+			fieldsStream.Seek(startOffset, state);
 			
 			return fieldsStream;
 		}
@@ -308,35 +309,35 @@ namespace Lucene.Net.Index
 		/// <summary> Skip the field.  We still have to read some of the information about the field, but can skip past the actual content.
 		/// This will have the most payoff on large fields.
 		/// </summary>
-		private void  SkipField(bool binary, bool compressed)
+		private void  SkipField(bool binary, bool compressed, IState state)
 		{
-			SkipField(binary, compressed, fieldsStream.ReadVInt());
+			SkipField(binary, compressed, fieldsStream.ReadVInt(state), state);
 		}
 		
-		private void  SkipField(bool binary, bool compressed, int toRead)
+		private void  SkipField(bool binary, bool compressed, int toRead, IState state)
 		{
 			if (format >= FieldsWriter.FORMAT_VERSION_UTF8_LENGTH_IN_BYTES || binary || compressed)
 			{
-				fieldsStream.Seek(fieldsStream.FilePointer + toRead);
+				fieldsStream.Seek(fieldsStream.FilePointer(state) + toRead, state);
 			}
 			else
 			{
 				// We need to skip chars.  This will slow us down, but still better
-				fieldsStream.SkipChars(toRead);
+				fieldsStream.SkipChars(toRead, state);
 			}
 		}
 		
-		private void  AddFieldLazy(Document doc, FieldInfo fi, bool binary, bool compressed, bool tokenize)
+		private void  AddFieldLazy(Document doc, FieldInfo fi, bool binary, bool compressed, bool tokenize, IState state)
 		{
 			if (binary)
 			{
-				int toRead = fieldsStream.ReadVInt();
-				long pointer = fieldsStream.FilePointer;
+				int toRead = fieldsStream.ReadVInt(state);
+				long pointer = fieldsStream.FilePointer(state);
 				//was: doc.add(new Fieldable(fi.name, b, Fieldable.Store.YES));
 				doc.Add(new LazyField(this, fi.name, Field.Store.YES, toRead, pointer, binary, compressed));
 
 				//Need to move the pointer ahead by toRead positions
-				fieldsStream.Seek(pointer + toRead);
+				fieldsStream.Seek(pointer + toRead, state);
 			}
 			else
 			{
@@ -347,26 +348,26 @@ namespace Lucene.Net.Index
 				AbstractField f;
 				if (compressed)
 				{
-					int toRead = fieldsStream.ReadVInt();
-					long pointer = fieldsStream.FilePointer;
+					int toRead = fieldsStream.ReadVInt(state);
+					long pointer = fieldsStream.FilePointer(state);
 					f = new LazyField(this, fi.name, store, toRead, pointer, binary, compressed);
 					//skip over the part that we aren't loading
-					fieldsStream.Seek(pointer + toRead);
+					fieldsStream.Seek(pointer + toRead, state);
 					f.OmitNorms = fi.omitNorms;
 					f.OmitTermFreqAndPositions = fi.omitTermFreqAndPositions;
 				}
 				else
 				{
-					int length = fieldsStream.ReadVInt();
-					long pointer = fieldsStream.FilePointer;
+					int length = fieldsStream.ReadVInt(state);
+					long pointer = fieldsStream.FilePointer(state);
 					//Skip ahead of where we are by the length of what is stored
                     if (format >= FieldsWriter.FORMAT_VERSION_UTF8_LENGTH_IN_BYTES)
                     {
-                        fieldsStream.Seek(pointer + length);
+                        fieldsStream.Seek(pointer + length, state);
                     }
                     else
                     {
-                        fieldsStream.SkipChars(length);
+                        fieldsStream.SkipChars(length, state);
                     }
 					f = new LazyField(this, fi.name, store, index, termVector, length, pointer, binary, compressed)
 					    	{OmitNorms = fi.omitNorms, OmitTermFreqAndPositions = fi.omitTermFreqAndPositions};
@@ -376,14 +377,14 @@ namespace Lucene.Net.Index
 			}
 		}
 
-		private void AddField(Document doc, FieldInfo fi, bool binary, bool compressed, bool tokenize)
+		private void AddField(Document doc, FieldInfo fi, bool binary, bool compressed, bool tokenize, IState state)
 		{
 			//we have a binary stored field, and it may be compressed
 			if (binary)
 			{
-				int toRead = fieldsStream.ReadVInt();
+				int toRead = fieldsStream.ReadVInt(state);
 				var b = new byte[toRead];
-				fieldsStream.ReadBytes(b, 0, b.Length);
+				fieldsStream.ReadBytes(b, 0, b.Length, state);
 				doc.Add(compressed ? new Field(fi.name, Uncompress(b), Field.Store.YES) : new Field(fi.name, b, Field.Store.YES));
 			}
 			else
@@ -395,16 +396,16 @@ namespace Lucene.Net.Index
 				AbstractField f;
 				if (compressed)
 				{
-					int toRead = fieldsStream.ReadVInt();
+					int toRead = fieldsStream.ReadVInt(state);
 					
 					var b = new byte[toRead];
-					fieldsStream.ReadBytes(b, 0, b.Length);
+					fieldsStream.ReadBytes(b, 0, b.Length, state);
 					f = new Field(fi.name, false, System.Text.Encoding.GetEncoding("UTF-8").GetString(Uncompress(b)), store, index,
 					              termVector) {OmitTermFreqAndPositions = fi.omitTermFreqAndPositions, OmitNorms = fi.omitNorms};
 				}
 				else
 				{
-					f = new Field(fi.name, false, fieldsStream.ReadString(), store, index, termVector)
+					f = new Field(fi.name, false, fieldsStream.ReadString(state), store, index, termVector)
 					    	{OmitTermFreqAndPositions = fi.omitTermFreqAndPositions, OmitNorms = fi.omitNorms};
 				}
 
@@ -415,9 +416,9 @@ namespace Lucene.Net.Index
 		// Add the size of field as a byte[] containing the 4 bytes of the integer byte size (high order byte first; char = 2 bytes)
 		// Read just the size -- caller must skip the field content to continue reading fields
 		// Return the size in bytes or chars, depending on field type
-		private int AddFieldSize(Document doc, FieldInfo fi, bool binary, bool compressed)
+		private int AddFieldSize(Document doc, FieldInfo fi, bool binary, bool compressed, IState state)
 		{
-			int size = fieldsStream.ReadVInt(), bytesize = binary || compressed?size:2 * size;
+			int size = fieldsStream.ReadVInt(state), bytesize = binary || compressed?size:2 * size;
 			var sizebytes = new byte[4];
 			sizebytes[0] = (byte) (Number.URShift(bytesize, 24));
 			sizebytes[1] = (byte) (Number.URShift(bytesize, 16));
@@ -512,51 +513,48 @@ namespace Lucene.Net.Index
 		    /// binary value, or TokenStream value is used.  Exactly one of StringValue(), 
 		    /// ReaderValue(), GetBinaryValue(), and TokenStreamValue() must be set. 
 		    /// </summary>
-		    public override string StringValue
+		    public override string StringValue(IState state)
 		    {
-		        get
-		        {
-		            Enclosing_Instance.EnsureOpen();
-		            if (internalIsBinary)
-		                return null;
+		        Enclosing_Instance.EnsureOpen();
+		        if (internalIsBinary)
+		            return null;
 
-		        	if (fieldsData == null)
+		        if (fieldsData == null)
+		        {
+		        	IndexInput localFieldsStream = GetFieldStream();
+		        	try
 		        	{
-		        		IndexInput localFieldsStream = GetFieldStream();
-		        		try
+		        		localFieldsStream.Seek(pointer, state);
+		        		if (isCompressed)
 		        		{
-		        			localFieldsStream.Seek(pointer);
-		        			if (isCompressed)
+		        			var b = new byte[toRead];
+		        			localFieldsStream.ReadBytes(b, 0, b.Length, state);
+		        			fieldsData =
+		        				System.Text.Encoding.GetEncoding("UTF-8").GetString(Enclosing_Instance.Uncompress(b));
+		        		}
+		        		else
+		        		{
+		        			if (Enclosing_Instance.format >= FieldsWriter.FORMAT_VERSION_UTF8_LENGTH_IN_BYTES)
 		        			{
-		        				var b = new byte[toRead];
-		        				localFieldsStream.ReadBytes(b, 0, b.Length);
-		        				fieldsData =
-		        					System.Text.Encoding.GetEncoding("UTF-8").GetString(Enclosing_Instance.Uncompress(b));
+		        				var bytes = new byte[toRead];
+		        				localFieldsStream.ReadBytes(bytes, 0, toRead, state);
+		        				fieldsData = System.Text.Encoding.GetEncoding("UTF-8").GetString(bytes);
 		        			}
 		        			else
 		        			{
-		        				if (Enclosing_Instance.format >= FieldsWriter.FORMAT_VERSION_UTF8_LENGTH_IN_BYTES)
-		        				{
-		        					var bytes = new byte[toRead];
-		        					localFieldsStream.ReadBytes(bytes, 0, toRead);
-		        					fieldsData = System.Text.Encoding.GetEncoding("UTF-8").GetString(bytes);
-		        				}
-		        				else
-		        				{
-		        					//read in chars b/c we already know the length we need to read
-		        					var chars = new char[toRead];
-		        					localFieldsStream.ReadChars(chars, 0, toRead);
-		        					fieldsData = new System.String(chars);
-		        				}
+		        				//read in chars b/c we already know the length we need to read
+		        				var chars = new char[toRead];
+		        				localFieldsStream.ReadChars(chars, 0, toRead, state);
+		        				fieldsData = new System.String(chars);
 		        			}
 		        		}
-		        		catch (System.IO.IOException e)
-		        		{
-		        			throw new FieldReaderException(e);
-		        		}
 		        	}
-		        	return (System.String) fieldsData;
+		        	catch (System.IO.IOException e)
+		        	{
+		        		throw new FieldReaderException(e);
+		        	}
 		        }
+		        return (System.String) fieldsData;
 		    }
 
 		    public long Pointer
@@ -587,7 +585,7 @@ namespace Lucene.Net.Index
 		        }
 		    }
 
-		    public override byte[] GetBinaryValue(byte[] result)
+		    public override byte[] GetBinaryValue(byte[] result, IState state)
 			{
 				Enclosing_Instance.EnsureOpen();
 				
@@ -608,8 +606,8 @@ namespace Lucene.Net.Index
 						// since they are already handling this exception when getting the document
 						try
 						{
-							localFieldsStream.Seek(pointer);
-							localFieldsStream.ReadBytes(b, 0, toRead);
+							localFieldsStream.Seek(pointer, state);
+							localFieldsStream.ReadBytes(b, 0, toRead, state);
 							fieldsData = isCompressed ? Enclosing_Instance.Uncompress(b) : b;
 						}
 						catch (IOException e)

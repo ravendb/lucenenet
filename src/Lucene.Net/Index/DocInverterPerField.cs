@@ -18,6 +18,7 @@
 using System;
 using Lucene.Net.Analysis.Tokenattributes;
 using Lucene.Net.Documents;
+using Lucene.Net.Store;
 using TokenStream = Lucene.Net.Analysis.TokenStream;
 
 namespace Lucene.Net.Index
@@ -57,7 +58,7 @@ namespace Lucene.Net.Index
 			endConsumer.Abort();
 		}
 		
-		public override void  ProcessFields(IFieldable[] fields, int count)
+		public override void  ProcessFields(IFieldable[] fields, int count, IState state)
 		{
 			
 			fieldState.Reset(docState.doc.Boost);
@@ -85,7 +86,7 @@ namespace Lucene.Net.Index
 					if (!field.IsTokenized)
 					{
 						// un-tokenized field
-						System.String stringValue = field.StringValue;
+						System.String stringValue = field.StringValue(state);
 						int valueLength = stringValue.Length;
 						perThread.singleToken.Reinit(stringValue, 0, valueLength);
 						fieldState.attributeSource = perThread.singleToken;
@@ -126,7 +127,7 @@ namespace Lucene.Net.Index
 								reader = readerValue;
 							else
 							{
-								System.String stringValue = field.StringValue;
+								System.String stringValue = field.StringValue(state);
 								if (stringValue == null)
 									throw new System.ArgumentException("field must have either TokenStream, String or Reader value");
 								perThread.stringReader.Init(stringValue);

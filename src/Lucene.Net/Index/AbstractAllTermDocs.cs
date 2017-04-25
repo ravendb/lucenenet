@@ -16,6 +16,7 @@
  */
 
 using System;
+using Lucene.Net.Store;
 
 namespace Lucene.Net.Index
 {
@@ -38,7 +39,7 @@ namespace Lucene.Net.Index
             this.maxDoc = maxDoc;
         }
 
-        public void Seek(Term term)
+        public void Seek(Term term, IState state)
         {
             if (term == null)
             {
@@ -50,7 +51,7 @@ namespace Lucene.Net.Index
             }
         }
 
-        public void Seek(TermEnum termEnum)
+        public void Seek(TermEnum termEnum, IState state)
         {
             throw new NotSupportedException();
         }
@@ -65,12 +66,12 @@ namespace Lucene.Net.Index
             get { return 1; }
         }
 
-        public bool Next()
+        public bool Next(IState state)
         {
-            return SkipTo(internalDoc + 1);
+            return SkipTo(internalDoc + 1, state);
         }
 
-        public int Read(int[] docs, int[] freqs)
+        public int Read(int[] docs, int[] freqs, IState state)
         {
             int length = docs.Length;
             int i = 0;
@@ -87,7 +88,7 @@ namespace Lucene.Net.Index
             return i;
         }
 
-        public bool SkipTo(int target)
+        public bool SkipTo(int target, IState state)
         {
             internalDoc = target;
             while (internalDoc < maxDoc)

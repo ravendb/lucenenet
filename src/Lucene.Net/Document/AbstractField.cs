@@ -17,6 +17,7 @@
 
 using System;
 using System.IO;
+using Lucene.Net.Store;
 using TokenStream = Lucene.Net.Analysis.TokenStream;
 using StringHelper = Lucene.Net.Util.StringHelper;
 using PhraseQuery = Lucene.Net.Search.PhraseQuery;
@@ -171,12 +172,12 @@ namespace Lucene.Net.Documents
 	    /// returned array belong to the field.
 	    /// </summary>
 	    /// <returns> reference to the Field value as byte[]. </returns>
-	    public virtual byte[] GetBinaryValue()
+	    public virtual byte[] GetBinaryValue(IState state)
 	    {
-	        return GetBinaryValue(null);
+	        return GetBinaryValue(null, state);
 	    }
 
-	    public virtual byte[] GetBinaryValue(byte[] result)
+	    public virtual byte[] GetBinaryValue(byte[] result, IState state)
 		{
 			if (internalIsBinary || fieldsData is byte[])
 				return (byte[]) fieldsData;
@@ -309,6 +310,6 @@ namespace Lucene.Net.Documents
 
 	    public abstract TokenStream TokenStreamValue { get; }
 	    public abstract TextReader ReaderValue { get; }
-	    public abstract string StringValue { get; }
+	    public abstract string StringValue(IState state);
 	}
 }

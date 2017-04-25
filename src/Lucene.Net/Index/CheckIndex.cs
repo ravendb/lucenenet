@@ -18,6 +18,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using Lucene.Net.Store;
 using Lucene.Net.Support;
 using AbstractField = Lucene.Net.Documents.AbstractField;
 using Document = Lucene.Net.Documents.Document;
@@ -281,9 +282,9 @@ namespace Lucene.Net.Index
 			{
 			}
 			
-			public override void  Seek(Term term)
+			public override void  Seek(Term term, IState state)
 			{
-				base.Seek(term);
+				base.Seek(term, state);
 				delCount = 0;
 			}
 			
@@ -303,9 +304,9 @@ namespace Lucene.Net.Index
 		/// you only call this when the index is not opened by any
 		/// writer. 
 		/// </summary>
-		public virtual Status CheckIndex_Renamed_Method()
+		public virtual Status CheckIndex_Renamed_Method(IState state)
 		{
-			return CheckIndex_Renamed_Method(null);
+			return CheckIndex_Renamed_Method(null, state);
 		}
 		
 		/// <summary>Returns a <see cref="Status" /> instance detailing
@@ -322,7 +323,7 @@ namespace Lucene.Net.Index
 		/// you only call this when the index is not opened by any
 		/// writer. 
 		/// </param>
-		public virtual Status CheckIndex_Renamed_Method(List<string> onlySegments)
+		public virtual Status CheckIndex_Renamed_Method(List<string> onlySegments, IState state)
 		{
             System.Globalization.NumberFormatInfo nf = System.Globalization.CultureInfo.CurrentCulture.NumberFormat;
 			SegmentInfos sis = new SegmentInfos();
@@ -330,7 +331,7 @@ namespace Lucene.Net.Index
 			result.dir = dir;
 			try
 			{
-				sis.Read(dir);
+				sis.Read(dir, state);
 			}
 			catch (System.Exception t)
 			{
@@ -346,7 +347,7 @@ namespace Lucene.Net.Index
 			IndexInput input = null;
 			try
 			{
-				input = dir.OpenInput(segmentsFileName);
+				input = dir.OpenInput(segmentsFileName, state);
 			}
 			catch (System.Exception t)
 			{
@@ -359,7 +360,7 @@ namespace Lucene.Net.Index
 			int format = 0;
 			try
 			{
-				format = input.ReadInt();
+				format = input.ReadInt(state);
 			}
 			catch (System.Exception t)
 			{
@@ -469,14 +470,14 @@ namespace Lucene.Net.Index
 				
 				try
 				{
-					Msg("    compound=" + info.GetUseCompoundFile());
-					segInfoStat.compound = info.GetUseCompoundFile();
+					Msg("    compound=" + info.GetUseCompoundFile(state));
+					segInfoStat.compound = info.GetUseCompoundFile(state);
 					Msg("    hasProx=" + info.HasProx);
 					segInfoStat.hasProx = info.HasProx;
-					Msg("    numFiles=" + info.Files().Count);
-					segInfoStat.numFiles = info.Files().Count;
-					Msg(System.String.Format(nf, "    size (MB)={0:f}", new System.Object[] { (info.SizeInBytes() / (1024.0 * 1024.0)) }));
-					segInfoStat.sizeMB = info.SizeInBytes() / (1024.0 * 1024.0);
+					Msg("    numFiles=" + info.Files(state).Count);
+					segInfoStat.numFiles = info.Files(state).Count;
+					Msg(System.String.Format(nf, "    size (MB)={0:f}", new System.Object[] { (info.SizeInBytes(state) / (1024.0 * 1024.0)) }));
+					segInfoStat.sizeMB = info.SizeInBytes(state) / (1024.0 * 1024.0);
                     IDictionary<string, string> diagnostics = info.Diagnostics;
 					segInfoStat.diagnostics = diagnostics;
 					if (diagnostics.Count > 0)
@@ -508,7 +509,7 @@ namespace Lucene.Net.Index
 					}
 					if (infoStream != null)
 						infoStream.Write("    test: open reader.........");
-					reader = SegmentReader.Get(true, info, IndexReader.DEFAULT_TERMS_INDEX_DIVISOR);
+					reader = SegmentReader.Get(true, info, IndexReader.DEFAULT_TERMS_INDEX_DIVISOR, state);
 					
 					segInfoStat.openReaderPassed = true;
 					
@@ -516,26 +517,26 @@ namespace Lucene.Net.Index
 					toLoseDocCount = numDocs;
 					if (reader.HasDeletions)
 					{
-						if (reader.deletedDocs.Count() != info.GetDelCount())
+						if (reader.deletedDocs.Count() != info.GetDelCount(state))
 						{
-							throw new System.SystemException("delete count mismatch: info=" + info.GetDelCount() + " vs deletedDocs.count()=" + reader.deletedDocs.Count());
+							throw new System.SystemException("delete count mismatch: info=" + info.GetDelCount(state) + " vs deletedDocs.count()=" + reader.deletedDocs.Count());
 						}
 						if (reader.deletedDocs.Count() > reader.MaxDoc)
 						{
 							throw new System.SystemException("too many deleted docs: MaxDoc=" + reader.MaxDoc + " vs deletedDocs.count()=" + reader.deletedDocs.Count());
 						}
-						if (info.docCount - numDocs != info.GetDelCount())
+						if (info.docCount - numDocs != info.GetDelCount(state))
 						{
-							throw new System.SystemException("delete count mismatch: info=" + info.GetDelCount() + " vs reader=" + (info.docCount - numDocs));
+							throw new System.SystemException("delete count mismatch: info=" + info.GetDelCount(state) + " vs reader=" + (info.docCount - numDocs));
 						}
 						segInfoStat.numDeleted = info.docCount - numDocs;
 						Msg("OK [" + (segInfoStat.numDeleted) + " deleted docs]");
 					}
 					else
 					{
-						if (info.GetDelCount() != 0)
+						if (info.GetDelCount(state) != 0)
 						{
-							throw new System.SystemException("delete count mismatch: info=" + info.GetDelCount() + " vs reader=" + (info.docCount - numDocs));
+							throw new System.SystemException("delete count mismatch: info=" + info.GetDelCount(state) + " vs reader=" + (info.docCount - numDocs));
 						}
 						Msg("OK");
 					}
@@ -552,16 +553,16 @@ namespace Lucene.Net.Index
 					segInfoStat.numFields = fieldNames.Count;
 					
 					// Test Field Norms
-					segInfoStat.fieldNormStatus = TestFieldNorms(fieldNames, reader);
+					segInfoStat.fieldNormStatus = TestFieldNorms(fieldNames, reader, state);
 					
 					// Test the Term Index
-					segInfoStat.termIndexStatus = TestTermIndex(info, reader);
+					segInfoStat.termIndexStatus = TestTermIndex(info, reader, state);
 					
 					// Test Stored Fields
-					segInfoStat.storedFieldStatus = TestStoredFields(info, reader, nf);
+					segInfoStat.storedFieldStatus = TestStoredFields(info, reader, nf, state);
 					
 					// Test Term Vectors
-					segInfoStat.termVectorStatus = TestTermVectors(info, reader, nf);
+					segInfoStat.termVectorStatus = TestTermVectors(info, reader, nf, state);
 					
 					// Rethrow the first exception we encountered
 					//  This will cause stats for failed segments to be incremented properly
@@ -618,7 +619,7 @@ namespace Lucene.Net.Index
 		}
 		
 		/// <summary> Test field norms.</summary>
-        private Status.FieldNormStatus TestFieldNorms(IEnumerable<string> fieldNames, SegmentReader reader)
+        private Status.FieldNormStatus TestFieldNorms(IEnumerable<string> fieldNames, SegmentReader reader, IState state)
 		{
 			var status = new Status.FieldNormStatus();
 			
@@ -633,9 +634,9 @@ namespace Lucene.Net.Index
 				var b = new byte[reader.MaxDoc];
 				foreach(string fieldName in fieldNames)
 				{
-                    if (reader.HasNorms(fieldName))
+                    if (reader.HasNorms(fieldName, state))
                     {
-                        reader.Norms(fieldName, b, 0);
+                        reader.Norms(fieldName, b, 0, state);
                         ++status.totFields;
                     }
 				}
@@ -656,7 +657,7 @@ namespace Lucene.Net.Index
 		}
 		
 		/// <summary> Test the term index.</summary>
-		private Status.TermIndexStatus TestTermIndex(SegmentInfo info, SegmentReader reader)
+		private Status.TermIndexStatus TestTermIndex(SegmentInfo info, SegmentReader reader, IState state)
 		{
 			var status = new Status.TermIndexStatus();
 			
@@ -667,24 +668,24 @@ namespace Lucene.Net.Index
 					infoStream.Write("    test: terms, freq, prox...");
 				}
 				
-				TermEnum termEnum = reader.Terms();
-				TermPositions termPositions = reader.TermPositions();
+				TermEnum termEnum = reader.Terms(state);
+				TermPositions termPositions = reader.TermPositions(state);
 				
 				// Used only to count up # deleted docs for this term
 				var myTermDocs = new MySegmentTermDocs(reader);
 				
 				int maxDoc = reader.MaxDoc;
 				
-				while (termEnum.Next())
+				while (termEnum.Next(state))
 				{
 					status.termCount++;
 					Term term = termEnum.Term;
 					int docFreq = termEnum.DocFreq();
-					termPositions.Seek(term);
+					termPositions.Seek(term, state);
 					int lastDoc = - 1;
 					int freq0 = 0;
 					status.totFreq += docFreq;
-					while (termPositions.Next())
+					while (termPositions.Next(state))
 					{
 						freq0++;
 						int doc = termPositions.Doc;
@@ -708,7 +709,7 @@ namespace Lucene.Net.Index
 						status.totPos += freq;
 						for (int j = 0; j < freq; j++)
 						{
-							int pos = termPositions.NextPosition();
+							int pos = termPositions.NextPosition(state);
 							if (pos < - 1)
 							{
 								throw new System.SystemException("term " + term + ": doc " + doc + ": pos " + pos + " is out of bounds");
@@ -726,8 +727,8 @@ namespace Lucene.Net.Index
 					int delCount;
 					if (reader.HasDeletions)
 					{
-						myTermDocs.Seek(term);
-						while (myTermDocs.Next())
+						myTermDocs.Seek(term, state);
+						while (myTermDocs.Next(state))
 						{
 						}
 						delCount = myTermDocs.delCount;
@@ -759,7 +760,7 @@ namespace Lucene.Net.Index
 		}
 		
 		/// <summary> Test stored fields for a segment.</summary>
-		private Status.StoredFieldStatus TestStoredFields(SegmentInfo info, SegmentReader reader, System.Globalization.NumberFormatInfo format)
+		private Status.StoredFieldStatus TestStoredFields(SegmentInfo info, SegmentReader reader, System.Globalization.NumberFormatInfo format, IState state)
 		{
 			var status = new Status.StoredFieldStatus();
 			
@@ -776,7 +777,7 @@ namespace Lucene.Net.Index
 					if (!reader.IsDeleted(j))
 					{
 						status.docCount++;
-						Document doc = reader.Document(j);
+						Document doc = reader.Document(j, state);
 						status.totFields += doc.GetFields().Count;
 					}
 				}
@@ -803,7 +804,7 @@ namespace Lucene.Net.Index
 		}
 		
 		/// <summary> Test term vectors for a segment.</summary>
-        private Status.TermVectorStatus TestTermVectors(SegmentInfo info, SegmentReader reader, System.Globalization.NumberFormatInfo format)
+        private Status.TermVectorStatus TestTermVectors(SegmentInfo info, SegmentReader reader, System.Globalization.NumberFormatInfo format, IState state)
 		{
 			var status = new Status.TermVectorStatus();
 			
@@ -819,7 +820,7 @@ namespace Lucene.Net.Index
 					if (!reader.IsDeleted(j))
 					{
 						status.docCount++;
-						ITermFreqVector[] tfv = reader.GetTermFreqVectors(j);
+						ITermFreqVector[] tfv = reader.GetTermFreqVectors(j, state);
 						if (tfv != null)
 						{
 							status.totVectors += tfv.Length;
@@ -856,11 +857,11 @@ namespace Lucene.Net.Index
 		/// <p/><b>WARNING</b>: Make sure you only call this when the
 		/// index is not opened  by any writer. 
 		/// </summary>
-		public virtual void  FixIndex(Status result)
+		public virtual void  FixIndex(Status result, IState state)
 		{
 			if (result.partial)
 				throw new System.ArgumentException("can only fix an index that was fully checked (this status checked a subset of segments)");
-			result.newSegments.Commit(result.dir);
+			result.newSegments.Commit(result.dir, state);
 		}
 		
 		private static bool assertsOn;
@@ -978,7 +979,7 @@ namespace Lucene.Net.Index
 			                 	{AutoFlush = true};
 			checker.SetInfoStream(tempWriter);
 			
-			Status result = checker.CheckIndex_Renamed_Method(onlySegments);
+			Status result = checker.CheckIndex_Renamed_Method(onlySegments, null);
 			if (result.missingSegments)
 			{
                 return 1;
@@ -1000,7 +1001,7 @@ namespace Lucene.Net.Index
 						System.Console.Out.WriteLine("  " + (5 - s) + "...");
 					}
 					Console.Out.WriteLine("Writing...");
-					checker.FixIndex(result);
+					checker.FixIndex(result, null);
 					Console.Out.WriteLine("OK");
 					Console.Out.WriteLine("Wrote new segments file \"" + result.newSegments.GetCurrentSegmentFileName() + "\"");
 				}

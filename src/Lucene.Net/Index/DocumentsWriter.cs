@@ -19,6 +19,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using Lucene.Net.Store;
 using Lucene.Net.Support;
 using Analyzer = Lucene.Net.Analysis.Analyzer;
 using Document = Lucene.Net.Documents.Document;
@@ -217,7 +218,7 @@ namespace Lucene.Net.Index
 		{
 			internal DocWriter next;
 			internal int docID;
-			public abstract void  Finish();
+			public abstract void  Finish(IState state);
 			public abstract void  Abort();
 			public abstract long SizeInBytes();
 			
@@ -482,7 +483,7 @@ namespace Lucene.Net.Index
 		/// store segment name.  This returns null if there are *
 		/// no buffered documents. 
 		/// </summary>
-		internal System.String CloseDocStore()
+		internal System.String CloseDocStore(IState state)
 		{
 			lock (this)
 			{
@@ -499,7 +500,7 @@ namespace Lucene.Net.Index
 					InitFlushState(true);
 					closedFiles.Clear();
 					
-					consumer.CloseDocStore(flushState);
+					consumer.CloseDocStore(flushState, state);
 					System.Diagnostics.Debug.Assert(0 == openFiles.Count);
 					
 					System.String s = docStoreSegment;
@@ -744,7 +745,7 @@ namespace Lucene.Net.Index
 		}
 		
 		/// <summary>Flush all pending docs to a new segment </summary>
-		internal int Flush(bool closeDocStore)
+		internal int Flush(bool closeDocStore, IState state)
 		{
 			lock (this)
 			{
@@ -773,19 +774,19 @@ namespace Lucene.Net.Index
 					{
 						System.Diagnostics.Debug.Assert(flushState.docStoreSegmentName != null);
 						System.Diagnostics.Debug.Assert(flushState.docStoreSegmentName.Equals(flushState.segmentName));
-						CloseDocStore();
+						CloseDocStore(state);
 						flushState.numDocsInStore = 0;
 					}
 					
 					ICollection<DocConsumerPerThread> threads = new HashSet<DocConsumerPerThread>();
 					for (int i = 0; i < threadStates.Length; i++)
 						threads.Add(threadStates[i].consumer);
-					consumer.Flush(threads, flushState);
+					consumer.Flush(threads, flushState, state);
 					
 					if (infoStream != null)
 					{
                         SegmentInfo si = new SegmentInfo(flushState.segmentName, flushState.numDocs, directory);
-                        long newSegmentSize = si.SizeInBytes();
+                        long newSegmentSize = si.SizeInBytes(state);
                         System.String message = System.String.Format(nf, "  oldRAMSize={0:d} newFlushedSize={1:d} docs/MB={2:f} new/old={3:%}",
                             new System.Object[] { numBytesUsed, newSegmentSize, (numDocsInRAM / (newSegmentSize / 1024.0 / 1024.0)), (100.0 * newSegmentSize / numBytesUsed) });
 						Message(message);
@@ -998,17 +999,17 @@ namespace Lucene.Net.Index
 		/// <summary>Returns true if the caller (IndexWriter) should now
 		/// flush. 
 		/// </summary>
-		internal bool AddDocument(Document doc, Analyzer analyzer)
+		internal bool AddDocument(Document doc, Analyzer analyzer, IState state)
 		{
-			return UpdateDocument(doc, analyzer, null);
+			return UpdateDocument(doc, analyzer, null, state);
 		}
 		
-		internal bool UpdateDocument(Term t, Document doc, Analyzer analyzer)
+		internal bool UpdateDocument(Term t, Document doc, Analyzer analyzer, IState state)
 		{
-			return UpdateDocument(doc, analyzer, t);
+			return UpdateDocument(doc, analyzer, t, state);
 		}
 		
-		internal bool UpdateDocument(Document doc, Analyzer analyzer, Term delTerm)
+		internal bool UpdateDocument(Document doc, Analyzer analyzer, Term delTerm, IState s)
 		{
 			
 			// This call is synchronized but fast
@@ -1028,14 +1029,14 @@ namespace Lucene.Net.Index
 				DocWriter perDoc;
                 try
                 {
-                    perDoc = state.consumer.ProcessDocument();
+                    perDoc = state.consumer.ProcessDocument(s);
                 }
                 finally
                 {
                     docState.Clear();
                 }
 				// This call is synchronized but fast
-				FinishDocument(state, perDoc);
+				FinishDocument(state, perDoc, s);
 				success = true;
 			}
 			finally
@@ -1057,7 +1058,7 @@ namespace Lucene.Net.Index
 							bool success2 = false;
 							try
 							{
-								waitQueue.Add(skipDocWriter);
+								waitQueue.Add(skipDocWriter, s);
 								success2 = true;
 							}
 							finally
@@ -1241,7 +1242,7 @@ namespace Lucene.Net.Index
 			}
 		}
 		
-		internal bool ApplyDeletes(SegmentInfos infos)
+		internal bool ApplyDeletes(SegmentInfos infos, IState state)
 		{
 			lock (this)
 			{
@@ -1262,15 +1263,15 @@ namespace Lucene.Net.Index
 					// segment in external dir
 					System.Diagnostics.Debug.Assert(infos.Info(i).dir == directory);
 					
-					SegmentReader reader = writer.readerPool.Get(infos.Info(i), false);
+					SegmentReader reader = writer.readerPool.Get(infos.Info(i), false, state);
 					try
 					{
-						any |= ApplyDeletes(reader, docStart);
+						any |= ApplyDeletes(reader, docStart, state);
 						docStart += reader.MaxDoc;
 					}
 					finally
 					{
-						writer.readerPool.Release(reader);
+						writer.readerPool.Release(reader, state);
 					}
 				}
 				
@@ -1295,7 +1296,7 @@ namespace Lucene.Net.Index
 		
 		// Apply buffered delete terms, queries and docIDs to the
 		// provided reader
-		private bool ApplyDeletes(IndexReader reader, int docIDStart)
+		private bool ApplyDeletes(IndexReader reader, int docIDStart, IState state)
 		{
 			lock (this)
 			{
@@ -1305,7 +1306,7 @@ namespace Lucene.Net.Index
                 System.Diagnostics.Debug.Assert(CheckDeleteTerm(null));
 
 				// Delete by term
-				TermDocs docs = reader.TermDocs();
+				TermDocs docs = reader.TermDocs(state);
 				try
 				{
 					foreach(KeyValuePair<Term, BufferedDeletes.Num> entry in deletesFlushed.terms)
@@ -1314,14 +1315,14 @@ namespace Lucene.Net.Index
 						// LUCENE-2086: we should be iterating a TreeMap,
                         // here, so terms better be in order:
                         System.Diagnostics.Debug.Assert(CheckDeleteTerm(term));
-						docs.Seek(term);
+						docs.Seek(term, state);
 						int limit = entry.Value.GetNum();
-						while (docs.Next())
+						while (docs.Next(state))
 						{
 							int docID = docs.Doc;
 							if (docIDStart + docID >= limit)
 								break;
-							reader.DeleteDocument(docID);
+							reader.DeleteDocument(docID, state);
 							any = true;
 						}
 					}
@@ -1337,7 +1338,7 @@ namespace Lucene.Net.Index
 				    int docID = docIdInt;
 					if (docID >= docIDStart && docID < docEnd)
 					{
-						reader.DeleteDocument(docID - docIDStart);
+						reader.DeleteDocument(docID - docIDStart, state);
 						any = true;
 					}
 				}
@@ -1348,16 +1349,16 @@ namespace Lucene.Net.Index
 				{
 					Query query = (Query) entry.Key;
 					int limit = (int)entry.Value;
-					Weight weight = query.Weight(searcher);
-					Scorer scorer = weight.Scorer(reader, true, false);
+					Weight weight = query.Weight(searcher, state);
+					Scorer scorer = weight.Scorer(reader, true, false, state);
 					if (scorer != null)
 					{
 						while (true)
 						{
-							int doc = scorer.NextDoc();
+							int doc = scorer.NextDoc(state);
 							if (((long) docIDStart) + doc >= limit)
 								break;
-							reader.DeleteDocument(doc);
+							reader.DeleteDocument(doc, state);
 							any = true;
 						}
 					}
@@ -1418,7 +1419,7 @@ namespace Lucene.Net.Index
 		/// <summary>Does the synchronized work to finish/flush the
 		/// inverted document. 
 		/// </summary>
-		private void  FinishDocument(DocumentsWriterThreadState perThread, DocWriter docWriter)
+		private void  FinishDocument(DocumentsWriterThreadState perThread, DocWriter docWriter, IState state)
 		{
 			
 			if (DoBalanceRAM())
@@ -1455,11 +1456,11 @@ namespace Lucene.Net.Index
 				bool doPause;
 				
 				if (docWriter != null)
-					doPause = waitQueue.Add(docWriter);
+					doPause = waitQueue.Add(docWriter, state);
 				else
 				{
 					skipDocWriter.docID = perThread.docState.docID;
-					doPause = waitQueue.Add(skipDocWriter);
+					doPause = waitQueue.Add(skipDocWriter, state);
 				}
 				
 				if (doPause)
@@ -1490,7 +1491,7 @@ namespace Lucene.Net.Index
 		
 		internal class SkipDocWriter:DocWriter
 		{
-			public override void  Finish()
+			public override void  Finish(IState state)
 			{
 			}
 			public override void  Abort()
@@ -1970,13 +1971,13 @@ namespace Lucene.Net.Index
 				}
 			}
 			
-			private void  WriteDocument(DocWriter doc)
+			private void  WriteDocument(DocWriter doc, IState state)
 			{
                 System.Diagnostics.Debug.Assert(doc == Enclosing_Instance.skipDocWriter || nextWriteDocID == doc.docID);
 				bool success = false;
 				try
 				{
-					doc.Finish();
+					doc.Finish(state);
 					nextWriteDocID++;
 					Enclosing_Instance.numDocsInStore++;
 					nextWriteLoc++;
@@ -1992,7 +1993,7 @@ namespace Lucene.Net.Index
 				}
 			}
 			
-			public bool Add(DocWriter doc)
+			public bool Add(DocWriter doc, IState state)
 			{
 				lock (this)
 				{
@@ -2001,7 +2002,7 @@ namespace Lucene.Net.Index
 					
 					if (doc.docID == nextWriteDocID)
 					{
-						WriteDocument(doc);
+						WriteDocument(doc, state);
 						while (true)
 						{
 							doc = waiting[nextWriteLoc];
@@ -2010,7 +2011,7 @@ namespace Lucene.Net.Index
 								numWaiting--;
 								waiting[nextWriteLoc] = null;
 								waitingBytes -= doc.SizeInBytes();
-								WriteDocument(doc);
+								WriteDocument(doc, state);
 							}
 							else
 								break;

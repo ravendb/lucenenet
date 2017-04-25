@@ -18,6 +18,7 @@
 using System;
 using System.Collections.Generic;
 using Lucene.Net.Index;
+using Lucene.Net.Store;
 using Lucene.Net.Support;
 using IndexReader = Lucene.Net.Index.IndexReader;
 using ToStringUtils = Lucene.Net.Util.ToStringUtils;
@@ -34,15 +35,15 @@ namespace Lucene.Net.Search.Spans
 	{
 		private class AnonymousClassSpans : Spans
 		{
-			public AnonymousClassSpans(Lucene.Net.Index.IndexReader reader, SpanFirstQuery enclosingInstance)
+			public AnonymousClassSpans(Lucene.Net.Index.IndexReader reader, SpanFirstQuery enclosingInstance, IState state)
 			{
-				InitBlock(reader, enclosingInstance);
+				InitBlock(reader, enclosingInstance, state);
 			}
-			private void  InitBlock(Lucene.Net.Index.IndexReader reader, SpanFirstQuery enclosingInstance)
+			private void  InitBlock(Lucene.Net.Index.IndexReader reader, SpanFirstQuery enclosingInstance, IState state)
 			{
 				this.reader = reader;
 				this.enclosingInstance = enclosingInstance;
-				spans = Enclosing_Instance.match.GetSpans(reader);
+				spans = Enclosing_Instance.match.GetSpans(reader, state);
 			}
 			private Lucene.Net.Index.IndexReader reader;
 			private SpanFirstQuery enclosingInstance;
@@ -56,9 +57,9 @@ namespace Lucene.Net.Search.Spans
 			}
 			private Spans spans;
 			
-			public override bool Next()
+			public override bool Next(IState state)
 			{
-				while (spans.Next())
+				while (spans.Next(state))
 				{
 					// scan to next match
 					if (End() <= Enclosing_Instance.end)
@@ -67,12 +68,12 @@ namespace Lucene.Net.Search.Spans
 				return false;
 			}
 			
-			public override bool SkipTo(int target)
+			public override bool SkipTo(int target, IState state)
 			{
-				if (!spans.SkipTo(target))
+				if (!spans.SkipTo(target, state))
 					return false;
 				
-				return spans.End() <= Enclosing_Instance.end || Next();
+				return spans.End() <= Enclosing_Instance.end || Next(state);
 			}
 			
 			public override int Doc()
@@ -90,12 +91,12 @@ namespace Lucene.Net.Search.Spans
 			
 			// TODO: Remove warning after API has been finalized
 
-		    public override ICollection<byte[]> GetPayload()
+		    public override ICollection<byte[]> GetPayload(IState state)
 		    {
 		        System.Collections.Generic.ICollection<byte[]> result = null;
 		        if (spans.IsPayloadAvailable())
 		        {
-		            result = spans.GetPayload();
+		            result = spans.GetPayload(state);
 		        }
 		        return result; //TODO: any way to avoid the new construction?
 		    }
@@ -165,16 +166,16 @@ namespace Lucene.Net.Search.Spans
 			match.ExtractTerms(terms);
 		}
 		
-		public override Spans GetSpans(IndexReader reader)
+		public override Spans GetSpans(IndexReader reader, IState state)
 		{
-			return new AnonymousClassSpans(reader, this);
+			return new AnonymousClassSpans(reader, this, state);
 		}
 		
-		public override Query Rewrite(IndexReader reader)
+		public override Query Rewrite(IndexReader reader, IState state)
 		{
 			SpanFirstQuery clone = null;
 			
-			SpanQuery rewritten = (SpanQuery) match.Rewrite(reader);
+			SpanQuery rewritten = (SpanQuery) match.Rewrite(reader, state);
 			if (rewritten != match)
 			{
 				clone = (SpanFirstQuery) this.Clone();

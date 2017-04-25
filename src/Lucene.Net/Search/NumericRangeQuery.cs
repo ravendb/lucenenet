@@ -18,6 +18,7 @@
 using System;
 using System.Collections.Generic;
 using Lucene.Net.Index;
+using Lucene.Net.Store;
 using NumericTokenStream = Lucene.Net.Analysis.NumericTokenStream;
 using NumericField = Lucene.Net.Documents.NumericField;
 using IndexReader = Lucene.Net.Index.IndexReader;
@@ -200,9 +201,9 @@ namespace Lucene.Net.Search
 		}
 		
 		//@Override
-		protected internal override FilteredTermEnum GetEnum(IndexReader reader)
+		protected internal override FilteredTermEnum GetEnum(IndexReader reader, IState state)
 		{
-			return new NumericRangeTermEnum(this, reader);
+			return new NumericRangeTermEnum(this, reader, state);
 		}
 
 	    /// <summary>Returns the field name for this query </summary>
@@ -376,7 +377,7 @@ namespace Lucene.Net.Search
 
 		    private bool isDisposed;
 
-            internal NumericRangeTermEnum(NumericRangeQuery<T> enclosingInstance, IndexReader reader)
+            internal NumericRangeTermEnum(NumericRangeQuery<T> enclosingInstance, IndexReader reader, IState state)
 			{
 				InitBlock(enclosingInstance);
 				this.reader = reader;
@@ -481,7 +482,7 @@ namespace Lucene.Net.Search
 				}
 				
 				// seek to first term
-				Next();
+				Next(state);
 			}
 			
 			//@Override
@@ -498,7 +499,7 @@ namespace Lucene.Net.Search
 			}
 
             /// <summary>this is a dummy, it is not used by this class. </summary>
-            protected internal override void SetEnum(TermEnum tenum)
+            protected internal override void SetEnum(TermEnum tenum, IState state)
             {
                 throw new NotSupportedException("not implemented");
             }
@@ -517,14 +518,14 @@ namespace Lucene.Net.Search
 			
 			/// <summary>Increments the enumeration to the next element.  True if one exists. </summary>
 			//@Override
-            public override bool Next()
+            public override bool Next(IState state)
 			{
 			    // if a current term exists, the actual enum is initialized:
 			    // try change to next term, if no such term exists, fall-through
 			    if (currentTerm != null)
 			    {
 			        System.Diagnostics.Debug.Assert(actualEnum != null);
-			        if (actualEnum.Next())
+			        if (actualEnum.Next(state))
 			        {
 			            currentTerm = actualEnum.Term;
 			            if (TermCompare(currentTerm))
@@ -547,7 +548,7 @@ namespace Lucene.Net.Search
 			        this.currentUpperBound = rangeBounds.First.Value;
 			        rangeBounds.RemoveFirst();
 			        // create a new enum
-			        actualEnum = reader.Terms(termTemplate.CreateTerm(lowerBound));
+			        actualEnum = reader.Terms(termTemplate.CreateTerm(lowerBound), state);
 			        currentTerm = actualEnum.Term;
 			        if (currentTerm != null && TermCompare(currentTerm))
 			            return true;

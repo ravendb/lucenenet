@@ -17,6 +17,7 @@
 
 using System;
 using System.Collections.Generic;
+using Lucene.Net.Store;
 using Lucene.Net.Support;
 using IndexOutput = Lucene.Net.Store.IndexOutput;
 using Similarity = Lucene.Net.Search.Similarity;
@@ -58,7 +59,7 @@ namespace Lucene.Net.Index
 		/// <summary>Produce _X.nrm if any document had a field with norms
 		/// not disabled 
 		/// </summary>
-        public override void Flush(IDictionary<InvertedDocEndConsumerPerThread,ICollection<InvertedDocEndConsumerPerField>> threadsAndFields, SegmentWriteState state)
+        public override void Flush(IDictionary<InvertedDocEndConsumerPerThread,ICollection<InvertedDocEndConsumerPerField>> threadsAndFields, SegmentWriteState state, IState s)
 		{
 
             IDictionary<FieldInfo, IList<NormsWriterPerField>> byField = new HashMap<FieldInfo, IList<NormsWriterPerField>>();
@@ -102,7 +103,7 @@ namespace Lucene.Net.Index
 			
 			System.String normsFileName = state.segmentName + "." + IndexFileNames.NORMS_EXTENSION;
 			state.flushedFiles.Add(normsFileName);
-			IndexOutput normsOut = state.directory.CreateOutput(normsFileName);
+			IndexOutput normsOut = state.directory.CreateOutput(normsFileName, s);
 			
 			try
 			{

@@ -16,7 +16,7 @@
  */
 
 using System;
-
+using Lucene.Net.Store;
 using IndexReader = Lucene.Net.Index.IndexReader;
 using Term = Lucene.Net.Index.Term;
 using StringHelper = Lucene.Net.Util.StringHelper;
@@ -70,7 +70,7 @@ namespace Lucene.Net.Search
 		/// 
 		/// </param>
 		/// <throws>  IOException </throws>
-		public TermRangeTermEnum(IndexReader reader, System.String field, System.String lowerTermText, System.String upperTermText, bool includeLower, bool includeUpper, System.Globalization.CompareInfo collator)
+		public TermRangeTermEnum(IndexReader reader, System.String field, System.String lowerTermText, System.String upperTermText, bool includeLower, bool includeUpper, System.Globalization.CompareInfo collator, IState state)
 		{
 			this.collator = collator;
 			this.upperTermText = upperTermText;
@@ -93,7 +93,7 @@ namespace Lucene.Net.Search
 			}
 			
 			System.String startTermText = collator == null?this.lowerTermText:"";
-			SetEnum(reader.Terms(new Term(this.field, startTermText)));
+			SetEnum(reader.Terms(new Term(this.field, startTermText), state), state);
 		}
 		
 		public override float Difference()

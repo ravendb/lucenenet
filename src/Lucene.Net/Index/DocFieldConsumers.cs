@@ -17,6 +17,7 @@
 
 using System;
 using System.Collections.Generic;
+using Lucene.Net.Store;
 using Lucene.Net.Support;
 using ArrayUtil = Lucene.Net.Util.ArrayUtil;
 
@@ -50,7 +51,7 @@ namespace Lucene.Net.Index
 			two.SetFieldInfos(fieldInfos);
 		}
 
-        public override void Flush(IDictionary<DocFieldConsumerPerThread, ICollection<DocFieldConsumerPerField>> threadsAndFields, SegmentWriteState state)
+        public override void Flush(IDictionary<DocFieldConsumerPerThread, ICollection<DocFieldConsumerPerField>> threadsAndFields, SegmentWriteState state, IState s)
 		{
 
             var oneThreadsAndFields = new HashMap<DocFieldConsumerPerThread, ICollection<DocFieldConsumerPerField>>();
@@ -76,19 +77,19 @@ namespace Lucene.Net.Index
 			}
 			
 			
-			one.Flush(oneThreadsAndFields, state);
-			two.Flush(twoThreadsAndFields, state);
+			one.Flush(oneThreadsAndFields, state, s);
+			two.Flush(twoThreadsAndFields, state, s);
 		}
 
-	    public override void  CloseDocStore(SegmentWriteState state)
+	    public override void  CloseDocStore(SegmentWriteState state, IState s)
 		{
 			try
 			{
-				one.CloseDocStore(state);
+				one.CloseDocStore(state, s);
 			}
 			finally
 			{
-				two.CloseDocStore(state);
+				two.CloseDocStore(state, s);
 			}
 		}
 		
@@ -179,17 +180,17 @@ namespace Lucene.Net.Index
 				return one.SizeInBytes() + two.SizeInBytes();
 			}
 			
-			public override void  Finish()
+			public override void  Finish(IState state)
 			{
 				try
 				{
 					try
 					{
-						one.Finish();
+						one.Finish(state);
 					}
 					finally
 					{
-						two.Finish();
+						two.Finish(state);
 					}
 				}
 				finally

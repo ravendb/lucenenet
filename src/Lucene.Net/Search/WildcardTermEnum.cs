@@ -16,7 +16,7 @@
  */
 
 using System;
-
+using Lucene.Net.Store;
 using IndexReader = Lucene.Net.Index.IndexReader;
 using Term = Lucene.Net.Index.Term;
 
@@ -43,7 +43,7 @@ namespace Lucene.Net.Search
 		/// After calling the constructor the enumeration is already pointing to the first 
 		/// valid term if such a term exists.
 		/// </summary>
-		public WildcardTermEnum(IndexReader reader, Term term):base()
+		public WildcardTermEnum(IndexReader reader, Term term, IState state) :base()
 		{
 			searchTerm = term;
 			field = searchTerm.Field;
@@ -64,7 +64,7 @@ namespace Lucene.Net.Search
 			
 			preLen = pre.Length;
 			text = searchTermText.Substring(preLen);
-			SetEnum(reader.Terms(new Term(searchTerm.Field, pre)));
+			SetEnum(reader.Terms(new Term(searchTerm.Field, pre), state), state);
 		}
 
 	    /*protected internal*/ protected internal override bool TermCompare(Term term)

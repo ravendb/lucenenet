@@ -16,6 +16,7 @@
  */
 
 using System;
+using Lucene.Net.Store;
 using Lucene.Net.Support;
 using IndexInput = Lucene.Net.Store.IndexInput;
 using UnicodeUtil = Lucene.Net.Util.UnicodeUtil;
@@ -67,16 +68,16 @@ namespace Lucene.Net.Index
 			preUTF8Strings = true;
 		}
 		
-		public void  Read(IndexInput input, FieldInfos fieldInfos)
+		public void  Read(IndexInput input, FieldInfos fieldInfos, IState state)
 		{
             this.term = null; // invalidate cache
-			int start = input.ReadVInt();
-			int length = input.ReadVInt();
+			int start = input.ReadVInt(state);
+			int length = input.ReadVInt(state);
 			int totalLength = start + length;
 			if (preUTF8Strings)
 			{
 				text.SetLength(totalLength);
-				input.ReadChars(text.result, start, length);
+				input.ReadChars(text.result, start, length, state);
 			}
 			else
 			{
@@ -86,7 +87,7 @@ namespace Lucene.Net.Index
 					// Fully convert all bytes since bytes is dirty
 					UnicodeUtil.UTF16toUTF8(text.result, 0, text.length, bytes);
 					bytes.SetLength(totalLength);
-					input.ReadBytes(bytes.result, start, length);
+					input.ReadBytes(bytes.result, start, length, state);
 					UnicodeUtil.UTF8toUTF16(bytes.result, 0, totalLength, text);
 					dirty = false;
 				}
@@ -94,11 +95,11 @@ namespace Lucene.Net.Index
 				{
 					// Incrementally convert only the UTF8 bytes that are new:
 					bytes.SetLength(totalLength);
-					input.ReadBytes(bytes.result, start, length);
+					input.ReadBytes(bytes.result, start, length, state);
 					UnicodeUtil.UTF8toUTF16(bytes.result, start, length, text);
 				}
 			}
-			this.field = fieldInfos.FieldName(input.ReadVInt());
+			this.field = fieldInfos.FieldName(input.ReadVInt(state));
 		}
 		
 		public void  Set(Term term)

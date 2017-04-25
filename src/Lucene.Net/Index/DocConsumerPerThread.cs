@@ -16,6 +16,7 @@
  */
 
 using System;
+using Lucene.Net.Store;
 
 namespace Lucene.Net.Index
 {
@@ -30,7 +31,7 @@ namespace Lucene.Net.Index
 		/// DocumentsWriter then calls finish() on this object
 		/// when it's its turn. 
 		/// </summary>
-		public abstract DocumentsWriter.DocWriter ProcessDocument();
+		public abstract DocumentsWriter.DocWriter ProcessDocument(IState state);
 		
 		public abstract void  Abort();
 	}

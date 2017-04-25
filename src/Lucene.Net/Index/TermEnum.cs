@@ -16,6 +16,7 @@
  */
 
 using System;
+using Lucene.Net.Store;
 
 namespace Lucene.Net.Index
 {
@@ -27,7 +28,7 @@ namespace Lucene.Net.Index
 	public abstract class TermEnum : IDisposable
 	{
 		/// <summary>Increments the enumeration to the next element.  True if one exists.</summary>
-		public abstract bool Next();
+		public abstract bool Next(IState state);
 
 	    /// <summary>Returns the current Term in the enumeration.</summary>
 	    public abstract Term Term { get; }

@@ -17,6 +17,7 @@
 
 using System;
 using Lucene.Net.Index;
+using Lucene.Net.Store;
 using IndexReader = Lucene.Net.Index.IndexReader;
 
 namespace Lucene.Net.Search
@@ -43,7 +44,7 @@ namespace Lucene.Net.Search
 	        get { return internalFilter; }
 	    }
 
-	    public override Query Rewrite(IndexReader reader)
+	    public override Query Rewrite(IndexReader reader, IState state)
 		{
 			return this;
 		}
@@ -104,16 +105,16 @@ namespace Lucene.Net.Search
 				queryWeight *= this.queryNorm;
 			}
 			
-			public override Scorer Scorer(IndexReader reader, bool scoreDocsInOrder, bool topScorer)
+			public override Scorer Scorer(IndexReader reader, bool scoreDocsInOrder, bool topScorer, IState state)
 			{
-				return new ConstantScorer(enclosingInstance, similarity, reader, this);
+				return new ConstantScorer(enclosingInstance, similarity, reader, this, state);
 			}
 			
-			public override Explanation Explain(IndexReader reader, int doc)
+			public override Explanation Explain(IndexReader reader, int doc, IState state)
 			{
 				
-				var cs = new ConstantScorer(enclosingInstance, similarity, reader, this);
-				bool exists = cs.docIdSetIterator.Advance(doc) == doc;
+				var cs = new ConstantScorer(enclosingInstance, similarity, reader, this, state);
+				bool exists = cs.docIdSetIterator.Advance(doc, state) == doc;
 				
 				var result = new ComplexExplanation();
 				
@@ -156,21 +157,21 @@ namespace Lucene.Net.Search
 			internal float theScore;
 			internal int doc = - 1;
 			
-			public ConstantScorer(ConstantScoreQuery enclosingInstance, Similarity similarity, IndexReader reader, Weight w):base(similarity)
+			public ConstantScorer(ConstantScoreQuery enclosingInstance, Similarity similarity, IndexReader reader, Weight w, IState state) :base(similarity)
 			{
 				InitBlock(enclosingInstance);
 				theScore = w.Value;
-				DocIdSet docIdSet = Enclosing_Instance.internalFilter.GetDocIdSet(reader);
+				DocIdSet docIdSet = Enclosing_Instance.internalFilter.GetDocIdSet(reader, state);
 				if (docIdSet == null)
 				{
-					docIdSetIterator = DocIdSet.EMPTY_DOCIDSET.Iterator();
+					docIdSetIterator = DocIdSet.EMPTY_DOCIDSET.Iterator(state);
 				}
 				else
 				{
-					DocIdSetIterator iter = docIdSet.Iterator();
+					DocIdSetIterator iter = docIdSet.Iterator(state);
 					if (iter == null)
 					{
-						docIdSetIterator = DocIdSet.EMPTY_DOCIDSET.Iterator();
+						docIdSetIterator = DocIdSet.EMPTY_DOCIDSET.Iterator(state);
 					}
 					else
 					{
@@ -179,9 +180,9 @@ namespace Lucene.Net.Search
 				}
 			}
 			
-			public override int NextDoc()
+			public override int NextDoc(IState state)
 			{
-				return docIdSetIterator.NextDoc();
+				return docIdSetIterator.NextDoc(state);
 			}
 			
 			public override int DocID()
@@ -189,18 +190,18 @@ namespace Lucene.Net.Search
 				return docIdSetIterator.DocID();
 			}
 			
-			public override float Score()
+			public override float Score(IState state)
 			{
 				return theScore;
 			}
 			
-			public override int Advance(int target)
+			public override int Advance(int target, IState state)
 			{
-				return docIdSetIterator.Advance(target);
+				return docIdSetIterator.Advance(target, state);
 			}
 		}
 		
-		public override Weight CreateWeight(Searcher searcher)
+		public override Weight CreateWeight(Searcher searcher, IState state)
 		{
 			return new ConstantScoreQuery.ConstantWeight(this, searcher);
 		}

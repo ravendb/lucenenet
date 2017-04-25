@@ -16,7 +16,7 @@
  */
 
 using System;
-
+using Lucene.Net.Store;
 using Directory = Lucene.Net.Store.Directory;
 using IndexOutput = Lucene.Net.Store.IndexOutput;
 using StringHelper = Lucene.Net.Util.StringHelper;
@@ -33,14 +33,14 @@ namespace Lucene.Net.Index
 		private readonly FieldInfos fieldInfos;
 		internal UnicodeUtil.UTF8Result[] utf8Results = new[]{new UnicodeUtil.UTF8Result(), new UnicodeUtil.UTF8Result()};
 		
-		public TermVectorsWriter(Directory directory, System.String segment, FieldInfos fieldInfos)
+		public TermVectorsWriter(Directory directory, System.String segment, FieldInfos fieldInfos, IState state)
 		{
 			// Open files for TermVector storage
-			tvx = directory.CreateOutput(segment + "." + IndexFileNames.VECTORS_INDEX_EXTENSION);
+			tvx = directory.CreateOutput(segment + "." + IndexFileNames.VECTORS_INDEX_EXTENSION, state);
 			tvx.WriteInt(TermVectorsReader.FORMAT_CURRENT);
-			tvd = directory.CreateOutput(segment + "." + IndexFileNames.VECTORS_DOCUMENTS_EXTENSION);
+			tvd = directory.CreateOutput(segment + "." + IndexFileNames.VECTORS_DOCUMENTS_EXTENSION, state);
 			tvd.WriteInt(TermVectorsReader.FORMAT_CURRENT);
-			tvf = directory.CreateOutput(segment + "." + IndexFileNames.VECTORS_FIELDS_EXTENSION);
+			tvf = directory.CreateOutput(segment + "." + IndexFileNames.VECTORS_FIELDS_EXTENSION, state);
 			tvf.WriteInt(TermVectorsReader.FORMAT_CURRENT);
 			
 			this.fieldInfos = fieldInfos;
@@ -181,7 +181,7 @@ namespace Lucene.Net.Index
 		/// streams.  This is used to expedite merging, if the
 		/// field numbers are congruent.
 		/// </summary>
-		internal void  AddRawDocuments(TermVectorsReader reader, int[] tvdLengths, int[] tvfLengths, int numDocs)
+		internal void  AddRawDocuments(TermVectorsReader reader, int[] tvdLengths, int[] tvfLengths, int numDocs, IState state)
 		{
 			long tvdPosition = tvd.FilePointer;
 			long tvfPosition = tvf.FilePointer;
@@ -194,8 +194,8 @@ namespace Lucene.Net.Index
 				tvx.WriteLong(tvfPosition);
 				tvfPosition += tvfLengths[i];
 			}
-			tvd.CopyBytes(reader.GetTvdStream(), tvdPosition - tvdStart);
-			tvf.CopyBytes(reader.GetTvfStream(), tvfPosition - tvfStart);
+			tvd.CopyBytes(reader.GetTvdStream(), tvdPosition - tvdStart, state);
+			tvf.CopyBytes(reader.GetTvfStream(), tvfPosition - tvfStart, state);
 			System.Diagnostics.Debug.Assert(tvd.FilePointer == tvdPosition);
 			System.Diagnostics.Debug.Assert(tvf.FilePointer == tvfPosition);
 		}
