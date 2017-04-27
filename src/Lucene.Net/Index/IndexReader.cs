@@ -21,6 +21,7 @@ using Lucene.Net.Documents;
 using Document = Lucene.Net.Documents.Document;
 using FieldSelector = Lucene.Net.Documents.FieldSelector;
 using Lucene.Net.Store;
+using Lucene.Net.Util;
 using Similarity = Lucene.Net.Search.Similarity;
 
 namespace Lucene.Net.Index
@@ -62,7 +63,7 @@ namespace Lucene.Net.Index
 	/// <c>IndexReader</c> instance; use your own
 	/// (non-Lucene) objects instead.
 	/// </summary>
-	public abstract class IndexReader : System.ICloneable, System.IDisposable
+	public abstract class IndexReader : ILuceneCloneable, System.IDisposable
 	{
 		private class AnonymousClassFindSegmentsFile : SegmentInfos.FindSegmentsFile
 		{
@@ -457,7 +458,7 @@ namespace Lucene.Net.Index
 		/// </summary>
 		/// <throws>  CorruptIndexException if the index is corrupt </throws>
 		/// <exception cref="System.IO.IOException">If there is a low-level IO error</exception>
-		public virtual System.Object Clone()
+		public virtual System.Object Clone(IState state)
 		{
 			throw new System.NotSupportedException("This reader does not implement clone()");
 		}
@@ -945,7 +946,7 @@ namespace Lucene.Net.Index
 		/// <summary>
 		/// Deletes the document numbered <c>docNum</c>.  Once a document is
 		/// deleted it will not appear in TermDocs or TermPostitions enumerations.
-		/// Attempts to read its field with the <see cref="Document(int)" />
+		/// Attempts to read its field with the <see cref="Documents.Document" />
 		/// method will result in an error.  The presence of this document may still be
 		/// reflected in the <see cref="DocFreq" /> statistic, though
 		/// this will be corrected eventually as the index is further modified.

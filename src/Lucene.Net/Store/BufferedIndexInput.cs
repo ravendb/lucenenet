@@ -16,12 +16,13 @@
  */
 
 using System;
+using Lucene.Net.Util;
 
 namespace Lucene.Net.Store
 {
 	
 	/// <summary>Base implementation class for buffered <see cref="IndexInput" />. </summary>
-	public abstract class BufferedIndexInput : IndexInput, System.ICloneable
+	public abstract class BufferedIndexInput : IndexInput, ILuceneCloneable
 	{
 		
 		/// <summary>Default buffer size </summary>
@@ -226,14 +227,14 @@ namespace Lucene.Net.Store
 		/// </seealso>
 		public abstract void  SeekInternal(long pos);
 		
-		public override System.Object Clone()
+		public override System.Object Clone(IState state)
 		{
-			BufferedIndexInput clone = (BufferedIndexInput) base.Clone();
+			BufferedIndexInput clone = (BufferedIndexInput) base.Clone(state);
 			
 			clone.buffer = null;
 			clone.bufferLength = 0;
 			clone.bufferPosition = 0;
-			clone.bufferStart = FilePointer(StateHolder.Current.Value);
+			clone.bufferStart = FilePointer(state);
 			
 			return clone;
 		}

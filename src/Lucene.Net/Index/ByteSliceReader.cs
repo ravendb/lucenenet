@@ -176,7 +176,7 @@ namespace Lucene.Net.Index
             // Do nothing...
         }
 		
-		override public Object Clone()
+		override public Object Clone(IState state)
 		{
             System.Diagnostics.Debug.Fail("Port issue:", "Let see if we need this ByteSliceReader.Clone()"); // {{Aroush-2.9}}
 			return null;

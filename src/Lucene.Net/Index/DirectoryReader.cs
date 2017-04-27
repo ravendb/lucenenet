@@ -414,13 +414,13 @@ namespace Lucene.Net.Index
             }
         }
         
-        public override Object Clone()
+        public override Object Clone(IState state)
         {
             lock (this)
             {
                 try
                 {
-                    return Clone(readOnly, StateHolder.Current.Value); // Preserve current readOnly
+                    return Clone(readOnly, state); // Preserve current readOnly
                 }
                 catch (Exception ex)
                 {

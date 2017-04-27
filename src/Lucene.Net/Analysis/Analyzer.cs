@@ -64,7 +64,7 @@ namespace Lucene.Net.Analysis
 	            {
 	                throw new AlreadyClosedException("this Analyzer is closed");
 	            }
-	            return tokenStreams.Get();
+	            return tokenStreams.Get(StateHolder.Current.Value);
 	        }
 	        set
 	        {

@@ -19,6 +19,7 @@ using System;
 using System.Linq;
 using Lucene.Net.Store;
 using Lucene.Net.Support;
+using Lucene.Net.Util;
 using Document = Lucene.Net.Documents.Document;
 using FieldSelector = Lucene.Net.Documents.FieldSelector;
 using MultiTermDocs = Lucene.Net.Index.DirectoryReader.MultiTermDocs;
@@ -32,7 +33,7 @@ namespace Lucene.Net.Index
     /// <summary>An IndexReader which reads multiple indexes, appending 
     /// their content.
     /// </summary>
-    public class MultiReader:IndexReader, System.ICloneable
+    public class MultiReader:IndexReader, ILuceneCloneable
     {
         protected internal IndexReader[] subReaders;
         private int[] starts; // 1st docno for each segment
@@ -131,11 +132,11 @@ namespace Lucene.Net.Index
         /// readers is increased to ensure that the subreaders remain open
         /// until the last referring reader is closed.
         /// </summary>
-        public override System.Object Clone()
+        public override System.Object Clone(IState state)
         {
             try
             {
-                return DoReopen(true, StateHolder.Current.Value);
+                return DoReopen(true, state);
             }
             catch (System.Exception ex)
             {
@@ -164,7 +165,7 @@ namespace Lucene.Net.Index
                 for (int i = 0; i < subReaders.Length; i++)
                 {
                     if (doClone)
-                        newSubReaders[i] = (IndexReader) subReaders[i].Clone();
+                        newSubReaders[i] = (IndexReader) subReaders[i].Clone(state);
                     else
                         newSubReaders[i] = subReaders[i].Reopen(state);
                     // if at least one of the subreaders was updated we remember that

@@ -278,7 +278,7 @@ namespace Lucene.Net.Index
 			
 			internal int delCount;
 			
-			internal MySegmentTermDocs(SegmentReader p):base(p)
+			internal MySegmentTermDocs(SegmentReader p, IState state) :base(p, state)
 			{
 			}
 			
@@ -672,7 +672,7 @@ namespace Lucene.Net.Index
 				TermPositions termPositions = reader.TermPositions(state);
 				
 				// Used only to count up # deleted docs for this term
-				var myTermDocs = new MySegmentTermDocs(reader);
+				var myTermDocs = new MySegmentTermDocs(reader, state);
 				
 				int maxDoc = reader.MaxDoc;
 				

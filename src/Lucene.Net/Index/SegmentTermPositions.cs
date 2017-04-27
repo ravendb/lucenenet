@@ -39,7 +39,7 @@ namespace Lucene.Net.Index
 		private long lazySkipPointer = - 1;
 		private int lazySkipProxCount = 0;
 		
-		internal SegmentTermPositions(SegmentReader p):base(p)
+		internal SegmentTermPositions(SegmentReader p, IState state) :base(p, state)
 		{
 			this.proxStream = null; // the proxStream will be cloned lazily when nextPosition() is called for the first time
 		}
@@ -167,7 +167,7 @@ namespace Lucene.Net.Index
 			if (proxStream == null)
 			{
 				// clone lazily
-				proxStream = (IndexInput) parent.core.proxStream.Clone();
+				proxStream = (IndexInput) parent.core.proxStream.Clone(state);
 			}
 			
 			// we might have to skip the current payload

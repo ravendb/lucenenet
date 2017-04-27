@@ -17,13 +17,14 @@
 
 using System;
 using Lucene.Net.Store;
+using Lucene.Net.Util;
 using BufferedIndexInput = Lucene.Net.Store.BufferedIndexInput;
 using Directory = Lucene.Net.Store.Directory;
 using IndexInput = Lucene.Net.Store.IndexInput;
 
 namespace Lucene.Net.Index
 {
-	class TermVectorsReader : System.ICloneable, IDisposable
+	class TermVectorsReader : ILuceneCloneable, IDisposable
 	{
 		
 		// NOTE: if you make a new format, it must be larger than
@@ -648,7 +649,7 @@ namespace Lucene.Net.Index
 			}
 		}
 		
-		public virtual System.Object Clone()
+		public virtual System.Object Clone(IState state)
 		{
 			
 			TermVectorsReader clone = (TermVectorsReader) base.MemberwiseClone();
@@ -657,9 +658,9 @@ namespace Lucene.Net.Index
 			// on a segment that did not have term vectors saved
 			if (tvx != null && tvd != null && tvf != null)
 			{
-				clone.tvx = (IndexInput) tvx.Clone();
-				clone.tvd = (IndexInput) tvd.Clone();
-				clone.tvf = (IndexInput) tvf.Clone();
+				clone.tvx = (IndexInput) tvx.Clone(state);
+				clone.tvd = (IndexInput) tvd.Clone(state);
+				clone.tvf = (IndexInput) tvf.Clone(state);
 			}
 			
 			return clone;

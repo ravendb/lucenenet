@@ -49,10 +49,10 @@ namespace Lucene.Net.Index
 
 	    private bool isDisposed;
 		
-		public /*protected internal*/ SegmentTermDocs(SegmentReader parent)
+		public /*protected internal*/ SegmentTermDocs(SegmentReader parent, IState state)
 		{
 			this.parent = parent;
-			this.freqStream = (IndexInput) parent.core.freqStream.Clone();
+			this.freqStream = (IndexInput) parent.core.freqStream.Clone(state);
 			lock (parent)
 			{
 				this.deletedDocs = parent.deletedDocs;
@@ -250,7 +250,7 @@ namespace Lucene.Net.Index
 			{
 				// optimized case
 				if (skipListReader == null)
-					skipListReader = new DefaultSkipListReader((IndexInput) freqStream.Clone(), maxSkipLevels, skipInterval); // lazily clone
+					skipListReader = new DefaultSkipListReader((IndexInput) freqStream.Clone(state), maxSkipLevels, skipInterval); // lazily clone
 				
 				if (!haveSkipped)
 				{

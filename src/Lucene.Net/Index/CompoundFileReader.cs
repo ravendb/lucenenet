@@ -163,7 +163,7 @@ namespace Lucene.Net.Index
 				if (entry == null)
 					throw new System.IO.IOException("No sub-file with id " + id + " found");
 				
-				return new CSIndexInput(stream, entry.offset, entry.length, readBufferSize);
+				return new CSIndexInput(stream, entry.offset, entry.length, readBufferSize, state);
 			}
 		}
 		
@@ -242,21 +242,21 @@ namespace Lucene.Net.Index
 
 		    private bool isDisposed;
 			
-			internal CSIndexInput(IndexInput @base, long fileOffset, long length):this(@base, fileOffset, length, BufferedIndexInput.BUFFER_SIZE)
+			internal CSIndexInput(IndexInput @base, long fileOffset, long length, IState state) :this(@base, fileOffset, length, BufferedIndexInput.BUFFER_SIZE, state)
 			{
 			}
 			
-			internal CSIndexInput(IndexInput @base, long fileOffset, long length, int readBufferSize):base(readBufferSize)
+			internal CSIndexInput(IndexInput @base, long fileOffset, long length, int readBufferSize, IState state) :base(readBufferSize)
 			{
-				this.base_Renamed = (IndexInput) @base.Clone();
+				this.base_Renamed = (IndexInput) @base.Clone(state);
 				this.fileOffset = fileOffset;
 				this.length = length;
 			}
 			
-			public override System.Object Clone()
+			public override System.Object Clone(IState state)
 			{
-				var clone = (CSIndexInput) base.Clone();
-				clone.base_Renamed = (IndexInput) base_Renamed.Clone();
+				var clone = (CSIndexInput) base.Clone(state);
+				clone.base_Renamed = (IndexInput) base_Renamed.Clone(state);
 				clone.fileOffset = fileOffset;
 				clone.length = length;
 				return clone;

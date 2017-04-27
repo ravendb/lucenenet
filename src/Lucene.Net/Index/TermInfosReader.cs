@@ -160,13 +160,13 @@ namespace Lucene.Net.Index
 			return size;
 		}
 		
-		private ThreadResources GetThreadResources()
+		private ThreadResources GetThreadResources(IState state)
 		{
-			ThreadResources resources = threadResources.Get();
+			ThreadResources resources = threadResources.Get(state);
 			if (resources == null)
 			{
 				resources = new ThreadResources
-				            	{termEnum = Terms(), termInfoCache = new SimpleLRUCache<Term, TermInfo>(DEFAULT_CACHE_SIZE)};
+				            	{termEnum = Terms(state), termInfoCache = new SimpleLRUCache<Term, TermInfo>(DEFAULT_CACHE_SIZE)};
 				// Cache does not have to be thread-safe, it is only used by one thread at the same time
 				threadResources.Set(resources);
 			}
@@ -214,7 +214,7 @@ namespace Lucene.Net.Index
 			EnsureIndexIsRead();
 			
 			TermInfo ti;
-			ThreadResources resources = GetThreadResources();
+			ThreadResources resources = GetThreadResources(state);
 			Cache<Term, TermInfo> cache = null;
 			
 			if (useCache)
@@ -295,7 +295,7 @@ namespace Lucene.Net.Index
 			EnsureIndexIsRead();
 			int indexOffset = GetIndexOffset(term);
 			
-			SegmentTermEnum enumerator = GetThreadResources().termEnum;
+			SegmentTermEnum enumerator = GetThreadResources(state).termEnum;
 			SeekEnum(enumerator, indexOffset, state);
 			
 			while (term.CompareTo(enumerator.Term) > 0 && enumerator.Next(state))
@@ -309,9 +309,9 @@ namespace Lucene.Net.Index
 		}
 		
 		/// <summary>Returns an enumeration of all the Terms and TermInfos in the set. </summary>
-		public SegmentTermEnum Terms()
+		public SegmentTermEnum Terms(IState state)
 		{
-			return (SegmentTermEnum) origEnum.Clone();
+			return (SegmentTermEnum) origEnum.Clone(state);
 		}
 		
 		/// <summary>Returns an enumeration of terms starting at or after the named term. </summary>
@@ -320,7 +320,7 @@ namespace Lucene.Net.Index
 			// don't use the cache in this call because we want to reposition the
 			// enumeration
 			Get(term, false, state);
-			return (SegmentTermEnum) GetThreadResources().termEnum.Clone();
+			return (SegmentTermEnum) GetThreadResources(state).termEnum.Clone(state);
 		}
 	}
 }

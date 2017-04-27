@@ -20,6 +20,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Lucene.Net.Store;
 using Lucene.Net.Support;
+using Lucene.Net.Util;
 using Document = Lucene.Net.Documents.Document;
 using FieldSelector = Lucene.Net.Documents.FieldSelector;
 using FieldSelectorResult = Lucene.Net.Documents.FieldSelectorResult;
@@ -43,7 +44,7 @@ namespace Lucene.Net.Index
 	/// same order to the other indexes. <em>Failure to do so will result in
 	/// undefined behavior</em>.
 	/// </summary>
-	public class ParallelReader:IndexReader, System.ICloneable
+	public class ParallelReader:IndexReader, ILuceneCloneable
 	{
         private List<IndexReader> readers = new List<IndexReader>();
         private List<bool> decrefOnClose = new List<bool>(); // remember which subreaders to decRef on close
@@ -130,11 +131,11 @@ namespace Lucene.Net.Index
 			decrefOnClose.Add(incRefReaders);
 		}
 		
-		public override System.Object Clone()
+		public override System.Object Clone(IState state)
 		{
 			try
 			{
-				return DoReopen(true, StateHolder.Current.Value);
+				return DoReopen(true, state);
 			}
 			catch (System.Exception ex)
 			{
@@ -184,7 +185,7 @@ namespace Lucene.Net.Index
 					IndexReader newReader = null;
 					if (doClone)
 					{
-						newReader = (IndexReader) oldReader.Clone();
+						newReader = (IndexReader) oldReader.Clone(state);
 					}
 					else
 					{
