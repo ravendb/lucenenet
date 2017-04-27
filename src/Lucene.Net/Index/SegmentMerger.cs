@@ -404,7 +404,7 @@ namespace Lucene.Net.Index
 						FieldsReader matchingFieldsReader = null;
 						if (matchingSegmentReader != null)
 						{
-							FieldsReader fieldsReader = matchingSegmentReader.GetFieldsReader();
+							FieldsReader fieldsReader = matchingSegmentReader.GetFieldsReader(state);
 							if (fieldsReader != null && fieldsReader.CanReadRawDocs())
 							{
 								matchingFieldsReader = fieldsReader;

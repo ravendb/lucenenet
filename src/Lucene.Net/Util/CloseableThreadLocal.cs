@@ -19,6 +19,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using Lucene.Net.Store;
 using Lucene.Net.Support;
 
 #if NET35
@@ -59,17 +60,17 @@ namespace Lucene.Net.Util
 
         private bool isDisposed;
 
-        public virtual T InitialValue()
+        public virtual T InitialValue(IState state)
         {
             return null;
         }
 
-        public virtual T Get()
+        public virtual T Get(IState state)
         {
             WeakReference weakRef = t.Get();
             if (weakRef == null)
             {
-                T iv = InitialValue();
+                T iv = InitialValue(state);
                 if (iv != null)
                 {
                     Set(iv);

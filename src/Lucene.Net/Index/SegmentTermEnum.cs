@@ -16,11 +16,12 @@
  */
 
 using Lucene.Net.Store;
+using Lucene.Net.Util;
 using IndexInput = Lucene.Net.Store.IndexInput;
 
 namespace Lucene.Net.Index
 {
-	internal sealed class SegmentTermEnum : TermEnum, System.ICloneable
+	internal sealed class SegmentTermEnum : TermEnum, ILuceneCloneable
 	{
 		private IndexInput input;
 		internal FieldInfos fieldInfos;
@@ -102,7 +103,7 @@ namespace Lucene.Net.Index
 			}
 		}
 		
-		public System.Object Clone()
+		public System.Object Clone(IState state)
 		{
 			SegmentTermEnum clone = null;
 			try
@@ -113,7 +114,7 @@ namespace Lucene.Net.Index
 			{
 			}
 			
-			clone.input = (IndexInput) input.Clone();
+			clone.input = (IndexInput) input.Clone(state);
 			clone.termInfo = new TermInfo(termInfo);
 			
 			clone.termBuffer = (TermBuffer) termBuffer.Clone();

@@ -397,9 +397,9 @@ namespace Lucene.Net.Index
 				}
 				
 			}
-			public /*protected internal*/ override FieldsReader InitialValue()
+			public /*protected internal*/ override FieldsReader InitialValue(IState state)
 			{
-				return (FieldsReader) Enclosing_Instance.core.GetFieldsReaderOrig().Clone();
+				return (FieldsReader) Enclosing_Instance.core.GetFieldsReaderOrig().Clone(state);
 			}
 		}
 		
@@ -859,13 +859,13 @@ namespace Lucene.Net.Index
 			return (BitVector) bv.Clone();
 		}
 		
-		public override System.Object Clone()
+		public override System.Object Clone(IState state)
 		{
             lock (this)
             {
                 try
                 {
-                    return Clone(readOnly, StateHolder.Current.Value); // Preserve current readOnly
+                    return Clone(readOnly, state); // Preserve current readOnly
                 }
                 catch (System.Exception ex)
                 {
@@ -1072,9 +1072,9 @@ namespace Lucene.Net.Index
             hasChanges = false;
         }
         
-		internal virtual FieldsReader GetFieldsReader()
+		internal virtual FieldsReader GetFieldsReader(IState state)
 		{
-			return fieldsReaderLocal.Get();
+			return fieldsReaderLocal.Get(state);
 		}
 		
 		protected internal override void  DoClose(IState state)
@@ -1174,7 +1174,7 @@ namespace Lucene.Net.Index
 		public override TermEnum Terms(IState state)
 		{
 			EnsureOpen();
-			return core.GetTermsReader().Terms();
+			return core.GetTermsReader().Terms(state);
 		}
 		
 		public override TermEnum Terms(Term t, IState state)
@@ -1191,7 +1191,7 @@ namespace Lucene.Net.Index
 		public override Document Document(int n, FieldSelector fieldSelector, IState state)
 		{
 			EnsureOpen();
-			return GetFieldsReader().Doc(n, fieldSelector, state);
+			return GetFieldsReader(state).Doc(n, fieldSelector, state);
 		}
 		
 		public override bool IsDeleted(int n)
@@ -1217,13 +1217,13 @@ namespace Lucene.Net.Index
 		public override TermDocs TermDocs(IState state)
 		{
 			EnsureOpen();
-			return new SegmentTermDocs(this);
+			return new SegmentTermDocs(this, state);
 		}
 		
 		public override TermPositions TermPositions(IState state)
 		{
 			EnsureOpen();
-			return new SegmentTermPositions(this);
+			return new SegmentTermPositions(this, state);
 		}
 		
 		public override int DocFreq(Term t, IState state)
@@ -1468,9 +1468,9 @@ namespace Lucene.Net.Index
 		/// <summary> Create a clone from the initial TermVectorsReader and store it in the ThreadLocal.</summary>
 		/// <returns> TermVectorsReader
 		/// </returns>
-		internal virtual TermVectorsReader GetTermVectorsReader()
+		internal virtual TermVectorsReader GetTermVectorsReader(IState state)
 		{
-			TermVectorsReader tvReader = termVectorsLocal.Get();
+			TermVectorsReader tvReader = termVectorsLocal.Get(state);
 			if (tvReader == null)
 			{
 				TermVectorsReader orig = core.GetTermVectorsReaderOrig();
@@ -1482,7 +1482,7 @@ namespace Lucene.Net.Index
 				{
 					try
 					{
-						tvReader = (TermVectorsReader) orig.Clone();
+						tvReader = (TermVectorsReader) orig.Clone(state);
 					}
 					catch (System.Exception)
 					{
@@ -1513,7 +1513,7 @@ namespace Lucene.Net.Index
 			if (fi == null || !fi.storeTermVector)
 				return null;
 			
-			TermVectorsReader termVectorsReader = GetTermVectorsReader();
+			TermVectorsReader termVectorsReader = GetTermVectorsReader(state);
 			if (termVectorsReader == null)
 				return null;
 			
@@ -1528,7 +1528,7 @@ namespace Lucene.Net.Index
 			if (fi == null || !fi.storeTermVector)
 				return;
 			
-			TermVectorsReader termVectorsReader = GetTermVectorsReader();
+			TermVectorsReader termVectorsReader = GetTermVectorsReader(state);
 			if (termVectorsReader == null)
 			{
 				return;
@@ -1541,7 +1541,7 @@ namespace Lucene.Net.Index
 		{
 			EnsureOpen();
 			
-			TermVectorsReader termVectorsReader = GetTermVectorsReader();
+			TermVectorsReader termVectorsReader = GetTermVectorsReader(state);
 			if (termVectorsReader == null)
 				return ;
 			
@@ -1559,7 +1559,7 @@ namespace Lucene.Net.Index
 		{
 			EnsureOpen();
 			
-			TermVectorsReader termVectorsReader = GetTermVectorsReader();
+			TermVectorsReader termVectorsReader = GetTermVectorsReader(state);
 			if (termVectorsReader == null)
 				return null;
 			

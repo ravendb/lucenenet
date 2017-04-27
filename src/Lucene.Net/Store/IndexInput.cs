@@ -17,6 +17,7 @@
 
 using System;
 using Lucene.Net.Support;
+using Lucene.Net.Util;
 
 namespace Lucene.Net.Store
 {
@@ -26,7 +27,7 @@ namespace Lucene.Net.Store
 	/// </summary>
 	/// <seealso cref="Directory">
 	/// </seealso>
-	public abstract class IndexInput : System.ICloneable, IDisposable
+	public abstract class IndexInput : ILuceneCloneable, IDisposable
 	{
 		private bool preUTF8Strings; // true if we are reading old (modified UTF8) string format
 		
@@ -256,7 +257,7 @@ namespace Lucene.Net.Store
 		/// different points in the input from each other and from the stream they
 		/// were cloned from.
 		/// </summary>
-		public virtual System.Object Clone()
+		public virtual System.Object Clone(IState state)
 		{
 			IndexInput clone = null;
 			try

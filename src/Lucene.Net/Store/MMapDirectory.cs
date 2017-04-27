@@ -16,7 +16,7 @@
  */
 
 using System;
-
+using Lucene.Net.Util;
 using Constants = Lucene.Net.Util.Constants;
 
 namespace Lucene.Net.Store
@@ -274,11 +274,11 @@ namespace Lucene.Net.Store
 				return length;
 			}
 			
-			public override System.Object Clone()
+			public override System.Object Clone(IState state)
 			{
                 if (buffer == null)
                     throw new AlreadyClosedException("MMapIndexInput already closed");
-				MMapIndexInput clone = (MMapIndexInput) base.Clone();
+				MMapIndexInput clone = (MMapIndexInput) base.Clone(state);
 				clone.isClone = true;
 				// clone.buffer = buffer.duplicate();   // {{Aroush-1.9}}
 				return clone;
@@ -310,7 +310,7 @@ namespace Lucene.Net.Store
 		// Because Java's ByteBuffer uses an int to address the
 		// values, it's necessary to access a file >
 		// Integer.MAX_VALUE in size using multiple byte buffers.
-		protected internal class MultiMMapIndexInput:IndexInput, System.ICloneable
+		protected internal class MultiMMapIndexInput:IndexInput, ILuceneCloneable
 		{
 			private void  InitBlock(MMapDirectory enclosingInstance)
 			{
@@ -431,9 +431,9 @@ namespace Lucene.Net.Store
 				return length;
 			}
 			
-			public override System.Object Clone()
+			public override System.Object Clone(IState state)
 			{
-				MultiMMapIndexInput clone = (MultiMMapIndexInput) base.Clone();
+				MultiMMapIndexInput clone = (MultiMMapIndexInput) base.Clone(state);
 				clone.isClone = true;
 				clone.buffers = new System.IO.MemoryStream[buffers.Length];
 				// No need to clone bufSizes.
@@ -445,7 +445,6 @@ namespace Lucene.Net.Store
 				}
 				try
 				{
-				    var state = StateHolder.Current.Value;
 					clone.Seek(FilePointer(state), state);
 				}
 				catch (System.IO.IOException ioe)

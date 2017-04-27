@@ -35,7 +35,7 @@ namespace Lucene.Net.Index
 	/// It uses &lt;segment&gt;.fdt and &lt;segment&gt;.fdx; files.
 	/// 
 	/// </summary>
-	public sealed class FieldsReader : ICloneable, IDisposable
+	public sealed class FieldsReader : ILuceneCloneable, IDisposable
 	{
 		private readonly FieldInfos fieldInfos;
 		
@@ -67,14 +67,14 @@ namespace Lucene.Net.Index
 		/// clones are called (eg, currently SegmentReader manages
 		/// this logic). 
 		/// </summary>
-		public System.Object Clone()
+		public System.Object Clone(IState state)
 		{
 			EnsureOpen();
-			return new FieldsReader(fieldInfos, numTotalDocs, size, format, formatSize, docStoreOffset, cloneableFieldsStream, cloneableIndexStream);
+			return new FieldsReader(fieldInfos, numTotalDocs, size, format, formatSize, docStoreOffset, cloneableFieldsStream, cloneableIndexStream, state);
 		}
 		
 		// Used only by clone
-		private FieldsReader(FieldInfos fieldInfos, int numTotalDocs, int size, int format, int formatSize, int docStoreOffset, IndexInput cloneableFieldsStream, IndexInput cloneableIndexStream)
+		private FieldsReader(FieldInfos fieldInfos, int numTotalDocs, int size, int format, int formatSize, int docStoreOffset, IndexInput cloneableFieldsStream, IndexInput cloneableIndexStream, IState state)
 		{
 			this.fieldInfos = fieldInfos;
 			this.numTotalDocs = numTotalDocs;
@@ -84,8 +84,8 @@ namespace Lucene.Net.Index
 			this.docStoreOffset = docStoreOffset;
 			this.cloneableFieldsStream = cloneableFieldsStream;
 			this.cloneableIndexStream = cloneableIndexStream;
-			fieldsStream = (IndexInput) cloneableFieldsStream.Clone();
-			indexStream = (IndexInput) cloneableIndexStream.Clone();
+			fieldsStream = (IndexInput) cloneableFieldsStream.Clone(state);
+			indexStream = (IndexInput) cloneableIndexStream.Clone(state);
 		}
 		
 		public /*internal*/ FieldsReader(Directory d, String segment, FieldInfos fn, IState state) :this(d, segment, fn, BufferedIndexInput.BUFFER_SIZE, - 1, 0, state)
@@ -121,7 +121,7 @@ namespace Lucene.Net.Index
 				if (format < FieldsWriter.FORMAT_VERSION_UTF8_LENGTH_IN_BYTES)
 					cloneableFieldsStream.SetModifiedUTF8StringsMode();
 				
-				fieldsStream = (IndexInput) cloneableFieldsStream.Clone();
+				fieldsStream = (IndexInput) cloneableFieldsStream.Clone(state);
 				
 				long indexSize = cloneableIndexStream.Length(state) - formatSize;
 				
@@ -141,7 +141,7 @@ namespace Lucene.Net.Index
 					this.size = (int) (indexSize >> 3);
 				}
 				
-				indexStream = (IndexInput) cloneableIndexStream.Clone();
+				indexStream = (IndexInput) cloneableIndexStream.Clone(state);
 				numTotalDocs = (int) (indexSize >> 3);
 				success = true;
 			}
@@ -472,12 +472,12 @@ namespace Lucene.Net.Index
 			    this.isCompressed = isCompressed;
 			}
 			
-			private IndexInput GetFieldStream()
+			private IndexInput GetFieldStream(IState state)
 			{
-				IndexInput localFieldsStream = Enclosing_Instance.fieldsStreamTL.Get();
+				IndexInput localFieldsStream = Enclosing_Instance.fieldsStreamTL.Get(state);
 				if (localFieldsStream == null)
 				{
-					localFieldsStream = (IndexInput) Enclosing_Instance.cloneableFieldsStream.Clone();
+					localFieldsStream = (IndexInput) Enclosing_Instance.cloneableFieldsStream.Clone(state);
 					Enclosing_Instance.fieldsStreamTL.Set(localFieldsStream);
 				}
 				return localFieldsStream;
@@ -521,7 +521,7 @@ namespace Lucene.Net.Index
 
 		        if (fieldsData == null)
 		        {
-		        	IndexInput localFieldsStream = GetFieldStream();
+		        	IndexInput localFieldsStream = GetFieldStream(state);
 		        	try
 		        	{
 		        		localFieldsStream.Seek(pointer, state);
@@ -600,7 +600,7 @@ namespace Lucene.Net.Index
 						else
 							b = result;
 						
-						IndexInput localFieldsStream = GetFieldStream();
+						IndexInput localFieldsStream = GetFieldStream(state);
 						
 						// Throw this IOException since IndexReader.document does so anyway, so probably not that big of a change for people
 						// since they are already handling this exception when getting the document

@@ -246,7 +246,7 @@ namespace Lucene.Net.Index
 				else
 				{
 					// clone this stream, it is already at the start of the current level
-					skipStream[i] = (IndexInput) skipStream[0].Clone();
+					skipStream[i] = (IndexInput) skipStream[0].Clone(state);
 					if (inputIsBuffered && length < BufferedIndexInput.BUFFER_SIZE)
 					{
 						((BufferedIndexInput) skipStream[i]).SetBufferSize((int) length);
@@ -331,7 +331,7 @@ namespace Lucene.Net.Index
 				this.pos = (int) (pos - pointer);
 			}
 			
-			override public System.Object Clone()
+			override public System.Object Clone(IState state)
 			{
                 System.Diagnostics.Debug.Fail("Port issue:", "Lets see if we need this FilterIndexReader.Clone()"); // {{Aroush-2.9}}
 				return null;
