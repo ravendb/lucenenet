@@ -59,13 +59,13 @@ namespace Lucene.Net.Index
 			DocHelper.WriteDoc(dir, doc1);
 			DocHelper.WriteDoc(dir, doc2);
 			sis = new SegmentInfos();
-			sis.Read(dir);
+			sis.Read(dir, null);
 		}
 		
 		protected internal virtual IndexReader OpenReader()
 		{
 			IndexReader reader;
-			reader = IndexReader.Open(dir, false);
+			reader = IndexReader.Open(dir, false, null);
 			Assert.IsTrue(reader is DirectoryReader);
 			
 			Assert.IsTrue(dir != null);
@@ -85,53 +85,53 @@ namespace Lucene.Net.Index
 		
 		public virtual void  DoTestDocument()
 		{
-			sis.Read(dir);
+			sis.Read(dir, null);
 			IndexReader reader = OpenReader();
 			Assert.IsTrue(reader != null);
-			Document newDoc1 = reader.Document(0);
+			Document newDoc1 = reader.Document(0, null);
 			Assert.IsTrue(newDoc1 != null);
 			Assert.IsTrue(DocHelper.NumFields(newDoc1) == DocHelper.NumFields(doc1) - DocHelper.unstored.Count);
-			Document newDoc2 = reader.Document(1);
+			Document newDoc2 = reader.Document(1, null);
 			Assert.IsTrue(newDoc2 != null);
 			Assert.IsTrue(DocHelper.NumFields(newDoc2) == DocHelper.NumFields(doc2) - DocHelper.unstored.Count);
-			ITermFreqVector vector = reader.GetTermFreqVector(0, DocHelper.TEXT_FIELD_2_KEY);
+			ITermFreqVector vector = reader.GetTermFreqVector(0, DocHelper.TEXT_FIELD_2_KEY, null);
 			Assert.IsTrue(vector != null);
 			TestSegmentReader.CheckNorms(reader);
 		}
 		
 		public virtual void  DoTestUndeleteAll()
 		{
-			sis.Read(dir);
+			sis.Read(dir, null);
 			IndexReader reader = OpenReader();
 			Assert.IsTrue(reader != null);
 			Assert.AreEqual(2, reader.NumDocs());
-			reader.DeleteDocument(0);
+			reader.DeleteDocument(0, null);
 			Assert.AreEqual(1, reader.NumDocs());
-			reader.UndeleteAll();
+			reader.UndeleteAll(null);
 			Assert.AreEqual(2, reader.NumDocs());
 			
 			// Ensure undeleteAll survives commit/close/reopen:
-			reader.Commit();
+			reader.Commit(null);
 			reader.Close();
 			
 			if (reader is MultiReader)
 			// MultiReader does not "own" the directory so it does
 			// not write the changes to sis on commit:
-				sis.Commit(dir);
+				sis.Commit(dir, null);
 			
-			sis.Read(dir);
+			sis.Read(dir, null);
 			reader = OpenReader();
 			Assert.AreEqual(2, reader.NumDocs());
 			
-			reader.DeleteDocument(0);
+			reader.DeleteDocument(0, null);
 			Assert.AreEqual(1, reader.NumDocs());
-			reader.Commit();
+			reader.Commit(null);
 			reader.Close();
 			if (reader is MultiReader)
 			// MultiReader does not "own" the directory so it does
 			// not write the changes to sis on commit:
-				sis.Commit(dir);
-			sis.Read(dir);
+				sis.Commit(dir, null);
+			sis.Read(dir, null);
 			reader = OpenReader();
 			Assert.AreEqual(1, reader.NumDocs());
 		}
@@ -151,13 +151,13 @@ namespace Lucene.Net.Index
 			AddDoc(ramDir1, "test foo", true);
 			RAMDirectory ramDir2 = new RAMDirectory();
 			AddDoc(ramDir2, "test blah", true);
-			IndexReader[] readers = new IndexReader[]{IndexReader.Open(ramDir1, false), IndexReader.Open(ramDir2, false)};
+			IndexReader[] readers = new IndexReader[]{IndexReader.Open((Directory) ramDir1, false, null), IndexReader.Open((Directory) ramDir2, false, null)};
 			MultiReader mr = new MultiReader(readers);
-			Assert.IsTrue(mr.IsCurrent()); // just opened, must be current
+			Assert.IsTrue(mr.IsCurrent(null)); // just opened, must be current
 			AddDoc(ramDir1, "more text", false);
-			Assert.IsFalse(mr.IsCurrent()); // has been modified, not current anymore
+			Assert.IsFalse(mr.IsCurrent(null)); // has been modified, not current anymore
 			AddDoc(ramDir2, "even more text", false);
-			Assert.IsFalse(mr.IsCurrent()); // has been modified even more, not current anymore
+			Assert.IsFalse(mr.IsCurrent(null)); // has been modified even more, not current anymore
 
 			Assert.Throws<NotSupportedException>(() => { var ver = mr.Version; });
 			mr.Close();
@@ -173,20 +173,20 @@ namespace Lucene.Net.Index
 			RAMDirectory ramDir3 = new RAMDirectory();
 			AddDoc(ramDir3, "test wow", true);
 
-            IndexReader[] readers1 = new [] { IndexReader.Open(ramDir1, false), IndexReader.Open(ramDir3, false) };
-            IndexReader[] readers2 = new [] { IndexReader.Open(ramDir1, false), IndexReader.Open(ramDir2, false), IndexReader.Open(ramDir3, false) };
+            IndexReader[] readers1 = new [] { IndexReader.Open((Directory) ramDir1, false, null), IndexReader.Open((Directory) ramDir3, false, null) };
+            IndexReader[] readers2 = new [] { IndexReader.Open((Directory) ramDir1, false, null), IndexReader.Open((Directory) ramDir2, false, null), IndexReader.Open((Directory) ramDir3, false, null) };
 			MultiReader mr2 = new MultiReader(readers1);
 			MultiReader mr3 = new MultiReader(readers2);
 			
 			// test mixing up TermDocs and TermEnums from different readers.
-			TermDocs td2 = mr2.TermDocs();
-			TermEnum te3 = mr3.Terms(new Term("body", "wow"));
-			td2.Seek(te3);
+			TermDocs td2 = mr2.TermDocs(null);
+			TermEnum te3 = mr3.Terms(new Term("body", "wow"), null);
+			td2.Seek(te3, null);
 			int ret = 0;
 			
 			// This should blow up if we forget to check that the TermEnum is from the same
 			// reader as the TermDocs.
-			while (td2.Next())
+			while (td2.Next(null))
 				ret += td2.Doc;
 			td2.Close();
 			te3.Close();
@@ -204,7 +204,7 @@ namespace Lucene.Net.Index
 			TermDocs td = reader.TermDocs(null);
 			for (int i = 0; i < NUM_DOCS; i++)
 			{
-				Assert.IsTrue(td.Next());
+				Assert.IsTrue(td.Next(null));
 				Assert.AreEqual(i, td.Doc);
 				Assert.AreEqual(1, td.Freq);
 			}
@@ -214,10 +214,10 @@ namespace Lucene.Net.Index
 		
 		private void  AddDoc(RAMDirectory ramDir1, System.String s, bool create)
 		{
-			IndexWriter iw = new IndexWriter(ramDir1, new StandardAnalyzer(Lucene.Net.Util.Version.LUCENE_CURRENT), create, IndexWriter.MaxFieldLength.LIMITED);
+			IndexWriter iw = new IndexWriter(ramDir1, new StandardAnalyzer(Lucene.Net.Util.Version.LUCENE_CURRENT), create, IndexWriter.MaxFieldLength.LIMITED, null);
 			Document doc = new Document();
 			doc.Add(new Field("body", s, Field.Store.YES, Field.Index.ANALYZED));
-			iw.AddDocument(doc);
+			iw.AddDocument(doc, null);
 			iw.Close();
 		}
 	}

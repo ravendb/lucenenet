@@ -813,7 +813,7 @@ namespace Lucene.Net.Index
                 normsCache.Remove(field); // clear cache      
             }
             int i = ReaderIndex(n); // find segment num
-            subReaders[i].SetNorm(n - starts[i], field, value_Renamed); // dispatch
+            subReaders[i].SetNorm(n - starts[i], field, value_Renamed, state); // dispatch
         }
         
         public override TermEnum Terms(IState state)

@@ -73,7 +73,7 @@ namespace Lucene.Net.Store
             Init();
         }
         public MockRAMDirectory(Directory dir)
-            : base(dir)
+            : base(dir, null)
         {
             Init();
         }
@@ -209,7 +209,7 @@ namespace Lucene.Net.Store
             }
         }
 
-        public override void DeleteFile(String name)
+        public override void DeleteFile(String name, IState state)
         {
             lock (this)
             {
@@ -240,7 +240,7 @@ namespace Lucene.Net.Store
                         openFilesDeleted.Remove(name);
                     }
                 }
-                base.DeleteFile(name);
+                base.DeleteFile(name, null);
             }
         }
 
@@ -252,7 +252,7 @@ namespace Lucene.Net.Store
             }
         }
 
-        public override IndexOutput CreateOutput(String name)
+        public override IndexOutput CreateOutput(String name, IState state)
         {
             lock (this)
             {
@@ -287,7 +287,7 @@ namespace Lucene.Net.Store
             }
         }
 
-        public override IndexInput OpenInput(String name)
+        public override IndexInput OpenInput(String name, IState state)
         {
             lock (this)
             {

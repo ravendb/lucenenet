@@ -67,7 +67,7 @@ namespace Lucene.Net.Index
 				
 			}
 			
-			public MockIndexWriter(TestStressIndexing2 enclosingInstance, Directory dir, Analyzer a, bool create, IndexWriter.MaxFieldLength mfl):base(dir, a, create, mfl)
+			public MockIndexWriter(TestStressIndexing2 enclosingInstance, Directory dir, Analyzer a, bool create, IndexWriter.MaxFieldLength mfl):base(dir, a, create, mfl, null)
 			{
 				InitBlock(enclosingInstance);
 			}
@@ -93,8 +93,8 @@ namespace Lucene.Net.Index
 			
 			// TODO: verify equals using IW.getReader
 			DocsAndWriter dw = IndexRandomIWReader(10, 100, 100, dir);
-			IndexReader r = dw.writer.GetReader();
-			dw.writer.Commit();
+			IndexReader r = dw.writer.GetReader(null);
+			dw.writer.Commit(null);
 			VerifyEquals(r, dir, "id");
 			r.Close();
 			dw.writer.Close();
@@ -273,7 +273,7 @@ namespace Lucene.Net.Index
 		
 		public static void  IndexSerial(System.Collections.IDictionary docs, Directory dir)
 		{
-			IndexWriter w = new IndexWriter(dir, new WhitespaceAnalyzer(), IndexWriter.MaxFieldLength.UNLIMITED);
+			IndexWriter w = new IndexWriter(dir, new WhitespaceAnalyzer(), IndexWriter.MaxFieldLength.UNLIMITED, null);
 			
 			// index all docs in a single thread
 			System.Collections.IEnumerator iter = docs.Values.GetEnumerator();
@@ -292,7 +292,7 @@ namespace Lucene.Net.Index
 				{
 					d1.Add((IFieldable) fields[i]);
 				}
-				w.AddDocument(d1);
+				w.AddDocument(d1, null);
 				// System.out.println("indexing "+d1);
 			}
 			
@@ -301,15 +301,15 @@ namespace Lucene.Net.Index
 		
 		public static void  VerifyEquals(IndexReader r1, Directory dir2, System.String idField)
 		{
-		    IndexReader r2 = IndexReader.Open(dir2, true);
+		    IndexReader r2 = IndexReader.Open(dir2, true, null);
 			VerifyEquals(r1, r2, idField);
 			r2.Close();
 		}
 		
 		public static void  VerifyEquals(Directory dir1, Directory dir2, System.String idField)
 		{
-			IndexReader r1 = IndexReader.Open(dir1, true);
-		    IndexReader r2 = IndexReader.Open(dir2, true);
+			IndexReader r1 = IndexReader.Open(dir1, true, null);
+		    IndexReader r2 = IndexReader.Open(dir2, true, null);
 			VerifyEquals(r1, r2, idField);
 			r1.Close();
 			r2.Close();
@@ -323,59 +323,59 @@ namespace Lucene.Net.Index
 			
 			int[] r2r1 = new int[r2.MaxDoc]; // r2 id to r1 id mapping
 			
-			TermDocs termDocs1 = r1.TermDocs();
-			TermDocs termDocs2 = r2.TermDocs();
+			TermDocs termDocs1 = r1.TermDocs(null);
+			TermDocs termDocs2 = r2.TermDocs(null);
 			
 			// create mapping from id2 space to id2 based on idField
 			idField = StringHelper.Intern(idField);
-			TermEnum termEnum = r1.Terms(new Term(idField, ""));
+			TermEnum termEnum = r1.Terms(new Term(idField, ""), null);
 			do 
 			{
 				Term term = termEnum.Term;
 				if (term == null || (System.Object) term.Field != (System.Object) idField)
 					break;
 				
-				termDocs1.Seek(termEnum);
-				if (!termDocs1.Next())
+				termDocs1.Seek(termEnum, null);
+				if (!termDocs1.Next(null))
 				{
 					// This doc is deleted and wasn't replaced
-					termDocs2.Seek(termEnum);
-					Assert.IsFalse(termDocs2.Next());
+					termDocs2.Seek(termEnum, null);
+					Assert.IsFalse(termDocs2.Next(null));
 					continue;
 				}
 				
 				int id1 = termDocs1.Doc;
-				Assert.IsFalse(termDocs1.Next());
+				Assert.IsFalse(termDocs1.Next(null));
 				
-				termDocs2.Seek(termEnum);
-				Assert.IsTrue(termDocs2.Next());
+				termDocs2.Seek(termEnum, null);
+				Assert.IsTrue(termDocs2.Next(null));
 				int id2 = termDocs2.Doc;
-				Assert.IsFalse(termDocs2.Next());
+				Assert.IsFalse(termDocs2.Next(null));
 				
 				r2r1[id2] = id1;
 				
 				// verify stored fields are equivalent
 				try
 				{
-					VerifyEquals(r1.Document(id1), r2.Document(id2));
+					VerifyEquals(r1.Document(id1, null), r2.Document(id2, null));
 				}
 				catch (System.Exception t)
 				{
 					System.Console.Out.WriteLine("FAILED id=" + term + " id1=" + id1 + " id2=" + id2 + " term=" + term);
-					System.Console.Out.WriteLine("  d1=" + r1.Document(id1));
-					System.Console.Out.WriteLine("  d2=" + r2.Document(id2));
+					System.Console.Out.WriteLine("  d1=" + r1.Document(id1, null));
+					System.Console.Out.WriteLine("  d2=" + r2.Document(id2, null));
 					throw t;
 				}
 				
 				try
 				{
 					// verify term vectors are equivalent        
-					VerifyEquals(r1.GetTermFreqVectors(id1), r2.GetTermFreqVectors(id2));
+					VerifyEquals(r1.GetTermFreqVectors(id1, null), r2.GetTermFreqVectors(id2, null));
 				}
 				catch (System.Exception e)
 				{
 					System.Console.Out.WriteLine("FAILED id=" + term + " id1=" + id1 + " id2=" + id2);
-					ITermFreqVector[] tv1 = r1.GetTermFreqVectors(id1);
+					ITermFreqVector[] tv1 = r1.GetTermFreqVectors(id1, null);
 					System.Console.Out.WriteLine("  d1=" + tv1);
 					if (tv1 != null)
 						for (int i = 0; i < tv1.Length; i++)
@@ -383,7 +383,7 @@ namespace Lucene.Net.Index
 							System.Console.Out.WriteLine("    " + i + ": " + tv1[i]);
 						}
 					
-					ITermFreqVector[] tv2 = r2.GetTermFreqVectors(id2);
+					ITermFreqVector[] tv2 = r2.GetTermFreqVectors(id2, null);
 					System.Console.Out.WriteLine("  d2=" + tv2);
 					if (tv2 != null)
 						for (int i = 0; i < tv2.Length; i++)
@@ -394,13 +394,13 @@ namespace Lucene.Net.Index
 					throw e;
 				}
 			}
-			while (termEnum.Next());
+			while (termEnum.Next(null));
 			
 			termEnum.Close();
 			
 			// Verify postings
-			TermEnum termEnum1 = r1.Terms(new Term("", ""));
-			TermEnum termEnum2 = r2.Terms(new Term("", ""));
+			TermEnum termEnum1 = r1.Terms(new Term("", ""), null);
+			TermEnum termEnum2 = r2.Terms(new Term("", ""), null);
 			
 			// pack both doc and freq into single element for easy sorting
 			long[] info1 = new long[r1.NumDocs()];
@@ -418,8 +418,8 @@ namespace Lucene.Net.Index
 					term1 = termEnum1.Term;
 					if (term1 == null)
 						break;
-					termDocs1.Seek(termEnum1);
-					while (termDocs1.Next())
+					termDocs1.Seek(termEnum1, null);
+					while (termDocs1.Next(null))
 					{
 						int d1 = termDocs1.Doc;
 						int f1 = termDocs1.Freq;
@@ -428,7 +428,7 @@ namespace Lucene.Net.Index
 					}
 					if (len1 > 0)
 						break;
-					if (!termEnum1.Next())
+					if (!termEnum1.Next(null))
 						break;
 				}
 				
@@ -440,8 +440,8 @@ namespace Lucene.Net.Index
 					term2 = termEnum2.Term;
 					if (term2 == null)
 						break;
-					termDocs2.Seek(termEnum2);
-					while (termDocs2.Next())
+					termDocs2.Seek(termEnum2, null);
+					while (termDocs2.Next(null))
 					{
 						int d2 = termDocs2.Doc;
 						int f2 = termDocs2.Freq;
@@ -450,7 +450,7 @@ namespace Lucene.Net.Index
 					}
 					if (len2 > 0)
 						break;
-					if (!termEnum2.Next())
+					if (!termEnum2.Next(null))
 						break;
 				}
 				
@@ -472,8 +472,8 @@ namespace Lucene.Net.Index
 					Assert.AreEqual(info1[i], info2[i]);
 				}
 				
-				termEnum1.Next();
-				termEnum2.Next();
+				termEnum1.Next(null);
+				termEnum2.Next(null);
 			}
 		}
 		
@@ -502,8 +502,8 @@ namespace Lucene.Net.Index
 				}
 				else
 				{
-					System.String s1 = f1.StringValue;
-					System.String s2 = f2.StringValue;
+					System.String s1 = f1.StringValue(null);
+					System.String s2 = f2.StringValue(null);
 					if (!s1.Equals(s2))
 					{
 						// print out whole doc on error
@@ -742,7 +742,7 @@ namespace Lucene.Net.Index
 				{
 					d.Add((IFieldable) fields[i]);
 				}
-				w.UpdateDocument(Lucene.Net.Index.TestStressIndexing2.idTerm.CreateTerm(idString), d);
+				w.UpdateDocument(Lucene.Net.Index.TestStressIndexing2.idTerm.CreateTerm(idString), d, null);
 				// System.out.println("indexing "+d);
 				docs[idString] = d;
 			}
@@ -750,14 +750,14 @@ namespace Lucene.Net.Index
 			public virtual void  DeleteDoc()
 			{
 				System.String idString = GetIdString();
-				w.DeleteDocuments(Lucene.Net.Index.TestStressIndexing2.idTerm.CreateTerm(idString));
+				w.DeleteDocuments(null, Lucene.Net.Index.TestStressIndexing2.idTerm.CreateTerm(idString));
 				docs.Remove(idString);
 			}
 			
 			public virtual void  DeleteByQuery()
 			{
 				System.String idString = GetIdString();
-				w.DeleteDocuments(new TermQuery(Lucene.Net.Index.TestStressIndexing2.idTerm.CreateTerm(idString)));
+				w.DeleteDocuments(null, new TermQuery(Lucene.Net.Index.TestStressIndexing2.idTerm.CreateTerm(idString)));
 				docs.Remove(idString);
 			}
 			

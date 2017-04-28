@@ -51,30 +51,30 @@ namespace Lucene.Net.Search
 		{
 			base.SetUp();
 			
-			IndexWriter writer = new IndexWriter(directory, new WhitespaceAnalyzer(), true, IndexWriter.MaxFieldLength.LIMITED);
+			IndexWriter writer = new IndexWriter(directory, new WhitespaceAnalyzer(), true, IndexWriter.MaxFieldLength.LIMITED, null);
 			
 			for (int i = 0; i < 5137; ++i)
 			{
 				Document doc = new Document();
 				doc.Add(new Field(FIELD, "meaninglessnames", Field.Store.YES, Field.Index.NOT_ANALYZED));
-				writer.AddDocument(doc);
+				writer.AddDocument(doc, null);
 			}
 			{
 				Document doc = new Document();
 				doc.Add(new Field(FIELD, "tangfulin", Field.Store.YES, Field.Index.NOT_ANALYZED));
-				writer.AddDocument(doc);
+				writer.AddDocument(doc, null);
 			}
 			
 			for (int i = 5138; i < 11377; ++i)
 			{
 				Document doc = new Document();
 				doc.Add(new Field(FIELD, "meaninglessnames", Field.Store.YES, Field.Index.NOT_ANALYZED));
-				writer.AddDocument(doc);
+				writer.AddDocument(doc, null);
 			}
 			{
 				Document doc = new Document();
 				doc.Add(new Field(FIELD, "tangfulin", Field.Store.YES, Field.Index.NOT_ANALYZED));
-				writer.AddDocument(doc);
+				writer.AddDocument(doc, null);
 			}
 			
 			writer.Close();
@@ -83,37 +83,37 @@ namespace Lucene.Net.Search
 		[Test]
 		public virtual void  TestPrefixQuery()
 		{
-			IndexSearcher indexSearcher = new IndexSearcher(directory, true);
+			IndexSearcher indexSearcher = new IndexSearcher(directory, true, null);
 			Query query = new PrefixQuery(new Term(FIELD, "tang"));
-			Assert.AreEqual(2, indexSearcher.Search(query, null, 1000).TotalHits, "Number of matched documents");
+			Assert.AreEqual(2, indexSearcher.Search(query, null, 1000, null).TotalHits, "Number of matched documents");
 		}
 		
 		[Test]
 		public virtual void  TestTermQuery()
 		{
-			IndexSearcher indexSearcher = new IndexSearcher(directory, true);
+			IndexSearcher indexSearcher = new IndexSearcher(directory, true, null);
 			Query query = new TermQuery(new Term(FIELD, "tangfulin"));
-			Assert.AreEqual(2, indexSearcher.Search(query, null, 1000).TotalHits, "Number of matched documents");
+			Assert.AreEqual(2, indexSearcher.Search(query, null, 1000, null).TotalHits, "Number of matched documents");
 		}
 		
 		[Test]
 		public virtual void  TestTermBooleanQuery()
 		{
-			IndexSearcher indexSearcher = new IndexSearcher(directory, true);
+			IndexSearcher indexSearcher = new IndexSearcher(directory, true, null);
 			BooleanQuery query = new BooleanQuery();
 			query.Add(new TermQuery(new Term(FIELD, "tangfulin")), Occur.SHOULD);
 			query.Add(new TermQuery(new Term(FIELD, "notexistnames")), Occur.SHOULD);
-			Assert.AreEqual(2, indexSearcher.Search(query, null, 1000).TotalHits, "Number of matched documents");
+			Assert.AreEqual(2, indexSearcher.Search(query, null, 1000, null).TotalHits, "Number of matched documents");
 		}
 		
 		[Test]
 		public virtual void  TestPrefixBooleanQuery()
 		{
-			IndexSearcher indexSearcher = new IndexSearcher(directory, true);
+			IndexSearcher indexSearcher = new IndexSearcher(directory, true, null);
 			BooleanQuery query = new BooleanQuery();
 			query.Add(new PrefixQuery(new Term(FIELD, "tang")), Occur.SHOULD);
 			query.Add(new TermQuery(new Term(FIELD, "notexistnames")), Occur.SHOULD);
-			Assert.AreEqual(2, indexSearcher.Search(query, null, 1000).TotalHits, "Number of matched documents");
+			Assert.AreEqual(2, indexSearcher.Search(query, null, 1000, null).TotalHits, "Number of matched documents");
 		}
 	}
 }

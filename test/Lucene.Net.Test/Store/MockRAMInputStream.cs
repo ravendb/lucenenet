@@ -16,7 +16,7 @@
  */
 
 using System;
-
+using Lucene.Net.Util;
 using NUnit.Framework;
 
 namespace Lucene.Net.Store
@@ -26,7 +26,7 @@ namespace Lucene.Net.Store
 	/// keeps track of when it's been closed.
 	/// </summary>
 	
-	public class MockRAMInputStream:RAMInputStream, System.ICloneable
+	public class MockRAMInputStream:RAMInputStream, ILuceneCloneable
 	{
 		private MockRAMDirectory dir;
 		private System.String name;
@@ -73,9 +73,9 @@ namespace Lucene.Net.Store
             base.Dispose(disposing);
         }
 		
-		public override System.Object Clone()
+		public override System.Object Clone(IState state)
 		{
-			MockRAMInputStream clone = (MockRAMInputStream) base.Clone();
+			MockRAMInputStream clone = (MockRAMInputStream) base.Clone(null);
 			clone.isClone = true;
 			// Pending resolution on LUCENE-686 we may want to
 			// uncomment this code so that we also track that all

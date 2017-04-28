@@ -89,7 +89,7 @@ namespace Lucene.Net
 		{
 			Directory directory = new RAMDirectory();
 			Analyzer analyzer = new SimpleAnalyzer();
-			IndexWriter writer = new IndexWriter(directory, analyzer, true, IndexWriter.MaxFieldLength.LIMITED);
+			IndexWriter writer = new IndexWriter(directory, analyzer, true, IndexWriter.MaxFieldLength.LIMITED, null);
 			
 			writer.UseCompoundFile = useCompoundFile;
 			
@@ -98,11 +98,11 @@ namespace Lucene.Net
 			{
 				Document d = new Document();
 				d.Add(new Field("contents", docs[j], Field.Store.YES, Field.Index.ANALYZED));
-				writer.AddDocument(d);
+				writer.AddDocument(d, null);
 			}
 			writer.Close();
 
-		    Searcher searcher = new IndexSearcher(directory, true);
+		    Searcher searcher = new IndexSearcher(directory, true, null);
 			
 			System.String[] queries = new System.String[]{"a b", "\"a b\"", "\"a b c\"", "a c", "\"a c\"", "\"a c e\""};
 			ScoreDoc[] hits = null;
@@ -119,13 +119,13 @@ namespace Lucene.Net
 				//DateFilter filter = DateFilter.Before("modified", Time(1997,00,01));
 				//System.out.println(filter);
 				
-				hits = searcher.Search(query, null, 1000).ScoreDocs;
+				hits = searcher.Search(query, null, 1000, null).ScoreDocs;
 				
 				out_Renamed.WriteLine(hits.Length + " total results");
 				for (int i = 0; i < hits.Length && i < 10; i++)
 				{
-					Document d = searcher.Doc(hits[i].Doc);
-					out_Renamed.WriteLine(i + " " + hits[i].Score + " " + d.Get("contents"));
+					Document d = searcher.Doc(hits[i].Doc, null);
+					out_Renamed.WriteLine(i + " " + hits[i].Score + " " + d.Get("contents", null));
 				}
 			}
 			searcher.Close();

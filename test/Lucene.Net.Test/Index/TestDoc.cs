@@ -150,7 +150,7 @@ namespace Lucene.Net.Index
 			System.IO.StreamWriter out_Renamed = new System.IO.StreamWriter(sw);
 			
 			Directory directory = FSDirectory.Open(indexDir);
-			IndexWriter writer = new IndexWriter(directory, new SimpleAnalyzer(), true, IndexWriter.MaxFieldLength.LIMITED);
+			IndexWriter writer = new IndexWriter(directory, new SimpleAnalyzer(), true, IndexWriter.MaxFieldLength.LIMITED, null);
 			
 			SegmentInfo si1 = IndexDoc(writer, "test.txt");
 			PrintSegment(out_Renamed, si1);
@@ -183,7 +183,7 @@ namespace Lucene.Net.Index
 			out_Renamed = new System.IO.StreamWriter(sw);
 			
 			directory = FSDirectory.Open(indexDir);
-			writer = new IndexWriter(directory, new SimpleAnalyzer(), true, IndexWriter.MaxFieldLength.LIMITED);
+			writer = new IndexWriter(directory, new SimpleAnalyzer(), true, IndexWriter.MaxFieldLength.LIMITED, null);
 			
 			si1 = IndexDoc(writer, "test.txt");
 			PrintSegment(out_Renamed, si1);
@@ -221,24 +221,24 @@ namespace Lucene.Net.Index
             { 
                 Document doc = FileDocument.Document(file, fs);
                 doc.Add(new Field("contents", new System.IO.StreamReader(fs)));
-			    writer.AddDocument(doc);
+			    writer.AddDocument(doc, null);
             }
 
-            writer.Commit();
+            writer.Commit(null);
 			return writer.NewestSegment();
 		}
 		
 		
 		private SegmentInfo Merge(SegmentInfo si1, SegmentInfo si2, System.String merged, bool useCompoundFile)
 		{
-            SegmentReader r1 = SegmentReader.Get(true, si1, IndexReader.DEFAULT_TERMS_INDEX_DIVISOR);
-            SegmentReader r2 = SegmentReader.Get(true, si2, IndexReader.DEFAULT_TERMS_INDEX_DIVISOR);
+            SegmentReader r1 = SegmentReader.Get(true, si1, IndexReader.DEFAULT_TERMS_INDEX_DIVISOR, null);
+            SegmentReader r2 = SegmentReader.Get(true, si2, IndexReader.DEFAULT_TERMS_INDEX_DIVISOR, null);
 			
 			SegmentMerger merger = new SegmentMerger(si1.dir, merged);
 			
 			merger.Add(r1);
 			merger.Add(r2);
-			merger.Merge();
+			merger.Merge(null);
 			merger.CloseReaders();
 			
 			if (useCompoundFile)
@@ -246,7 +246,7 @@ namespace Lucene.Net.Index
 				System.Collections.Generic.ICollection<string> filesToDelete = merger.CreateCompoundFile(merged + ".cfs");
 				for (System.Collections.IEnumerator iter = filesToDelete.GetEnumerator(); iter.MoveNext(); )
 				{
-					si1.dir.DeleteFile((System.String) iter.Current);
+					si1.dir.DeleteFile((System.String) iter.Current, null);
 				}
 			}
 			
@@ -256,30 +256,30 @@ namespace Lucene.Net.Index
 		
 		private void  PrintSegment(System.IO.StreamWriter out_Renamed, SegmentInfo si)
 		{
-			SegmentReader reader = SegmentReader.Get(true, si, IndexReader.DEFAULT_TERMS_INDEX_DIVISOR);
+			SegmentReader reader = SegmentReader.Get(true, si, IndexReader.DEFAULT_TERMS_INDEX_DIVISOR, null);
 			
 			for (int i = 0; i < reader.NumDocs(); i++)
 			{
-				out_Renamed.WriteLine(reader.Document(i));
+				out_Renamed.WriteLine(reader.Document(i, null));
 			}
 			
-			TermEnum tis = reader.Terms();
-			while (tis.Next())
+			TermEnum tis = reader.Terms(null);
+			while (tis.Next(null))
 			{
 				out_Renamed.Write(tis.Term);
 				out_Renamed.WriteLine(" DF=" + tis.DocFreq());
 				
-				TermPositions positions = reader.TermPositions(tis.Term);
+				TermPositions positions = reader.TermPositions(tis.Term, null);
 				try
 				{
-					while (positions.Next())
+					while (positions.Next(null))
 					{
 						out_Renamed.Write(" doc=" + positions.Doc);
 						out_Renamed.Write(" TF=" + positions.Freq);
 						out_Renamed.Write(" pos=");
-						out_Renamed.Write(positions.NextPosition());
+						out_Renamed.Write(positions.NextPosition(null));
 						for (int j = 1; j < positions.Freq; j++)
-							out_Renamed.Write("," + positions.NextPosition());
+							out_Renamed.Write("," + positions.NextPosition(null));
 						out_Renamed.WriteLine("");
 					}
 				}

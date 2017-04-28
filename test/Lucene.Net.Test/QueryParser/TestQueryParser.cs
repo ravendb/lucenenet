@@ -56,6 +56,7 @@ using MockRAMDirectory = Lucene.Net.Store.MockRAMDirectory;
 using LocalizedTestCase = Lucene.Net.Util.LocalizedTestCase;
 using Version = Lucene.Net.Util.Version;
 using System.Reflection;
+using Lucene.Net.Search;
 
 namespace Lucene.Net.QueryParsers
 {
@@ -532,12 +533,12 @@ namespace Lucene.Net.QueryParsers
 		{
 			
 			RAMDirectory ramDir = new RAMDirectory();
-			IndexWriter iw = new IndexWriter(ramDir, new WhitespaceAnalyzer(), true, IndexWriter.MaxFieldLength.LIMITED);
+			IndexWriter iw = new IndexWriter(ramDir, new WhitespaceAnalyzer(), true, IndexWriter.MaxFieldLength.LIMITED, null);
 			Document doc = new Document();
 			doc.Add(new Field("content", "\u0633\u0627\u0628", Field.Store.YES, Field.Index.NOT_ANALYZED));
-			iw.AddDocument(doc);
+			iw.AddDocument(doc, null);
 			iw.Close();
-		    IndexSearcher is_Renamed = new IndexSearcher(ramDir, true);
+		    IndexSearcher is_Renamed = new IndexSearcher(ramDir, true, null);
 
             QueryParser qp = new QueryParser(Version.LUCENE_CURRENT, "content", new WhitespaceAnalyzer());
 			
@@ -555,18 +556,18 @@ namespace Lucene.Net.QueryParsers
 			
 			// Test ConstantScoreRangeQuery
 			qp.MultiTermRewriteMethod = MultiTermQuery.CONSTANT_SCORE_FILTER_REWRITE;
-			ScoreDoc[] result = is_Renamed.Search(qp.Parse("[ \u062F TO \u0698 ]"), null, 1000).ScoreDocs;
+			ScoreDoc[] result = is_Renamed.Search(qp.Parse("[ \u062F TO \u0698 ]"), null, 1000, null).ScoreDocs;
 			Assert.AreEqual(0, result.Length, "The index Term should not be included.");
 			
-			result = is_Renamed.Search(qp.Parse("[ \u0633 TO \u0638 ]"), null, 1000).ScoreDocs;
+			result = is_Renamed.Search(qp.Parse("[ \u0633 TO \u0638 ]"), null, 1000, null).ScoreDocs;
 			Assert.AreEqual(1, result.Length, "The index Term should be included.");
 			
 			// Test TermRangeQuery
 			qp.MultiTermRewriteMethod = MultiTermQuery.SCORING_BOOLEAN_QUERY_REWRITE;
-			result = is_Renamed.Search(qp.Parse("[ \u062F TO \u0698 ]"), null, 1000).ScoreDocs;
+			result = is_Renamed.Search(qp.Parse("[ \u062F TO \u0698 ]"), null, 1000, null).ScoreDocs;
 			Assert.AreEqual(0, result.Length, "The index Term should not be included.");
 			
-			result = is_Renamed.Search(qp.Parse("[ \u0633 TO \u0638 ]"), null, 1000).ScoreDocs;
+			result = is_Renamed.Search(qp.Parse("[ \u0633 TO \u0638 ]"), null, 1000, null).ScoreDocs;
 			Assert.AreEqual(1, result.Length, "The index Term should be included.");
 			
 			is_Renamed.Close();
@@ -934,11 +935,11 @@ namespace Lucene.Net.QueryParsers
 		public virtual void  TestLocalDateFormat()
 		{
 			RAMDirectory ramDir = new RAMDirectory();
-			IndexWriter iw = new IndexWriter(ramDir, new WhitespaceAnalyzer(), true, IndexWriter.MaxFieldLength.LIMITED);
+			IndexWriter iw = new IndexWriter(ramDir, new WhitespaceAnalyzer(), true, IndexWriter.MaxFieldLength.LIMITED, null);
 			AddDateDoc("a", 2005, 12, 2, 10, 15, 33, iw);
 			AddDateDoc("b", 2005, 12, 4, 22, 15, 0, iw);
 			iw.Close();
-		    IndexSearcher is_Renamed = new IndexSearcher(ramDir, true);
+		    IndexSearcher is_Renamed = new IndexSearcher(ramDir, true, null);
 			AssertHits(1, "[12/1/2005 TO 12/3/2005]", is_Renamed);
 			AssertHits(2, "[12/1/2005 TO 12/4/2005]", is_Renamed);
 			AssertHits(1, "[12/3/2005 TO 12/4/2005]", is_Renamed);
@@ -1048,7 +1049,7 @@ namespace Lucene.Net.QueryParsers
             QueryParser qp = new QueryParser(Version.LUCENE_CURRENT, "date", new WhitespaceAnalyzer());
 			qp.Locale = new System.Globalization.CultureInfo("en-US");
 			Query q = qp.Parse(query);
-			ScoreDoc[] hits = is_Renamed.Search(q, null, 1000).ScoreDocs;
+			ScoreDoc[] hits = is_Renamed.Search(q, null, 1000, null).ScoreDocs;
 			Assert.AreEqual(expected, hits.Length);
 		}
 		
@@ -1059,7 +1060,7 @@ namespace Lucene.Net.QueryParsers
 			System.Globalization.Calendar cal = new System.Globalization.GregorianCalendar();
 			System.DateTime tempAux = cal.ToDateTime(year, month, day, hour, minute, second, 0);
 			d.Add(new Field("date", DateField.DateToString(tempAux), Field.Store.YES, Field.Index.NOT_ANALYZED));
-			iw.AddDocument(d);
+			iw.AddDocument(d, null);
 		}
 		
 		[TearDown]
@@ -1077,16 +1078,16 @@ namespace Lucene.Net.QueryParsers
 		{
 			Directory dir = new MockRAMDirectory();
 			Analyzer a = new StandardAnalyzer(Version.LUCENE_CURRENT);
-			IndexWriter w = new IndexWriter(dir, a, IndexWriter.MaxFieldLength.UNLIMITED);
+			IndexWriter w = new IndexWriter(dir, a, IndexWriter.MaxFieldLength.UNLIMITED, null);
 			Document doc = new Document();
 			doc.Add(new Field("f", "the wizard of ozzy", Field.Store.NO, Field.Index.ANALYZED));
-			w.AddDocument(doc);
-			IndexReader r = w.GetReader();
+			w.AddDocument(doc, null);
+			IndexReader r = w.GetReader(null);
 			w.Close();
 			IndexSearcher s = new IndexSearcher(r);
 			QueryParser qp = new QueryParser(Version.LUCENE_CURRENT, "f", a);
 			Query q = qp.Parse("\"wizard of ozzy\"");
-			Assert.AreEqual(1, s.Search(q, 1).TotalHits);
+			Assert.AreEqual(1, s.Search(q, 1, null).TotalHits);
 			r.Close();
 			dir.Close();
 		}

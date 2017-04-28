@@ -72,16 +72,16 @@ namespace Lucene.Net.Search
 		{
 			base.SetUp();
 			RAMDirectory directory = new RAMDirectory();
-			IndexWriter writer = new IndexWriter(directory, new WhitespaceAnalyzer(), true, IndexWriter.MaxFieldLength.LIMITED);
+			IndexWriter writer = new IndexWriter(directory, new WhitespaceAnalyzer(), true, IndexWriter.MaxFieldLength.LIMITED, null);
 			for (int i = 0; i < docFields.Length; i++)
 			{
 				Document doc = new Document();
 				doc.Add(new Field(KEY, "" + i, Field.Store.NO, Field.Index.NOT_ANALYZED));
 				doc.Add(new Field(FIELD, docFields[i], Field.Store.NO, Field.Index.ANALYZED));
-				writer.AddDocument(doc);
+				writer.AddDocument(doc, null);
 			}
 			writer.Close();
-		    searcher = new IndexSearcher(directory, true);
+		    searcher = new IndexSearcher(directory, true, null);
 		}
 		
 		protected internal System.String[] docFields = new System.String[]{"w1 w2 w3 w4 w5", "w1 w3 w2 w3 zz", "w1 xx w2 yy w3", "w1 w3 xx w2 yy w3 zz"};

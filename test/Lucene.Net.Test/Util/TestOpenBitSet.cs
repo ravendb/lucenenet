@@ -68,7 +68,7 @@ namespace Lucene.Net.Util
 			do 
 			{
 				aa = BitSetSupport.NextSetBit(a, aa + 1);
-				bb = rand.NextDouble() > 0.5 ? iterator.NextDoc() : iterator.Advance(bb + 1);
+				bb = rand.NextDouble() > 0.5 ? iterator.NextDoc(null) : iterator.Advance(bb + 1, null);
 				Assert.AreEqual(aa == - 1?DocIdSetIterator.NO_MORE_DOCS:aa, bb);
 			}
 			while (aa >= 0);
@@ -81,7 +81,7 @@ namespace Lucene.Net.Util
 			do 
 			{
 				aa = BitSetSupport.NextSetBit(a, aa + 1);
-				bb = rand.NextDouble() > 0.5 ? iterator.NextDoc() : iterator.Advance(bb + 1);
+				bb = rand.NextDouble() > 0.5 ? iterator.NextDoc(null) : iterator.Advance(bb + 1, null);
 				Assert.AreEqual(aa == - 1?DocIdSetIterator.NO_MORE_DOCS:aa, bb);
 			}
 			while (aa >= 0);

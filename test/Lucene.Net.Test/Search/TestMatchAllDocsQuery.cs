@@ -16,7 +16,8 @@
  */
 
 using System;
-
+using Lucene.Net.Index;
+using Lucene.Net.Store;
 using NUnit.Framework;
 
 using Analyzer = Lucene.Net.Analysis.Analyzer;
@@ -55,74 +56,74 @@ namespace Lucene.Net.Search
 		{
 			
 			RAMDirectory dir = new RAMDirectory();
-			IndexWriter iw = new IndexWriter(dir, analyzer, true, IndexWriter.MaxFieldLength.LIMITED);
+			IndexWriter iw = new IndexWriter(dir, analyzer, true, IndexWriter.MaxFieldLength.LIMITED, null);
 			iw.SetMaxBufferedDocs(2); // force multi-segment
 			AddDoc("one", iw, 1f);
 			AddDoc("two", iw, 20f);
 			AddDoc("three four", iw, 300f);
 			iw.Close();
 
-		    IndexReader ir = IndexReader.Open(dir, false);
+		    IndexReader ir = IndexReader.Open((Directory) dir, false, null);
 			IndexSearcher is_Renamed = new IndexSearcher(ir);
 			ScoreDoc[] hits;
 			
 			// assert with norms scoring turned off
 			
-			hits = is_Renamed.Search(new MatchAllDocsQuery(), null, 1000).ScoreDocs;
+			hits = is_Renamed.Search(new MatchAllDocsQuery(), null, 1000, null).ScoreDocs;
 			Assert.AreEqual(3, hits.Length);
-			Assert.AreEqual(ir.Document(hits[0].Doc).Get("key"), "one");
-			Assert.AreEqual(ir.Document(hits[1].Doc).Get("key"), "two");
-			Assert.AreEqual(ir.Document(hits[2].Doc).Get("key"), "three four");
+			Assert.AreEqual(ir.Document(hits[0].Doc, null).Get("key", null), "one");
+			Assert.AreEqual(ir.Document(hits[1].Doc, null).Get("key", null), "two");
+			Assert.AreEqual(ir.Document(hits[2].Doc, null).Get("key", null), "three four");
 			
 			// assert with norms scoring turned on
 			
 			MatchAllDocsQuery normsQuery = new MatchAllDocsQuery("key");
-			hits = is_Renamed.Search(normsQuery, null, 1000).ScoreDocs;
+			hits = is_Renamed.Search(normsQuery, null, 1000, null).ScoreDocs;
 			Assert.AreEqual(3, hits.Length);
 			
-			Assert.AreEqual(ir.Document(hits[0].Doc).Get("key"), "three four");
-			Assert.AreEqual(ir.Document(hits[1].Doc).Get("key"), "two");
-			Assert.AreEqual(ir.Document(hits[2].Doc).Get("key"), "one");
+			Assert.AreEqual(ir.Document(hits[0].Doc, null).Get("key", null), "three four");
+			Assert.AreEqual(ir.Document(hits[1].Doc, null).Get("key", null), "two");
+			Assert.AreEqual(ir.Document(hits[2].Doc, null).Get("key", null), "one");
 			
 			// change norm & retest
-			ir.SetNorm(0, "key", 400f);
+			ir.SetNorm(0, "key", 400f, null);
 			normsQuery = new MatchAllDocsQuery("key");
-			hits = is_Renamed.Search(normsQuery, null, 1000).ScoreDocs;
+			hits = is_Renamed.Search(normsQuery, null, 1000, null).ScoreDocs;
 			Assert.AreEqual(3, hits.Length);
 			
-			Assert.AreEqual(ir.Document(hits[0].Doc).Get("key"), "one");
-			Assert.AreEqual(ir.Document(hits[1].Doc).Get("key"), "three four");
-			Assert.AreEqual(ir.Document(hits[2].Doc).Get("key"), "two");
+			Assert.AreEqual(ir.Document(hits[0].Doc, null).Get("key", null), "one");
+			Assert.AreEqual(ir.Document(hits[1].Doc, null).Get("key", null), "three four");
+			Assert.AreEqual(ir.Document(hits[2].Doc, null).Get("key", null), "two");
 			
 			// some artificial queries to trigger the use of skipTo():
 			
 			BooleanQuery bq = new BooleanQuery();
 			bq.Add(new MatchAllDocsQuery(), Occur.MUST);
 			bq.Add(new MatchAllDocsQuery(), Occur.MUST);
-			hits = is_Renamed.Search(bq, null, 1000).ScoreDocs;
+			hits = is_Renamed.Search(bq, null, 1000, null).ScoreDocs;
 			Assert.AreEqual(3, hits.Length);
 			
 			bq = new BooleanQuery();
 			bq.Add(new MatchAllDocsQuery(), Occur.MUST);
 			bq.Add(new TermQuery(new Term("key", "three")), Occur.MUST);
-			hits = is_Renamed.Search(bq, null, 1000).ScoreDocs;
+			hits = is_Renamed.Search(bq, null, 1000, null).ScoreDocs;
 			Assert.AreEqual(1, hits.Length);
 			
 			// delete a document:
-			is_Renamed.IndexReader.DeleteDocument(0);
-			hits = is_Renamed.Search(new MatchAllDocsQuery(), null, 1000).ScoreDocs;
+			is_Renamed.IndexReader.DeleteDocument(0, null);
+			hits = is_Renamed.Search(new MatchAllDocsQuery(), null, 1000, null).ScoreDocs;
 			Assert.AreEqual(2, hits.Length);
 			
 			// test parsable toString()
 			QueryParser qp = new QueryParser(Util.Version.LUCENE_CURRENT, "key", analyzer);
-			hits = is_Renamed.Search(qp.Parse(new MatchAllDocsQuery().ToString()), null, 1000).ScoreDocs;
+			hits = is_Renamed.Search(qp.Parse(new MatchAllDocsQuery().ToString()), null, 1000, null).ScoreDocs;
 			Assert.AreEqual(2, hits.Length);
 			
 			// test parsable toString() with non default boost
 			Query maq = new MatchAllDocsQuery();
 			maq.Boost = 2.3f;
 			Query pq = qp.Parse(maq.ToString());
-			hits = is_Renamed.Search(pq, null, 1000).ScoreDocs;
+			hits = is_Renamed.Search(pq, null, 1000, null).ScoreDocs;
 			Assert.AreEqual(2, hits.Length);
 			
 			is_Renamed.Close();
@@ -146,7 +147,7 @@ namespace Lucene.Net.Search
 			Field f = new Field("key", text, Field.Store.YES, Field.Index.ANALYZED);
 			f.Boost = boost;
 			doc.Add(f);
-			iw.AddDocument(doc);
+			iw.AddDocument(doc, null);
 		}
 	}
 }

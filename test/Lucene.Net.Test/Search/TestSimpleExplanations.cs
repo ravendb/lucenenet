@@ -415,49 +415,49 @@ namespace Lucene.Net.Search
 			Document lDoc3 = new Document();
 			lDoc3.Add(new Field("handle", "1 2", Field.Store.YES, Field.Index.ANALYZED));
 			
-			IndexWriter writerA = new IndexWriter(indexStoreA, new StandardAnalyzer(Util.Version.LUCENE_CURRENT), true, IndexWriter.MaxFieldLength.LIMITED);
-			IndexWriter writerB = new IndexWriter(indexStoreB, new StandardAnalyzer(Util.Version.LUCENE_CURRENT), true, IndexWriter.MaxFieldLength.LIMITED);
+			IndexWriter writerA = new IndexWriter(indexStoreA, new StandardAnalyzer(Util.Version.LUCENE_CURRENT), true, IndexWriter.MaxFieldLength.LIMITED, null);
+			IndexWriter writerB = new IndexWriter(indexStoreB, new StandardAnalyzer(Util.Version.LUCENE_CURRENT), true, IndexWriter.MaxFieldLength.LIMITED, null);
 			
-			writerA.AddDocument(lDoc);
-			writerA.AddDocument(lDoc2);
-			writerA.Optimize();
+			writerA.AddDocument(lDoc, null);
+			writerA.AddDocument(lDoc2, null);
+			writerA.Optimize(null);
 			writerA.Close();
 			
-			writerB.AddDocument(lDoc3);
+			writerB.AddDocument(lDoc3, null);
 			writerB.Close();
 			
 			QueryParser parser = new QueryParser(Util.Version.LUCENE_CURRENT, "fulltext", new StandardAnalyzer(Util.Version.LUCENE_CURRENT));
 			Query query = parser.Parse("handle:1");
 			
 			Searcher[] searchers = new Searcher[2];
-			searchers[0] = new IndexSearcher(indexStoreB, true);
-            searchers[1] = new IndexSearcher(indexStoreA, true);
+			searchers[0] = new IndexSearcher(indexStoreB, true, null);
+            searchers[1] = new IndexSearcher(indexStoreA, true, null);
 			Searcher mSearcher = new MultiSearcher(searchers);
-			ScoreDoc[] hits = mSearcher.Search(query, null, 1000).ScoreDocs;
+			ScoreDoc[] hits = mSearcher.Search(query, null, 1000, null).ScoreDocs;
 			
 			Assert.AreEqual(3, hits.Length);
 			
-			Explanation explain = mSearcher.Explain(query, hits[0].Doc);
+			Explanation explain = mSearcher.Explain(query, hits[0].Doc, null);
 			System.String exp = explain.ToString(0);
 			Assert.IsTrue(exp.IndexOf("maxDocs=3") > - 1, exp);
 			Assert.IsTrue(exp.IndexOf("docFreq=3") > - 1, exp);
 			
 			query = parser.Parse("handle:\"1 2\"");
-			hits = mSearcher.Search(query, null, 1000).ScoreDocs;
+			hits = mSearcher.Search(query, null, 1000, null).ScoreDocs;
 			
 			Assert.AreEqual(3, hits.Length);
 			
-			explain = mSearcher.Explain(query, hits[0].Doc);
+			explain = mSearcher.Explain(query, hits[0].Doc, null);
 			exp = explain.ToString(0);
 			Assert.IsTrue(exp.IndexOf("1=3") > - 1, exp);
 			Assert.IsTrue(exp.IndexOf("2=3") > - 1, exp);
 			
 			query = new SpanNearQuery(new SpanQuery[]{new SpanTermQuery(new Term("handle", "1")), new SpanTermQuery(new Term("handle", "2"))}, 0, true);
-			hits = mSearcher.Search(query, null, 1000).ScoreDocs;
+			hits = mSearcher.Search(query, null, 1000, null).ScoreDocs;
 			
 			Assert.AreEqual(3, hits.Length);
 			
-			explain = mSearcher.Explain(query, hits[0].Doc);
+			explain = mSearcher.Explain(query, hits[0].Doc, null);
 			exp = explain.ToString(0);
 			Assert.IsTrue(exp.IndexOf("1=3") > - 1, exp);
 			Assert.IsTrue(exp.IndexOf("2=3") > - 1, exp);

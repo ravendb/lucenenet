@@ -16,7 +16,7 @@
  */
 
 using System;
-
+using Lucene.Net.Index;
 using NUnit.Framework;
 
 using WhitespaceAnalyzer = Lucene.Net.Analysis.WhitespaceAnalyzer;
@@ -84,7 +84,7 @@ namespace Lucene.Net.Search
 			System.String[] data = new System.String[]{"A 1 2 3 4 5 6", "Z       4 5 6", null, "B   2   4 5 6", "Y     3   5 6", null, "C     3     6", "X       4 5 6"};
 			
 			index = new RAMDirectory();
-			IndexWriter writer = new IndexWriter(index, new WhitespaceAnalyzer(), true, IndexWriter.MaxFieldLength.LIMITED);
+			IndexWriter writer = new IndexWriter(index, new WhitespaceAnalyzer(), true, IndexWriter.MaxFieldLength.LIMITED, null);
 			
 			for (int i = 0; i < data.Length; i++)
 			{
@@ -95,13 +95,13 @@ namespace Lucene.Net.Search
 				{
 					doc.Add(new Field("data", data[i], Field.Store.YES, Field.Index.ANALYZED)); //Field.Text("data",data[i]));
 				}
-				writer.AddDocument(doc);
+				writer.AddDocument(doc, null);
 			}
 			
-			writer.Optimize();
+			writer.Optimize(null);
 			writer.Close();
 			
-			r = IndexReader.Open(index, true);
+			r = IndexReader.Open(index, true, null);
 			s = new IndexSearcher(r);
 			
 			//System.out.println("Set up " + getName());
@@ -109,7 +109,7 @@ namespace Lucene.Net.Search
 		
 		public virtual void  VerifyNrHits(Query q, int expected)
 		{
-			ScoreDoc[] h = s.Search(q, null, 1000).ScoreDocs;
+			ScoreDoc[] h = s.Search(q, null, 1000, null).ScoreDocs;
 			if (expected != h.Length)
 			{
 				PrintHits(Lucene.Net.TestCase.GetName(), h, s);  
@@ -380,8 +380,8 @@ namespace Lucene.Net.Search
 				// Can't use Hits because normalized scores will mess things
 				// up.  The non-sorting version of search() that returns TopDocs
 				// will not normalize scores.
-				TopDocs top1 = s.Search(q1, null, 100);
-				TopDocs top2 = s.Search(q2, null, 100);
+				TopDocs top1 = s.Search(q1, null, 100, null);
+				TopDocs top2 = s.Search(q2, null, 100, null);
 				
 				QueryUtils.Check(q1, s);
 				QueryUtils.Check(q2, s);
@@ -429,9 +429,9 @@ namespace Lucene.Net.Search
 			
 			for (int i = 0; i < h.Length; i++)
 			{
-				Document d = searcher.Doc(h[i].Doc);
+				Document d = searcher.Doc(h[i].Doc, null);
 				float score = h[i].Score;
-				System.Console.Error.WriteLine("#" + i + ": {0.000000}" + score + " - " + d.Get("id") + " - " + d.Get("data"));
+				System.Console.Error.WriteLine("#" + i + ": {0.000000}" + score + " - " + d.Get("id", null) + " - " + d.Get("data", null));
 			}
 		}
 	}

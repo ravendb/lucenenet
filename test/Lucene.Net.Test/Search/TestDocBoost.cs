@@ -21,6 +21,7 @@ using NUnit.Framework;
 
 using SimpleAnalyzer = Lucene.Net.Analysis.SimpleAnalyzer;
 using Lucene.Net.Documents;
+using Lucene.Net.Store;
 using IndexReader = Lucene.Net.Index.IndexReader;
 using IndexWriter = Lucene.Net.Index.IndexWriter;
 using Term = Lucene.Net.Index.Term;
@@ -66,11 +67,11 @@ namespace Lucene.Net.Search
 			{
 				this.scorer = scorer;
 			}
-			public override void  Collect(int doc)
+			public override void  Collect(int doc, IState state)
 			{
-				scores[doc + base_Renamed] = scorer.Score();
+				scores[doc + base_Renamed] = scorer.Score(null);
 			}
-			public override void  SetNextReader(IndexReader reader, int docBase)
+			public override void  SetNextReader(IndexReader reader, int docBase, IState state)
 			{
 				base_Renamed = docBase;
 			}
@@ -85,7 +86,7 @@ namespace Lucene.Net.Search
 		public virtual void  TestDocBoost_Renamed()
 		{
 			RAMDirectory store = new RAMDirectory();
-			IndexWriter writer = new IndexWriter(store, new SimpleAnalyzer(), true, IndexWriter.MaxFieldLength.LIMITED);
+			IndexWriter writer = new IndexWriter(store, new SimpleAnalyzer(), true, IndexWriter.MaxFieldLength.LIMITED, null);
 			
 			IFieldable f1 = new Field("field", "word", Field.Store.YES, Field.Index.ANALYZED);
 			IFieldable f2 = new Field("field", "word", Field.Store.YES, Field.Index.ANALYZED);
@@ -103,16 +104,16 @@ namespace Lucene.Net.Search
 			d3.Add(f1); // boost = 3
 			d4.Add(f2); // boost = 4
 			
-			writer.AddDocument(d1);
-			writer.AddDocument(d2);
-			writer.AddDocument(d3);
-			writer.AddDocument(d4);
-			writer.Optimize();
+			writer.AddDocument(d1, null);
+			writer.AddDocument(d2, null);
+			writer.AddDocument(d3, null);
+			writer.AddDocument(d4, null);
+			writer.Optimize(null);
 			writer.Close();
 			
 			float[] scores = new float[4];
 			
-			new IndexSearcher(store, true).Search(new TermQuery(new Term("field", "word")), new AnonymousClassCollector(scores, this));
+			new IndexSearcher(store, true, null).Search(new TermQuery(new Term("field", "word")), new AnonymousClassCollector(scores, this), null);
 			
 			float lastScore = 0.0f;
 			

@@ -69,22 +69,22 @@ namespace Lucene.Net.Search
 		public virtual void  TestNullOrSubScorer()
 		{
 			Directory dir = new MockRAMDirectory();
-			IndexWriter w = new IndexWriter(dir, new WhitespaceAnalyzer(), IndexWriter.MaxFieldLength.UNLIMITED);
+			IndexWriter w = new IndexWriter(dir, new WhitespaceAnalyzer(), IndexWriter.MaxFieldLength.UNLIMITED, null);
 			Document doc = new Document();
 			doc.Add(new Field("field", "a b c d", Field.Store.NO, Field.Index.ANALYZED));
-			w.AddDocument(doc);
+			w.AddDocument(doc, null);
 
-			IndexReader r = w.GetReader();
+			IndexReader r = w.GetReader(null);
 			IndexSearcher s = new IndexSearcher(r);
 			BooleanQuery q = new BooleanQuery();
 			q.Add(new TermQuery(new Term("field", "a")), Occur.SHOULD);
 
             // LUCENE-2617: make sure that a term not in the index still contributes to the score via coord factor
-            float score = s.Search(q, 10).MaxScore;
+            float score = s.Search(q, 10, null).MaxScore;
             Query subQuery = new TermQuery(new Term("field", "not_in_index"));
             subQuery.Boost = 0;
             q.Add(subQuery, Occur.SHOULD);
-            float score2 = s.Search(q, 10).MaxScore;
+            float score2 = s.Search(q, 10, null).MaxScore;
             Assert.AreEqual(score * .5, score2, 1e-6);
 
             // LUCENE-2617: make sure that a clause not in the index still contributes to the score via coord factor
@@ -94,20 +94,20 @@ namespace Lucene.Net.Search
             phrase.Add(new Term("field", "another_not_in_index"));
             phrase.Boost = 0;
             qq.Add(phrase, Occur.SHOULD);
-            score2 = s.Search(qq, 10).MaxScore;
+            score2 = s.Search(qq, 10, null).MaxScore;
             Assert.AreEqual(score * (1.0 / 3), score2, 1e-6);
 
             // now test BooleanScorer2
             subQuery = new TermQuery(new Term("field", "b"));
             subQuery.Boost = 0;
             q.Add(subQuery, Occur.MUST);
-            score2 = s.Search(q, 10).MaxScore;
+            score2 = s.Search(q, 10, null).MaxScore;
             Assert.AreEqual(score * (2.0 / 3), score2, 1e-6);
 
 			// PhraseQuery w/ no terms added returns a null scorer
 			PhraseQuery pq = new PhraseQuery();
 			q.Add(pq, Occur.SHOULD);
-			Assert.AreEqual(1, s.Search(q, 10).TotalHits);
+			Assert.AreEqual(1, s.Search(q, 10, null).TotalHits);
 			
 			// A required clause which returns null scorer should return null scorer to
 			// IndexSearcher.
@@ -115,12 +115,12 @@ namespace Lucene.Net.Search
 			pq = new PhraseQuery();
 			q.Add(new TermQuery(new Term("field", "a")), Occur.SHOULD);
 			q.Add(pq, Occur.MUST);
-			Assert.AreEqual(0, s.Search(q, 10).TotalHits);
+			Assert.AreEqual(0, s.Search(q, 10, null).TotalHits);
 			
 			DisjunctionMaxQuery dmq = new DisjunctionMaxQuery(1.0f);
 			dmq.Add(new TermQuery(new Term("field", "a")));
 			dmq.Add(pq);
-			Assert.AreEqual(1, s.Search(dmq, 10).TotalHits);
+			Assert.AreEqual(1, s.Search(dmq, 10, null).TotalHits);
 			
 			r.Close();
 			w.Close();

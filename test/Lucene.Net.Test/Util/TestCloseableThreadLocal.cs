@@ -16,7 +16,7 @@
  */
 
 using System;
-
+using Lucene.Net.Store;
 using NUnit.Framework;
 
 namespace Lucene.Net.Util
@@ -31,7 +31,7 @@ namespace Lucene.Net.Util
 		public virtual void  TestInitValue()
 		{
 			InitValueThreadLocal tl = new InitValueThreadLocal(this);
-			System.String str = (System.String) tl.Get();
+			System.String str = (System.String) tl.Get(null);
 			Assert.AreEqual(TEST_VALUE, str);
 		}
 		
@@ -42,7 +42,7 @@ namespace Lucene.Net.Util
 			// previously failed in get().
             CloseableThreadLocal<object> ctl = new CloseableThreadLocal<object>();
 			ctl.Set(null);
-			Assert.IsNull(ctl.Get());
+			Assert.IsNull(ctl.Get(null));
 		}
 		
         [Test]
@@ -51,8 +51,8 @@ namespace Lucene.Net.Util
 			// LUCENE-1805: make sure default get returns null,
 			// twice in a row
             CloseableThreadLocal<object> ctl = new CloseableThreadLocal<object>();
-			Assert.IsNull(ctl.Get());
-			Assert.IsNull(ctl.Get());
+			Assert.IsNull(ctl.Get(null));
+			Assert.IsNull(ctl.Get(null));
 		}
 
         public class InitValueThreadLocal : CloseableThreadLocal<object>
@@ -74,7 +74,7 @@ namespace Lucene.Net.Util
 				}
 				
 			}
-			public /*protected internal*/ override System.Object InitialValue()
+			public /*protected internal*/ override System.Object InitialValue(IState state)
 			{
 				return Lucene.Net.Util.TestCloseableThreadLocal.TEST_VALUE;
 			}

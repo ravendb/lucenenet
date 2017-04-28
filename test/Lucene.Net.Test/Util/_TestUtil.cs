@@ -124,7 +124,7 @@ namespace Lucene.Net.Util
 			
 			CheckIndex checker = new CheckIndex(dir);
 			checker.SetInfoStream(new System.IO.StreamWriter(bos));
-			CheckIndex.Status indexStatus = checker.CheckIndex_Renamed_Method();
+			CheckIndex.Status indexStatus = checker.CheckIndex_Renamed_Method(null);
 			if (indexStatus == null || indexStatus.clean == false)
 			{
 				System.Console.Out.WriteLine("CheckIndex failed");

@@ -77,8 +77,8 @@ namespace Lucene.Net.Index
 			Directory dir1 = GetDir1();
 			Directory dir2 = GetDir2();
 			ParallelReader pr = new ParallelReader();
-            pr.Add(IndexReader.Open(dir1, false));
-            pr.Add(IndexReader.Open(dir2, false));
+            pr.Add(IndexReader.Open(dir1, false, null));
+            pr.Add(IndexReader.Open(dir2, false, null));
             System.Collections.Generic.ICollection<string> fieldNames = pr.GetFieldNames(IndexReader.FieldOption.ALL);
 			Assert.AreEqual(4, fieldNames.Count);
 			Assert.IsTrue(CollectionsHelper.Contains(fieldNames, "f1"));
@@ -93,21 +93,21 @@ namespace Lucene.Net.Index
 			Directory dir1 = GetDir1();
 			Directory dir2 = GetDir2();
 			ParallelReader pr = new ParallelReader();
-            pr.Add(IndexReader.Open(dir1, false));
-            pr.Add(IndexReader.Open(dir2, false));
+            pr.Add(IndexReader.Open(dir1, false, null));
+            pr.Add(IndexReader.Open(dir2, false, null));
 			
-			Document doc11 = pr.Document(0, new MapFieldSelector(new System.String[]{"f1"}));
-			Document doc24 = pr.Document(1, new MapFieldSelector(new System.String[]{"f4"}));
-			Document doc223 = pr.Document(1, new MapFieldSelector(new System.String[]{"f2", "f3"}));
+			Document doc11 = pr.Document(0, new MapFieldSelector(new System.String[]{"f1"}), null);
+			Document doc24 = pr.Document(1, new MapFieldSelector(new System.String[]{"f4"}), null);
+			Document doc223 = pr.Document(1, new MapFieldSelector(new System.String[]{"f2", "f3"}), null);
 			
 			Assert.AreEqual(1, doc11.GetFields().Count);
 			Assert.AreEqual(1, doc24.GetFields().Count);
 			Assert.AreEqual(2, doc223.GetFields().Count);
 			
-			Assert.AreEqual("v1", doc11.Get("f1"));
-			Assert.AreEqual("v2", doc24.Get("f4"));
-			Assert.AreEqual("v2", doc223.Get("f2"));
-			Assert.AreEqual("v2", doc223.Get("f3"));
+			Assert.AreEqual("v1", doc11.Get("f1", null));
+			Assert.AreEqual("v2", doc24.Get("f4", null));
+			Assert.AreEqual("v2", doc223.Get("f2", null));
+			Assert.AreEqual("v2", doc223.Get("f3", null));
 		}
 		
 		[Test]
@@ -118,16 +118,16 @@ namespace Lucene.Net.Index
 			
 			// one document only:
 			Directory dir2 = new MockRAMDirectory();
-			IndexWriter w2 = new IndexWriter(dir2, new StandardAnalyzer(Util.Version.LUCENE_CURRENT), true, IndexWriter.MaxFieldLength.LIMITED);
+			IndexWriter w2 = new IndexWriter(dir2, new StandardAnalyzer(Util.Version.LUCENE_CURRENT), true, IndexWriter.MaxFieldLength.LIMITED, null);
 			Document d3 = new Document();
 			d3.Add(new Field("f3", "v1", Field.Store.YES, Field.Index.ANALYZED));
-			w2.AddDocument(d3);
+			w2.AddDocument(d3, null);
 			w2.Close();
 			
 			ParallelReader pr = new ParallelReader();
-            pr.Add(IndexReader.Open(dir1, false));
+            pr.Add(IndexReader.Open(dir1, false, null));
 
-			Assert.Throws<ArgumentException>(() => pr.Add(IndexReader.Open(dir2, false)),
+			Assert.Throws<ArgumentException>(() => pr.Add(IndexReader.Open(dir2, false, null)),
 			                                    "didn't get exptected exception: indexes don't have same number of documents");
 		}
 		
@@ -137,24 +137,24 @@ namespace Lucene.Net.Index
 			Directory dir1 = GetDir1();
 			Directory dir2 = GetDir2();
 			ParallelReader pr = new ParallelReader();
-			pr.Add(IndexReader.Open(dir1, false));
-            pr.Add(IndexReader.Open(dir2, false));
+			pr.Add(IndexReader.Open(dir1, false, null));
+            pr.Add(IndexReader.Open(dir2, false, null));
 			
-			Assert.IsTrue(pr.IsCurrent());
-            IndexReader modifier = IndexReader.Open(dir1, false);
-			modifier.SetNorm(0, "f1", 100);
+			Assert.IsTrue(pr.IsCurrent(null));
+            IndexReader modifier = IndexReader.Open(dir1, false, null);
+			modifier.SetNorm(0, "f1", 100, null);
 			modifier.Close();
 			
 			// one of the two IndexReaders which ParallelReader is using
 			// is not current anymore
-			Assert.IsFalse(pr.IsCurrent());
+			Assert.IsFalse(pr.IsCurrent(null));
 
-            modifier = IndexReader.Open(dir2, false);
-			modifier.SetNorm(0, "f3", 100);
+            modifier = IndexReader.Open(dir2, false, null);
+			modifier.SetNorm(0, "f3", 100, null);
 			modifier.Close();
 			
 			// now both are not current anymore
-			Assert.IsFalse(pr.IsCurrent());
+			Assert.IsFalse(pr.IsCurrent(null));
 		}
 		
 		[Test]
@@ -164,44 +164,44 @@ namespace Lucene.Net.Index
 			Directory dir2 = GetDir2();
 			
 			// add another document to ensure that the indexes are not optimized
-			IndexWriter modifier = new IndexWriter(dir1, new StandardAnalyzer(Util.Version.LUCENE_CURRENT), IndexWriter.MaxFieldLength.LIMITED);
+			IndexWriter modifier = new IndexWriter(dir1, new StandardAnalyzer(Util.Version.LUCENE_CURRENT), IndexWriter.MaxFieldLength.LIMITED, null);
 			Document d = new Document();
 			d.Add(new Field("f1", "v1", Field.Store.YES, Field.Index.ANALYZED));
-			modifier.AddDocument(d);
+			modifier.AddDocument(d, null);
 			modifier.Close();
 			
-			modifier = new IndexWriter(dir2, new StandardAnalyzer(Util.Version.LUCENE_CURRENT), IndexWriter.MaxFieldLength.LIMITED);
+			modifier = new IndexWriter(dir2, new StandardAnalyzer(Util.Version.LUCENE_CURRENT), IndexWriter.MaxFieldLength.LIMITED, null);
 			d = new Document();
 			d.Add(new Field("f2", "v2", Field.Store.YES, Field.Index.ANALYZED));
-			modifier.AddDocument(d);
+			modifier.AddDocument(d, null);
 			modifier.Close();
 			
 			
 			ParallelReader pr = new ParallelReader();
-            pr.Add(IndexReader.Open(dir1, false));
-            pr.Add(IndexReader.Open(dir2, false));
+            pr.Add(IndexReader.Open(dir1, false, null));
+            pr.Add(IndexReader.Open(dir2, false, null));
 			Assert.IsFalse(pr.IsOptimized());
 			pr.Close();
 			
-			modifier = new IndexWriter(dir1, new StandardAnalyzer(Util.Version.LUCENE_CURRENT), IndexWriter.MaxFieldLength.LIMITED);
-			modifier.Optimize();
+			modifier = new IndexWriter(dir1, new StandardAnalyzer(Util.Version.LUCENE_CURRENT), IndexWriter.MaxFieldLength.LIMITED, null);
+			modifier.Optimize(null);
 			modifier.Close();
 			
 			pr = new ParallelReader();
-            pr.Add(IndexReader.Open(dir1, false));
-            pr.Add(IndexReader.Open(dir2, false));
+            pr.Add(IndexReader.Open(dir1, false, null));
+            pr.Add(IndexReader.Open(dir2, false, null));
 			// just one of the two indexes are optimized
 			Assert.IsFalse(pr.IsOptimized());
 			pr.Close();
 			
 			
-			modifier = new IndexWriter(dir2, new StandardAnalyzer(Util.Version.LUCENE_CURRENT), IndexWriter.MaxFieldLength.LIMITED);
-			modifier.Optimize();
+			modifier = new IndexWriter(dir2, new StandardAnalyzer(Util.Version.LUCENE_CURRENT), IndexWriter.MaxFieldLength.LIMITED, null);
+			modifier.Optimize(null);
 			modifier.Close();
 			
 			pr = new ParallelReader();
-            pr.Add(IndexReader.Open(dir1, false));
-            pr.Add(IndexReader.Open(dir2, false));
+            pr.Add(IndexReader.Open(dir1, false, null));
+            pr.Add(IndexReader.Open(dir2, false, null));
 			// now both indexes are optimized
 			Assert.IsTrue(pr.IsOptimized());
 			pr.Close();
@@ -213,13 +213,13 @@ namespace Lucene.Net.Index
 			Directory dir1 = GetDir1();
 			Directory dir2 = GetDir2();
 			ParallelReader pr = new ParallelReader();
-            pr.Add(IndexReader.Open(dir1, false));
-            pr.Add(IndexReader.Open(dir2, false));
+            pr.Add(IndexReader.Open(dir1, false, null));
+            pr.Add(IndexReader.Open(dir2, false, null));
 			int NUM_DOCS = 2;
-            TermDocs td = pr.TermDocs(null);
+            TermDocs td = pr.TermDocs(null, null);
 			for (int i = 0; i < NUM_DOCS; i++)
 			{
-				Assert.IsTrue(td.Next());
+				Assert.IsTrue(td.Next(null));
 				Assert.AreEqual(i, td.Doc);
 				Assert.AreEqual(1, td.Freq);
 			}
@@ -232,18 +232,18 @@ namespace Lucene.Net.Index
 		
 		private void  QueryTest(Query query)
 		{
-			ScoreDoc[] parallelHits = parallel.Search(query, null, 1000).ScoreDocs;
-			ScoreDoc[] singleHits = single.Search(query, null, 1000).ScoreDocs;
+			ScoreDoc[] parallelHits = parallel.Search(query, null, 1000, null).ScoreDocs;
+			ScoreDoc[] singleHits = single.Search(query, null, 1000, null).ScoreDocs;
 			Assert.AreEqual(parallelHits.Length, singleHits.Length);
 			for (int i = 0; i < parallelHits.Length; i++)
 			{
 				Assert.AreEqual(parallelHits[i].Score, singleHits[i].Score, 0.001f);
-				Document docParallel = parallel.Doc(parallelHits[i].Doc);
-				Document docSingle = single.Doc(singleHits[i].Doc);
-				Assert.AreEqual(docParallel.Get("f1"), docSingle.Get("f1"));
-				Assert.AreEqual(docParallel.Get("f2"), docSingle.Get("f2"));
-				Assert.AreEqual(docParallel.Get("f3"), docSingle.Get("f3"));
-				Assert.AreEqual(docParallel.Get("f4"), docSingle.Get("f4"));
+				Document docParallel = parallel.Doc(parallelHits[i].Doc, null);
+				Document docSingle = single.Doc(singleHits[i].Doc, null);
+				Assert.AreEqual(docParallel.Get("f1", null), docSingle.Get("f1", null));
+				Assert.AreEqual(docParallel.Get("f2", null), docSingle.Get("f2", null));
+				Assert.AreEqual(docParallel.Get("f3", null), docSingle.Get("f3", null));
+				Assert.AreEqual(docParallel.Get("f4", null), docSingle.Get("f4", null));
 			}
 		}
 		
@@ -251,22 +251,22 @@ namespace Lucene.Net.Index
 		private Searcher Single()
 		{
 			Directory dir = new MockRAMDirectory();
-			IndexWriter w = new IndexWriter(dir, new StandardAnalyzer(Util.Version.LUCENE_CURRENT), true, IndexWriter.MaxFieldLength.LIMITED);
+			IndexWriter w = new IndexWriter(dir, new StandardAnalyzer(Util.Version.LUCENE_CURRENT), true, IndexWriter.MaxFieldLength.LIMITED, null);
 			Document d1 = new Document();
 			d1.Add(new Field("f1", "v1", Field.Store.YES, Field.Index.ANALYZED));
 			d1.Add(new Field("f2", "v1", Field.Store.YES, Field.Index.ANALYZED));
 			d1.Add(new Field("f3", "v1", Field.Store.YES, Field.Index.ANALYZED));
 			d1.Add(new Field("f4", "v1", Field.Store.YES, Field.Index.ANALYZED));
-			w.AddDocument(d1);
+			w.AddDocument(d1, null);
 			Document d2 = new Document();
 			d2.Add(new Field("f1", "v2", Field.Store.YES, Field.Index.ANALYZED));
 			d2.Add(new Field("f2", "v2", Field.Store.YES, Field.Index.ANALYZED));
 			d2.Add(new Field("f3", "v2", Field.Store.YES, Field.Index.ANALYZED));
 			d2.Add(new Field("f4", "v2", Field.Store.YES, Field.Index.ANALYZED));
-			w.AddDocument(d2);
+			w.AddDocument(d2, null);
 			w.Close();
 
-            return new IndexSearcher(dir, false);
+            return new IndexSearcher(dir, false, null);
 		}
 		
 		// Fields 1 & 2 in one index, 3 & 4 in other, with ParallelReader:
@@ -275,23 +275,23 @@ namespace Lucene.Net.Index
 			Directory dir1 = GetDir1();
 			Directory dir2 = GetDir2();
 			ParallelReader pr = new ParallelReader();
-            pr.Add(IndexReader.Open(dir1, false));
-            pr.Add(IndexReader.Open(dir2, false));
+            pr.Add(IndexReader.Open(dir1, false, null));
+            pr.Add(IndexReader.Open(dir2, false, null));
 			return new IndexSearcher(pr);
 		}
 		
 		private Directory GetDir1()
 		{
 			Directory dir1 = new MockRAMDirectory();
-			IndexWriter w1 = new IndexWriter(dir1, new StandardAnalyzer(Util.Version.LUCENE_CURRENT), true, IndexWriter.MaxFieldLength.LIMITED);
+			IndexWriter w1 = new IndexWriter(dir1, new StandardAnalyzer(Util.Version.LUCENE_CURRENT), true, IndexWriter.MaxFieldLength.LIMITED, null);
 			Document d1 = new Document();
 			d1.Add(new Field("f1", "v1", Field.Store.YES, Field.Index.ANALYZED));
 			d1.Add(new Field("f2", "v1", Field.Store.YES, Field.Index.ANALYZED));
-			w1.AddDocument(d1);
+			w1.AddDocument(d1, null);
 			Document d2 = new Document();
 			d2.Add(new Field("f1", "v2", Field.Store.YES, Field.Index.ANALYZED));
 			d2.Add(new Field("f2", "v2", Field.Store.YES, Field.Index.ANALYZED));
-			w1.AddDocument(d2);
+			w1.AddDocument(d2, null);
 			w1.Close();
 			return dir1;
 		}
@@ -299,15 +299,15 @@ namespace Lucene.Net.Index
 		private Directory GetDir2()
 		{
 			Directory dir2 = new RAMDirectory();
-			IndexWriter w2 = new IndexWriter(dir2, new StandardAnalyzer(Util.Version.LUCENE_CURRENT), true, IndexWriter.MaxFieldLength.LIMITED);
+			IndexWriter w2 = new IndexWriter(dir2, new StandardAnalyzer(Util.Version.LUCENE_CURRENT), true, IndexWriter.MaxFieldLength.LIMITED, null);
 			Document d3 = new Document();
 			d3.Add(new Field("f3", "v1", Field.Store.YES, Field.Index.ANALYZED));
 			d3.Add(new Field("f4", "v1", Field.Store.YES, Field.Index.ANALYZED));
-			w2.AddDocument(d3);
+			w2.AddDocument(d3, null);
 			Document d4 = new Document();
 			d4.Add(new Field("f3", "v2", Field.Store.YES, Field.Index.ANALYZED));
 			d4.Add(new Field("f4", "v2", Field.Store.YES, Field.Index.ANALYZED));
-			w2.AddDocument(d4);
+			w2.AddDocument(d4, null);
 			w2.Close();
 			return dir2;
 		}

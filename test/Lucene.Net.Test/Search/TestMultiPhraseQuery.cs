@@ -17,6 +17,8 @@
 
 using System;
 using System.Collections.Generic;
+using Lucene.Net.Index;
+using Lucene.Net.Store;
 using NUnit.Framework;
 
 using SimpleAnalyzer = Lucene.Net.Analysis.SimpleAnalyzer;
@@ -42,7 +44,7 @@ namespace Lucene.Net.Search
 		public virtual void  TestPhrasePrefix()
 		{
 			RAMDirectory indexStore = new RAMDirectory();
-			IndexWriter writer = new IndexWriter(indexStore, new SimpleAnalyzer(), true, IndexWriter.MaxFieldLength.LIMITED);
+			IndexWriter writer = new IndexWriter(indexStore, new SimpleAnalyzer(), true, IndexWriter.MaxFieldLength.LIMITED, null);
 			Add("blueberry pie", writer);
 			Add("blueberry strudel", writer);
 			Add("blueberry pizza", writer);
@@ -50,10 +52,10 @@ namespace Lucene.Net.Search
 			Add("bluebird pizza", writer);
 			Add("bluebird foobar pizza", writer);
 			Add("piccadilly circus", writer);
-			writer.Optimize();
+			writer.Optimize(null);
 			writer.Close();
 
-		    IndexSearcher searcher = new IndexSearcher(indexStore, true);
+		    IndexSearcher searcher = new IndexSearcher(indexStore, true, null);
 			
 			// search for "blueberry pi*":
 			MultiPhraseQuery query1 = new MultiPhraseQuery();
@@ -63,11 +65,11 @@ namespace Lucene.Net.Search
 			query2.Add(new Term("body", "strawberry"));
 			
 			System.Collections.ArrayList termsWithPrefix = new System.Collections.ArrayList();
-		    IndexReader ir = IndexReader.Open(indexStore, true);
+		    IndexReader ir = IndexReader.Open((Directory) indexStore, true, null);
 			
 			// this TermEnum gives "piccadilly", "pie" and "pizza".
 			System.String prefix = "pi";
-			TermEnum te = ir.Terms(new Term("body", prefix));
+			TermEnum te = ir.Terms(new Term("body", prefix), null);
 			do 
 			{
 				if (te.Term.Text.StartsWith(prefix))
@@ -75,7 +77,7 @@ namespace Lucene.Net.Search
 					termsWithPrefix.Add(te.Term);
 				}
 			}
-			while (te.Next());
+			while (te.Next(null));
 			
 			query1.Add((Term[]) termsWithPrefix.ToArray(typeof(Term)));
 			Assert.AreEqual("body:\"blueberry (piccadilly pie pizza)\"", query1.ToString());
@@ -83,16 +85,16 @@ namespace Lucene.Net.Search
 			Assert.AreEqual("body:\"strawberry (piccadilly pie pizza)\"", query2.ToString());
 			
 			ScoreDoc[] result;
-			result = searcher.Search(query1, null, 1000).ScoreDocs;
+			result = searcher.Search(query1, null, 1000, null).ScoreDocs;
 			Assert.AreEqual(2, result.Length);
-			result = searcher.Search(query2, null, 1000).ScoreDocs;
+			result = searcher.Search(query2, null, 1000, null).ScoreDocs;
 			Assert.AreEqual(0, result.Length);
 			
 			// search for "blue* pizza":
 			MultiPhraseQuery query3 = new MultiPhraseQuery();
 			termsWithPrefix.Clear();
 			prefix = "blue";
-			te = ir.Terms(new Term("body", prefix));
+			te = ir.Terms(new Term("body", prefix), null);
 			do 
 			{
 				if (te.Term.Text.StartsWith(prefix))
@@ -100,17 +102,17 @@ namespace Lucene.Net.Search
 					termsWithPrefix.Add(te.Term);
 				}
 			}
-			while (te.Next());
+			while (te.Next(null));
 			query3.Add((Term[]) termsWithPrefix.ToArray(typeof(Term)));
 			query3.Add(new Term("body", "pizza"));
 			
-			result = searcher.Search(query3, null, 1000).ScoreDocs;
+			result = searcher.Search(query3, null, 1000, null).ScoreDocs;
 			Assert.AreEqual(2, result.Length); // blueberry pizza, bluebird pizza
 			Assert.AreEqual("body:\"(blueberry bluebird) pizza\"", query3.ToString());
 			
 			// test slop:
 			query3.Slop = 1;
-			result = searcher.Search(query3, null, 1000).ScoreDocs;
+			result = searcher.Search(query3, null, 1000, null).ScoreDocs;
 			Assert.AreEqual(3, result.Length); // blueberry pizza, bluebird pizza, bluebird foobar pizza
 			
 			MultiPhraseQuery query4 = new MultiPhraseQuery();
@@ -130,7 +132,7 @@ namespace Lucene.Net.Search
 		{
 			Document doc = new Document();
 			doc.Add(new Field("body", s, Field.Store.YES, Field.Index.ANALYZED));
-			writer.AddDocument(doc);
+			writer.AddDocument(doc, null);
 		}
 		
 		[Test]
@@ -142,14 +144,14 @@ namespace Lucene.Net.Search
 			// The contained PhraseMultiQuery must contain exactly one term array.
 			
 			RAMDirectory indexStore = new RAMDirectory();
-			IndexWriter writer = new IndexWriter(indexStore, new SimpleAnalyzer(), true, IndexWriter.MaxFieldLength.LIMITED);
+			IndexWriter writer = new IndexWriter(indexStore, new SimpleAnalyzer(), true, IndexWriter.MaxFieldLength.LIMITED, null);
 			Add("blueberry pie", writer);
 			Add("blueberry chewing gum", writer);
 			Add("blue raspberry pie", writer);
-			writer.Optimize();
+			writer.Optimize(null);
 			writer.Close();
 
-		    IndexSearcher searcher = new IndexSearcher(indexStore, true);
+		    IndexSearcher searcher = new IndexSearcher(indexStore, true, null);
 			// This query will be equivalent to +body:pie +body:"blue*"
 			BooleanQuery q = new BooleanQuery();
 			q.Add(new TermQuery(new Term("body", "pie")), Occur.MUST);
@@ -159,7 +161,7 @@ namespace Lucene.Net.Search
 			q.Add(trouble, Occur.MUST);
 			
 			// exception will be thrown here without fix
-			ScoreDoc[] hits = searcher.Search(q, null, 1000).ScoreDocs;
+			ScoreDoc[] hits = searcher.Search(q, null, 1000, null).ScoreDocs;
 			
 			Assert.AreEqual(2, hits.Length, "Wrong number of hits");
 			searcher.Close();
@@ -169,12 +171,12 @@ namespace Lucene.Net.Search
 		public virtual void  TestPhrasePrefixWithBooleanQuery()
 		{
 			RAMDirectory indexStore = new RAMDirectory();
-			IndexWriter writer = new IndexWriter(indexStore, new StandardAnalyzer(Util.Version.LUCENE_CURRENT, Support.Compatibility.SetFactory.CreateHashSet<string>()), true, IndexWriter.MaxFieldLength.LIMITED);
+			IndexWriter writer = new IndexWriter(indexStore, new StandardAnalyzer(Util.Version.LUCENE_CURRENT, Support.Compatibility.SetFactory.CreateHashSet<string>()), true, IndexWriter.MaxFieldLength.LIMITED, null);
 			Add("This is a test", "object", writer);
 			Add("a note", "note", writer);
 			writer.Close();
 
-		    IndexSearcher searcher = new IndexSearcher(indexStore, true);
+		    IndexSearcher searcher = new IndexSearcher(indexStore, true, null);
 			
 			// This query will be equivalent to +type:note +body:"a t*"
 			BooleanQuery q = new BooleanQuery();
@@ -186,7 +188,7 @@ namespace Lucene.Net.Search
 			q.Add(trouble, Occur.MUST);
 			
 			// exception will be thrown here without fix for #35626:
-			ScoreDoc[] hits = searcher.Search(q, null, 1000).ScoreDocs;
+			ScoreDoc[] hits = searcher.Search(q, null, 1000, null).ScoreDocs;
 			Assert.AreEqual(0, hits.Length, "Wrong number of hits");
 			searcher.Close();
 		}
@@ -227,7 +229,7 @@ namespace Lucene.Net.Search
 			Document doc = new Document();
 			doc.Add(new Field("body", s, Field.Store.YES, Field.Index.ANALYZED));
 			doc.Add(new Field("type", type, Field.Store.YES, Field.Index.NOT_ANALYZED));
-			writer.AddDocument(doc);
+			writer.AddDocument(doc, null);
 		}
 	}
 }

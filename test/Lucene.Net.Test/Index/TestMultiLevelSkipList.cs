@@ -17,6 +17,8 @@
 
 using System;
 using Lucene.Net.Analysis.Tokenattributes;
+using Lucene.Net.Store;
+using Lucene.Net.Util;
 using NUnit.Framework;
 
 using Analyzer = Lucene.Net.Analysis.Analyzer;
@@ -48,26 +50,26 @@ namespace Lucene.Net.Index
 		public virtual void  TestSimpleSkip()
 		{
 			RAMDirectory dir = new RAMDirectory();
-			IndexWriter writer = new IndexWriter(dir, new PayloadAnalyzer(), true, IndexWriter.MaxFieldLength.LIMITED);
+			IndexWriter writer = new IndexWriter(dir, new PayloadAnalyzer(), true, IndexWriter.MaxFieldLength.LIMITED, null);
 			Term term = new Term("test", "a");
 			for (int i = 0; i < 5000; i++)
 			{
 				Document d1 = new Document();
 				d1.Add(new Field(term.Field, term.Text, Field.Store.NO, Field.Index.ANALYZED));
-				writer.AddDocument(d1);
+				writer.AddDocument(d1, null);
 			}
-			writer.Commit();
-			writer.Optimize();
+			writer.Commit(null);
+			writer.Optimize(null);
 			writer.Close();
 			
-			IndexReader reader = SegmentReader.GetOnlySegmentReader(dir);
-			SegmentTermPositions tp = (SegmentTermPositions) reader.TermPositions();
+			IndexReader reader = SegmentReader.GetOnlySegmentReader(dir, null);
+			SegmentTermPositions tp = (SegmentTermPositions) reader.TermPositions(null);
             tp.freqStream = new CountingStream(this, tp.freqStream);
 			
 			for (int i = 0; i < 2; i++)
 			{
 				counter = 0;
-				tp.Seek(term);
+				tp.Seek(term, null);
 				
 				CheckSkipTo(tp, 14, 185); // no skips
 				CheckSkipTo(tp, 17, 190); // one skip on level 0
@@ -81,14 +83,14 @@ namespace Lucene.Net.Index
 		
 		public virtual void  CheckSkipTo(TermPositions tp, int target, int maxCounter)
 		{
-			tp.SkipTo(target);
+			tp.SkipTo(target, null);
 		    Assert.Greater(maxCounter, counter, "Too many bytes read: " + counter);
 			
 			Assert.AreEqual(target, tp.Doc, "Wrong document " + tp.Doc + " after skipTo target " + target);
 			Assert.AreEqual(1, tp.Freq, "Frequency is not 1: " + tp.Freq);
-			tp.NextPosition();
+			tp.NextPosition(null);
 			byte[] b = new byte[1];
-			tp.GetPayload(b, 0);
+			tp.GetPayload(b, 0, null);
 			Assert.AreEqual((byte) target, b[0], "Wrong payload for the target " + target + ": " + b[0]);
 		}
 		
@@ -126,7 +128,7 @@ namespace Lucene.Net.Index
 		
 		// Simply extends IndexInput in a way that we are able to count the number
 		// of bytes read
-		internal class CountingStream:IndexInput, System.ICloneable
+		internal class CountingStream:IndexInput, ILuceneCloneable
 		{
 			private void  InitBlock(TestMultiLevelSkipList enclosingInstance)
 			{
@@ -150,16 +152,16 @@ namespace Lucene.Net.Index
 				this.input = input;
 			}
 			
-			public override byte ReadByte()
+			public override byte ReadByte(IState state)
 			{
 				Enclosing_Instance.counter++;
-				return this.input.ReadByte();
+				return this.input.ReadByte(null);
 			}
 			
-			public override void  ReadBytes(byte[] b, int offset, int len)
+			public override void  ReadBytes(byte[] b, int offset, int len, IState state)
 			{
 				Enclosing_Instance.counter += len;
-				this.input.ReadBytes(b, offset, len);
+				this.input.ReadBytes(b, offset, len, null);
 			}
 
             protected override void Dispose(bool disposing)
@@ -173,24 +175,24 @@ namespace Lucene.Net.Index
                 isDisposed = true;
             }
 
-		    public override long FilePointer
+		    public override long FilePointer(IState state)
 		    {
-		        get { return this.input.FilePointer; }
+		        return this.input.FilePointer(null);
 		    }
 
-		    public override void  Seek(long pos)
+		    public override void  Seek(long pos, IState state)
 			{
-				this.input.Seek(pos);
+				this.input.Seek(pos, null);
 			}
 			
-			public override long Length()
+			public override long Length(IState state)
 			{
-				return this.input.Length();
+				return this.input.Length(null);
 			}
 			
-			public override System.Object Clone()
+			public override System.Object Clone(IState state)
 			{
-				return new CountingStream(enclosingInstance, (IndexInput) this.input.Clone());
+				return new CountingStream(enclosingInstance, (IndexInput) this.input.Clone(null));
 			}
 		}
 	}

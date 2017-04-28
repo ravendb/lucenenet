@@ -144,11 +144,11 @@ namespace Lucene.Net.Index
 			Directory dir3 = FSDirectory.Open(indexDir3);
 			
 			CreateIndex(dir3);
-			IndexWriter iw = new IndexWriter(dir3, anlzr, false, IndexWriter.MaxFieldLength.LIMITED);
+			IndexWriter iw = new IndexWriter(dir3, anlzr, false, IndexWriter.MaxFieldLength.LIMITED, null);
 			iw.SetMaxBufferedDocs(5);
 			iw.MergeFactor = 3;
-			iw.AddIndexesNoOptimize(new Directory[]{dir1, dir2});
-            iw.Optimize();
+			iw.AddIndexesNoOptimize(null, new Directory[]{dir1, dir2});
+            iw.Optimize(null);
 			iw.Close();
 			
 			norms1.AddRange(norms);
@@ -162,10 +162,10 @@ namespace Lucene.Net.Index
 			DoTestNorms(dir3);
 			
 			// now with optimize
-			iw = new IndexWriter(dir3, anlzr, false, IndexWriter.MaxFieldLength.LIMITED);
+			iw = new IndexWriter(dir3, anlzr, false, IndexWriter.MaxFieldLength.LIMITED, null);
 			iw.SetMaxBufferedDocs(5);
 			iw.MergeFactor = 3;
-			iw.Optimize();
+			iw.Optimize(null);
 			iw.Close();
 			VerifyIndex(dir3);
 			
@@ -178,19 +178,19 @@ namespace Lucene.Net.Index
 		private void  DoTestNorms(Directory dir)
 		{
 			AddDocs(dir, 12, true);
-			IndexReader ir = IndexReader.Open(dir, false);
+			IndexReader ir = IndexReader.Open(dir, false, null);
 			VerifyIndex(ir);
 			ModifyNormsForF1(ir);
-			IndexReader irc = (IndexReader) ir.Clone(); // IndexReader.open(dir, false);//ir.clone();
+			IndexReader irc = (IndexReader) ir.Clone(null); // IndexReader.open(dir, false);//ir.clone();
 			VerifyIndex(irc);
 			
 			ModifyNormsForF1(irc);
 			
-			IndexReader irc3 = (IndexReader) irc.Clone();
+			IndexReader irc3 = (IndexReader) irc.Clone(null);
 			VerifyIndex(irc3);
 			ModifyNormsForF1(irc3);
 			VerifyIndex(irc3);
-			irc3.Flush();
+			irc3.Flush(null);
 			irc3.Close();
 		}
 		
@@ -199,15 +199,15 @@ namespace Lucene.Net.Index
 		{
 			Directory dir1 = new MockRAMDirectory();
 			TestIndexReaderReopen.CreateIndex(dir1, false);
-			SegmentReader reader1 = SegmentReader.GetOnlySegmentReader(dir1);
-			reader1.Norms("field1");
+			SegmentReader reader1 = SegmentReader.GetOnlySegmentReader(dir1, null);
+			reader1.Norms("field1", null);
 			Norm r1norm = reader1.norms_ForNUnit["field1"];
 			SegmentReader.Ref r1BytesRef = r1norm.BytesRef();
-			SegmentReader reader2 = (SegmentReader) reader1.Clone();
+			SegmentReader reader2 = (SegmentReader) reader1.Clone(null);
 			Assert.AreEqual(2, r1norm.BytesRef().RefCount());
 			reader1.Close();
 			Assert.AreEqual(1, r1BytesRef.RefCount());
-			reader2.Norms("field1");
+			reader2.Norms("field1", null);
 			reader2.Close();
 			dir1.Close();
 		}
@@ -217,40 +217,40 @@ namespace Lucene.Net.Index
 		{
 			Directory dir1 = new MockRAMDirectory();
 			TestIndexReaderReopen.CreateIndex(dir1, false);
-            IndexReader reader1 = IndexReader.Open(dir1, false);
+            IndexReader reader1 = IndexReader.Open(dir1, false, null);
 			
-			IndexReader reader2C = (IndexReader) reader1.Clone();
+			IndexReader reader2C = (IndexReader) reader1.Clone(null);
 			SegmentReader segmentReader2C = SegmentReader.GetOnlySegmentReader(reader2C);
-			segmentReader2C.Norms("field1"); // load the norms for the field
+			segmentReader2C.Norms("field1", null); // load the norms for the field
 			Norm reader2CNorm = segmentReader2C.norms_ForNUnit["field1"];
 			Assert.IsTrue(reader2CNorm.BytesRef().RefCount() == 2, "reader2CNorm.bytesRef()=" + reader2CNorm.BytesRef());
 			
 			
 			
-			IndexReader reader3C = (IndexReader) reader2C.Clone();
+			IndexReader reader3C = (IndexReader) reader2C.Clone(null);
 			SegmentReader segmentReader3C = SegmentReader.GetOnlySegmentReader(reader3C);
 			Norm reader3CCNorm = segmentReader3C.norms_ForNUnit["field1"];
 			Assert.AreEqual(3, reader3CCNorm.BytesRef().RefCount());
 			
 			// edit a norm and the refcount should be 1
-			IndexReader reader4C = (IndexReader) reader3C.Clone();
+			IndexReader reader4C = (IndexReader) reader3C.Clone(null);
 			SegmentReader segmentReader4C = SegmentReader.GetOnlySegmentReader(reader4C);
 			Assert.AreEqual(4, reader3CCNorm.BytesRef().RefCount());
-			reader4C.SetNorm(5, "field1", 0.33f);
+			reader4C.SetNorm(5, "field1", 0.33f, null);
 			
 			// generate a cannot update exception in reader1
-            Assert.Throws<LockObtainFailedException>(() => reader3C.SetNorm(1, "field1", 0.99f), "did not hit expected exception");
+            Assert.Throws<LockObtainFailedException>(() => reader3C.SetNorm(1, "field1", 0.99f, null), "did not hit expected exception");
 			
 			// norm values should be different 
-			Assert.IsTrue(Similarity.DecodeNorm(segmentReader3C.Norms("field1")[5]) != Similarity.DecodeNorm(segmentReader4C.Norms("field1")[5]));
+			Assert.IsTrue(Similarity.DecodeNorm(segmentReader3C.Norms("field1", null)[5]) != Similarity.DecodeNorm(segmentReader4C.Norms("field1", null)[5]));
 			Norm reader4CCNorm = segmentReader4C.norms_ForNUnit["field1"];
 			Assert.AreEqual(3, reader3CCNorm.BytesRef().RefCount());
 			Assert.AreEqual(1, reader4CCNorm.BytesRef().RefCount());
 			
-			IndexReader reader5C = (IndexReader) reader4C.Clone();
+			IndexReader reader5C = (IndexReader) reader4C.Clone(null);
 			SegmentReader segmentReader5C = SegmentReader.GetOnlySegmentReader(reader5C);
 			Norm reader5CCNorm = segmentReader5C.norms_ForNUnit["field1"];
-			reader5C.SetNorm(5, "field1", 0.7f);
+			reader5C.SetNorm(5, "field1", 0.7f, null);
 			Assert.AreEqual(1, reader5CCNorm.BytesRef().RefCount());
 			
 			reader5C.Close();
@@ -263,7 +263,7 @@ namespace Lucene.Net.Index
 		
 		private void  CreateIndex(Directory dir)
 		{
-			IndexWriter iw = new IndexWriter(dir, anlzr, true, IndexWriter.MaxFieldLength.LIMITED);
+			IndexWriter iw = new IndexWriter(dir, anlzr, true, IndexWriter.MaxFieldLength.LIMITED, null);
 			iw.SetMaxBufferedDocs(5);
 			iw.MergeFactor = 3;
 			iw.SetSimilarity(similarityOne);
@@ -273,7 +273,7 @@ namespace Lucene.Net.Index
 		
 		private void  ModifyNormsForF1(Directory dir)
 		{
-            IndexReader ir = IndexReader.Open(dir, false);
+            IndexReader ir = IndexReader.Open(dir, false, null);
 			ModifyNormsForF1(ir);
 		}
 		
@@ -292,8 +292,8 @@ namespace Lucene.Net.Index
 				// System.out.println(" and: for "+k+" from "+newNorm+" to "+origNorm);
 				modifiedNorms[i] = newNorm;
 				modifiedNorms[k] = origNorm;
-				ir.SetNorm(i, "f" + 1, newNorm);
-				ir.SetNorm(k, "f" + 1, origNorm);
+				ir.SetNorm(i, "f" + 1, newNorm, null);
+				ir.SetNorm(k, "f" + 1, origNorm, null);
 				// System.out.println("setNorm i: "+i);
 				// break;
 			}
@@ -302,7 +302,7 @@ namespace Lucene.Net.Index
 		
 		private void  VerifyIndex(Directory dir)
 		{
-            IndexReader ir = IndexReader.Open(dir, false);
+            IndexReader ir = IndexReader.Open(dir, false, null);
 			VerifyIndex(ir);
 			ir.Close();
 		}
@@ -312,7 +312,7 @@ namespace Lucene.Net.Index
 			for (int i = 0; i < NUM_FIELDS; i++)
 			{
 				System.String field = "f" + i;
-				byte[] b = ir.Norms(field);
+				byte[] b = ir.Norms(field, null);
 				Assert.AreEqual(numDocNorms, b.Length, "number of norms mismatches");
 				System.Collections.ArrayList storedNorms = (i == 1?modifiedNorms:norms);
 				for (int j = 0; j < b.Length; j++)
@@ -326,14 +326,14 @@ namespace Lucene.Net.Index
 		
 		private void  AddDocs(Directory dir, int ndocs, bool compound)
 		{
-			IndexWriter iw = new IndexWriter(dir, anlzr, false, IndexWriter.MaxFieldLength.LIMITED);
+			IndexWriter iw = new IndexWriter(dir, anlzr, false, IndexWriter.MaxFieldLength.LIMITED, null);
 			iw.SetMaxBufferedDocs(5);
 			iw.MergeFactor = 3;
 			iw.SetSimilarity(similarityOne);
 			iw.UseCompoundFile = compound;
 			for (int i = 0; i < ndocs; i++)
 			{
-				iw.AddDocument(NewDoc());
+				iw.AddDocument(NewDoc(), null);
 			}
 			iw.Close();
 		}

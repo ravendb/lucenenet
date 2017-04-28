@@ -35,11 +35,11 @@ namespace Lucene.Net.Store
 			Directory dir = new RAMDirectory();
 			dir.Close();
 
-            Assert.Throws<AlreadyClosedException>(() => dir.CreateOutput("test"), "did not hit expected exception");
+            Assert.Throws<AlreadyClosedException>(() => dir.CreateOutput("test", null), "did not hit expected exception");
 			
 			dir = FSDirectory.Open(new System.IO.DirectoryInfo(AppSettings.Get("tempDir", System.IO.Path.GetTempPath())));
 			dir.Close();
-			Assert.Throws<AlreadyClosedException>(() => dir.CreateOutput("test"), "did not hit expected exception");
+			Assert.Throws<AlreadyClosedException>(() => dir.CreateOutput("test", null), "did not hit expected exception");
 		}
 		
 		
@@ -64,7 +64,7 @@ namespace Lucene.Net.Store
 				dir.EnsureOpen();
 				System.String fname = "foo." + i;
 				System.String lockname = "foo" + i + ".lck";
-				IndexOutput out_Renamed = dir.CreateOutput(fname);
+				IndexOutput out_Renamed = dir.CreateOutput(fname, null);
 				out_Renamed.WriteByte((byte) i);
 				out_Renamed.Close();
 				
@@ -72,26 +72,26 @@ namespace Lucene.Net.Store
 				{
 					Directory d2 = dirs[j];
 					d2.EnsureOpen();
-					Assert.IsTrue(d2.FileExists(fname));
-					Assert.AreEqual(1, d2.FileLength(fname));
+					Assert.IsTrue(d2.FileExists(fname, null));
+					Assert.AreEqual(1, d2.FileLength(fname, null));
 					
 					// don't test read on MMapDirectory, since it can't really be
 					// closed and will cause a failure to delete the file.
 					if (d2 is MMapDirectory)
 						continue;
 					
-					IndexInput input = d2.OpenInput(fname);
-					Assert.AreEqual((byte) i, input.ReadByte());
+					IndexInput input = d2.OpenInput(fname, null);
+					Assert.AreEqual((byte) i, input.ReadByte(null));
 					input.Close();
 				}
 				
 				// delete with a different dir
-				dirs[(i + 1) % sz].DeleteFile(fname);
+				dirs[(i + 1) % sz].DeleteFile(fname, null);
 				
 				for (int j = 0; j < sz; j++)
 				{
 					Directory d2 = dirs[j];
-					Assert.IsFalse(d2.FileExists(fname));
+					Assert.IsFalse(d2.FileExists(fname, null));
 				}
 				
 				Lock lock_Renamed = dir.MakeLock(lockname);
@@ -176,9 +176,9 @@ namespace Lucene.Net.Store
 			System.String name = "file";
 			try
 			{
-				dir.CreateOutput(name).Close();
-				Assert.IsTrue(dir.FileExists(name));
-				Assert.IsTrue(new System.Collections.ArrayList(dir.ListAll()).Contains(name));
+				dir.CreateOutput(name, null).Close();
+				Assert.IsTrue(dir.FileExists(name, null));
+				Assert.IsTrue(new System.Collections.ArrayList(dir.ListAll(null)).Contains(name));
 			}
 			finally
 			{
@@ -196,7 +196,7 @@ namespace Lucene.Net.Store
 				System.IO.Directory.CreateDirectory(path.FullName);
 				System.IO.Directory.CreateDirectory(new System.IO.DirectoryInfo(System.IO.Path.Combine(path.FullName, "subdir")).FullName);
 				Directory fsDir = new SimpleFSDirectory(path, null);
-				Assert.AreEqual(0, new RAMDirectory(fsDir).ListAll().Length);
+				Assert.AreEqual(0, new RAMDirectory(fsDir, null).ListAll(null).Length);
 			}
 			finally
 			{
@@ -212,9 +212,9 @@ namespace Lucene.Net.Store
 			Directory fsDir = new SimpleFSDirectory(path, null);
 			try
 			{
-				IndexOutput out_Renamed = fsDir.CreateOutput("afile");
+				IndexOutput out_Renamed = fsDir.CreateOutput("afile", null);
 				out_Renamed.Close();
-				Assert.IsTrue(fsDir.FileExists("afile"));
+				Assert.IsTrue(fsDir.FileExists("afile", null));
 
 			    Assert.Throws<NoSuchDirectoryException>(
 			        () =>

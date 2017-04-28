@@ -130,13 +130,13 @@ namespace Lucene.Net.Index
 		    FSDirectory dir = FSDirectory.Open(this.__test_dir);
             try
             {
-                im = new IndexWriter(dir, new Lucene.Net.Analysis.Standard.StandardAnalyzer(Util.Version.LUCENE_CURRENT), false, IndexWriter.MaxFieldLength.LIMITED);
+                im = new IndexWriter(dir, new Lucene.Net.Analysis.Standard.StandardAnalyzer(Util.Version.LUCENE_CURRENT), false, IndexWriter.MaxFieldLength.LIMITED, null);
             }
             catch (System.IO.FileNotFoundException)
             {
                 try
                 {
-                    im = new IndexWriter(dir, new Lucene.Net.Analysis.Standard.StandardAnalyzer(Util.Version.LUCENE_CURRENT), false, IndexWriter.MaxFieldLength.LIMITED);
+                    im = new IndexWriter(dir, new Lucene.Net.Analysis.Standard.StandardAnalyzer(Util.Version.LUCENE_CURRENT), false, IndexWriter.MaxFieldLength.LIMITED, null);
                 }
                 catch (System.IO.FileNotFoundException e1)
                 {

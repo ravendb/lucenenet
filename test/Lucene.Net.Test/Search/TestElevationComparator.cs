@@ -40,17 +40,17 @@ namespace Lucene.Net.Search
 		public virtual void  TestSorting()
 		{
 			Directory directory = new MockRAMDirectory();
-			IndexWriter writer = new IndexWriter(directory, new WhitespaceAnalyzer(), true, IndexWriter.MaxFieldLength.LIMITED);
+			IndexWriter writer = new IndexWriter(directory, new WhitespaceAnalyzer(), true, IndexWriter.MaxFieldLength.LIMITED, null);
 			writer.SetMaxBufferedDocs(2);
 			writer.MergeFactor = 1000;
-			writer.AddDocument(Adoc(new System.String[]{"id", "a", "title", "ipod", "str_s", "a"}));
-			writer.AddDocument(Adoc(new System.String[]{"id", "b", "title", "ipod ipod", "str_s", "b"}));
-			writer.AddDocument(Adoc(new System.String[]{"id", "c", "title", "ipod ipod ipod", "str_s", "c"}));
-			writer.AddDocument(Adoc(new System.String[]{"id", "x", "title", "boosted", "str_s", "x"}));
-			writer.AddDocument(Adoc(new System.String[]{"id", "y", "title", "boosted boosted", "str_s", "y"}));
-			writer.AddDocument(Adoc(new System.String[]{"id", "z", "title", "boosted boosted boosted", "str_s", "z"}));
+			writer.AddDocument(Adoc(new System.String[]{"id", "a", "title", "ipod", "str_s", "a"}), null);
+			writer.AddDocument(Adoc(new System.String[]{"id", "b", "title", "ipod ipod", "str_s", "b"}), null);
+			writer.AddDocument(Adoc(new System.String[]{"id", "c", "title", "ipod ipod ipod", "str_s", "c"}), null);
+			writer.AddDocument(Adoc(new System.String[]{"id", "x", "title", "boosted", "str_s", "x"}), null);
+			writer.AddDocument(Adoc(new System.String[]{"id", "y", "title", "boosted boosted", "str_s", "y"}), null);
+			writer.AddDocument(Adoc(new System.String[]{"id", "z", "title", "boosted boosted boosted", "str_s", "z"}), null);
 			
-			IndexReader r = writer.GetReader();
+			IndexReader r = writer.GetReader(null);
 			writer.Close();
 			
 			IndexSearcher searcher = new IndexSearcher(r);
@@ -75,7 +75,7 @@ namespace Lucene.Net.Search
 			Sort sort = new Sort(new SortField("id", new ElevationComparatorSource(priority), false), new SortField(null, SortField.SCORE, reversed));
 			
 			TopFieldCollector topCollector = TopFieldCollector.Create(sort, 50, false, true, true, true);
-			searcher.Search(newq, null, topCollector);
+			searcher.Search(newq, null, topCollector, null);
 			
 			TopDocs topDocs = topCollector.TopDocs(0, 10);
 			int nDocsReturned = topDocs.ScoreDocs.Length;
@@ -184,19 +184,19 @@ namespace Lucene.Net.Search
                 return prio == null ? 0 : (int)prio;
 			}
 			
-			public override int CompareBottom(int doc)
+			public override int CompareBottom(int doc, IState state)
 			{
 				return DocVal(doc) - bottomVal;
 			}
 			
-			public override void  Copy(int slot, int doc)
+			public override void  Copy(int slot, int doc, IState state)
 			{
 				values[slot] = DocVal(doc);
 			}
 			
-			public override void  SetNextReader(IndexReader reader, int docBase)
+			public override void  SetNextReader(IndexReader reader, int docBase, IState state)
 			{
-				idIndex = Lucene.Net.Search.FieldCache_Fields.DEFAULT.GetStringIndex(reader, fieldname);
+				idIndex = Lucene.Net.Search.FieldCache_Fields.DEFAULT.GetStringIndex(reader, fieldname, null);
 			}
 
 		    public override IComparable this[int slot]

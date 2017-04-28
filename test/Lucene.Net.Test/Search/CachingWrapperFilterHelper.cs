@@ -16,7 +16,7 @@
  */
 
 using System;
-
+using Lucene.Net.Store;
 using NUnit.Framework;
 
 using IndexReader = Lucene.Net.Index.IndexReader;
@@ -43,12 +43,12 @@ namespace Lucene.Net.Search
             this.shouldHaveCache = shouldHaveCache;
         }
 
-        public override DocIdSet GetDocIdSet(IndexReader reader)
+        public override DocIdSet GetDocIdSet(IndexReader reader, IState state)
         {
             lock (this)
             {
                 int saveMissCount = missCount;
-                DocIdSet docIdSet = base.GetDocIdSet(reader);
+                DocIdSet docIdSet = base.GetDocIdSet(reader, null);
 
                 if (shouldHaveCache) {
                     Assert.AreEqual(saveMissCount, missCount, "Cache should have data ");

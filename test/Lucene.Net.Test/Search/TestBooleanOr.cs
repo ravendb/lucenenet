@@ -47,7 +47,7 @@ namespace Lucene.Net.Search
 		private int Search(Query q)
 		{
 			QueryUtils.Check(q, searcher);
-			return searcher.Search(q, null, 1000).TotalHits;
+			return searcher.Search(q, null, 1000, null).TotalHits;
 		}
 		
 		[Test]
@@ -144,7 +144,7 @@ namespace Lucene.Net.Search
 			RAMDirectory rd = new RAMDirectory();
 			
 			//
-			IndexWriter writer = new IndexWriter(rd, new StandardAnalyzer(Util.Version.LUCENE_CURRENT), true, IndexWriter.MaxFieldLength.LIMITED);
+			IndexWriter writer = new IndexWriter(rd, new StandardAnalyzer(Util.Version.LUCENE_CURRENT), true, IndexWriter.MaxFieldLength.LIMITED, null);
 			
 			//
 			Document d = new Document();
@@ -152,11 +152,11 @@ namespace Lucene.Net.Search
 			d.Add(new Field(FIELD_C, "Deleted When I run an optimize in our production environment.", Field.Store.YES, Field.Index.ANALYZED));
 			
 			//
-			writer.AddDocument(d);
+			writer.AddDocument(d, null);
 			writer.Close();
 			
 			//
-		    searcher = new IndexSearcher(rd, true);
+		    searcher = new IndexSearcher(rd, true, null);
 		}
 	}
 }

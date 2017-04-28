@@ -78,15 +78,15 @@ namespace Lucene.Net.Search
 		{
 			base.SetUp();
 			RAMDirectory directory = new RAMDirectory();
-			IndexWriter writer = new IndexWriter(directory, new WhitespaceAnalyzer(), true, IndexWriter.MaxFieldLength.LIMITED);
+			IndexWriter writer = new IndexWriter(directory, new WhitespaceAnalyzer(), true, IndexWriter.MaxFieldLength.LIMITED, null);
 			for (int i = 0; i < docFields.Length; i++)
 			{
 				Document document = new Document();
 				document.Add(new Field(field, docFields[i], Field.Store.NO, Field.Index.ANALYZED));
-				writer.AddDocument(document);
+				writer.AddDocument(document, null);
 			}
 			writer.Close();
-			searcher = new IndexSearcher(directory, true);
+			searcher = new IndexSearcher(directory, true, null);
 
             // Make big index
 		    dir2 = new MockRAMDirectory(directory);
@@ -96,30 +96,30 @@ namespace Lucene.Net.Search
 		    int docCount = 0;
 		    do
 		    {
-		        Directory copy = new RAMDirectory(dir2);
-                IndexWriter indexWriter = new IndexWriter(dir2, new WhitespaceAnalyzer(), IndexWriter.MaxFieldLength.UNLIMITED);
-		        indexWriter.AddIndexesNoOptimize(new[] {copy});
+		        Directory copy = new RAMDirectory(dir2, null);
+                IndexWriter indexWriter = new IndexWriter(dir2, new WhitespaceAnalyzer(), IndexWriter.MaxFieldLength.UNLIMITED, null);
+		        indexWriter.AddIndexesNoOptimize(null, new[] {copy});
 		        docCount = indexWriter.MaxDoc();
 		        indexWriter.Close();
 		        mulFactor *= 2;
 		    } while (docCount < 3000);
 
-		    IndexWriter w = new IndexWriter(dir2, new WhitespaceAnalyzer(), IndexWriter.MaxFieldLength.UNLIMITED);
+		    IndexWriter w = new IndexWriter(dir2, new WhitespaceAnalyzer(), IndexWriter.MaxFieldLength.UNLIMITED, null);
 		    Document doc = new Document();
             doc.Add(new Field("field2", "xxx", Field.Store.NO, Field.Index.ANALYZED));
             for (int i = 0; i < NUM_EXTRA_DOCS / 2; i++)
             {
-                w.AddDocument(doc);
+                w.AddDocument(doc, null);
             }
             doc = new Document();
             doc.Add(new Field("field2", "big bad bug", Field.Store.NO, Field.Index.ANALYZED));
             for (int i = 0; i < NUM_EXTRA_DOCS / 2; i++)
             {
-                w.AddDocument(doc);
+                w.AddDocument(doc, null);
             }
             // optimize to 1 segment
-		    w.Optimize();
-		    reader = w.GetReader();
+		    w.Optimize(null);
+		    reader = w.GetReader(null);
 		    w.Close();
 		    bigSearcher = new IndexSearcher(reader);
 		}
@@ -145,15 +145,15 @@ namespace Lucene.Net.Search
             //System.out.println("Query: " + queryText);
             Query query1 = MakeQuery(queryText);
             TopScoreDocCollector collector = TopScoreDocCollector.Create(1000, false);
-            searcher.Search(query1, null, collector);
+            searcher.Search(query1, null, collector, null);
             ScoreDoc[] hits1 = collector.TopDocs().ScoreDocs;
 
             Query query2 = MakeQuery(queryText); // there should be no need to parse again...
             collector = TopScoreDocCollector.Create(1000, true);
-            searcher.Search(query2, null, collector);
+            searcher.Search(query2, null, collector, null);
             ScoreDoc[] hits2 = collector.TopDocs().ScoreDocs;
 
-            Assert.AreEqual(mulFactor*collector.internalTotalHits, bigSearcher.Search(query1, 1).TotalHits);
+            Assert.AreEqual(mulFactor*collector.internalTotalHits, bigSearcher.Search(query1, 1, null).TotalHits);
 
             CheckHits.CheckHitsQuery(query2, hits1, hits2, expDocNrs);
         }
@@ -265,11 +265,11 @@ namespace Lucene.Net.Search
 					QueryUtils.Check(q1, searcher);
 
 				    TopFieldCollector collector = TopFieldCollector.Create(sort, 1000, false, true, true, true);
-				    searcher.Search(q1, null, collector);
+				    searcher.Search(q1, null, collector, null);
 					ScoreDoc[] hits1 = collector.TopDocs().ScoreDocs;
 
 				    collector = TopFieldCollector.Create(sort, 1000, false, true, true, false);
-				    searcher.Search(q1, null, collector);
+				    searcher.Search(q1, null, collector, null);
 					ScoreDoc[] hits2 = collector.TopDocs().ScoreDocs;
 					tot += hits2.Length;
 					CheckHits.CheckEqual(q1, hits1, hits2);
@@ -277,7 +277,7 @@ namespace Lucene.Net.Search
                     BooleanQuery q3 = new BooleanQuery();
 				    q3.Add(q1, Occur.SHOULD);
                     q3.Add(new PrefixQuery(new Term("field2", "b")), Occur.SHOULD);
-				    TopDocs hits4 = bigSearcher.Search(q3, 1);
+				    TopDocs hits4 = bigSearcher.Search(q3, 1, null);
 				    Assert.AreEqual(mulFactor*collector.internalTotalHits + NUM_EXTRA_DOCS/2, hits4.TotalHits);
 				}
 			}

@@ -41,12 +41,12 @@ namespace Lucene.Net.Support
         {
             Lucene.Net.Store.RAMDirectory directory = new Lucene.Net.Store.RAMDirectory();
             Lucene.Net.Analysis.Analyzer analyzer = new Lucene.Net.Analysis.WhitespaceAnalyzer();
-            Lucene.Net.Index.IndexWriter writer = new Lucene.Net.Index.IndexWriter(directory, analyzer, Lucene.Net.Index.IndexWriter.MaxFieldLength.LIMITED);
+            Lucene.Net.Index.IndexWriter writer = new Lucene.Net.Index.IndexWriter(directory, analyzer, Lucene.Net.Index.IndexWriter.MaxFieldLength.LIMITED, null);
             Lucene.Net.Documents.Document document = new Lucene.Net.Documents.Document();
             document.Add(new Lucene.Net.Documents.Field("contents", new System.IO.StreamReader(new System.IO.MemoryStream(System.Text.Encoding.ASCII.GetBytes("a_ a0"))), Lucene.Net.Documents.Field.TermVector.WITH_OFFSETS));
-            writer.AddDocument(document);
-            Lucene.Net.Index.IndexReader reader = writer.GetReader();
-            Lucene.Net.Index.TermPositionVector tpv = reader.GetTermFreqVector(0, "contents") as Lucene.Net.Index.TermPositionVector;
+            writer.AddDocument(document, null);
+            Lucene.Net.Index.IndexReader reader = writer.GetReader(null);
+            Lucene.Net.Index.TermPositionVector tpv = reader.GetTermFreqVector(0, "contents", null) as Lucene.Net.Index.TermPositionVector;
             //Console.WriteLine("tpv: " + tpv);
             int index = tpv.IndexOf("a_");
             Assert.AreEqual(index, 1, "See the issue: LUCENENET-183");
@@ -134,12 +134,12 @@ namespace Lucene.Net.Support
         [Description("LUCENENET-150")]
         public void Test_Index_ReusableStringReader()
         {
-            Lucene.Net.Index.IndexWriter wr = new Lucene.Net.Index.IndexWriter(new Lucene.Net.Store.RAMDirectory(), new TestAnalyzer(), true, IndexWriter.MaxFieldLength.UNLIMITED);
+            Lucene.Net.Index.IndexWriter wr = new Lucene.Net.Index.IndexWriter(new Lucene.Net.Store.RAMDirectory(), new TestAnalyzer(), true, IndexWriter.MaxFieldLength.UNLIMITED, null);
 
             Lucene.Net.Documents.Document doc = new Lucene.Net.Documents.Document();
             Lucene.Net.Documents.Field f1 = new Lucene.Net.Documents.Field("f1", TEST_STRING, Lucene.Net.Documents.Field.Store.YES, Lucene.Net.Documents.Field.Index.ANALYZED);
             doc.Add(f1);
-            wr.AddDocument(doc);
+            wr.AddDocument(doc, null);
 
             wr.Close();
         }
@@ -177,32 +177,32 @@ namespace Lucene.Net.Support
         public void Test_IndexReader_IsCurrent()
         {
             RAMDirectory ramDir = new RAMDirectory();
-            IndexWriter writer = new IndexWriter(ramDir, new KeywordAnalyzer(), true, new IndexWriter.MaxFieldLength(1000));
+            IndexWriter writer = new IndexWriter(ramDir, new KeywordAnalyzer(), true, new IndexWriter.MaxFieldLength(1000), null);
             Field field = new Field("TEST", "mytest", Field.Store.YES, Field.Index.ANALYZED);
             Document doc = new Document();
             doc.Add(field);
-            writer.AddDocument(doc);
+            writer.AddDocument(doc, null);
 
-            IndexReader reader = writer.GetReader();
+            IndexReader reader = writer.GetReader(null);
 
-            writer.DeleteDocuments(new Lucene.Net.Index.Term("TEST", "mytest"));
+            writer.DeleteDocuments(null, new Lucene.Net.Index.Term("TEST", "mytest"));
 
-            Assert.IsFalse(reader.IsCurrent());
+            Assert.IsFalse(reader.IsCurrent(null));
 
-            int resCount1 = new IndexSearcher(reader).Search(new TermQuery(new Term("TEST", "mytest")),100).TotalHits; 
+            int resCount1 = new IndexSearcher(reader).Search(new TermQuery(new Term("TEST", "mytest")),100, null).TotalHits; 
             Assert.AreEqual(1, resCount1);
 
-            writer.Commit();
+            writer.Commit(null);
 
-            Assert.IsFalse(reader.IsCurrent());
+            Assert.IsFalse(reader.IsCurrent(null));
 
-            int resCount2 = new IndexSearcher(reader).Search(new TermQuery(new Term("TEST", "mytest")),100).TotalHits;
+            int resCount2 = new IndexSearcher(reader).Search(new TermQuery(new Term("TEST", "mytest")),100, null).TotalHits;
             Assert.AreEqual(1, resCount2, "Reopen not invoked yet, resultCount must still be 1.");
 
-            reader = reader.Reopen();
-            Assert.IsTrue(reader.IsCurrent());
+            reader = reader.Reopen(null);
+            Assert.IsTrue(reader.IsCurrent(null));
 
-            int resCount3 = new IndexSearcher(reader).Search(new TermQuery(new Term("TEST", "mytest")), 100).TotalHits;
+            int resCount3 = new IndexSearcher(reader).Search(new TermQuery(new Term("TEST", "mytest")), 100, null).TotalHits;
             Assert.AreEqual(0, resCount3, "After reopen, resultCount must be 0.");
 
             reader.Close();
@@ -284,21 +284,21 @@ namespace Lucene.Net.Support
 
         void LUCENENET_100_CreateIndex()
         {
-            Lucene.Net.Index.IndexWriter w = new Lucene.Net.Index.IndexWriter(LUCENENET_100_Dir, new Lucene.Net.Analysis.Standard.StandardAnalyzer(Version.LUCENE_CURRENT), true, IndexWriter.MaxFieldLength.UNLIMITED);
+            Lucene.Net.Index.IndexWriter w = new Lucene.Net.Index.IndexWriter(LUCENENET_100_Dir, new Lucene.Net.Analysis.Standard.StandardAnalyzer(Version.LUCENE_CURRENT), true, IndexWriter.MaxFieldLength.UNLIMITED, null);
 
             Lucene.Net.Documents.Field f1 = new Lucene.Net.Documents.Field("field1", "dark side of the moon", Lucene.Net.Documents.Field.Store.YES, Lucene.Net.Documents.Field.Index.ANALYZED);
             Lucene.Net.Documents.Field f2 = new Lucene.Net.Documents.Field("field2", "123", Lucene.Net.Documents.Field.Store.YES, Lucene.Net.Documents.Field.Index.NOT_ANALYZED);
             Lucene.Net.Documents.Document d = new Lucene.Net.Documents.Document();
             d.Add(f1);
             d.Add(f2);
-            w.AddDocument(d);
+            w.AddDocument(d, null);
 
             f1 = new Lucene.Net.Documents.Field("field1", "Fly me to the moon", Lucene.Net.Documents.Field.Store.YES, Lucene.Net.Documents.Field.Index.ANALYZED);
             f2 = new Lucene.Net.Documents.Field("field2", "456", Lucene.Net.Documents.Field.Store.YES, Lucene.Net.Documents.Field.Index.NOT_ANALYZED);
             d = new Lucene.Net.Documents.Document();
             d.Add(f1);
             d.Add(f2);
-            w.AddDocument(d);
+            w.AddDocument(d, null);
 
             w.Close();
         }

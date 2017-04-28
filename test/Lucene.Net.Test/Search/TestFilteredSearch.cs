@@ -52,13 +52,13 @@ namespace Lucene.Net.Search
             RAMDirectory directory = new RAMDirectory();
             int[] filterBits = { 1, 36 };
             SimpleDocIdSetFilter filter = new SimpleDocIdSetFilter(filterBits);
-            IndexWriter writer = new IndexWriter(directory, new WhitespaceAnalyzer(), true, IndexWriter.MaxFieldLength.LIMITED);
+            IndexWriter writer = new IndexWriter(directory, new WhitespaceAnalyzer(), true, IndexWriter.MaxFieldLength.LIMITED, null);
             SearchFiltered(writer, directory, filter, enforceSingleSegment);
             // run the test on more than one segment
             enforceSingleSegment = false;
             // reset - it is stateful
             filter.Reset();
-            writer = new IndexWriter(directory, new WhitespaceAnalyzer(), true, IndexWriter.MaxFieldLength.LIMITED);
+            writer = new IndexWriter(directory, new WhitespaceAnalyzer(), true, IndexWriter.MaxFieldLength.LIMITED, null);
             // we index 60 docs - this will create 6 segments
             writer.SetMaxBufferedDocs(10);
             SearchFiltered(writer, directory, filter, enforceSingleSegment);
@@ -73,18 +73,18 @@ namespace Lucene.Net.Search
                 {//Simple docs
                     Document doc = new Document();
                     doc.Add(new Field(FIELD, i.ToString(), Field.Store.YES, Field.Index.NOT_ANALYZED));
-                    writer.AddDocument(doc);
+                    writer.AddDocument(doc, null);
                 }
                 if (optimize)
-                    writer.Optimize();
+                    writer.Optimize(null);
                 writer.Close();
 
                 BooleanQuery booleanQuery = new BooleanQuery();
                 booleanQuery.Add(new TermQuery(new Term(FIELD, "36")), Occur.SHOULD);
 
 
-                IndexSearcher indexSearcher = new IndexSearcher(directory);
-                ScoreDoc[] hits = indexSearcher.Search(booleanQuery, filter, 1000).ScoreDocs;
+                IndexSearcher indexSearcher = new IndexSearcher(directory, null);
+                ScoreDoc[] hits = indexSearcher.Search(booleanQuery, filter, 1000, null).ScoreDocs;
                 Assert.AreEqual(1, hits.Length, "Number of matched documents");
 
             }
@@ -106,7 +106,7 @@ namespace Lucene.Net.Search
             {
                 this.docs = docs;
             }
-            public override DocIdSet GetDocIdSet(IndexReader reader)
+            public override DocIdSet GetDocIdSet(IndexReader reader, IState state)
             {
                 OpenBitSet set = new OpenBitSet();
                 int limit = docBase + reader.MaxDoc;

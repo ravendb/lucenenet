@@ -117,14 +117,14 @@ namespace Lucene.Net.Index
 					int n = Enclosing_Instance.RANDOM.Next();
 					d.Add(new Field("id", System.Convert.ToString(nextID++), Field.Store.YES, Field.Index.NOT_ANALYZED));
 					d.Add(new Field("contents", English.IntToEnglish(n), Field.Store.NO, Field.Index.ANALYZED));
-					writer.AddDocument(d);
+					writer.AddDocument(d, null);
 				}
 				
 				// Delete 5 docs:
 				int deleteID = nextID - 1;
 				for (int j = 0; j < 5; j++)
 				{
-					writer.DeleteDocuments(new Term("id", "" + deleteID));
+					writer.DeleteDocuments(null, new Term("id", "" + deleteID));
 					deleteID -= 2;
 				}
 			}
@@ -142,7 +142,7 @@ namespace Lucene.Net.Index
 			public override void  DoWork()
 			{
 				for (int i = 0; i < 100; i++)
-					(new IndexSearcher(directory)).Close();
+					(new IndexSearcher(directory, null)).Close();
 				count += 100;
 			}
 		}
@@ -153,7 +153,7 @@ namespace Lucene.Net.Index
 		*/
 		public virtual void  RunStressTest(Directory directory, MergeScheduler mergeScheduler)
 		{
-		    IndexWriter modifier = new IndexWriter(directory, ANALYZER, true, IndexWriter.MaxFieldLength.UNLIMITED);
+		    IndexWriter modifier = new IndexWriter(directory, ANALYZER, true, IndexWriter.MaxFieldLength.UNLIMITED, null);
 			
 			modifier.SetMaxBufferedDocs(10);
 			
@@ -161,7 +161,7 @@ namespace Lucene.Net.Index
 			int numThread = 0;
 			
 			if (mergeScheduler != null)
-				modifier.SetMergeScheduler(mergeScheduler);
+				modifier.SetMergeScheduler(mergeScheduler, null);
 			
 			// One modifier that writes 10 docs then removes 5, over
 			// and over:

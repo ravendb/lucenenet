@@ -41,7 +41,7 @@ namespace Lucene.Net.Support
 
         void Index()
         {
-            Lucene.Net.Index.IndexWriter wr = new Lucene.Net.Index.IndexWriter(dir, new Lucene.Net.Analysis.WhitespaceAnalyzer(), Lucene.Net.Index.IndexWriter.MaxFieldLength.UNLIMITED);
+            Lucene.Net.Index.IndexWriter wr = new Lucene.Net.Index.IndexWriter(dir, new Lucene.Net.Analysis.WhitespaceAnalyzer(), Lucene.Net.Index.IndexWriter.MaxFieldLength.UNLIMITED, null);
 
             Lucene.Net.Documents.Document doc = null;
             Lucene.Net.Documents.Field f = null;
@@ -49,22 +49,22 @@ namespace Lucene.Net.Support
             doc = new Lucene.Net.Documents.Document();
             f = new Lucene.Net.Documents.Field("field", "a b c d", Lucene.Net.Documents.Field.Store.NO, Lucene.Net.Documents.Field.Index.ANALYZED);
             doc.Add(f);
-            wr.AddDocument(doc);
+            wr.AddDocument(doc, null);
 
             doc = new Lucene.Net.Documents.Document();
             f = new Lucene.Net.Documents.Field("field", "a b a d", Lucene.Net.Documents.Field.Store.NO, Lucene.Net.Documents.Field.Index.ANALYZED);
             doc.Add(f);
-            wr.AddDocument(doc);
+            wr.AddDocument(doc, null);
 
             doc = new Lucene.Net.Documents.Document();
             f = new Lucene.Net.Documents.Field("field", "a b e f", Lucene.Net.Documents.Field.Store.NO, Lucene.Net.Documents.Field.Index.ANALYZED);
             doc.Add(f);
-            wr.AddDocument(doc);
+            wr.AddDocument(doc, null);
             
             doc = new Lucene.Net.Documents.Document();
             f = new Lucene.Net.Documents.Field("field", "x y z", Lucene.Net.Documents.Field.Store.NO, Lucene.Net.Documents.Field.Index.ANALYZED);
             doc.Add(f);
-            wr.AddDocument(doc);
+            wr.AddDocument(doc, null);
             
             wr.Close();
         }

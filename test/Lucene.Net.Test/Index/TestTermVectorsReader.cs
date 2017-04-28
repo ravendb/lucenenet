@@ -17,6 +17,7 @@
 
 using System;
 using Lucene.Net.Analysis.Tokenattributes;
+using Lucene.Net.Store;
 using NUnit.Framework;
 
 using Analyzer = Lucene.Net.Analysis.Analyzer;
@@ -123,7 +124,7 @@ namespace Lucene.Net.Index
 			}
 			System.Array.Sort(tokens);
 			
-			IndexWriter writer = new IndexWriter(dir, new MyAnalyzer(this), true, IndexWriter.MaxFieldLength.LIMITED);
+			IndexWriter writer = new IndexWriter(dir, new MyAnalyzer(this), true, IndexWriter.MaxFieldLength.LIMITED, null);
 			writer.UseCompoundFile = false;
 			Document doc = new Document();
 			for (int i = 0; i < testFields.Length; i++)
@@ -143,12 +144,12 @@ namespace Lucene.Net.Index
 			//Create 5 documents for testing, they all have the same
 			//terms
 			for (int j = 0; j < 5; j++)
-				writer.AddDocument(doc);
-			writer.Commit();
+				writer.AddDocument(doc, null);
+			writer.Commit(null);
 			seg = writer.NewestSegment().name;
 			writer.Close();
 			
-			fieldInfos = new FieldInfos(dir, seg + "." + IndexFileNames.FIELD_INFOS_EXTENSION);
+			fieldInfos = new FieldInfos(dir, seg + "." + IndexFileNames.FIELD_INFOS_EXTENSION, null);
 		}
 		
 		private class MyTokenStream:TokenStream
@@ -237,18 +238,18 @@ namespace Lucene.Net.Index
 		public virtual void  Test()
 		{
 			//Check to see the files were created properly in setup
-			Assert.IsTrue(dir.FileExists(seg + "." + IndexFileNames.VECTORS_DOCUMENTS_EXTENSION));
-			Assert.IsTrue(dir.FileExists(seg + "." + IndexFileNames.VECTORS_INDEX_EXTENSION));
+			Assert.IsTrue(dir.FileExists(seg + "." + IndexFileNames.VECTORS_DOCUMENTS_EXTENSION, null));
+			Assert.IsTrue(dir.FileExists(seg + "." + IndexFileNames.VECTORS_INDEX_EXTENSION, null));
 		}
 		
 		[Test]
 		public virtual void  TestReader()
 		{
-			TermVectorsReader reader = new TermVectorsReader(dir, seg, fieldInfos);
+			TermVectorsReader reader = new TermVectorsReader(dir, seg, fieldInfos, null);
 			Assert.IsTrue(reader != null);
 			for (int j = 0; j < 5; j++)
 			{
-				ITermFreqVector vector = reader.Get(j, testFields[0]);
+				ITermFreqVector vector = reader.Get(j, testFields[0], null);
 				Assert.IsTrue(vector != null);
 				System.String[] terms = vector.GetTerms();
 				Assert.IsTrue(terms != null);
@@ -265,11 +266,11 @@ namespace Lucene.Net.Index
 		[Test]
 		public virtual void  TestPositionReader()
 		{
-			TermVectorsReader reader = new TermVectorsReader(dir, seg, fieldInfos);
+			TermVectorsReader reader = new TermVectorsReader(dir, seg, fieldInfos, null);
 			Assert.IsTrue(reader != null);
 			TermPositionVector vector;
 			System.String[] terms;
-			vector = (TermPositionVector) reader.Get(0, testFields[0]);
+			vector = (TermPositionVector) reader.Get(0, testFields[0], null);
 			Assert.IsTrue(vector != null);
 			terms = vector.GetTerms();
 			Assert.IsTrue(terms != null);
@@ -297,7 +298,7 @@ namespace Lucene.Net.Index
 				}
 			}
 			
-			ITermFreqVector freqVector = reader.Get(0, testFields[1]); //no pos, no offset
+			ITermFreqVector freqVector = reader.Get(0, testFields[1], null); //no pos, no offset
 			Assert.IsTrue(freqVector != null);
 			Assert.IsTrue(freqVector is TermPositionVector == false);
 			terms = freqVector.GetTerms();
@@ -314,9 +315,9 @@ namespace Lucene.Net.Index
 		[Test]
 		public virtual void  TestOffsetReader()
 		{
-			TermVectorsReader reader = new TermVectorsReader(dir, seg, fieldInfos);
+			TermVectorsReader reader = new TermVectorsReader(dir, seg, fieldInfos, null);
 			Assert.IsTrue(reader != null);
-			TermPositionVector vector = (TermPositionVector) reader.Get(0, testFields[0]);
+			TermPositionVector vector = (TermPositionVector) reader.Get(0, testFields[0], null);
 			Assert.IsTrue(vector != null);
 			System.String[] terms = vector.GetTerms();
 			Assert.IsTrue(terms != null);
@@ -348,10 +349,10 @@ namespace Lucene.Net.Index
 		[Test]
 		public virtual void  TestMapper()
 		{
-			TermVectorsReader reader = new TermVectorsReader(dir, seg, fieldInfos);
+			TermVectorsReader reader = new TermVectorsReader(dir, seg, fieldInfos, null);
 			Assert.IsTrue(reader != null);
 			SortedTermVectorMapper mapper = new SortedTermVectorMapper(new TermVectorEntryFreqSortedComparator());
-			reader.Get(0, mapper);
+			reader.Get(0, mapper, null);
 			var set_Renamed = mapper.TermVectorEntrySet;
 			Assert.IsTrue(set_Renamed != null, "set is null and it shouldn't be");
 			//three fields, 4 terms, all terms are the same
@@ -366,7 +367,7 @@ namespace Lucene.Net.Index
 			}
 			
 			mapper = new SortedTermVectorMapper(new TermVectorEntryFreqSortedComparator());
-			reader.Get(1, mapper);
+			reader.Get(1, mapper, null);
 			set_Renamed = mapper.TermVectorEntrySet;
 			Assert.IsTrue(set_Renamed != null, "set is null and it shouldn't be");
 			//three fields, 4 terms, all terms are the same
@@ -382,7 +383,7 @@ namespace Lucene.Net.Index
 			
 			
 			FieldSortedTermVectorMapper fsMapper = new FieldSortedTermVectorMapper(new TermVectorEntryFreqSortedComparator());
-			reader.Get(0, fsMapper);
+			reader.Get(0, fsMapper, null);
 			var map = fsMapper.FieldToTerms;
 			Assert.IsTrue(map.Count == testFields.Length, "map Size: " + map.Count + " is not: " + testFields.Length);
 			for (var iterator = map.GetEnumerator(); iterator.MoveNext(); )
@@ -415,7 +416,7 @@ namespace Lucene.Net.Index
 			}
 			//Try mapper that ignores offs and positions
 			fsMapper = new FieldSortedTermVectorMapper(true, true, new TermVectorEntryFreqSortedComparator());
-			reader.Get(0, fsMapper);
+			reader.Get(0, fsMapper, null);
 			map = fsMapper.FieldToTerms;
 			Assert.IsTrue(map.Count == testFields.Length, "map Size: " + map.Count + " is not: " + testFields.Length);
 			for (var iterator = map.GetEnumerator(); iterator.MoveNext(); )
@@ -448,27 +449,27 @@ namespace Lucene.Net.Index
 			}
 			
 			// test setDocumentNumber()
-		    IndexReader ir = IndexReader.Open(dir, true);
+		    IndexReader ir = IndexReader.Open((Directory) dir, true, null);
 			DocNumAwareMapper docNumAwareMapper = new DocNumAwareMapper();
 			Assert.AreEqual(- 1, docNumAwareMapper.GetDocumentNumber());
 			
-			ir.GetTermFreqVector(0, docNumAwareMapper);
+			ir.GetTermFreqVector(0, docNumAwareMapper, null);
 			Assert.AreEqual(0, docNumAwareMapper.GetDocumentNumber());
             docNumAwareMapper.SetDocumentNumber(-1);
 			
-			ir.GetTermFreqVector(1, docNumAwareMapper);
+			ir.GetTermFreqVector(1, docNumAwareMapper, null);
 			Assert.AreEqual(1, docNumAwareMapper.GetDocumentNumber());
             docNumAwareMapper.SetDocumentNumber(-1);
 			
-			ir.GetTermFreqVector(0, "f1", docNumAwareMapper);
+			ir.GetTermFreqVector(0, "f1", docNumAwareMapper, null);
 			Assert.AreEqual(0, docNumAwareMapper.GetDocumentNumber());
 		    docNumAwareMapper.SetDocumentNumber(-1);
 			
-			ir.GetTermFreqVector(1, "f2", docNumAwareMapper);
+			ir.GetTermFreqVector(1, "f2", docNumAwareMapper, null);
 			Assert.AreEqual(1, docNumAwareMapper.GetDocumentNumber());
 		    docNumAwareMapper.SetDocumentNumber(-1);
 			
-			ir.GetTermFreqVector(0, "f1", docNumAwareMapper);
+			ir.GetTermFreqVector(0, "f1", docNumAwareMapper, null);
 			Assert.AreEqual(0, docNumAwareMapper.GetDocumentNumber());
 			
 			ir.Close();
@@ -479,22 +480,22 @@ namespace Lucene.Net.Index
 		[Test]
 		public virtual void  TestBadParams()
 		{
-			var reader = new TermVectorsReader(dir, seg, fieldInfos);
+			var reader = new TermVectorsReader(dir, seg, fieldInfos, null);
 			Assert.IsTrue(reader != null);
 			//Bad document number, good field number
-            Assert.Throws<System.IO.IOException>(() => reader.Get(50, testFields[0]));
+            Assert.Throws<System.IO.IOException>(() => reader.Get(50, testFields[0], null));
 
-			reader = new TermVectorsReader(dir, seg, fieldInfos);
+			reader = new TermVectorsReader(dir, seg, fieldInfos, null);
 			Assert.IsTrue(reader != null);
 			//Bad document number, no field
-			Assert.Throws<System.IO.IOException>(() => reader.Get(50));
+			Assert.Throws<System.IO.IOException>(() => reader.Get(50, null));
 
-			reader = new TermVectorsReader(dir, seg, fieldInfos);
+			reader = new TermVectorsReader(dir, seg, fieldInfos, null);
 			Assert.IsTrue(reader != null);
 		    Assert.DoesNotThrow(() =>
 		                            {
 		                                //good document number, bad field number
-		                                ITermFreqVector vector = reader.Get(0, "f50");
+		                                ITermFreqVector vector = reader.Get(0, "f50", null);
 		                                Assert.IsTrue(vector == null);
 		                            });
 		}

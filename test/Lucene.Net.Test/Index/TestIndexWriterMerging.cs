@@ -54,11 +54,11 @@ namespace Lucene.Net.Index
 			
 			Directory merged = new MockRAMDirectory();
 			
-			IndexWriter writer = new IndexWriter(merged, new StandardAnalyzer(Util.Version.LUCENE_CURRENT), true, IndexWriter.MaxFieldLength.LIMITED);
+			IndexWriter writer = new IndexWriter(merged, new StandardAnalyzer(Util.Version.LUCENE_CURRENT), true, IndexWriter.MaxFieldLength.LIMITED, null);
 			writer.MergeFactor = 2;
 			
-			writer.AddIndexesNoOptimize(new []{indexA, indexB});
-            writer.Optimize();
+			writer.AddIndexesNoOptimize(null, new []{indexA, indexB});
+            writer.Optimize(null);
 			writer.Close();
 			
 			var fail = VerifyIndex(merged, 0);
@@ -70,18 +70,18 @@ namespace Lucene.Net.Index
 		private bool VerifyIndex(Directory directory, int startAt)
 		{
 			bool fail = false;
-			IndexReader reader = IndexReader.Open(directory, true);
+			IndexReader reader = IndexReader.Open(directory, true, null);
 			
 			int max = reader.MaxDoc;
 			for (int i = 0; i < max; i++)
 			{
-				Document temp = reader.Document(i);
-				//System.out.println("doc "+i+"="+temp.getField("count").stringValue());
+				Document temp = reader.Document(i, null);
+				//System.out.println("doc "+i+"="+temp.getField("count").StringValue(null)());
 				//compare the index doc number to the value that it should be
-				if (!temp.GetField("count").StringValue.Equals((i + startAt) + ""))
+				if (!temp.GetField("count").StringValue(null).Equals((i + startAt) + ""))
 				{
 					fail = true;
-					System.Console.Out.WriteLine("Document " + (i + startAt) + " is returning document " + temp.GetField("count").StringValue);
+					System.Console.Out.WriteLine("Document " + (i + startAt) + " is returning document " + temp.GetField("count").StringValue(null));
 				}
 			}
 			reader.Close();
@@ -91,7 +91,7 @@ namespace Lucene.Net.Index
 		private void  FillIndex(Directory dir, int start, int numDocs)
 		{
 			
-			IndexWriter writer = new IndexWriter(dir, new StandardAnalyzer(Util.Version.LUCENE_CURRENT), true, IndexWriter.MaxFieldLength.LIMITED);
+			IndexWriter writer = new IndexWriter(dir, new StandardAnalyzer(Util.Version.LUCENE_CURRENT), true, IndexWriter.MaxFieldLength.LIMITED, null);
 			writer.MergeFactor = 2;
 			writer.SetMaxBufferedDocs(2);
 			
@@ -100,7 +100,7 @@ namespace Lucene.Net.Index
 				Document temp = new Document();
 				temp.Add(new Field("count", ("" + i), Field.Store.YES, Field.Index.NOT_ANALYZED));
 				
-				writer.AddDocument(temp);
+				writer.AddDocument(temp, null);
 			}
 			writer.Close();
 		}

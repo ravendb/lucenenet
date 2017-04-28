@@ -47,14 +47,14 @@ namespace Lucene.Net.Support
                                                                   {
                                                                       analyzers[i] = new Lucene.Net.Analysis.Standard.StandardAnalyzer(Version.LUCENE_CURRENT);
                                                                       dirs[i] = new RAMDirectory();
-                                                                      indexWriters[i] = new IndexWriter(dirs[i], analyzers[i], true, IndexWriter.MaxFieldLength.UNLIMITED);
+                                                                      indexWriters[i] = new IndexWriter(dirs[i], analyzers[i], true, IndexWriter.MaxFieldLength.UNLIMITED, null);
                                                                   });
 
             System.Threading.Tasks.Parallel.For(0, LoopCount, (i) =>
                                                                   {
                                                                       Document document = new Document();
                                                                       document.Add(new Field("field", "some test", Field.Store.NO, Field.Index.ANALYZED));
-                                                                      indexWriters[i].AddDocument(document);
+                                                                      indexWriters[i].AddDocument(document, null);
                                                                   });
 
             System.Threading.Tasks.Parallel.For(0, LoopCount, (i) =>
@@ -65,8 +65,8 @@ namespace Lucene.Net.Support
 
             System.Threading.Tasks.Parallel.For(0, LoopCount, (i) =>
                                                                   {
-                                                                      IndexSearcher searcher = new IndexSearcher(dirs[i]);
-                                                                      TopDocs d = searcher.Search(new TermQuery(new Term("field", "test")), 10);
+                                                                      IndexSearcher searcher = new IndexSearcher(dirs[i], null);
+                                                                      TopDocs d = searcher.Search(new TermQuery(new Term("field", "test")), 10, null);
                                                                       searcher.Close();
                                                                   });
 

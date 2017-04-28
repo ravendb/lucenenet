@@ -143,7 +143,7 @@ namespace Lucene.Net.Search.Payloads
 		{
 			RAMDirectory directory = new RAMDirectory();
 			PayloadAnalyzer analyzer = new PayloadAnalyzer(this);
-			IndexWriter writer = new IndexWriter(directory, analyzer, true, IndexWriter.MaxFieldLength.UNLIMITED);
+			IndexWriter writer = new IndexWriter(directory, analyzer, true, IndexWriter.MaxFieldLength.UNLIMITED, null);
 			writer.SetSimilarity(similarity);
 			//writer.infoStream = System.out;
 			for (int i = 0; i < numDocs; i++)
@@ -152,12 +152,12 @@ namespace Lucene.Net.Search.Payloads
 				doc.Add(new Field(FIELD, English.IntToEnglish(i), Field.Store.YES, Field.Index.ANALYZED));
 				doc.Add(new Field(MULTI_FIELD, English.IntToEnglish(i) + "  " + English.IntToEnglish(i), Field.Store.YES, Field.Index.ANALYZED));
 				doc.Add(new Field(NO_PAYLOAD_FIELD, English.IntToEnglish(i), Field.Store.YES, Field.Index.ANALYZED));
-				writer.AddDocument(doc);
+				writer.AddDocument(doc, null);
 			}
 			//writer.optimize();
 			writer.Close();
 			
-			IndexSearcher searcher = new IndexSearcher(directory, true);
+			IndexSearcher searcher = new IndexSearcher(directory, true, null);
 			searcher.Similarity = similarity;
 			return searcher;
 		}

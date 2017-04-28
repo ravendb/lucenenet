@@ -16,6 +16,7 @@
  */
 
 using System;
+using Lucene.Net.Store;
 using Lucene.Net.Support;
 using NUnit.Framework;
 
@@ -63,7 +64,7 @@ namespace Lucene.Net.Search
 				}
 				
 			}
-			public override DocIdSet GetDocIdSet(IndexReader reader)
+			public override DocIdSet GetDocIdSet(IndexReader reader, IState state)
 			{
 				return new DocIdBitSet(rnd);
 			}
@@ -81,10 +82,10 @@ namespace Lucene.Net.Search
 			// Create a dummy index with nothing in it.
 			// This could possibly fail if Lucene starts checking for docid ranges...
 			RAMDirectory rd = new RAMDirectory();
-			IndexWriter iw = new IndexWriter(rd, new WhitespaceAnalyzer(), true, IndexWriter.MaxFieldLength.LIMITED);
-			iw.AddDocument(new Document());
+			IndexWriter iw = new IndexWriter(rd, new WhitespaceAnalyzer(), true, IndexWriter.MaxFieldLength.LIMITED, null);
+			iw.AddDocument(new Document(), null);
 			iw.Close();
-			s = new IndexSearcher(rd);
+			s = new IndexSearcher(rd, null);
 		}
 		
 		public virtual void  CreateRandomTerms(int nDocs, int nTerms, double power, Directory dir)
@@ -98,7 +99,7 @@ namespace Lucene.Net.Search
 				terms[i] = new Term("f", System.Convert.ToString((char) ('A' + i)));
 			}
 			
-			IndexWriter iw = new IndexWriter(dir, new WhitespaceAnalyzer(), true, IndexWriter.MaxFieldLength.LIMITED);
+			IndexWriter iw = new IndexWriter(dir, new WhitespaceAnalyzer(), true, IndexWriter.MaxFieldLength.LIMITED, null);
 			for (int i = 0; i < nDocs; i++)
 			{
 				Document d = new Document();
@@ -110,9 +111,9 @@ namespace Lucene.Net.Search
 						//System.out.println(d);
 					}
 				}
-				iw.AddDocument(d);
+				iw.AddDocument(d, null);
 			}
-			iw.Optimize();
+			iw.Optimize(null);
 			iw.Close();
 		}
 		
@@ -147,7 +148,7 @@ namespace Lucene.Net.Search
 			{
 			}
 			
-			public override void  Collect(int doc)
+			public override void  Collect(int doc, IState state)
 			{
 				count++;
 				sum += docBase + doc; // use it to avoid any possibility of being optimized away
@@ -162,7 +163,7 @@ namespace Lucene.Net.Search
 				return sum;
 			}
 			
-			public override void  SetNextReader(IndexReader reader, int base_Renamed)
+			public override void  SetNextReader(IndexReader reader, int base_Renamed, IState state)
 			{
 				docBase = base_Renamed;
 			}
@@ -191,7 +192,7 @@ namespace Lucene.Net.Search
 				{
 					throw new System.SystemException("Expected doc " + pos + " but got " + doc + docBase);
 				}
-				base.Collect(doc);
+				base.Collect(doc, null);
 			}
 		}
 		
@@ -229,7 +230,7 @@ namespace Lucene.Net.Search
 				}
 				
 				CountingHitCollector hc = validate?new MatchingHitCollector(result):new CountingHitCollector();
-				s.Search(bq, hc);
+				s.Search(bq, hc, null);
 				ret += hc.GetSum();
 				
 				if (validate)
@@ -265,7 +266,7 @@ namespace Lucene.Net.Search
 				} // outer
 				
 				CountingHitCollector hc = validate?new MatchingHitCollector(result):new CountingHitCollector();
-				s.Search(oq, hc);
+				s.Search(oq, hc, null);
 				nMatches += hc.GetCount();
 				ret += hc.GetSum();
 				if (validate)
@@ -302,7 +303,7 @@ namespace Lucene.Net.Search
 				}
 				
 				CountingHitCollector hc = new CountingHitCollector();
-				s.Search(bq, hc);
+				s.Search(bq, hc, null);
 				nMatches += hc.GetCount();
 				ret += hc.GetSum();
 			}
@@ -345,7 +346,7 @@ namespace Lucene.Net.Search
 				
 				
 				CountingHitCollector hc = new CountingHitCollector();
-				s.Search(oq, hc);
+				s.Search(oq, hc, null);
 				nMatches += hc.GetCount();
 				ret += hc.GetSum();
 			}
@@ -370,7 +371,7 @@ namespace Lucene.Net.Search
 				q.Slop = termsInIndex; // this could be random too
 				
 				CountingHitCollector hc = new CountingHitCollector();
-				s.Search(q, hc);
+				s.Search(q, hc, null);
 				ret += hc.GetSum();
 			}
 			

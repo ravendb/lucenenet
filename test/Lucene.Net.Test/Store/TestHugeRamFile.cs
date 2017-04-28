@@ -102,16 +102,16 @@ namespace Lucene.Net.Store
 			out_Renamed.Close();
 			// input part
 			RAMInputStream in_Renamed = new RAMInputStream(f);
-			Assert.AreEqual(n, in_Renamed.Length(), "input length must match");
+			Assert.AreEqual(n, in_Renamed.Length(null), "input length must match");
 			//System.out.println("input length = "+in.length()+" % 1024 = "+in.length()%1024);
 			for (int j = 0; j < L; j++)
 			{
 				long loc = n - (L - j) * m;
-				in_Renamed.Seek(loc / 3);
-				in_Renamed.Seek(loc);
+				in_Renamed.Seek(loc / 3, null);
+				in_Renamed.Seek(loc, null);
 				for (int i = 0; i < m; i++)
 				{
-					byte bt = in_Renamed.ReadByte();
+					byte bt = in_Renamed.ReadByte(null);
 					byte expected = (byte) (1 + j + (i & 0x0003F));
 					Assert.AreEqual(expected, bt, "must read same value that was written! j=" + j + " i=" + i);
 				}

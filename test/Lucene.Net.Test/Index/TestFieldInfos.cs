@@ -61,7 +61,7 @@ namespace Lucene.Net.Index
 			Assert.IsTrue(fieldInfos.Size() == DocHelper.all.Count); //this is all b/c we are using the no-arg constructor
 			RAMDirectory dir = new RAMDirectory();
 			System.String name = "testFile";
-			IndexOutput output = dir.CreateOutput(name);
+			IndexOutput output = dir.CreateOutput(name, null);
 			Assert.IsTrue(output != null);
 			//Use a RAMOutputStream
 			
@@ -70,7 +70,7 @@ namespace Lucene.Net.Index
 				fieldInfos.Write(output);
 				output.Close();
 				Assert.IsTrue(output.Length > 0);
-				FieldInfos readIn = new FieldInfos(dir, name);
+				FieldInfos readIn = new FieldInfos(dir, name, null);
 				Assert.IsTrue(fieldInfos.Size() == readIn.Size());
 				FieldInfo info = readIn.FieldInfo("textField1");
 				Assert.IsTrue(info != null);

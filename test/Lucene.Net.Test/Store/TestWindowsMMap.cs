@@ -82,15 +82,15 @@ namespace Lucene.Net.Store
 			// interior filters.
 			StandardAnalyzer analyzer = new StandardAnalyzer(Util.Version.LUCENE_CURRENT, Support.Compatibility.SetFactory.CreateHashSet<string>());
 			// TODO: something about lock timeouts and leftover locks.
-			IndexWriter writer = new IndexWriter(storeDirectory, analyzer, true, IndexWriter.MaxFieldLength.LIMITED);
-            IndexSearcher searcher = new IndexSearcher(storeDirectory, true);
+			IndexWriter writer = new IndexWriter(storeDirectory, analyzer, true, IndexWriter.MaxFieldLength.LIMITED, null);
+            IndexSearcher searcher = new IndexSearcher(storeDirectory, true, null);
 			
 			for (int dx = 0; dx < 1000; dx++)
 			{
 				System.String f = RandomField();
 				Document doc = new Document();
 				doc.Add(new Field("data", f, Field.Store.YES, Field.Index.ANALYZED));
-				writer.AddDocument(doc);
+				writer.AddDocument(doc, null);
 			}
 			
 			searcher.Close();

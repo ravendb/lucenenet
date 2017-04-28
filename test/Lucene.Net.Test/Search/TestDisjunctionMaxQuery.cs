@@ -16,7 +16,7 @@
  */
 
 using System;
-
+using Lucene.Net.Index;
 using NUnit.Framework;
 
 using WhitespaceAnalyzer = Lucene.Net.Analysis.WhitespaceAnalyzer;
@@ -92,7 +92,7 @@ namespace Lucene.Net.Search
 			base.SetUp();
 			
 			index = new RAMDirectory();
-			IndexWriter writer = new IndexWriter(index, new WhitespaceAnalyzer(), true, IndexWriter.MaxFieldLength.LIMITED);
+			IndexWriter writer = new IndexWriter(index, new WhitespaceAnalyzer(), true, IndexWriter.MaxFieldLength.LIMITED, null);
 			writer.SetSimilarity(sim);
 			
 			// hed is the most important field, dek is secondary
@@ -103,7 +103,7 @@ namespace Lucene.Net.Search
 				d1.Add(new Field("id", "d1", Field.Store.YES, Field.Index.NOT_ANALYZED)); //Field.Keyword("id", "d1"));
 				d1.Add(new Field("hed", "elephant", Field.Store.YES, Field.Index.ANALYZED)); //Field.Text("hed", "elephant"));
 				d1.Add(new Field("dek", "elephant", Field.Store.YES, Field.Index.ANALYZED)); //Field.Text("dek", "elephant"));
-				writer.AddDocument(d1);
+				writer.AddDocument(d1, null);
 			}
 			
 			// d2 is a "good" match for:  albino elephant
@@ -113,7 +113,7 @@ namespace Lucene.Net.Search
 				d2.Add(new Field("hed", "elephant", Field.Store.YES, Field.Index.ANALYZED)); //Field.Text("hed", "elephant"));
 				d2.Add(new Field("dek", "albino", Field.Store.YES, Field.Index.ANALYZED)); //Field.Text("dek", "albino"));
 				d2.Add(new Field("dek", "elephant", Field.Store.YES, Field.Index.ANALYZED)); //Field.Text("dek", "elephant"));
-				writer.AddDocument(d2);
+				writer.AddDocument(d2, null);
 			}
 			
 			// d3 is a "better" match for:  albino elephant
@@ -122,7 +122,7 @@ namespace Lucene.Net.Search
 				d3.Add(new Field("id", "d3", Field.Store.YES, Field.Index.NOT_ANALYZED)); //Field.Keyword("id", "d3"));
 				d3.Add(new Field("hed", "albino", Field.Store.YES, Field.Index.ANALYZED)); //Field.Text("hed", "albino"));
 				d3.Add(new Field("hed", "elephant", Field.Store.YES, Field.Index.ANALYZED)); //Field.Text("hed", "elephant"));
-				writer.AddDocument(d3);
+				writer.AddDocument(d3, null);
 			}
 			
 			// d4 is the "best" match for:  albino elephant
@@ -132,12 +132,12 @@ namespace Lucene.Net.Search
 				d4.Add(new Field("hed", "albino", Field.Store.YES, Field.Index.ANALYZED)); //Field.Text("hed", "albino"));
 				d4.Add(new Field("hed", "elephant", Field.Store.YES, Field.Index.ANALYZED)); //Field.Text("hed", "elephant"));
 				d4.Add(new Field("dek", "albino", Field.Store.YES, Field.Index.ANALYZED)); //Field.Text("dek", "albino"));
-				writer.AddDocument(d4);
+				writer.AddDocument(d4, null);
 			}
 			
 			writer.Close();
 
-		    r = IndexReader.Open(index, true);
+		    r = IndexReader.Open(index, true, null);
 			s = new IndexSearcher(r);
 			s.Similarity = sim;
 		}
@@ -151,12 +151,12 @@ namespace Lucene.Net.Search
 			
 			QueryUtils.Check(dq, s);
 			
-			Weight dw = dq.Weight(s);
-			Scorer ds = dw.Scorer(r, true, false);
-			bool skipOk = ds.Advance(3) != DocIdSetIterator.NO_MORE_DOCS;
+			Weight dw = dq.Weight(s, null);
+			Scorer ds = dw.Scorer(r, true, false, null);
+			bool skipOk = ds.Advance(3, null) != DocIdSetIterator.NO_MORE_DOCS;
 			if (skipOk)
 			{
-				Assert.Fail("firsttime skipTo found a match? ... " + r.Document(ds.DocID()).Get("id"));
+				Assert.Fail("firsttime skipTo found a match? ... " + r.Document(ds.DocID(), null).Get("id", null));
 			}
 		}
 		
@@ -169,10 +169,10 @@ namespace Lucene.Net.Search
 			
 			QueryUtils.Check(dq, s);
 			
-			Weight dw = dq.Weight(s);
-			Scorer ds = dw.Scorer(r, true, false);
-			Assert.IsTrue(ds.Advance(3) != DocIdSetIterator.NO_MORE_DOCS, "firsttime skipTo found no match");
-			Assert.AreEqual("d4", r.Document(ds.DocID()).Get("id"), "found wrong docid");
+			Weight dw = dq.Weight(s, null);
+			Scorer ds = dw.Scorer(r, true, false, null);
+			Assert.IsTrue(ds.Advance(3, null) != DocIdSetIterator.NO_MORE_DOCS, "firsttime skipTo found no match");
+			Assert.AreEqual("d4", r.Document(ds.DocID(), null).Get("id", null), "found wrong docid");
 		}
 		
 		[Test]
@@ -184,7 +184,7 @@ namespace Lucene.Net.Search
 			q.Add(Tq("hed", "elephant"));
 			QueryUtils.Check(q, s);
 			
-			ScoreDoc[] h = s.Search(q, null, 1000).ScoreDocs;
+			ScoreDoc[] h = s.Search(q, null, 1000, null).ScoreDocs;
 			
 			try
 			{
@@ -213,7 +213,7 @@ namespace Lucene.Net.Search
 			QueryUtils.Check(q, s);
 			
 			
-			ScoreDoc[] h = s.Search(q, null, 1000).ScoreDocs;
+			ScoreDoc[] h = s.Search(q, null, 1000, null).ScoreDocs;
 			
 			try
 			{
@@ -243,7 +243,7 @@ namespace Lucene.Net.Search
 			QueryUtils.Check(q, s);
 			
 			
-			ScoreDoc[] h = s.Search(q, null, 1000).ScoreDocs;
+			ScoreDoc[] h = s.Search(q, null, 1000, null).ScoreDocs;
 			
 			try
 			{
@@ -271,12 +271,12 @@ namespace Lucene.Net.Search
 			QueryUtils.Check(q, s);
 			
 			
-			ScoreDoc[] h = s.Search(q, null, 1000).ScoreDocs;
+			ScoreDoc[] h = s.Search(q, null, 1000, null).ScoreDocs;
 			
 			try
 			{
 				Assert.AreEqual(3, h.Length, "3 docs should match " + q.ToString());
-				Assert.AreEqual(s.Doc(h[0].Doc).Get("id"), "d2", "wrong first");
+				Assert.AreEqual(s.Doc(h[0].Doc, null).Get("id", null), "d2", "wrong first");
 				float score0 = h[0].Score;
 				float score1 = h[1].Score;
 				float score2 = h[2].Score;
@@ -312,7 +312,7 @@ namespace Lucene.Net.Search
 			
 			QueryUtils.Check(q, s);
 			
-			ScoreDoc[] h = s.Search(q, null, 1000).ScoreDocs;
+			ScoreDoc[] h = s.Search(q, null, 1000, null).ScoreDocs;
 			
 			try
 			{
@@ -351,7 +351,7 @@ namespace Lucene.Net.Search
 			QueryUtils.Check(q, s);
 			
 			
-			ScoreDoc[] h = s.Search(q, null, 1000).ScoreDocs;
+			ScoreDoc[] h = s.Search(q, null, 1000, null).ScoreDocs;
 			
 			try
 			{
@@ -362,7 +362,7 @@ namespace Lucene.Net.Search
 					/* note: -1 */
 					Assert.AreEqual(score, h[i].Score, SCORE_COMP_THRESH, "score #" + i + " is not the same");
 				}
-				Assert.AreEqual("d1", s.Doc(h[h.Length - 1].Doc).Get("id"), "wrong last");
+				Assert.AreEqual("d1", s.Doc(h[h.Length - 1].Doc, null).Get("id", null), "wrong last");
 				float score1 = h[h.Length - 1].Score;
 				Assert.IsTrue(score > score1, "d1 does not have worse score then others: " + score + " >? " + score1);
 			}
@@ -394,7 +394,7 @@ namespace Lucene.Net.Search
 			QueryUtils.Check(q, s);
 			
 			
-			ScoreDoc[] h = s.Search(q, null, 1000).ScoreDocs;
+			ScoreDoc[] h = s.Search(q, null, 1000, null).ScoreDocs;
 			
 			try
 			{
@@ -406,10 +406,10 @@ namespace Lucene.Net.Search
 				float score2 = h[2].Score;
 				float score3 = h[3].Score;
 				
-				System.String doc0 = s.Doc(h[0].Doc).Get("id");
-				System.String doc1 = s.Doc(h[1].Doc).Get("id");
-				System.String doc2 = s.Doc(h[2].Doc).Get("id");
-				System.String doc3 = s.Doc(h[3].Doc).Get("id");
+				System.String doc0 = s.Doc(h[0].Doc, null).Get("id", null);
+				System.String doc1 = s.Doc(h[1].Doc, null).Get("id", null);
+				System.String doc2 = s.Doc(h[2].Doc, null).Get("id", null);
+				System.String doc3 = s.Doc(h[3].Doc, null).Get("id", null);
 				
 				Assert.IsTrue(doc0.Equals("d2") || doc0.Equals("d4"), "doc0 should be d2 or d4: " + doc0);
 				Assert.IsTrue(doc1.Equals("d2") || doc1.Equals("d4"), "doc1 should be d2 or d4: " + doc0);
@@ -448,7 +448,7 @@ namespace Lucene.Net.Search
 			QueryUtils.Check(q, s);
 			
 			
-			ScoreDoc[] h = s.Search(q, null, 1000).ScoreDocs;
+			ScoreDoc[] h = s.Search(q, null, 1000, null).ScoreDocs;
 			
 			try
 			{
@@ -460,10 +460,10 @@ namespace Lucene.Net.Search
 				float score2 = h[2].Score;
 				float score3 = h[3].Score;
 				
-				System.String doc0 = s.Doc(h[0].Doc).Get("id");
-				System.String doc1 = s.Doc(h[1].Doc).Get("id");
-				System.String doc2 = s.Doc(h[2].Doc).Get("id");
-				System.String doc3 = s.Doc(h[3].Doc).Get("id");
+				System.String doc0 = s.Doc(h[0].Doc, null).Get("id", null);
+				System.String doc1 = s.Doc(h[1].Doc, null).Get("id", null);
+				System.String doc2 = s.Doc(h[2].Doc, null).Get("id", null);
+				System.String doc3 = s.Doc(h[3].Doc, null).Get("id", null);
 				
 				Assert.AreEqual("d4", doc0, "doc0 should be d4: ");
 				Assert.AreEqual("d3", doc1, "doc1 should be d3: ");
@@ -508,9 +508,9 @@ namespace Lucene.Net.Search
 			
 			for (int i = 0; i < h.Length; i++)
 			{
-				Document d = searcher.Doc(h[i].Doc);
+				Document d = searcher.Doc(h[i].Doc, null);
 				float score = h[i].Score;
-				System.Console.Error.WriteLine("#" + i + ": {0.000000000}" + score + " - " + d.Get("id"));
+				System.Console.Error.WriteLine("#" + i + ": {0.000000000}" + score + " - " + d.Get("id", null));
 			}
 		}
 	}

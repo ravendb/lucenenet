@@ -32,6 +32,7 @@ using MockRAMDirectory = Lucene.Net.Store.MockRAMDirectory;
 using Constants = Lucene.Net.Util.Constants;
 using LuceneTestCase = Lucene.Net.Util.LuceneTestCase;
 using Lucene.Net.Util;
+using Directory = Lucene.Net.Store.Directory;
 
 namespace Lucene.Net.Index
 {
@@ -43,24 +44,24 @@ namespace Lucene.Net.Index
 		public virtual void  TestDeletedDocs()
 		{
 			MockRAMDirectory dir = new MockRAMDirectory();
-			IndexWriter writer = new IndexWriter(dir, new WhitespaceAnalyzer(), true, IndexWriter.MaxFieldLength.LIMITED);
+			IndexWriter writer = new IndexWriter(dir, new WhitespaceAnalyzer(), true, IndexWriter.MaxFieldLength.LIMITED, null);
 			writer.SetMaxBufferedDocs(2);
 			Document doc = new Document();
 			doc.Add(new Field("field", "aaa", Field.Store.YES, Field.Index.ANALYZED, Field.TermVector.WITH_POSITIONS_OFFSETS));
 			for (int i = 0; i < 19; i++)
 			{
-				writer.AddDocument(doc);
+				writer.AddDocument(doc, null);
 			}
 			writer.Close();
-			IndexReader reader = IndexReader.Open(dir, false);
-			reader.DeleteDocument(5);
+			IndexReader reader = IndexReader.Open((Directory) dir, false, null);
+			reader.DeleteDocument(5, null);
 			reader.Close();
 			
 			System.IO.MemoryStream bos = new System.IO.MemoryStream(1024);
 			CheckIndex checker = new CheckIndex(dir);
 			checker.SetInfoStream(new System.IO.StreamWriter(bos));
 			//checker.setInfoStream(System.out);
-			CheckIndex.Status indexStatus = checker.CheckIndex_Renamed_Method();
+			CheckIndex.Status indexStatus = checker.CheckIndex_Renamed_Method(null);
 			if (indexStatus.clean == false)
 			{
 				System.Console.Out.WriteLine("CheckIndex failed");
@@ -101,7 +102,7 @@ namespace Lucene.Net.Index
 			List<string> onlySegments = new List<string>();
 			onlySegments.Add("_0");
 			
-			Assert.IsTrue(checker.CheckIndex_Renamed_Method(onlySegments).clean == true);
+			Assert.IsTrue(checker.CheckIndex_Renamed_Method(onlySegments, null).clean == true);
 		}
 		
 		[Test]

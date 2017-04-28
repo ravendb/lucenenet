@@ -154,7 +154,7 @@ namespace Lucene.Net.Index
             // FieldSelectorResult.SIZE returns 2*number_of_chars for String fields:
             int BINARY_PLAIN_LENGTH = BINARY_TO_COMPRESS.Length;
 
-            IndexReader reader = IndexReader.Open(dir, true);
+            IndexReader reader = IndexReader.Open(dir, true, null);
             try
             {
                 // look into sub readers and check if raw merge is on/off
@@ -162,7 +162,7 @@ namespace Lucene.Net.Index
                 ReaderUtil.GatherSubReaders(readers, reader);
                 foreach (IndexReader ir in readers)
                 {
-                    FieldsReader fr = ((SegmentReader) ir).GetFieldsReader();
+                    FieldsReader fr = ((SegmentReader) ir).GetFieldsReader(null);
                     Assert.IsTrue(shouldStillBeCompressed != fr.CanReadRawDocs(),
                                   "for a 2.9 index, FieldsReader.canReadRawDocs() must be false and other way round for a trunk index");
                 }
@@ -172,20 +172,20 @@ namespace Lucene.Net.Index
                 {
                     if (!reader.IsDeleted(i))
                     {
-                        Document d = reader.Document(i);
-                        if (d.Get("content3") != null) continue;
+                        Document d = reader.Document(i, null);
+                        if (d.Get("content3", null) != null) continue;
                         count++;
                         IFieldable compressed = d.GetFieldable("compressed");
-                        if (int.Parse(d.Get("id"))%2 == 0)
+                        if (int.Parse(d.Get("id", null))%2 == 0)
                         {
                             Assert.IsFalse(compressed.IsBinary);
-                            Assert.AreEqual(TEXT_TO_COMPRESS, compressed.StringValue,
+                            Assert.AreEqual(TEXT_TO_COMPRESS, compressed.StringValue(null),
                                             "incorrectly decompressed string");
                         }
                         else
                         {
                             Assert.IsTrue(compressed.IsBinary);
-                            Assert.IsTrue(BINARY_TO_COMPRESS.SequenceEqual(compressed.GetBinaryValue()),
+                            Assert.IsTrue(BINARY_TO_COMPRESS.SequenceEqual(compressed.GetBinaryValue(null)),
                                           "incorrectly decompressed binary");
                         }
                     }
@@ -196,15 +196,15 @@ namespace Lucene.Net.Index
                 {
                     if (!reader.IsDeleted(i))
                     {
-                        Document d = reader.Document(i, new AnonymousFieldSelector());
-                        if (d.Get("content3") != null) continue;
+                        Document d = reader.Document(i, new AnonymousFieldSelector(), null);
+                        if (d.Get("content3", null) != null) continue;
                         count++;
                         // read the size from the binary value using BinaryReader (this prevents us from doing the shift ops ourselves):
                         // ugh, Java uses Big-Endian streams, so we need to do it manually.
-                        byte[] encodedSize = d.GetFieldable("compressed").GetBinaryValue().Take(4).Reverse().ToArray();
+                        byte[] encodedSize = d.GetFieldable("compressed").GetBinaryValue(null).Take(4).Reverse().ToArray();
                         int actualSize = BitConverter.ToInt32(encodedSize, 0);
-                        int compressedSize = int.Parse(d.Get("compressedSize"));
-                        bool binary = int.Parse(d.Get("id"))%2 > 0;
+                        int compressedSize = int.Parse(d.Get("compressedSize", null));
+                        bool binary = int.Parse(d.Get("id", null))%2 > 0;
                         int shouldSize = shouldStillBeCompressed
                                              ? compressedSize
                                              : (binary ? BINARY_PLAIN_LENGTH : TEXT_PLAIN_LENGTH);
@@ -241,8 +241,8 @@ namespace Lucene.Net.Index
                     hasTested29++;
                 }
 
-				IndexWriter w = new IndexWriter(dir, new WhitespaceAnalyzer(), IndexWriter.MaxFieldLength.LIMITED);
-				w.Optimize();
+				IndexWriter w = new IndexWriter(dir, new WhitespaceAnalyzer(), IndexWriter.MaxFieldLength.LIMITED, null);
+				w.Optimize(null);
 				w.Close();
 				
 				_TestUtil.CheckIndex(dir);
@@ -301,8 +301,8 @@ namespace Lucene.Net.Index
 			Assert.AreEqual(expectedCount, hitCount, "wrong number of hits");
 			for (int i = 0; i < hitCount; i++)
 			{
-				reader.Document(hits[i].Doc);
-				reader.GetTermFreqVectors(hits[i].Doc);
+				reader.Document(hits[i].Doc, null);
+				reader.GetTermFreqVectors(hits[i].Doc, null);
 			}
 		}
 		
@@ -314,7 +314,7 @@ namespace Lucene.Net.Index
 			dirName = FullDir(dirName);
 			
 			Directory dir = FSDirectory.Open(new System.IO.DirectoryInfo(dirName));
-			IndexSearcher searcher = new IndexSearcher(dir, true);
+			IndexSearcher searcher = new IndexSearcher(dir, true, null);
 			IndexReader reader = searcher.IndexReader;
 			
 			_TestUtil.CheckIndex(dir);
@@ -323,7 +323,7 @@ namespace Lucene.Net.Index
 			{
 				if (!reader.IsDeleted(i))
 				{
-					Document d = reader.Document(i);
+					Document d = reader.Document(i, null);
 					var fields = d.GetFields();
 					if (!oldName.StartsWith("19.") && !oldName.StartsWith("20.") && !oldName.StartsWith("21.") && !oldName.StartsWith("22."))
 					{
@@ -332,19 +332,19 @@ namespace Lucene.Net.Index
 						    int numFields = oldName.StartsWith("29.") ? 7 : 5;
 							Assert.AreEqual(numFields, fields.Count);
 							Field f = d.GetField("id");
-							Assert.AreEqual("" + i, f.StringValue);
+							Assert.AreEqual("" + i, f.StringValue(null));
 							
 							f = (Field) d.GetField("utf8");
-							Assert.AreEqual("Lu\uD834\uDD1Ece\uD834\uDD60ne \u0000 \u2620 ab\ud917\udc17cd", f.StringValue);
+							Assert.AreEqual("Lu\uD834\uDD1Ece\uD834\uDD60ne \u0000 \u2620 ab\ud917\udc17cd", f.StringValue(null));
 							
 							f = (Field) d.GetField("autf8");
-							Assert.AreEqual("Lu\uD834\uDD1Ece\uD834\uDD60ne \u0000 \u2620 ab\ud917\udc17cd", f.StringValue);
+							Assert.AreEqual("Lu\uD834\uDD1Ece\uD834\uDD60ne \u0000 \u2620 ab\ud917\udc17cd", f.StringValue(null));
 							
 							f = (Field) d.GetField("content2");
-							Assert.AreEqual("here is more content with aaa aaa aaa", f.StringValue);
+							Assert.AreEqual("here is more content with aaa aaa aaa", f.StringValue(null));
 							
 							f = (Field) d.GetField("fie\u2C77ld");
-							Assert.AreEqual("field with non-ascii name", f.StringValue);
+							Assert.AreEqual("field with non-ascii name", f.StringValue(null));
 						}
 					}
 				}
@@ -353,23 +353,23 @@ namespace Lucene.Net.Index
 					Assert.AreEqual(7, i);
 			}
 			
-			ScoreDoc[] hits = searcher.Search(new TermQuery(new Term("content", "aaa")), null, 1000).ScoreDocs;
+			ScoreDoc[] hits = searcher.Search(new TermQuery(new Term("content", "aaa")), null, 1000, null).ScoreDocs;
 			
 			// First document should be #21 since it's norm was
 			// increased:
-			Document d2 = searcher.Doc(hits[0].Doc);
-			Assert.AreEqual("21", d2.Get("id"), "didn't get the right document first");
+			Document d2 = searcher.Doc(hits[0].Doc, null);
+			Assert.AreEqual("21", d2.Get("id", null), "didn't get the right document first");
 			
 			TestHits(hits, 34, searcher.IndexReader);
 			
 			if (!oldName.StartsWith("19.") && !oldName.StartsWith("20.") && !oldName.StartsWith("21.") && !oldName.StartsWith("22."))
 			{
 				// Test on indices >= 2.3
-				hits = searcher.Search(new TermQuery(new Term("utf8", "\u0000")), null, 1000).ScoreDocs;
+				hits = searcher.Search(new TermQuery(new Term("utf8", "\u0000")), null, 1000, null).ScoreDocs;
 				Assert.AreEqual(34, hits.Length);
-				hits = searcher.Search(new TermQuery(new Term("utf8", "Lu\uD834\uDD1Ece\uD834\uDD60ne")), null, 1000).ScoreDocs;
+				hits = searcher.Search(new TermQuery(new Term("utf8", "Lu\uD834\uDD1Ece\uD834\uDD60ne")), null, 1000, null).ScoreDocs;
 				Assert.AreEqual(34, hits.Length);
-				hits = searcher.Search(new TermQuery(new Term("utf8", "ab\ud917\udc17cd")), null, 1000).ScoreDocs;
+				hits = searcher.Search(new TermQuery(new Term("utf8", "ab\ud917\udc17cd")), null, 1000, null).ScoreDocs;
 				Assert.AreEqual(34, hits.Length);
 			}
 			
@@ -394,7 +394,7 @@ namespace Lucene.Net.Index
 			Directory dir = FSDirectory.Open(new System.IO.DirectoryInfo(dirName));
 			
 			// open writer
-			IndexWriter writer = new IndexWriter(dir, new WhitespaceAnalyzer(), false, IndexWriter.MaxFieldLength.UNLIMITED);
+			IndexWriter writer = new IndexWriter(dir, new WhitespaceAnalyzer(), false, IndexWriter.MaxFieldLength.UNLIMITED, null);
 			
 			// add 10 docs
 			for (int i = 0; i < 10; i++)
@@ -416,42 +416,42 @@ namespace Lucene.Net.Index
 			writer.Close();
 			
 			// make sure searching sees right # hits
-			IndexSearcher searcher = new IndexSearcher(dir, true);
-			ScoreDoc[] hits = searcher.Search(new TermQuery(new Term("content", "aaa")), null, 1000).ScoreDocs;
-			Document d = searcher.Doc(hits[0].Doc);
-			Assert.AreEqual("21", d.Get("id"), "wrong first document");
+			IndexSearcher searcher = new IndexSearcher(dir, true, null);
+			ScoreDoc[] hits = searcher.Search(new TermQuery(new Term("content", "aaa")), null, 1000, null).ScoreDocs;
+			Document d = searcher.Doc(hits[0].Doc, null);
+			Assert.AreEqual("21", d.Get("id", null), "wrong first document");
 			TestHits(hits, 44, searcher.IndexReader);
 			searcher.Close();
 			
 			// make sure we can do delete & setNorm against this
 			// pre-lockless segment:
-			IndexReader reader = IndexReader.Open(dir, false);
+			IndexReader reader = IndexReader.Open(dir, false, null);
 			Term searchTerm = new Term("id", "6");
-			int delCount = reader.DeleteDocuments(searchTerm);
+			int delCount = reader.DeleteDocuments(searchTerm, null);
 			Assert.AreEqual(1, delCount, "wrong delete count");
-			reader.SetNorm(22, "content", (float) 2.0);
+			reader.SetNorm(22, "content", (float) 2.0, null);
 			reader.Close();
 			
 			// make sure they "took":
-			searcher = new IndexSearcher(dir, true);
-			hits = searcher.Search(new TermQuery(new Term("content", "aaa")), null, 1000).ScoreDocs;
+			searcher = new IndexSearcher(dir, true, null);
+			hits = searcher.Search(new TermQuery(new Term("content", "aaa")), null, 1000, null).ScoreDocs;
 			Assert.AreEqual(43, hits.Length, "wrong number of hits");
-			d = searcher.Doc(hits[0].Doc);
-			Assert.AreEqual("22", d.Get("id"), "wrong first document");
+			d = searcher.Doc(hits[0].Doc, null);
+			Assert.AreEqual("22", d.Get("id", null), "wrong first document");
 			TestHits(hits, 43, searcher.IndexReader);
 			searcher.Close();
 			
 			// optimize
-			writer = new IndexWriter(dir, new WhitespaceAnalyzer(), false, IndexWriter.MaxFieldLength.UNLIMITED);
-			writer.Optimize();
+			writer = new IndexWriter(dir, new WhitespaceAnalyzer(), false, IndexWriter.MaxFieldLength.UNLIMITED, null);
+			writer.Optimize(null);
 			writer.Close();
 			
-			searcher = new IndexSearcher(dir, true);
-			hits = searcher.Search(new TermQuery(new Term("content", "aaa")), null, 1000).ScoreDocs;
+			searcher = new IndexSearcher(dir, true, null);
+			hits = searcher.Search(new TermQuery(new Term("content", "aaa")), null, 1000, null).ScoreDocs;
 			Assert.AreEqual(43, hits.Length, "wrong number of hits");
-			d = searcher.Doc(hits[0].Doc);
+			d = searcher.Doc(hits[0].Doc, null);
 			TestHits(hits, 43, searcher.IndexReader);
-			Assert.AreEqual("22", d.Get("id"), "wrong first document");
+			Assert.AreEqual("22", d.Get("id", null), "wrong first document");
 			searcher.Close();
 			
 			dir.Close();
@@ -466,41 +466,41 @@ namespace Lucene.Net.Index
 			Directory dir = FSDirectory.Open(new System.IO.DirectoryInfo(dirName));
 			
 			// make sure searching sees right # hits
-			IndexSearcher searcher = new IndexSearcher(dir, true);
-			ScoreDoc[] hits = searcher.Search(new TermQuery(new Term("content", "aaa")), null, 1000).ScoreDocs;
+			IndexSearcher searcher = new IndexSearcher(dir, true, null);
+			ScoreDoc[] hits = searcher.Search(new TermQuery(new Term("content", "aaa")), null, 1000, null).ScoreDocs;
 			Assert.AreEqual(34, hits.Length, "wrong number of hits");
-			Document d = searcher.Doc(hits[0].Doc);
-			Assert.AreEqual("21", d.Get("id"), "wrong first document");
+			Document d = searcher.Doc(hits[0].Doc, null);
+			Assert.AreEqual("21", d.Get("id", null), "wrong first document");
 			searcher.Close();
 			
 			// make sure we can do a delete & setNorm against this
 			// pre-lockless segment:
-			IndexReader reader = IndexReader.Open(dir, false);
+			IndexReader reader = IndexReader.Open(dir, false, null);
 			Term searchTerm = new Term("id", "6");
-			int delCount = reader.DeleteDocuments(searchTerm);
+			int delCount = reader.DeleteDocuments(searchTerm, null);
 			Assert.AreEqual(1, delCount, "wrong delete count");
-			reader.SetNorm(22, "content", (float) 2.0);
+			reader.SetNorm(22, "content", (float) 2.0, null);
 			reader.Close();
 			
 			// make sure they "took":
-			searcher = new IndexSearcher(dir, true);
-			hits = searcher.Search(new TermQuery(new Term("content", "aaa")), null, 1000).ScoreDocs;
+			searcher = new IndexSearcher(dir, true, null);
+			hits = searcher.Search(new TermQuery(new Term("content", "aaa")), null, 1000, null).ScoreDocs;
 			Assert.AreEqual(33, hits.Length, "wrong number of hits");
-			d = searcher.Doc(hits[0].Doc);
-			Assert.AreEqual("22", d.Get("id"), "wrong first document");
+			d = searcher.Doc(hits[0].Doc, null);
+			Assert.AreEqual("22", d.Get("id", null), "wrong first document");
 			TestHits(hits, 33, searcher.IndexReader);
 			searcher.Close();
 			
 			// optimize
-			IndexWriter writer = new IndexWriter(dir, new WhitespaceAnalyzer(), false, IndexWriter.MaxFieldLength.UNLIMITED);
-			writer.Optimize();
+			IndexWriter writer = new IndexWriter(dir, new WhitespaceAnalyzer(), false, IndexWriter.MaxFieldLength.UNLIMITED, null);
+			writer.Optimize(null);
 			writer.Close();
 			
-			searcher = new IndexSearcher(dir, true);
-			hits = searcher.Search(new TermQuery(new Term("content", "aaa")), null, 1000).ScoreDocs;
+			searcher = new IndexSearcher(dir, true, null);
+			hits = searcher.Search(new TermQuery(new Term("content", "aaa")), null, 1000, null).ScoreDocs;
 			Assert.AreEqual(33, hits.Length, "wrong number of hits");
-			d = searcher.Doc(hits[0].Doc);
-			Assert.AreEqual("22", d.Get("id"), "wrong first document");
+			d = searcher.Doc(hits[0].Doc, null);
+			Assert.AreEqual("22", d.Get("id", null), "wrong first document");
 			TestHits(hits, 33, searcher.IndexReader);
 			searcher.Close();
 			
@@ -515,7 +515,7 @@ namespace Lucene.Net.Index
 			dirName = FullDir(dirName);
 			
 			Directory dir = FSDirectory.Open(new System.IO.DirectoryInfo(dirName));
-			IndexWriter writer = new IndexWriter(dir, new WhitespaceAnalyzer(), true, IndexWriter.MaxFieldLength.LIMITED);
+			IndexWriter writer = new IndexWriter(dir, new WhitespaceAnalyzer(), true, IndexWriter.MaxFieldLength.LIMITED, null);
 			writer.UseCompoundFile = doCFS;
 			writer.SetMaxBufferedDocs(10);
 			
@@ -527,20 +527,20 @@ namespace Lucene.Net.Index
 			writer.Close();
 			
 			// open fresh writer so we get no prx file in the added segment
-			writer = new IndexWriter(dir, new WhitespaceAnalyzer(), IndexWriter.MaxFieldLength.LIMITED);
+			writer = new IndexWriter(dir, new WhitespaceAnalyzer(), IndexWriter.MaxFieldLength.LIMITED, null);
 			writer.UseCompoundFile = doCFS;
 			writer.SetMaxBufferedDocs(10);
 			AddNoProxDoc(writer);
 			writer.Close();
 			
 			// Delete one doc so we get a .del file:
-		    IndexReader reader = IndexReader.Open(dir, false);
+		    IndexReader reader = IndexReader.Open(dir, false, null);
 			Term searchTerm = new Term("id", "7");
-			int delCount = reader.DeleteDocuments(searchTerm);
+			int delCount = reader.DeleteDocuments(searchTerm, null);
 			Assert.AreEqual(1, delCount, "didn't delete the right number of documents");
 			
 			// Set one norm so we get a .s0 file:
-			reader.SetNorm(21, "content", (float) 1.5);
+			reader.SetNorm(21, "content", (float) 1.5, null);
 			reader.Close();
 		}
 		
@@ -557,7 +557,7 @@ namespace Lucene.Net.Index
                 Directory dir = FSDirectory.Open(new System.IO.DirectoryInfo(FullDir(outputDir)));
 
                 IndexWriter writer = new IndexWriter(dir, new WhitespaceAnalyzer(), true,
-                                                     IndexWriter.MaxFieldLength.UNLIMITED);
+                                                     IndexWriter.MaxFieldLength.UNLIMITED, null);
                 writer.SetRAMBufferSizeMB(16.0);
                 for (int i = 0; i < 35; i++)
                 {
@@ -567,13 +567,13 @@ namespace Lucene.Net.Index
                 writer.Close();
 
                 // Delete one doc so we get a .del file:
-                IndexReader reader = IndexReader.Open(dir, false);
+                IndexReader reader = IndexReader.Open(dir, false, null);
                 Term searchTerm = new Term("id", "7");
-                int delCount = reader.DeleteDocuments(searchTerm);
+                int delCount = reader.DeleteDocuments(searchTerm, null);
                 Assert.AreEqual(1, delCount, "didn't delete the right number of documents");
 
                 // Set one norm so we get a .s0 file:
-                reader.SetNorm(21, "content", (float) 1.5);
+                reader.SetNorm(21, "content", (float) 1.5, null);
                 reader.Close();
 
                 // The numbering of fields can vary depending on which
@@ -582,8 +582,8 @@ namespace Lucene.Net.Index
                 // figure out which field number corresponds to
                 // "content", and then set our expected file names below
                 // accordingly:
-                CompoundFileReader cfsReader = new CompoundFileReader(dir, "_0.cfs");
-                FieldInfos fieldInfos = new FieldInfos(cfsReader, "_0.fnm");
+                CompoundFileReader cfsReader = new CompoundFileReader(dir, "_0.cfs", null);
+                FieldInfos fieldInfos = new FieldInfos(cfsReader, "_0.fnm", null);
                 int contentFieldIndex = -1;
                 for (int i = 0; i < fieldInfos.Size(); i++)
                 {
@@ -603,7 +603,7 @@ namespace Lucene.Net.Index
                 expected = new System.String[]
                                {"_0.cfs", "_0_1.del", "_0_1.s" + contentFieldIndex, "segments_3", "segments.gen"};
 
-                System.String[] actual = dir.ListAll();
+                System.String[] actual = dir.ListAll(null);
                 System.Array.Sort(expected);
                 System.Array.Sort(actual);
                 if (!CollectionsHelper.Equals(expected, actual))
@@ -656,7 +656,7 @@ namespace Lucene.Net.Index
             // Add numeric fields, to test if flex preserves encoding
 		    doc.Add(new NumericField("trieInt", 4).SetIntValue(id));
             doc.Add(new NumericField("trieLong", 4).SetLongValue(id));
-			writer.AddDocument(doc);
+			writer.AddDocument(doc, null);
 		}
 		
 		private void  AddNoProxDoc(IndexWriter writer)
@@ -668,7 +668,7 @@ namespace Lucene.Net.Index
 			f = new Field("content4", "aaa", Field.Store.YES, Field.Index.NO);
 			f.OmitTermFreqAndPositions = true;
 			doc.Add(f);
-			writer.AddDocument(doc);
+			writer.AddDocument(doc, null);
 		}
 		
 		private void  RmDir(System.String dir)

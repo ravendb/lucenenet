@@ -134,12 +134,12 @@ namespace Lucene.Net.Search
 			
 			RAMDirectory ramDir = new RAMDirectory();
 			WhitespaceAnalyzer analyzer = new WhitespaceAnalyzer();
-			IndexWriter writer = new IndexWriter(ramDir, analyzer, MaxFieldLength.UNLIMITED);
-			writer.AddDocument(doc);
+			IndexWriter writer = new IndexWriter(ramDir, analyzer, MaxFieldLength.UNLIMITED, null);
+			writer.AddDocument(doc, null);
 			writer.Close();
 
-		    IndexSearcher searcher = new IndexSearcher(ramDir, true);
-			TopDocs td = searcher.Search(query, null, 10);
+		    IndexSearcher searcher = new IndexSearcher(ramDir, true, null);
+			TopDocs td = searcher.Search(query, null, 10, null);
 			//System.out.println("slop: "+slop+"  query: "+query+"  doc: "+doc+"  Expecting number of hits: "+expectedNumResults+" maxScore="+td.getMaxScore());
 			Assert.AreEqual(expectedNumResults, td.TotalHits, "slop: " + slop + "  query: " + query + "  doc: " + doc + "  Wrong number of hits");
 			

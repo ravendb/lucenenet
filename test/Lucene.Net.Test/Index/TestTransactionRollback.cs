@@ -52,7 +52,7 @@ namespace Lucene.Net.Index
 			// System.out.println("Attempting to rollback to "+id);
 			System.String ids = "-" + id;
 			IndexCommit last = null;
-			var commits = IndexReader.ListCommits(dir);
+			var commits = IndexReader.ListCommits(dir, null);
 			for (System.Collections.IEnumerator iterator = commits.GetEnumerator(); iterator.MoveNext(); )
 			{
 				IndexCommit commit = (IndexCommit) iterator.Current;
@@ -65,10 +65,10 @@ namespace Lucene.Net.Index
 			if (last == null)
 				throw new System.SystemException("Couldn't find commit point " + id);
 			
-			IndexWriter w = new IndexWriter(dir, new WhitespaceAnalyzer(), new RollbackDeletionPolicy(this, id), MaxFieldLength.UNLIMITED, last);
+			IndexWriter w = new IndexWriter(dir, new WhitespaceAnalyzer(), new RollbackDeletionPolicy(this, id), MaxFieldLength.UNLIMITED, last, null);
             System.Collections.Generic.IDictionary<string, string> data = new System.Collections.Generic.Dictionary<string, string>();
 			data["index"] = "Rolled back to 1-" + id;
-			w.Commit(data);
+			w.Commit(data, null);
 			w.Close();
 		}
 		
@@ -90,14 +90,14 @@ namespace Lucene.Net.Index
 		
 		private void  CheckExpecteds(System.Collections.BitArray expecteds)
 		{
-			IndexReader r = IndexReader.Open(dir, true);
+			IndexReader r = IndexReader.Open(dir, true, null);
 			
 			//Perhaps not the most efficient approach but meets our needs here.
 			for (int i = 0; i < r.MaxDoc; i++)
 			{
 				if (!r.IsDeleted(i))
 				{
-					System.String sval = r.Document(i).Get(FIELD_RECORD_ID);
+					System.String sval = r.Document(i, null).Get(FIELD_RECORD_ID, null);
 					if (sval != null)
                     {
                         int val = System.Int32.Parse(sval);
@@ -134,18 +134,18 @@ namespace Lucene.Net.Index
 			
 			//Build index, of records 1 to 100, committing after each batch of 10
 			IndexDeletionPolicy sdp = new KeepAllDeletionPolicy(this);
-			IndexWriter w = new IndexWriter(dir, new WhitespaceAnalyzer(), sdp, MaxFieldLength.UNLIMITED);
+			IndexWriter w = new IndexWriter(dir, new WhitespaceAnalyzer(), sdp, MaxFieldLength.UNLIMITED, null);
 			for (int currentRecordId = 1; currentRecordId <= 100; currentRecordId++)
 			{
 				Document doc = new Document();
 				doc.Add(new Field(FIELD_RECORD_ID, "" + currentRecordId, Field.Store.YES, Field.Index.ANALYZED));
-				w.AddDocument(doc);
+				w.AddDocument(doc, null);
 				
 				if (currentRecordId % 10 == 0)
 				{
                     System.Collections.Generic.IDictionary<string, string> data = new System.Collections.Generic.Dictionary<string,string>();
 					data["index"] = "records 1-" + currentRecordId;
-					w.Commit(data);
+					w.Commit(data, null);
 				}
 			}
 			
@@ -250,8 +250,8 @@ namespace Lucene.Net.Index
 			{
 				// Unless you specify a prior commit point, rollback
 				// should not work:
-				new IndexWriter(dir, new WhitespaceAnalyzer(), new DeleteLastCommitPolicy(this), MaxFieldLength.UNLIMITED).Close();
-			    IndexReader r = IndexReader.Open(dir, true);
+				new IndexWriter(dir, new WhitespaceAnalyzer(), new DeleteLastCommitPolicy(this), MaxFieldLength.UNLIMITED, null).Close();
+			    IndexReader r = IndexReader.Open(dir, true, null);
 				Assert.AreEqual(100, r.NumDocs());
 				r.Close();
 			}

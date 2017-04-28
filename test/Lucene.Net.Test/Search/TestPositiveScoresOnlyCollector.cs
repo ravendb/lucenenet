@@ -16,7 +16,7 @@
  */
 
 using System;
-
+using Lucene.Net.Store;
 using NUnit.Framework;
 
 using LuceneTestCase = Lucene.Net.Util.LuceneTestCase;
@@ -36,7 +36,7 @@ namespace Lucene.Net.Search
 			{
 			}
 			
-			public override float Score()
+			public override float Score(IState state)
 			{
 			    return idx == scores.Length ? float.NaN : scores[idx];
 			}
@@ -46,12 +46,12 @@ namespace Lucene.Net.Search
 				return idx;
 			}
 			
-			public override int NextDoc()
+			public override int NextDoc(IState state)
 			{
 			    return ++idx != scores.Length ? idx : NO_MORE_DOCS;
 			}
 			
-			public override int Advance(int target)
+			public override int Advance(int target, IState state)
 			{
 				idx = target;
 			    return idx < scores.Length ? idx : NO_MORE_DOCS;
@@ -83,9 +83,9 @@ namespace Lucene.Net.Search
 			TopDocsCollector<ScoreDoc> tdc = TopScoreDocCollector.Create(scores.Length, true);
 			Collector c = new PositiveScoresOnlyCollector(tdc);
 			c.SetScorer(s);
-			while (s.NextDoc() != DocIdSetIterator.NO_MORE_DOCS)
+			while (s.NextDoc(null) != DocIdSetIterator.NO_MORE_DOCS)
 			{
-				c.Collect(0);
+				c.Collect(0, null);
 			}
 			TopDocs td = tdc.TopDocs();
 			ScoreDoc[] sd = td.ScoreDocs;

@@ -16,7 +16,7 @@
  */
 
 using System;
-
+using Lucene.Net.Store;
 using NUnit.Framework;
 
 using SimpleAnalyzer = Lucene.Net.Analysis.SimpleAnalyzer;
@@ -43,28 +43,28 @@ namespace Lucene.Net.Index
 			Document doc;
 			
 			RAMDirectory rd1 = new RAMDirectory();
-			IndexWriter iw1 = new IndexWriter(rd1, new SimpleAnalyzer(), true, IndexWriter.MaxFieldLength.LIMITED);
+			IndexWriter iw1 = new IndexWriter(rd1, new SimpleAnalyzer(), true, IndexWriter.MaxFieldLength.LIMITED, null);
 			
 			doc = new Document();
 			doc.Add(new Field("field1", "the quick brown fox jumps", Field.Store.YES, Field.Index.ANALYZED));
 			doc.Add(new Field("field2", "the quick brown fox jumps", Field.Store.YES, Field.Index.ANALYZED));
 			doc.Add(new Field("field4", "", Field.Store.NO, Field.Index.ANALYZED));
-			iw1.AddDocument(doc);
+			iw1.AddDocument(doc, null);
 			
 			iw1.Close();
 			RAMDirectory rd2 = new RAMDirectory();
-			IndexWriter iw2 = new IndexWriter(rd2, new SimpleAnalyzer(), true, IndexWriter.MaxFieldLength.LIMITED);
+			IndexWriter iw2 = new IndexWriter(rd2, new SimpleAnalyzer(), true, IndexWriter.MaxFieldLength.LIMITED, null);
 			
 			doc = new Document();
 			doc.Add(new Field("field0", "", Field.Store.NO, Field.Index.ANALYZED));
 			doc.Add(new Field("field1", "the fox jumps over the lazy dog", Field.Store.YES, Field.Index.ANALYZED));
 			doc.Add(new Field("field3", "the fox jumps over the lazy dog", Field.Store.YES, Field.Index.ANALYZED));
-			iw2.AddDocument(doc);
+			iw2.AddDocument(doc, null);
 			
 			iw2.Close();
 			
-			this.ir1 = IndexReader.Open(rd1, true);
-		    this.ir2 = IndexReader.Open(rd2, true);
+			this.ir1 = IndexReader.Open((Directory) rd1, true, null);
+		    this.ir2 = IndexReader.Open((Directory) rd2, true, null);
 		}
 		
 		[TearDown]
@@ -83,106 +83,106 @@ namespace Lucene.Net.Index
 			pr.Add(ir1);
 			pr.Add(ir2);
 			
-			TermDocs td = pr.TermDocs();
+			TermDocs td = pr.TermDocs(null);
 			
-			TermEnum te = pr.Terms();
-			Assert.IsTrue(te.Next());
+			TermEnum te = pr.Terms(null);
+			Assert.IsTrue(te.Next(null));
 			Assert.AreEqual("field1:brown", te.Term.ToString());
-			td.Seek(te.Term);
-			Assert.IsTrue(td.Next());
+			td.Seek(te.Term, null);
+			Assert.IsTrue(td.Next(null));
 			Assert.AreEqual(0, td.Doc);
-			Assert.IsFalse(td.Next());
-			Assert.IsTrue(te.Next());
+			Assert.IsFalse(td.Next(null));
+			Assert.IsTrue(te.Next(null));
 			Assert.AreEqual("field1:fox", te.Term.ToString());
-			td.Seek(te.Term);
-			Assert.IsTrue(td.Next());
+			td.Seek(te.Term, null);
+			Assert.IsTrue(td.Next(null));
 			Assert.AreEqual(0, td.Doc);
-			Assert.IsFalse(td.Next());
-			Assert.IsTrue(te.Next());
+			Assert.IsFalse(td.Next(null));
+			Assert.IsTrue(te.Next(null));
 			Assert.AreEqual("field1:jumps", te.Term.ToString());
-			td.Seek(te.Term);
-			Assert.IsTrue(td.Next());
+			td.Seek(te.Term, null);
+			Assert.IsTrue(td.Next(null));
 			Assert.AreEqual(0, td.Doc);
-			Assert.IsFalse(td.Next());
-			Assert.IsTrue(te.Next());
+			Assert.IsFalse(td.Next(null));
+			Assert.IsTrue(te.Next(null));
 			Assert.AreEqual("field1:quick", te.Term.ToString());
-			td.Seek(te.Term);
-			Assert.IsTrue(td.Next());
+			td.Seek(te.Term, null);
+			Assert.IsTrue(td.Next(null));
 			Assert.AreEqual(0, td.Doc);
-			Assert.IsFalse(td.Next());
-			Assert.IsTrue(te.Next());
+			Assert.IsFalse(td.Next(null));
+			Assert.IsTrue(te.Next(null));
 			Assert.AreEqual("field1:the", te.Term.ToString());
-			td.Seek(te.Term);
-			Assert.IsTrue(td.Next());
+			td.Seek(te.Term, null);
+			Assert.IsTrue(td.Next(null));
 			Assert.AreEqual(0, td.Doc);
-			Assert.IsFalse(td.Next());
-			Assert.IsTrue(te.Next());
+			Assert.IsFalse(td.Next(null));
+			Assert.IsTrue(te.Next(null));
 			Assert.AreEqual("field2:brown", te.Term.ToString());
-			td.Seek(te.Term);
-			Assert.IsTrue(td.Next());
+			td.Seek(te.Term, null);
+			Assert.IsTrue(td.Next(null));
 			Assert.AreEqual(0, td.Doc);
-			Assert.IsFalse(td.Next());
-			Assert.IsTrue(te.Next());
+			Assert.IsFalse(td.Next(null));
+			Assert.IsTrue(te.Next(null));
 			Assert.AreEqual("field2:fox", te.Term.ToString());
-			td.Seek(te.Term);
-			Assert.IsTrue(td.Next());
+			td.Seek(te.Term, null);
+			Assert.IsTrue(td.Next(null));
 			Assert.AreEqual(0, td.Doc);
-			Assert.IsFalse(td.Next());
-			Assert.IsTrue(te.Next());
+			Assert.IsFalse(td.Next(null));
+			Assert.IsTrue(te.Next(null));
 			Assert.AreEqual("field2:jumps", te.Term.ToString());
-			td.Seek(te.Term);
-			Assert.IsTrue(td.Next());
+			td.Seek(te.Term, null);
+			Assert.IsTrue(td.Next(null));
 			Assert.AreEqual(0, td.Doc);
-			Assert.IsFalse(td.Next());
-			Assert.IsTrue(te.Next());
+			Assert.IsFalse(td.Next(null));
+			Assert.IsTrue(te.Next(null));
 			Assert.AreEqual("field2:quick", te.Term.ToString());
-			td.Seek(te.Term);
-			Assert.IsTrue(td.Next());
+			td.Seek(te.Term, null);
+			Assert.IsTrue(td.Next(null));
 			Assert.AreEqual(0, td.Doc);
-			Assert.IsFalse(td.Next());
-			Assert.IsTrue(te.Next());
+			Assert.IsFalse(td.Next(null));
+			Assert.IsTrue(te.Next(null));
 			Assert.AreEqual("field2:the", te.Term.ToString());
-			td.Seek(te.Term);
-			Assert.IsTrue(td.Next());
+			td.Seek(te.Term, null);
+			Assert.IsTrue(td.Next(null));
 			Assert.AreEqual(0, td.Doc);
-			Assert.IsFalse(td.Next());
-			Assert.IsTrue(te.Next());
+			Assert.IsFalse(td.Next(null));
+			Assert.IsTrue(te.Next(null));
 			Assert.AreEqual("field3:dog", te.Term.ToString());
-			td.Seek(te.Term);
-			Assert.IsTrue(td.Next());
+			td.Seek(te.Term, null);
+			Assert.IsTrue(td.Next(null));
 			Assert.AreEqual(0, td.Doc);
-			Assert.IsFalse(td.Next());
-			Assert.IsTrue(te.Next());
+			Assert.IsFalse(td.Next(null));
+			Assert.IsTrue(te.Next(null));
 			Assert.AreEqual("field3:fox", te.Term.ToString());
-			td.Seek(te.Term);
-			Assert.IsTrue(td.Next());
+			td.Seek(te.Term, null);
+			Assert.IsTrue(td.Next(null));
 			Assert.AreEqual(0, td.Doc);
-			Assert.IsFalse(td.Next());
-			Assert.IsTrue(te.Next());
+			Assert.IsFalse(td.Next(null));
+			Assert.IsTrue(te.Next(null));
 			Assert.AreEqual("field3:jumps", te.Term.ToString());
-			td.Seek(te.Term);
-			Assert.IsTrue(td.Next());
+			td.Seek(te.Term, null);
+			Assert.IsTrue(td.Next(null));
 			Assert.AreEqual(0, td.Doc);
-			Assert.IsFalse(td.Next());
-			Assert.IsTrue(te.Next());
+			Assert.IsFalse(td.Next(null));
+			Assert.IsTrue(te.Next(null));
 			Assert.AreEqual("field3:lazy", te.Term.ToString());
-			td.Seek(te.Term);
-			Assert.IsTrue(td.Next());
+			td.Seek(te.Term, null);
+			Assert.IsTrue(td.Next(null));
 			Assert.AreEqual(0, td.Doc);
-			Assert.IsFalse(td.Next());
-			Assert.IsTrue(te.Next());
+			Assert.IsFalse(td.Next(null));
+			Assert.IsTrue(te.Next(null));
 			Assert.AreEqual("field3:over", te.Term.ToString());
-			td.Seek(te.Term);
-			Assert.IsTrue(td.Next());
+			td.Seek(te.Term, null);
+			Assert.IsTrue(td.Next(null));
 			Assert.AreEqual(0, td.Doc);
-			Assert.IsFalse(td.Next());
-			Assert.IsTrue(te.Next());
+			Assert.IsFalse(td.Next(null));
+			Assert.IsTrue(te.Next(null));
 			Assert.AreEqual("field3:the", te.Term.ToString());
-			td.Seek(te.Term);
-			Assert.IsTrue(td.Next());
+			td.Seek(te.Term, null);
+			Assert.IsTrue(td.Next(null));
 			Assert.AreEqual(0, td.Doc);
-			Assert.IsFalse(td.Next());
-			Assert.IsFalse(te.Next());
+			Assert.IsFalse(td.Next(null));
+			Assert.IsFalse(te.Next(null));
 		}
 	}
 }

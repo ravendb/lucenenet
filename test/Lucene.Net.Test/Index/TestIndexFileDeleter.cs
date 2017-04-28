@@ -44,7 +44,7 @@ namespace Lucene.Net.Index
 			
 			Directory dir = new RAMDirectory();
 			
-			IndexWriter writer = new IndexWriter(dir, new WhitespaceAnalyzer(), true, IndexWriter.MaxFieldLength.LIMITED);
+			IndexWriter writer = new IndexWriter(dir, new WhitespaceAnalyzer(), true, IndexWriter.MaxFieldLength.LIMITED, null);
 			writer.SetMaxBufferedDocs(10);
 			int i;
 			for (i = 0; i < 35; i++)
@@ -59,18 +59,18 @@ namespace Lucene.Net.Index
 			writer.Close();
 			
 			// Delete one doc so we get a .del file:
-			IndexReader reader = IndexReader.Open(dir, false);
+			IndexReader reader = IndexReader.Open(dir, false, null);
 			Term searchTerm = new Term("id", "7");
-			int delCount = reader.DeleteDocuments(searchTerm);
+			int delCount = reader.DeleteDocuments(searchTerm, null);
 			Assert.AreEqual(1, delCount, "didn't delete the right number of documents");
 			
 			// Set one norm so we get a .s0 file:
-			reader.SetNorm(21, "content", (float) 1.5);
+			reader.SetNorm(21, "content", (float) 1.5, null);
 			reader.Close();
 			
 			// Now, artificially create an extra .del file & extra
 			// .s0 file:
-			System.String[] files = dir.ListAll();
+			System.String[] files = dir.ListAll(null);
 			
 			/*
 			for(int j=0;j<files.length;j++) {
@@ -84,8 +84,8 @@ namespace Lucene.Net.Index
 			// figure out which field number corresponds to
 			// "content", and then set our expected file names below
 			// accordingly:
-			CompoundFileReader cfsReader = new CompoundFileReader(dir, "_2.cfs");
-			FieldInfos fieldInfos = new FieldInfos(cfsReader, "_2.fnm");
+			CompoundFileReader cfsReader = new CompoundFileReader(dir, "_2.cfs", null);
+			FieldInfos fieldInfos = new FieldInfos(cfsReader, "_2.fnm", null);
 			int contentFieldIndex = - 1;
 			for (i = 0; i < fieldInfos.Size(); i++)
 			{
@@ -149,14 +149,14 @@ namespace Lucene.Net.Index
 			// Create a bogus cfs file shadowing a non-cfs segment:
 			CopyFile(dir, "_2.cfs", "_3.cfs");
 			
-			System.String[] filesPre = dir.ListAll();
+			System.String[] filesPre = dir.ListAll(null);
 			
 			// Open & close a writer: it should delete the above 4
 			// files and nothing more:
-			writer = new IndexWriter(dir, new WhitespaceAnalyzer(), false, IndexWriter.MaxFieldLength.LIMITED);
+			writer = new IndexWriter(dir, new WhitespaceAnalyzer(), false, IndexWriter.MaxFieldLength.LIMITED, null);
 			writer.Close();
 			
-			System.String[] files2 = dir.ListAll();
+			System.String[] files2 = dir.ListAll(null);
 			dir.Close();
 			
 			System.Array.Sort(files);
@@ -220,14 +220,14 @@ namespace Lucene.Net.Index
 		
 		public virtual void  CopyFile(Directory dir, System.String src, System.String dest)
 		{
-			IndexInput in_Renamed = dir.OpenInput(src);
-			IndexOutput out_Renamed = dir.CreateOutput(dest);
+			IndexInput in_Renamed = dir.OpenInput(src, null);
+			IndexOutput out_Renamed = dir.CreateOutput(dest, null);
 			byte[] b = new byte[1024];
-			long remainder = in_Renamed.Length();
+			long remainder = in_Renamed.Length(null);
 			while (remainder > 0)
 			{
 				int len = (int) System.Math.Min(b.Length, remainder);
-				in_Renamed.ReadBytes(b, 0, len);
+				in_Renamed.ReadBytes(b, 0, len, null);
 				out_Renamed.WriteBytes(b, len);
 				remainder -= len;
 			}
@@ -240,7 +240,7 @@ namespace Lucene.Net.Index
 			Document doc = new Document();
 			doc.Add(new Field("content", "aaa", Field.Store.NO, Field.Index.ANALYZED));
 			doc.Add(new Field("id", System.Convert.ToString(id), Field.Store.YES, Field.Index.NOT_ANALYZED));
-			writer.AddDocument(doc);
+			writer.AddDocument(doc, null);
 		}
 	}
 }

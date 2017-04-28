@@ -127,7 +127,7 @@ namespace Lucene.Net.Search
 			{
 				
 				/* build an index */
-				IndexWriter writer = new IndexWriter(index.index, new SimpleAnalyzer(), T, IndexWriter.MaxFieldLength.LIMITED);
+				IndexWriter writer = new IndexWriter(index.index, new SimpleAnalyzer(), T, IndexWriter.MaxFieldLength.LIMITED, null);
 				
 				for (int d = minId; d <= maxId; d++)
 				{
@@ -144,10 +144,10 @@ namespace Lucene.Net.Search
 					}
 					doc.Add(new Field("rand", Pad(r), Field.Store.YES, Field.Index.NOT_ANALYZED));
 					doc.Add(new Field("body", "body", Field.Store.YES, Field.Index.NOT_ANALYZED));
-					writer.AddDocument(doc);
+					writer.AddDocument(doc, null);
 				}
 				
-				writer.Optimize();
+				writer.Optimize(null);
 				writer.Close();
 			}
 			catch (System.Exception e)

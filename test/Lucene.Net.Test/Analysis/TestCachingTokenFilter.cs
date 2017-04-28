@@ -17,6 +17,7 @@
 
 using System;
 using Lucene.Net.Analysis.Tokenattributes;
+using Lucene.Net.Index;
 using Lucene.Net.Test.Analysis;
 using NUnit.Framework;
 using Document = Lucene.Net.Documents.Document;
@@ -86,7 +87,7 @@ namespace Lucene.Net.Analysis
 		public virtual void  TestCaching()
 		{
 			Directory dir = new RAMDirectory();
-			IndexWriter writer = new IndexWriter(dir, new SimpleAnalyzer(), IndexWriter.MaxFieldLength.LIMITED);
+			IndexWriter writer = new IndexWriter(dir, new SimpleAnalyzer(), IndexWriter.MaxFieldLength.LIMITED, null);
 			Document doc = new Document();
 			TokenStream stream = new AnonymousClassTokenStream(this);
 			
@@ -101,25 +102,25 @@ namespace Lucene.Net.Analysis
 			
 			// 2) now add the document to the index and verify if all tokens are indexed
 			//    don't reset the stream here, the DocumentWriter should do that implicitly
-			writer.AddDocument(doc);
+			writer.AddDocument(doc, null);
 			writer.Close();
 			
-			IndexReader reader = IndexReader.Open(dir, true);
-			TermPositions termPositions = reader.TermPositions(new Term("preanalyzed", "term1"));
-			Assert.IsTrue(termPositions.Next());
+			IndexReader reader = IndexReader.Open(dir, true, null);
+			TermPositions termPositions = reader.TermPositions(new Term("preanalyzed", "term1"), null);
+			Assert.IsTrue(termPositions.Next(null));
 			Assert.AreEqual(1, termPositions.Freq);
-			Assert.AreEqual(0, termPositions.NextPosition());
+			Assert.AreEqual(0, termPositions.NextPosition(null));
 			
-			termPositions.Seek(new Term("preanalyzed", "term2"));
-			Assert.IsTrue(termPositions.Next());
+			termPositions.Seek(new Term("preanalyzed", "term2"), null);
+			Assert.IsTrue(termPositions.Next(null));
 			Assert.AreEqual(2, termPositions.Freq);
-			Assert.AreEqual(1, termPositions.NextPosition());
-			Assert.AreEqual(3, termPositions.NextPosition());
+			Assert.AreEqual(1, termPositions.NextPosition(null));
+			Assert.AreEqual(3, termPositions.NextPosition(null));
 			
-			termPositions.Seek(new Term("preanalyzed", "term3"));
-			Assert.IsTrue(termPositions.Next());
+			termPositions.Seek(new Term("preanalyzed", "term3"), null);
+			Assert.IsTrue(termPositions.Next(null));
 			Assert.AreEqual(1, termPositions.Freq);
-			Assert.AreEqual(2, termPositions.NextPosition());
+			Assert.AreEqual(2, termPositions.NextPosition(null));
 			reader.Close();
 			
 			// 3) reset stream and consume tokens again

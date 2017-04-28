@@ -16,7 +16,7 @@
  */
 
 using System;
-
+using Lucene.Net.Store;
 using NUnit.Framework;
 
 using BufferedIndexInput = Lucene.Net.Store.BufferedIndexInput;
@@ -37,7 +37,7 @@ namespace Lucene.Net.Index
 			length = bytes.Length;
 		}
 		
-		public override void  ReadInternal(byte[] dest, int destOffset, int len)
+		public override void  ReadInternal(byte[] dest, int destOffset, int len, IState state)
 		{
 			int remainder = len;
 			int start = pointer;
@@ -65,7 +65,7 @@ namespace Lucene.Net.Index
 			pointer = (int) pos;
 		}
 		
-		public override long Length()
+		public override long Length(IState state)
 		{
 			return length;
 		}

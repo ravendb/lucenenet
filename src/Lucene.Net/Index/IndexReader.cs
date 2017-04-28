@@ -854,10 +854,10 @@ namespace Lucene.Net.Index
         /// <exception cref="System.IO.IOException">
         /// If there is a low-level IO error
         /// </exception>
-		public virtual void  SetNorm(int doc, System.String field, float value)
+		public virtual void  SetNorm(int doc, string field, float value, IState state)
 		{
 			EnsureOpen();
-			SetNorm(doc, field, Similarity.EncodeNorm(value));
+			SetNorm(doc, field, Similarity.EncodeNorm(value), state);
 		}
 		
 		/// <summary>Returns an enumeration of all the terms in the index. The
@@ -1290,9 +1290,9 @@ namespace Lucene.Net.Index
         /// progress while this method is running, that commit
         /// may or may not be returned array.  
         /// </summary>
-        public static System.Collections.Generic.ICollection<IndexCommit> ListCommits(Directory dir)
+        public static System.Collections.Generic.ICollection<IndexCommit> ListCommits(Directory dir, IState state)
 		{
-			return DirectoryReader.ListCommits(dir);
+			return DirectoryReader.ListCommits(dir, state);
 		}
 
 	    /// <summary>Expert: returns the sequential sub readers that this

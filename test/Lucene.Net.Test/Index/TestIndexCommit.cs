@@ -86,9 +86,9 @@ namespace Lucene.Net.Index
                 get { return _dir; }
             }
 
-            public override long Timestamp
+            public override long Timestamp(IState state)
             {
-                get { return 1; }
+                return 1;
             }
         }
         private class IndexCommitSecond : IndexCommit
@@ -143,9 +143,9 @@ namespace Lucene.Net.Index
                 get { return _dir; }
             }
 
-            public override long Timestamp
+            public override long Timestamp(IState state)
             {
-                get { return 1; }
+                return 1;
             }
         }
 

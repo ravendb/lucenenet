@@ -92,7 +92,7 @@ namespace Lucene.Net.Search.Function
 			base.SetUp();
 			dir = new RAMDirectory();
 			anlzr = new StandardAnalyzer(Util.Version.LUCENE_CURRENT);
-			IndexWriter iw = new IndexWriter(dir, anlzr, IndexWriter.MaxFieldLength.LIMITED);
+			IndexWriter iw = new IndexWriter(dir, anlzr, IndexWriter.MaxFieldLength.LIMITED, null);
 			// add docs not exactly in natural ID order, to verify we do check the order of docs by scores
 			int remaining = N_DOCS;
 			bool[] done = new bool[N_DOCS];
@@ -108,7 +108,7 @@ namespace Lucene.Net.Search.Function
 				i = (i + 4) % N_DOCS;
                 if (doMultiSegment && remaining % 3 == 0) 
                 {
-                    iw.Commit();
+                    iw.Commit(null);
                 }
 				remaining--;
 			}
@@ -137,7 +137,7 @@ namespace Lucene.Net.Search.Function
 			f.OmitNorms = true;
 			d.Add(f);
 			
-			iw.AddDocument(d);
+			iw.AddDocument(d, null);
 			Log("added: " + d);
 		}
 		

@@ -47,7 +47,7 @@ namespace Lucene.Net.Search
         {
             RAMDirectory directory = new RAMDirectory();
             IndexWriter writer = new IndexWriter(directory, new WhitespaceAnalyzer(), true,
-                                                 IndexWriter.MaxFieldLength.LIMITED);
+                                                 IndexWriter.MaxFieldLength.LIMITED, null);
             AddDoc("aaaaa", writer);
             AddDoc("aaaab", writer);
             AddDoc("aaabb", writer);
@@ -55,42 +55,42 @@ namespace Lucene.Net.Search
             AddDoc("abbbb", writer);
             AddDoc("bbbbb", writer);
             AddDoc("ddddd", writer);
-            writer.Optimize();
+            writer.Optimize(null);
             writer.Close();
-            IndexSearcher searcher = new IndexSearcher(directory, true);
+            IndexSearcher searcher = new IndexSearcher(directory, true, null);
 
             FuzzyQuery query = new FuzzyQuery(new Term("field", "aaaaa"), FuzzyQuery.defaultMinSimilarity, 0);
-            ScoreDoc[] hits = searcher.Search(query, null, 1000).ScoreDocs;
+            ScoreDoc[] hits = searcher.Search(query, null, 1000, null).ScoreDocs;
             Assert.AreEqual(3, hits.Length);
 
             // same with prefix
             query = new FuzzyQuery(new Term("field", "aaaaa"), FuzzyQuery.defaultMinSimilarity, 1);
-            hits = searcher.Search(query, null, 1000).ScoreDocs;
+            hits = searcher.Search(query, null, 1000, null).ScoreDocs;
             Assert.AreEqual(3, hits.Length);
             query = new FuzzyQuery(new Term("field", "aaaaa"), FuzzyQuery.defaultMinSimilarity, 2);
-            hits = searcher.Search(query, null, 1000).ScoreDocs;
+            hits = searcher.Search(query, null, 1000, null).ScoreDocs;
             Assert.AreEqual(3, hits.Length);
             query = new FuzzyQuery(new Term("field", "aaaaa"), FuzzyQuery.defaultMinSimilarity, 3);
-            hits = searcher.Search(query, null, 1000).ScoreDocs;
+            hits = searcher.Search(query, null, 1000, null).ScoreDocs;
             Assert.AreEqual(3, hits.Length);
             query = new FuzzyQuery(new Term("field", "aaaaa"), FuzzyQuery.defaultMinSimilarity, 4);
-            hits = searcher.Search(query, null, 1000).ScoreDocs;
+            hits = searcher.Search(query, null, 1000, null).ScoreDocs;
             Assert.AreEqual(2, hits.Length);
             query = new FuzzyQuery(new Term("field", "aaaaa"), FuzzyQuery.defaultMinSimilarity, 5);
-            hits = searcher.Search(query, null, 1000).ScoreDocs;
+            hits = searcher.Search(query, null, 1000, null).ScoreDocs;
             Assert.AreEqual(1, hits.Length);
             query = new FuzzyQuery(new Term("field", "aaaaa"), FuzzyQuery.defaultMinSimilarity, 6);
-            hits = searcher.Search(query, null, 1000).ScoreDocs;
+            hits = searcher.Search(query, null, 1000, null).ScoreDocs;
             Assert.AreEqual(1, hits.Length);
 
             // test scoring
             query = new FuzzyQuery(new Term("field", "bbbbb"), FuzzyQuery.defaultMinSimilarity, 0);
-            hits = searcher.Search(query, null, 1000).ScoreDocs;
+            hits = searcher.Search(query, null, 1000, null).ScoreDocs;
             Assert.AreEqual(3, hits.Length, "3 documents should match");
             List<String> order = new List<string>(new[] {"bbbbb", "abbbb", "aabbb"});
             for (int i = 0; i < hits.Length; i++)
             {
-                String term = searcher.Doc(hits[i].Doc).Get("field");
+                String term = searcher.Doc(hits[i].Doc, null).Get("field", null);
                 //System.out.println(hits[i].score);
                 Assert.AreEqual(order[i], term);
             }
@@ -102,12 +102,12 @@ namespace Lucene.Net.Search
                 BooleanQuery.MaxClauseCount = 2;
                 // This query would normally return 3 documents, because 3 terms match (see above):
                 query = new FuzzyQuery(new Term("field", "bbbbb"), FuzzyQuery.defaultMinSimilarity, 0);
-                hits = searcher.Search(query, null, 1000).ScoreDocs;
+                hits = searcher.Search(query, null, 1000, null).ScoreDocs;
                 Assert.AreEqual(2, hits.Length, "only 2 documents should match");
                 order = new List<string>(new[] {"bbbbb", "abbbb"});
                 for (int i = 0; i < hits.Length; i++)
                 {
-                    String term = searcher.Doc(hits[i].Doc).Get("field");
+                    String term = searcher.Doc(hits[i].Doc, null).Get("field", null);
                     //System.out.println(hits[i].score);
                     Assert.AreEqual(order[i], term);
                 }
@@ -119,89 +119,89 @@ namespace Lucene.Net.Search
 
             // not similar enough:
             query = new FuzzyQuery(new Term("field", "xxxxx"), FuzzyQuery.defaultMinSimilarity, 0);
-            hits = searcher.Search(query, null, 1000).ScoreDocs;
+            hits = searcher.Search(query, null, 1000, null).ScoreDocs;
             Assert.AreEqual(0, hits.Length);
             query = new FuzzyQuery(new Term("field", "aaccc"), FuzzyQuery.defaultMinSimilarity, 0);
                 // edit distance to "aaaaa" = 3
-            hits = searcher.Search(query, null, 1000).ScoreDocs;
+            hits = searcher.Search(query, null, 1000, null).ScoreDocs;
             Assert.AreEqual(0, hits.Length);
 
             // query identical to a word in the index:
             query = new FuzzyQuery(new Term("field", "aaaaa"), FuzzyQuery.defaultMinSimilarity, 0);
-            hits = searcher.Search(query, null, 1000).ScoreDocs;
+            hits = searcher.Search(query, null, 1000, null).ScoreDocs;
             Assert.AreEqual(3, hits.Length);
-            Assert.AreEqual(searcher.Doc(hits[0].Doc).Get("field"), ("aaaaa"));
+            Assert.AreEqual(searcher.Doc(hits[0].Doc, null).Get("field", null), ("aaaaa"));
             // default allows for up to two edits:
-            Assert.AreEqual(searcher.Doc(hits[1].Doc).Get("field"), ("aaaab"));
-            Assert.AreEqual(searcher.Doc(hits[2].Doc).Get("field"), ("aaabb"));
+            Assert.AreEqual(searcher.Doc(hits[1].Doc, null).Get("field", null), ("aaaab"));
+            Assert.AreEqual(searcher.Doc(hits[2].Doc, null).Get("field", null), ("aaabb"));
 
             // query similar to a word in the index:
             query = new FuzzyQuery(new Term("field", "aaaac"), FuzzyQuery.defaultMinSimilarity, 0);
-            hits = searcher.Search(query, null, 1000).ScoreDocs;
+            hits = searcher.Search(query, null, 1000, null).ScoreDocs;
             Assert.AreEqual(3, hits.Length);
-            Assert.AreEqual(searcher.Doc(hits[0].Doc).Get("field"), ("aaaaa"));
-            Assert.AreEqual(searcher.Doc(hits[1].Doc).Get("field"), ("aaaab"));
-            Assert.AreEqual(searcher.Doc(hits[2].Doc).Get("field"), ("aaabb"));
+            Assert.AreEqual(searcher.Doc(hits[0].Doc, null).Get("field", null), ("aaaaa"));
+            Assert.AreEqual(searcher.Doc(hits[1].Doc, null).Get("field", null), ("aaaab"));
+            Assert.AreEqual(searcher.Doc(hits[2].Doc, null).Get("field", null), ("aaabb"));
 
             // now with prefix
             query = new FuzzyQuery(new Term("field", "aaaac"), FuzzyQuery.defaultMinSimilarity, 1);
-            hits = searcher.Search(query, null, 1000).ScoreDocs;
+            hits = searcher.Search(query, null, 1000, null).ScoreDocs;
             Assert.AreEqual(3, hits.Length);
-            Assert.AreEqual(searcher.Doc(hits[0].Doc).Get("field"), ("aaaaa"));
-            Assert.AreEqual(searcher.Doc(hits[1].Doc).Get("field"), ("aaaab"));
-            Assert.AreEqual(searcher.Doc(hits[2].Doc).Get("field"), ("aaabb"));
+            Assert.AreEqual(searcher.Doc(hits[0].Doc, null).Get("field", null), ("aaaaa"));
+            Assert.AreEqual(searcher.Doc(hits[1].Doc, null).Get("field", null), ("aaaab"));
+            Assert.AreEqual(searcher.Doc(hits[2].Doc, null).Get("field", null), ("aaabb"));
             query = new FuzzyQuery(new Term("field", "aaaac"), FuzzyQuery.defaultMinSimilarity, 2);
-            hits = searcher.Search(query, null, 1000).ScoreDocs;
+            hits = searcher.Search(query, null, 1000, null).ScoreDocs;
             Assert.AreEqual(3, hits.Length);
-            Assert.AreEqual(searcher.Doc(hits[0].Doc).Get("field"), ("aaaaa"));
-            Assert.AreEqual(searcher.Doc(hits[1].Doc).Get("field"), ("aaaab"));
-            Assert.AreEqual(searcher.Doc(hits[2].Doc).Get("field"), ("aaabb"));
+            Assert.AreEqual(searcher.Doc(hits[0].Doc, null).Get("field", null), ("aaaaa"));
+            Assert.AreEqual(searcher.Doc(hits[1].Doc, null).Get("field", null), ("aaaab"));
+            Assert.AreEqual(searcher.Doc(hits[2].Doc, null).Get("field", null), ("aaabb"));
             query = new FuzzyQuery(new Term("field", "aaaac"), FuzzyQuery.defaultMinSimilarity, 3);
-            hits = searcher.Search(query, null, 1000).ScoreDocs;
+            hits = searcher.Search(query, null, 1000, null).ScoreDocs;
             Assert.AreEqual(3, hits.Length);
-            Assert.AreEqual(searcher.Doc(hits[0].Doc).Get("field"), ("aaaaa"));
-            Assert.AreEqual(searcher.Doc(hits[1].Doc).Get("field"), ("aaaab"));
-            Assert.AreEqual(searcher.Doc(hits[2].Doc).Get("field"), ("aaabb"));
+            Assert.AreEqual(searcher.Doc(hits[0].Doc, null).Get("field", null), ("aaaaa"));
+            Assert.AreEqual(searcher.Doc(hits[1].Doc, null).Get("field", null), ("aaaab"));
+            Assert.AreEqual(searcher.Doc(hits[2].Doc, null).Get("field", null), ("aaabb"));
             query = new FuzzyQuery(new Term("field", "aaaac"), FuzzyQuery.defaultMinSimilarity, 4);
-            hits = searcher.Search(query, null, 1000).ScoreDocs;
+            hits = searcher.Search(query, null, 1000, null).ScoreDocs;
             Assert.AreEqual(2, hits.Length);
-            Assert.AreEqual(searcher.Doc(hits[0].Doc).Get("field"), ("aaaaa"));
-            Assert.AreEqual(searcher.Doc(hits[1].Doc).Get("field"), ("aaaab"));
+            Assert.AreEqual(searcher.Doc(hits[0].Doc, null).Get("field", null), ("aaaaa"));
+            Assert.AreEqual(searcher.Doc(hits[1].Doc, null).Get("field", null), ("aaaab"));
             query = new FuzzyQuery(new Term("field", "aaaac"), FuzzyQuery.defaultMinSimilarity, 5);
-            hits = searcher.Search(query, null, 1000).ScoreDocs;
+            hits = searcher.Search(query, null, 1000, null).ScoreDocs;
             Assert.AreEqual(0, hits.Length);
 
 
             query = new FuzzyQuery(new Term("field", "ddddX"), FuzzyQuery.defaultMinSimilarity, 0);
-            hits = searcher.Search(query, null, 1000).ScoreDocs;
+            hits = searcher.Search(query, null, 1000, null).ScoreDocs;
             Assert.AreEqual(1, hits.Length);
-            Assert.AreEqual(searcher.Doc(hits[0].Doc).Get("field"), ("ddddd"));
+            Assert.AreEqual(searcher.Doc(hits[0].Doc, null).Get("field", null), ("ddddd"));
 
             // now with prefix
             query = new FuzzyQuery(new Term("field", "ddddX"), FuzzyQuery.defaultMinSimilarity, 1);
-            hits = searcher.Search(query, null, 1000).ScoreDocs;
+            hits = searcher.Search(query, null, 1000, null).ScoreDocs;
             Assert.AreEqual(1, hits.Length);
-            Assert.AreEqual(searcher.Doc(hits[0].Doc).Get("field"), ("ddddd"));
+            Assert.AreEqual(searcher.Doc(hits[0].Doc, null).Get("field", null), ("ddddd"));
             query = new FuzzyQuery(new Term("field", "ddddX"), FuzzyQuery.defaultMinSimilarity, 2);
-            hits = searcher.Search(query, null, 1000).ScoreDocs;
+            hits = searcher.Search(query, null, 1000, null).ScoreDocs;
             Assert.AreEqual(1, hits.Length);
-            Assert.AreEqual(searcher.Doc(hits[0].Doc).Get("field"), ("ddddd"));
+            Assert.AreEqual(searcher.Doc(hits[0].Doc, null).Get("field", null), ("ddddd"));
             query = new FuzzyQuery(new Term("field", "ddddX"), FuzzyQuery.defaultMinSimilarity, 3);
-            hits = searcher.Search(query, null, 1000).ScoreDocs;
+            hits = searcher.Search(query, null, 1000, null).ScoreDocs;
             Assert.AreEqual(1, hits.Length);
-            Assert.AreEqual(searcher.Doc(hits[0].Doc).Get("field"), ("ddddd"));
+            Assert.AreEqual(searcher.Doc(hits[0].Doc, null).Get("field", null), ("ddddd"));
             query = new FuzzyQuery(new Term("field", "ddddX"), FuzzyQuery.defaultMinSimilarity, 4);
-            hits = searcher.Search(query, null, 1000).ScoreDocs;
+            hits = searcher.Search(query, null, 1000, null).ScoreDocs;
             Assert.AreEqual(1, hits.Length);
-            Assert.AreEqual(searcher.Doc(hits[0].Doc).Get("field"), ("ddddd"));
+            Assert.AreEqual(searcher.Doc(hits[0].Doc, null).Get("field", null), ("ddddd"));
             query = new FuzzyQuery(new Term("field", "ddddX"), FuzzyQuery.defaultMinSimilarity, 5);
-            hits = searcher.Search(query, null, 1000).ScoreDocs;
+            hits = searcher.Search(query, null, 1000, null).ScoreDocs;
             Assert.AreEqual(0, hits.Length);
 
 
             // different field = no match:
             query = new FuzzyQuery(new Term("anotherfield", "ddddX"), FuzzyQuery.defaultMinSimilarity, 0);
-            hits = searcher.Search(query, null, 1000).ScoreDocs;
+            hits = searcher.Search(query, null, 1000, null).ScoreDocs;
             Assert.AreEqual(0, hits.Length);
 
             searcher.Close();
@@ -212,73 +212,73 @@ namespace Lucene.Net.Search
 		public virtual void  TestFuzzinessLong()
 		{
 			RAMDirectory directory = new RAMDirectory();
-			IndexWriter writer = new IndexWriter(directory, new WhitespaceAnalyzer(), true, IndexWriter.MaxFieldLength.LIMITED);
+			IndexWriter writer = new IndexWriter(directory, new WhitespaceAnalyzer(), true, IndexWriter.MaxFieldLength.LIMITED, null);
 			AddDoc("aaaaaaa", writer);
 			AddDoc("segment", writer);
-			writer.Optimize();
+			writer.Optimize(null);
 			writer.Close();
-	        IndexSearcher searcher = new IndexSearcher(directory, true);
+	        IndexSearcher searcher = new IndexSearcher(directory, true, null);
 			
 			FuzzyQuery query;
 			// not similar enough:
 			query = new FuzzyQuery(new Term("field", "xxxxx"), FuzzyQuery.defaultMinSimilarity, 0);
-			ScoreDoc[] hits = searcher.Search(query, null, 1000).ScoreDocs;
+			ScoreDoc[] hits = searcher.Search(query, null, 1000, null).ScoreDocs;
 			Assert.AreEqual(0, hits.Length);
 			// edit distance to "aaaaaaa" = 3, this matches because the string is longer than
 			// in testDefaultFuzziness so a bigger difference is allowed:
 			query = new FuzzyQuery(new Term("field", "aaaaccc"), FuzzyQuery.defaultMinSimilarity, 0);
-			hits = searcher.Search(query, null, 1000).ScoreDocs;
+			hits = searcher.Search(query, null, 1000, null).ScoreDocs;
 			Assert.AreEqual(1, hits.Length);
-			Assert.AreEqual(searcher.Doc(hits[0].Doc).Get("field"), ("aaaaaaa"));
+			Assert.AreEqual(searcher.Doc(hits[0].Doc, null).Get("field", null), ("aaaaaaa"));
 			
 			// now with prefix
 			query = new FuzzyQuery(new Term("field", "aaaaccc"), FuzzyQuery.defaultMinSimilarity, 1);
-			hits = searcher.Search(query, null, 1000).ScoreDocs;
+			hits = searcher.Search(query, null, 1000, null).ScoreDocs;
 			Assert.AreEqual(1, hits.Length);
-			Assert.AreEqual(searcher.Doc(hits[0].Doc).Get("field"), ("aaaaaaa"));
+			Assert.AreEqual(searcher.Doc(hits[0].Doc, null).Get("field", null), ("aaaaaaa"));
 			query = new FuzzyQuery(new Term("field", "aaaaccc"), FuzzyQuery.defaultMinSimilarity, 4);
-			hits = searcher.Search(query, null, 1000).ScoreDocs;
+			hits = searcher.Search(query, null, 1000, null).ScoreDocs;
 			Assert.AreEqual(1, hits.Length);
-			Assert.AreEqual(searcher.Doc(hits[0].Doc).Get("field"), ("aaaaaaa"));
+			Assert.AreEqual(searcher.Doc(hits[0].Doc, null).Get("field", null), ("aaaaaaa"));
 			query = new FuzzyQuery(new Term("field", "aaaaccc"), FuzzyQuery.defaultMinSimilarity, 5);
-			hits = searcher.Search(query, null, 1000).ScoreDocs;
+			hits = searcher.Search(query, null, 1000, null).ScoreDocs;
 			Assert.AreEqual(0, hits.Length);
 			
 			// no match, more than half of the characters is wrong:
 			query = new FuzzyQuery(new Term("field", "aaacccc"), FuzzyQuery.defaultMinSimilarity, 0);
-			hits = searcher.Search(query, null, 1000).ScoreDocs;
+			hits = searcher.Search(query, null, 1000, null).ScoreDocs;
 			Assert.AreEqual(0, hits.Length);
 			
 			// now with prefix
 			query = new FuzzyQuery(new Term("field", "aaacccc"), FuzzyQuery.defaultMinSimilarity, 2);
-			hits = searcher.Search(query, null, 1000).ScoreDocs;
+			hits = searcher.Search(query, null, 1000, null).ScoreDocs;
 			Assert.AreEqual(0, hits.Length);
 			
 			// "student" and "stellent" are indeed similar to "segment" by default:
 			query = new FuzzyQuery(new Term("field", "student"), FuzzyQuery.defaultMinSimilarity, 0);
-			hits = searcher.Search(query, null, 1000).ScoreDocs;
+			hits = searcher.Search(query, null, 1000, null).ScoreDocs;
 			Assert.AreEqual(1, hits.Length);
 			query = new FuzzyQuery(new Term("field", "stellent"), FuzzyQuery.defaultMinSimilarity, 0);
-			hits = searcher.Search(query, null, 1000).ScoreDocs;
+			hits = searcher.Search(query, null, 1000, null).ScoreDocs;
 			Assert.AreEqual(1, hits.Length);
 			
 			// now with prefix
 			query = new FuzzyQuery(new Term("field", "student"), FuzzyQuery.defaultMinSimilarity, 1);
-			hits = searcher.Search(query, null, 1000).ScoreDocs;
+			hits = searcher.Search(query, null, 1000, null).ScoreDocs;
 			Assert.AreEqual(1, hits.Length);
 			query = new FuzzyQuery(new Term("field", "stellent"), FuzzyQuery.defaultMinSimilarity, 1);
-			hits = searcher.Search(query, null, 1000).ScoreDocs;
+			hits = searcher.Search(query, null, 1000, null).ScoreDocs;
 			Assert.AreEqual(1, hits.Length);
 			query = new FuzzyQuery(new Term("field", "student"), FuzzyQuery.defaultMinSimilarity, 2);
-			hits = searcher.Search(query, null, 1000).ScoreDocs;
+			hits = searcher.Search(query, null, 1000, null).ScoreDocs;
 			Assert.AreEqual(0, hits.Length);
 			query = new FuzzyQuery(new Term("field", "stellent"), FuzzyQuery.defaultMinSimilarity, 2);
-			hits = searcher.Search(query, null, 1000).ScoreDocs;
+			hits = searcher.Search(query, null, 1000, null).ScoreDocs;
 			Assert.AreEqual(0, hits.Length);
 			
 			// "student" doesn't match anymore thanks to increased minimum similarity:
 			query = new FuzzyQuery(new Term("field", "student"), 0.6f, 0);
-			hits = searcher.Search(query, null, 1000).ScoreDocs;
+			hits = searcher.Search(query, null, 1000, null).ScoreDocs;
 			Assert.AreEqual(0, hits.Length);
 
 	        Assert.Throws<ArgumentException>(() => new FuzzyQuery(new Term("field", "student"), 1.1f),
@@ -294,32 +294,32 @@ namespace Lucene.Net.Search
 		public virtual void  TestTokenLengthOpt()
 		{
 			RAMDirectory directory = new RAMDirectory();
-			IndexWriter writer = new IndexWriter(directory, new WhitespaceAnalyzer(), true, IndexWriter.MaxFieldLength.LIMITED);
+			IndexWriter writer = new IndexWriter(directory, new WhitespaceAnalyzer(), true, IndexWriter.MaxFieldLength.LIMITED, null);
 			AddDoc("12345678911", writer);
 			AddDoc("segment", writer);
-			writer.Optimize();
+			writer.Optimize(null);
 			writer.Close();
-		    IndexSearcher searcher = new IndexSearcher(directory, true);
+		    IndexSearcher searcher = new IndexSearcher(directory, true, null);
 			
 			Query query;
 			// term not over 10 chars, so optimization shortcuts
 			query = new FuzzyQuery(new Term("field", "1234569"), 0.9f);
-			ScoreDoc[] hits = searcher.Search(query, null, 1000).ScoreDocs;
+			ScoreDoc[] hits = searcher.Search(query, null, 1000, null).ScoreDocs;
 			Assert.AreEqual(0, hits.Length);
 			
 			// 10 chars, so no optimization
 			query = new FuzzyQuery(new Term("field", "1234567891"), 0.9f);
-			hits = searcher.Search(query, null, 1000).ScoreDocs;
+			hits = searcher.Search(query, null, 1000, null).ScoreDocs;
 			Assert.AreEqual(0, hits.Length);
 			
 			// over 10 chars, so no optimization
 			query = new FuzzyQuery(new Term("field", "12345678911"), 0.9f);
-			hits = searcher.Search(query, null, 1000).ScoreDocs;
+			hits = searcher.Search(query, null, 1000, null).ScoreDocs;
 			Assert.AreEqual(1, hits.Length);
 			
 			// over 10 chars, no match
 			query = new FuzzyQuery(new Term("field", "sdfsdfsdfsdf"), 0.9f);
-			hits = searcher.Search(query, null, 1000).ScoreDocs;
+			hits = searcher.Search(query, null, 1000, null).ScoreDocs;
 			Assert.AreEqual(0, hits.Length);
 		}
 		
@@ -330,7 +330,7 @@ namespace Lucene.Net.Search
 			StandardAnalyzer analyzer = new StandardAnalyzer(Util.Version.LUCENE_CURRENT);
 			
 			Directory index = new MockRAMDirectory();
-			IndexWriter w = new IndexWriter(index, analyzer, true, IndexWriter.MaxFieldLength.UNLIMITED);
+			IndexWriter w = new IndexWriter(index, analyzer, true, IndexWriter.MaxFieldLength.UNLIMITED, null);
 			
 			AddDoc("Lucene in Action", w);
 			AddDoc("Lucene for Dummies", w);
@@ -349,16 +349,16 @@ namespace Lucene.Net.Search
 			AddDoc("Willis bruce", w);
 			AddDoc("Brute willis", w);
 			AddDoc("B. willis", w);
-			IndexReader r = w.GetReader();
+			IndexReader r = w.GetReader(null);
 			w.Close();
 			
 			Query q = new QueryParser(Util.Version.LUCENE_CURRENT, "field", analyzer).Parse("giga~0.9");
 			
 			// 3. search
 			IndexSearcher searcher = new IndexSearcher(r);
-			ScoreDoc[] hits = searcher.Search(q, 10).ScoreDocs;
+			ScoreDoc[] hits = searcher.Search(q, 10, null).ScoreDocs;
 			Assert.AreEqual(1, hits.Length);
-			Assert.AreEqual(searcher.Doc(hits[0].Doc).Get("field"), "Giga byte");
+			Assert.AreEqual(searcher.Doc(hits[0].Doc, null).Get("field", null), "Giga byte");
 			r.Close();
 		}
 		
@@ -366,7 +366,7 @@ namespace Lucene.Net.Search
 		{
 			Document doc = new Document();
 			doc.Add(new Field("field", text, Field.Store.YES, Field.Index.ANALYZED));
-			writer.AddDocument(doc);
+			writer.AddDocument(doc, null);
 		}
 	}
 }

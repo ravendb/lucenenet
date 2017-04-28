@@ -16,7 +16,7 @@
  */
 
 using System;
-
+using Lucene.Net.Store;
 using NUnit.Framework;
 
 using IndexReader = Lucene.Net.Index.IndexReader;
@@ -35,7 +35,7 @@ namespace Lucene.Net.Search
 			this.doc = doc;
 		}
 		
-		public override DocIdSet GetDocIdSet(IndexReader reader)
+		public override DocIdSet GetDocIdSet(IndexReader reader, IState state)
 		{
 			System.Collections.BitArray bits = new System.Collections.BitArray((reader.MaxDoc % 64 == 0?reader.MaxDoc / 64:reader.MaxDoc / 64 + 1) * 64);
 			bits.Set(doc, true);

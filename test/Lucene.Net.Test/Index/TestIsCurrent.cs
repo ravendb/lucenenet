@@ -44,13 +44,13 @@ namespace Lucene.Net.Index
 
             // initialize directory
             directory = new MockRAMDirectory();
-            writer = new IndexWriter(directory, new WhitespaceAnalyzer(), IndexWriter.MaxFieldLength.LIMITED);
+            writer = new IndexWriter(directory, new WhitespaceAnalyzer(), IndexWriter.MaxFieldLength.LIMITED, null);
 
             // write document
             Document doc = new Document();
             doc.Add(new Field("UUID", "1", Field.Store.YES, Field.Index.ANALYZED));
-            writer.AddDocument(doc);
-            writer.Commit();
+            writer.AddDocument(doc, null);
+            writer.Commit(null);
         }
 
         [TearDown]
@@ -71,20 +71,20 @@ namespace Lucene.Net.Index
         {
 
             // get reader
-            IndexReader reader = writer.GetReader();
+            IndexReader reader = writer.GetReader(null);
 
             // assert index has a document and reader is up2date 
-            Assert.AreEqual(1, writer.NumDocs(), "One document should be in the index");
-            Assert.IsTrue(reader.IsCurrent(), "Document added, reader should be stale ");
+            Assert.AreEqual(1, writer.NumDocs(null), "One document should be in the index");
+            Assert.IsTrue(reader.IsCurrent(null), "Document added, reader should be stale ");
 
             // remove document
             Term idTerm = new Term("UUID", "1");
-            writer.DeleteDocuments(idTerm);
-            writer.Commit();
+            writer.DeleteDocuments(null, idTerm);
+            writer.Commit(null);
 
             // assert document has been deleted (index changed), reader is stale
-            Assert.AreEqual(0, writer.NumDocs(), "Document should be removed");
-            Assert.IsFalse(reader.IsCurrent(), "Reader should be stale");
+            Assert.AreEqual(0, writer.NumDocs(null), "Document should be removed");
+            Assert.IsFalse(reader.IsCurrent(null), "Reader should be stale");
 
             reader.Close();
         }
@@ -99,19 +99,19 @@ namespace Lucene.Net.Index
         {
 
             // get reader
-            IndexReader reader = writer.GetReader();
+            IndexReader reader = writer.GetReader(null);
 
             // assert index has a document and reader is up2date 
-            Assert.AreEqual(1, writer.NumDocs(), "One document should be in the index");
-            Assert.IsTrue(reader.IsCurrent(), "Document added, reader should be stale ");
+            Assert.AreEqual(1, writer.NumDocs(null), "One document should be in the index");
+            Assert.IsTrue(reader.IsCurrent(null), "Document added, reader should be stale ");
 
             // remove all documents
-            writer.DeleteAll();
-            writer.Commit();
+            writer.DeleteAll(null);
+            writer.Commit(null);
 
             // assert document has been deleted (index changed), reader is stale
-            Assert.AreEqual(0, writer.NumDocs(), "Document should be removed");
-            Assert.IsFalse(reader.IsCurrent(), "Reader should be stale");
+            Assert.AreEqual(0, writer.NumDocs(null), "Document should be removed");
+            Assert.IsFalse(reader.IsCurrent(null), "Reader should be stale");
 
             reader.Close();
         }

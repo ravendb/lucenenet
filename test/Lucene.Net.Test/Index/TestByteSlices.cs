@@ -141,7 +141,7 @@ namespace Lucene.Net.Index
 					{
 						reader.Init(pool, starts[stream], uptos[stream]);
 						for (int j = 0; j < counters[stream]; j++)
-							Assert.AreEqual(j, reader.ReadVInt());
+							Assert.AreEqual(j, reader.ReadVInt(null));
 						//Assert.AreEqual(ti, reader.readVInt());
 					}
 				}

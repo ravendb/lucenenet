@@ -18,6 +18,7 @@
 using System;
 using System.Collections.Generic;
 using Lucene.Net.Analysis.Tokenattributes;
+using Lucene.Net.Store;
 using NUnit.Framework;
 
 using Analyzer = Lucene.Net.Analysis.Analyzer;
@@ -154,7 +155,7 @@ namespace Lucene.Net.Search.Payloads
 			base.SetUp();
 			RAMDirectory directory = new RAMDirectory();
 			PayloadAnalyzer analyzer = new PayloadAnalyzer(this);
-			IndexWriter writer = new IndexWriter(directory, analyzer, true, IndexWriter.MaxFieldLength.LIMITED);
+			IndexWriter writer = new IndexWriter(directory, analyzer, true, IndexWriter.MaxFieldLength.LIMITED, null);
 			writer.SetSimilarity(similarity);
 			//writer.infoStream = System.out;
 			for (int i = 0; i < 1000; i++)
@@ -163,12 +164,12 @@ namespace Lucene.Net.Search.Payloads
 				doc.Add(new Field("field", English.IntToEnglish(i), Field.Store.YES, Field.Index.ANALYZED));
 				System.String txt = English.IntToEnglish(i) + ' ' + English.IntToEnglish(i + 1);
 				doc.Add(new Field("field2", txt, Field.Store.YES, Field.Index.ANALYZED));
-				writer.AddDocument(doc);
+				writer.AddDocument(doc, null);
 			}
-			writer.Optimize();
+			writer.Optimize(null);
 			writer.Close();
 			
-			searcher = new IndexSearcher(directory, true);
+			searcher = new IndexSearcher(directory, true, null);
 			searcher.Similarity = similarity;
 		}
 		
@@ -183,7 +184,7 @@ namespace Lucene.Net.Search.Payloads
 			
 			// all 10 hits should have score = 3 because adjacent terms have payloads of 2,4
 			// and all the similarity factors are set to 1
-			hits = searcher.Search(query, null, 100);
+			hits = searcher.Search(query, null, 100, null);
 			Assert.IsTrue(hits != null, "hits is null and it shouldn't be");
 			Assert.IsTrue(hits.TotalHits == 10, "should be 10 hits");
 			for (int j = 0; j < hits.ScoreDocs.Length; j++)
@@ -196,7 +197,7 @@ namespace Lucene.Net.Search.Payloads
 				query = NewPhraseQuery("field", English.IntToEnglish(i) + " hundred", true);
 				// all should have score = 3 because adjacent terms have payloads of 2,4
 				// and all the similarity factors are set to 1
-				hits = searcher.Search(query, null, 100);
+				hits = searcher.Search(query, null, 100, null);
 				Assert.IsTrue(hits != null, "hits is null and it shouldn't be");
 				Assert.IsTrue(hits.TotalHits == 100, "should be 100 hits");
 				for (int j = 0; j < hits.ScoreDocs.Length; j++)
@@ -223,7 +224,7 @@ namespace Lucene.Net.Search.Payloads
 			clauses[1] = q2;
 			query = new PayloadNearQuery(clauses, 10, false);
 			// System.out.println(query.toString());
-			Assert.AreEqual(12, searcher.Search(query, null, 100).TotalHits);
+			Assert.AreEqual(12, searcher.Search(query, null, 100, null).TotalHits);
 			/*
 			* System.out.println(hits.totalHits); for (int j = 0; j <
 			* hits.scoreDocs.length; j++) { ScoreDoc doc = hits.scoreDocs[j];
@@ -248,7 +249,7 @@ namespace Lucene.Net.Search.Payloads
 			PayloadNearQuery query;
 			TopDocs hits;
 			query = NewPhraseQuery("field", "nine hundred ninety nine", true);
-			hits = searcher.Search(query, null, 100);
+			hits = searcher.Search(query, null, 100, null);
 			ScoreDoc doc = hits.ScoreDocs[0];
 			//		System.out.println("Doc: " + doc.toString());
 			//		System.out.println("Explain: " + searcher.explain(query, doc.doc));
@@ -272,7 +273,7 @@ namespace Lucene.Net.Search.Payloads
 			SpanQuery q4 = NewPhraseQuery("field", "hundred nine", false);
 			SpanQuery[] clauses = new SpanQuery[]{new PayloadNearQuery(new SpanQuery[]{q1, q2}, 0, true), new PayloadNearQuery(new SpanQuery[]{q3, q4}, 0, false)};
 			query = new PayloadNearQuery(clauses, 0, false);
-			hits = searcher.Search(query, null, 100);
+			hits = searcher.Search(query, null, 100, null);
 			Assert.IsTrue(hits != null, "hits is null and it shouldn't be");
 			// should be only 1 hit - doc 999
 			Assert.IsTrue(hits.ScoreDocs.Length == 1, "should only be one hit");
@@ -318,7 +319,7 @@ namespace Lucene.Net.Search.Payloads
                 return 1.0f;
 			}
 			// idf used for phrase queries
-			public override Explanation.IDFExplanation IdfExplain(ICollection<Term> terms, Searcher searcher)
+			public override Explanation.IDFExplanation IdfExplain(ICollection<Term> terms, Searcher searcher, IState state)
 			{
 			    return new InjectableIDFExplanation
 			               {

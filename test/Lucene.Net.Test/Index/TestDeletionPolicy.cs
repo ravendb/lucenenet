@@ -47,13 +47,13 @@ namespace Lucene.Net.Index
 			long last = SegmentInfos.GenerationFromSegmentsFileName(firstCommit.SegmentsFileName);
 			Assert.AreEqual(last, firstCommit.Generation);
 			long lastVersion = firstCommit.Version;
-			long lastTimestamp = firstCommit.Timestamp;
+			long lastTimestamp = firstCommit.Timestamp(null);
 			for (int i = 1; i < commits.Count; i++)
 			{
 				IndexCommit commit = commits[i];
 				long now = SegmentInfos.GenerationFromSegmentsFileName(commit.SegmentsFileName);
 				long nowVersion = commit.Version;
-				long nowTimestamp = commit.Timestamp;
+				long nowTimestamp = commit.Timestamp(null);
 				Assert.IsTrue(now > last, "SegmentInfos commits are out-of-order");
 				Assert.IsTrue(nowVersion > lastVersion, "SegmentInfos versions are out-of-order");
 				Assert.IsTrue(nowTimestamp >= lastTimestamp, "SegmentInfos timestamps are out-of-order: now=" + nowTimestamp + " vs last=" + lastTimestamp);
@@ -94,7 +94,7 @@ namespace Lucene.Net.Index
 			public virtual void  OnCommit<T>(IList<T> commits) where T : IndexCommit
 			{
 				IndexCommit lastCommit = (IndexCommit) commits[commits.Count - 1];
-				IndexReader r = IndexReader.Open(dir, true);
+				IndexReader r = IndexReader.Open(dir, true, null);
 				Assert.AreEqual(r.IsOptimized(), lastCommit.IsOptimized, "lastCommit.isOptimized()=" + lastCommit.IsOptimized + " vs IndexReader.isOptimized=" + r.IsOptimized());
 				r.Close();
 				Enclosing_Instance.VerifyCommitOrder(commits);
@@ -261,14 +261,14 @@ namespace Lucene.Net.Index
 				IndexCommit lastCommit = commits[commits.Count - 1];
 				
 				// Any commit older than expireTime should be deleted:
-				double expireTime = dir.FileModified(lastCommit.SegmentsFileName) / 1000.0 - expirationTimeSeconds;
+				double expireTime = dir.FileModified(lastCommit.SegmentsFileName, null) / 1000.0 - expirationTimeSeconds;
 				
 				System.Collections.IEnumerator it = commits.GetEnumerator();
 				
 				while (it.MoveNext())
 				{
 					IndexCommit commit = (IndexCommit) it.Current;
-					double modTime = dir.FileModified(commit.SegmentsFileName) / 1000.0;
+					double modTime = dir.FileModified(commit.SegmentsFileName, null) / 1000.0;
 					if (commit != lastCommit && modTime < expireTime)
 					{
 						commit.Delete();
@@ -290,7 +290,7 @@ namespace Lucene.Net.Index
 			
 			Directory dir = new RAMDirectory();
 			ExpirationTimeDeletionPolicy policy = new ExpirationTimeDeletionPolicy(this, dir, SECONDS);
-            IndexWriter writer = new IndexWriter(dir, new WhitespaceAnalyzer(), true, policy, IndexWriter.MaxFieldLength.UNLIMITED);
+            IndexWriter writer = new IndexWriter(dir, new WhitespaceAnalyzer(), true, policy, IndexWriter.MaxFieldLength.UNLIMITED, null);
 			writer.UseCompoundFile = useCompoundFile;
 			writer.Close();
 			
@@ -300,7 +300,7 @@ namespace Lucene.Net.Index
 				// Record last time when writer performed deletes of
 				// past commits
 				lastDeleteTime = (DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond);
-                writer = new IndexWriter(dir, new WhitespaceAnalyzer(), false, policy, IndexWriter.MaxFieldLength.UNLIMITED);
+                writer = new IndexWriter(dir, new WhitespaceAnalyzer(), false, policy, IndexWriter.MaxFieldLength.UNLIMITED, null);
 				writer.UseCompoundFile = useCompoundFile;
 				for (int j = 0; j < 17; j++)
 				{
@@ -320,18 +320,18 @@ namespace Lucene.Net.Index
 			// segments_N's that still exist are in fact within SECONDS
 			// seconds of the last one's mod time, and, that I can
 			// open a reader on each:
-			long gen = SegmentInfos.GetCurrentSegmentGeneration(dir);
+			long gen = SegmentInfos.GetCurrentSegmentGeneration(dir, null);
 			
 			System.String fileName = IndexFileNames.FileNameFromGeneration(IndexFileNames.SEGMENTS, "", gen);
-			dir.DeleteFile(IndexFileNames.SEGMENTS_GEN);
+			dir.DeleteFile(IndexFileNames.SEGMENTS_GEN, null);
 			while (gen > 0)
 			{
 				try
 				{
-					IndexReader reader = IndexReader.Open(dir, true);
+					IndexReader reader = IndexReader.Open(dir, true, null);
 					reader.Close();
 					fileName = IndexFileNames.FileNameFromGeneration(IndexFileNames.SEGMENTS, "", gen);
-					long modTime = dir.FileModified(fileName);
+					long modTime = dir.FileModified(fileName, null);
 					Assert.IsTrue(lastDeleteTime - modTime <= (SECONDS * 1000), "commit point was older than " + SECONDS + " seconds (" + (lastDeleteTime - modTime) + " msec) but did not get deleted");
 				}
 				catch (System.IO.IOException)
@@ -340,7 +340,7 @@ namespace Lucene.Net.Index
 					break;
 				}
 				
-				dir.DeleteFile(IndexFileNames.FileNameFromGeneration(IndexFileNames.SEGMENTS, "", gen));
+				dir.DeleteFile(IndexFileNames.FileNameFromGeneration(IndexFileNames.SEGMENTS, "", gen), null);
 				gen--;
 			}
 			
@@ -364,19 +364,19 @@ namespace Lucene.Net.Index
 				Directory dir = new RAMDirectory();
 				policy.dir = dir;
 
-                IndexWriter writer = new IndexWriter(dir, new WhitespaceAnalyzer(), true, policy, IndexWriter.MaxFieldLength.UNLIMITED);
+                IndexWriter writer = new IndexWriter(dir, new WhitespaceAnalyzer(), true, policy, IndexWriter.MaxFieldLength.UNLIMITED, null);
 				writer.SetMaxBufferedDocs(10);
 				writer.UseCompoundFile = useCompoundFile;
-				writer.SetMergeScheduler(new SerialMergeScheduler());
+				writer.SetMergeScheduler(new SerialMergeScheduler(), null);
 				for (int i = 0; i < 107; i++)
 				{
 					AddDoc(writer);
 				}
 				writer.Close();
 
-                writer = new IndexWriter(dir, new WhitespaceAnalyzer(), false, policy, IndexWriter.MaxFieldLength.UNLIMITED);
+                writer = new IndexWriter(dir, new WhitespaceAnalyzer(), false, policy, IndexWriter.MaxFieldLength.UNLIMITED, null);
 				writer.UseCompoundFile = useCompoundFile;
-				writer.Optimize();
+				writer.Optimize(null);
 				writer.Close();
 				
 				Assert.AreEqual(2, policy.numOnInit);
@@ -386,7 +386,7 @@ namespace Lucene.Net.Index
 				Assert.AreEqual(2, policy.numOnCommit);
 				
 				// Test listCommits
-				ICollection<IndexCommit> commits = IndexReader.ListCommits(dir);
+				ICollection<IndexCommit> commits = IndexReader.ListCommits(dir, null);
 				// 1 from opening writer + 2 from closing writer
 				Assert.AreEqual(3, commits.Count);
 				
@@ -395,19 +395,19 @@ namespace Lucene.Net.Index
 				while (it.MoveNext())
 				{
 					IndexCommit commit = (IndexCommit) it.Current;
-					IndexReader r = IndexReader.Open(commit, null, false);
+					IndexReader r = IndexReader.Open(commit, null, false, null);
 					r.Close();
 				}
 				
 				// Simplistic check: just verify all segments_N's still
 				// exist, and, I can open a reader on each:
-				dir.DeleteFile(IndexFileNames.SEGMENTS_GEN);
-				long gen = SegmentInfos.GetCurrentSegmentGeneration(dir);
+				dir.DeleteFile(IndexFileNames.SEGMENTS_GEN, null);
+				long gen = SegmentInfos.GetCurrentSegmentGeneration(dir, null);
 				while (gen > 0)
 				{
-					IndexReader reader = IndexReader.Open(dir, true);
+					IndexReader reader = IndexReader.Open(dir, true, null);
 					reader.Close();
-					dir.DeleteFile(IndexFileNames.FileNameFromGeneration(IndexFileNames.SEGMENTS, "", gen));
+					dir.DeleteFile(IndexFileNames.FileNameFromGeneration(IndexFileNames.SEGMENTS, "", gen), null);
 					gen--;
 					
 					if (gen > 0)
@@ -416,10 +416,10 @@ namespace Lucene.Net.Index
 						// should have orphan'd at least one index file.
 						// Open & close a writer and assert that it
 						// actually removed something:
-						int preCount = dir.ListAll().Length;
-						writer = new IndexWriter(dir, new WhitespaceAnalyzer(), false, policy, IndexWriter.MaxFieldLength.LIMITED);
+						int preCount = dir.ListAll(null).Length;
+						writer = new IndexWriter(dir, new WhitespaceAnalyzer(), false, policy, IndexWriter.MaxFieldLength.LIMITED, null);
 						writer.Close();
-						int postCount = dir.ListAll().Length;
+						int postCount = dir.ListAll(null).Length;
 						Assert.IsTrue(postCount < preCount);
 					}
 				}
@@ -441,17 +441,17 @@ namespace Lucene.Net.Index
 			Directory dir = new MockRAMDirectory();
 			policy.dir = dir;
 			
-			IndexWriter writer = new IndexWriter(dir, new WhitespaceAnalyzer(), policy, IndexWriter.MaxFieldLength.LIMITED);
+			IndexWriter writer = new IndexWriter(dir, new WhitespaceAnalyzer(), policy, IndexWriter.MaxFieldLength.LIMITED, null);
 			writer.SetMaxBufferedDocs(2);
 			for (int i = 0; i < 10; i++)
 			{
 				AddDoc(writer);
 				if ((1 + i) % 2 == 0)
-					writer.Commit();
+					writer.Commit(null);
 			}
 			writer.Close();
 			
-			ICollection<IndexCommit> commits = IndexReader.ListCommits(dir);
+			ICollection<IndexCommit> commits = IndexReader.ListCommits(dir, null);
 			Assert.AreEqual(6, commits.Count);
 			IndexCommit lastCommit = null;
 			System.Collections.IEnumerator it = commits.GetEnumerator();
@@ -464,36 +464,36 @@ namespace Lucene.Net.Index
 			Assert.IsTrue(lastCommit != null);
 			
 			// Now add 1 doc and optimize
-			writer = new IndexWriter(dir, new WhitespaceAnalyzer(), policy, IndexWriter.MaxFieldLength.LIMITED);
+			writer = new IndexWriter(dir, new WhitespaceAnalyzer(), policy, IndexWriter.MaxFieldLength.LIMITED, null);
 			AddDoc(writer);
-			Assert.AreEqual(11, writer.NumDocs());
-			writer.Optimize();
+			Assert.AreEqual(11, writer.NumDocs(null));
+			writer.Optimize(null);
 			writer.Close();
 			
-			Assert.AreEqual(7, IndexReader.ListCommits(dir).Count);
+			Assert.AreEqual(7, IndexReader.ListCommits(dir, null).Count);
 			
 			// Now open writer on the commit just before optimize:
-			writer = new IndexWriter(dir, new WhitespaceAnalyzer(), policy, IndexWriter.MaxFieldLength.LIMITED, lastCommit);
-			Assert.AreEqual(10, writer.NumDocs());
+			writer = new IndexWriter(dir, new WhitespaceAnalyzer(), policy, IndexWriter.MaxFieldLength.LIMITED, lastCommit, null);
+			Assert.AreEqual(10, writer.NumDocs(null));
 			
 			// Should undo our rollback:
-			writer.Rollback();
+			writer.Rollback(null);
 			
-			IndexReader r = IndexReader.Open(dir, true);
+			IndexReader r = IndexReader.Open(dir, true, null);
 			// Still optimized, still 11 docs
 			Assert.IsTrue(r.IsOptimized());
 			Assert.AreEqual(11, r.NumDocs());
 			r.Close();
 			
-			writer = new IndexWriter(dir, new WhitespaceAnalyzer(), policy, IndexWriter.MaxFieldLength.LIMITED, lastCommit);
-			Assert.AreEqual(10, writer.NumDocs());
+			writer = new IndexWriter(dir, new WhitespaceAnalyzer(), policy, IndexWriter.MaxFieldLength.LIMITED, lastCommit, null);
+			Assert.AreEqual(10, writer.NumDocs(null));
 			// Commits the rollback:
 			writer.Close();
 			
 			// Now 8 because we made another commit
-			Assert.AreEqual(8, IndexReader.ListCommits(dir).Count);
+			Assert.AreEqual(8, IndexReader.ListCommits(dir, null).Count);
 			
-			r = IndexReader.Open(dir, true);
+			r = IndexReader.Open(dir, true, null);
 			// Not optimized because we rolled it back, and now only
 			// 10 docs
 			Assert.IsTrue(!r.IsOptimized());
@@ -501,23 +501,23 @@ namespace Lucene.Net.Index
 			r.Close();
 			
 			// Reoptimize
-			writer = new IndexWriter(dir, new WhitespaceAnalyzer(), policy, IndexWriter.MaxFieldLength.LIMITED);
-			writer.Optimize();
+			writer = new IndexWriter(dir, new WhitespaceAnalyzer(), policy, IndexWriter.MaxFieldLength.LIMITED, null);
+			writer.Optimize(null);
 			writer.Close();
 			
-			r = IndexReader.Open(dir, true);
+			r = IndexReader.Open(dir, true, null);
 			Assert.IsTrue(r.IsOptimized());
 			Assert.AreEqual(10, r.NumDocs());
 			r.Close();
 			
 			// Now open writer on the commit just before optimize,
 			// but this time keeping only the last commit:
-			writer = new IndexWriter(dir, new WhitespaceAnalyzer(), new KeepOnlyLastCommitDeletionPolicy(), IndexWriter.MaxFieldLength.LIMITED, lastCommit);
-			Assert.AreEqual(10, writer.NumDocs());
+			writer = new IndexWriter(dir, new WhitespaceAnalyzer(), new KeepOnlyLastCommitDeletionPolicy(), IndexWriter.MaxFieldLength.LIMITED, lastCommit, null);
+			Assert.AreEqual(10, writer.NumDocs(null));
 			
 			// Reader still sees optimized index, because writer
 			// opened on the prior commit has not yet committed:
-			r = IndexReader.Open(dir, true);
+			r = IndexReader.Open(dir, true, null);
 			Assert.IsTrue(r.IsOptimized());
 			Assert.AreEqual(10, r.NumDocs());
 			r.Close();
@@ -525,7 +525,7 @@ namespace Lucene.Net.Index
 			writer.Close();
 			
 			// Now reader sees unoptimized index:
-			r = IndexReader.Open(dir, true);
+			r = IndexReader.Open(dir, true, null);
 			Assert.IsTrue(!r.IsOptimized());
 			Assert.AreEqual(10, r.NumDocs());
 			r.Close();
@@ -549,7 +549,7 @@ namespace Lucene.Net.Index
 				
 				Directory dir = new RAMDirectory();
 
-                IndexWriter writer = new IndexWriter(dir, new WhitespaceAnalyzer(), true, policy, IndexWriter.MaxFieldLength.UNLIMITED);
+                IndexWriter writer = new IndexWriter(dir, new WhitespaceAnalyzer(), true, policy, IndexWriter.MaxFieldLength.UNLIMITED, null);
 				writer.SetMaxBufferedDocs(10);
 				writer.UseCompoundFile = useCompoundFile;
 				for (int i = 0; i < 107; i++)
@@ -558,9 +558,9 @@ namespace Lucene.Net.Index
 				}
 				writer.Close();
 
-                writer = new IndexWriter(dir, new WhitespaceAnalyzer(), false, policy, IndexWriter.MaxFieldLength.UNLIMITED);
+                writer = new IndexWriter(dir, new WhitespaceAnalyzer(), false, policy, IndexWriter.MaxFieldLength.UNLIMITED, null);
 				writer.UseCompoundFile = useCompoundFile;
-				writer.Optimize();
+				writer.Optimize(null);
 				writer.Close();
 				
 				Assert.AreEqual(2, policy.numOnInit);
@@ -570,7 +570,7 @@ namespace Lucene.Net.Index
 				
 				// Simplistic check: just verify the index is in fact
 				// readable:
-				IndexReader reader = IndexReader.Open(dir, true);
+				IndexReader reader = IndexReader.Open(dir, true, null);
 				reader.Close();
 				
 				dir.Close();
@@ -595,14 +595,14 @@ namespace Lucene.Net.Index
 				
 				for (int j = 0; j < N + 1; j++)
 				{
-                    IndexWriter writer = new IndexWriter(dir, new WhitespaceAnalyzer(), true, policy, IndexWriter.MaxFieldLength.UNLIMITED);
+                    IndexWriter writer = new IndexWriter(dir, new WhitespaceAnalyzer(), true, policy, IndexWriter.MaxFieldLength.UNLIMITED, null);
 					writer.SetMaxBufferedDocs(10);
 					writer.UseCompoundFile = useCompoundFile;
 					for (int i = 0; i < 17; i++)
 					{
 						AddDoc(writer);
 					}
-					writer.Optimize();
+					writer.Optimize(null);
 					writer.Close();
 				}
 				
@@ -612,13 +612,13 @@ namespace Lucene.Net.Index
 				
 				// Simplistic check: just verify only the past N segments_N's still
 				// exist, and, I can open a reader on each:
-				dir.DeleteFile(IndexFileNames.SEGMENTS_GEN);
-				long gen = SegmentInfos.GetCurrentSegmentGeneration(dir);
+				dir.DeleteFile(IndexFileNames.SEGMENTS_GEN, null);
+				long gen = SegmentInfos.GetCurrentSegmentGeneration(dir, null);
 				for (int i = 0; i < N + 1; i++)
 				{
 					try
 					{
-						IndexReader reader = IndexReader.Open(dir, true);
+						IndexReader reader = IndexReader.Open(dir, true, null);
 						reader.Close();
 						if (i == N)
 						{
@@ -634,7 +634,7 @@ namespace Lucene.Net.Index
 					}
 					if (i < N)
 					{
-						dir.DeleteFile(IndexFileNames.FileNameFromGeneration(IndexFileNames.SEGMENTS, "", gen));
+						dir.DeleteFile(IndexFileNames.FileNameFromGeneration(IndexFileNames.SEGMENTS, "", gen), null);
 					}
 					gen--;
 				}
@@ -659,7 +659,7 @@ namespace Lucene.Net.Index
 				KeepLastNDeletionPolicy policy = new KeepLastNDeletionPolicy(this, N);
 				
 				Directory dir = new RAMDirectory();
-                IndexWriter writer = new IndexWriter(dir, new WhitespaceAnalyzer(), true, policy, IndexWriter.MaxFieldLength.UNLIMITED);
+                IndexWriter writer = new IndexWriter(dir, new WhitespaceAnalyzer(), true, policy, IndexWriter.MaxFieldLength.UNLIMITED, null);
 				writer.UseCompoundFile = useCompoundFile;
 				writer.Close();
 				Term searchTerm = new Term("content", "aaa");
@@ -667,7 +667,7 @@ namespace Lucene.Net.Index
 				
 				for (int i = 0; i < N + 1; i++)
 				{
-                    writer = new IndexWriter(dir, new WhitespaceAnalyzer(), false, policy, IndexWriter.MaxFieldLength.UNLIMITED);
+                    writer = new IndexWriter(dir, new WhitespaceAnalyzer(), false, policy, IndexWriter.MaxFieldLength.UNLIMITED, null);
 					writer.UseCompoundFile = useCompoundFile;
 					for (int j = 0; j < 17; j++)
 					{
@@ -675,46 +675,46 @@ namespace Lucene.Net.Index
 					}
 					// this is a commit
 					writer.Close();
-					IndexReader reader = IndexReader.Open(dir, policy, false);
-					reader.DeleteDocument(3 * i + 1);
-					reader.SetNorm(4 * i + 1, "content", 2.0F);
+					IndexReader reader = IndexReader.Open(dir, policy, false, null);
+					reader.DeleteDocument(3 * i + 1, null);
+					reader.SetNorm(4 * i + 1, "content", 2.0F, null);
 					IndexSearcher searcher = new IndexSearcher(reader);
-					ScoreDoc[] hits = searcher.Search(query, null, 1000).ScoreDocs;
+					ScoreDoc[] hits = searcher.Search(query, null, 1000, null).ScoreDocs;
 					Assert.AreEqual(16 * (1 + i), hits.Length);
 					// this is a commit
 					reader.Close();
 					searcher.Close();
 				}
-                writer = new IndexWriter(dir, new WhitespaceAnalyzer(), false, policy, IndexWriter.MaxFieldLength.UNLIMITED);
+                writer = new IndexWriter(dir, new WhitespaceAnalyzer(), false, policy, IndexWriter.MaxFieldLength.UNLIMITED, null);
 				writer.UseCompoundFile = useCompoundFile;
-				writer.Optimize();
+				writer.Optimize(null);
 				// this is a commit
 				writer.Close();
 				
 				Assert.AreEqual(2 * (N + 2), policy.numOnInit);
 				Assert.AreEqual(2 * (N + 2) - 1, policy.numOnCommit);
 				
-				IndexSearcher searcher2 = new IndexSearcher(dir, false);
-				ScoreDoc[] hits2 = searcher2.Search(query, null, 1000).ScoreDocs;
+				IndexSearcher searcher2 = new IndexSearcher(dir, false, null);
+				ScoreDoc[] hits2 = searcher2.Search(query, null, 1000, null).ScoreDocs;
 				Assert.AreEqual(176, hits2.Length);
 				
 				// Simplistic check: just verify only the past N segments_N's still
 				// exist, and, I can open a reader on each:
-				long gen = SegmentInfos.GetCurrentSegmentGeneration(dir);
+				long gen = SegmentInfos.GetCurrentSegmentGeneration(dir, null);
 				
-				dir.DeleteFile(IndexFileNames.SEGMENTS_GEN);
+				dir.DeleteFile(IndexFileNames.SEGMENTS_GEN, null);
 				int expectedCount = 176;
 				
 				for (int i = 0; i < N + 1; i++)
 				{
 					try
 					{
-						IndexReader reader = IndexReader.Open(dir, true);
+						IndexReader reader = IndexReader.Open(dir, true, null);
 						
 						// Work backwards in commits on what the expected
 						// count should be.
 						searcher2 = new IndexSearcher(reader);
-						hits2 = searcher2.Search(query, null, 1000).ScoreDocs;
+						hits2 = searcher2.Search(query, null, 1000, null).ScoreDocs;
 						if (i > 1)
 						{
 							if (i % 2 == 0)
@@ -743,7 +743,7 @@ namespace Lucene.Net.Index
 					}
 					if (i < N)
 					{
-						dir.DeleteFile(IndexFileNames.FileNameFromGeneration(IndexFileNames.SEGMENTS, "", gen));
+						dir.DeleteFile(IndexFileNames.FileNameFromGeneration(IndexFileNames.SEGMENTS, "", gen), null);
 					}
 					gen--;
 				}
@@ -768,7 +768,7 @@ namespace Lucene.Net.Index
 				KeepLastNDeletionPolicy policy = new KeepLastNDeletionPolicy(this, N);
 				
 				Directory dir = new RAMDirectory();
-                IndexWriter writer = new IndexWriter(dir, new WhitespaceAnalyzer(), true, policy, IndexWriter.MaxFieldLength.UNLIMITED);
+                IndexWriter writer = new IndexWriter(dir, new WhitespaceAnalyzer(), true, policy, IndexWriter.MaxFieldLength.UNLIMITED, null);
 				writer.SetMaxBufferedDocs(10);
 				writer.UseCompoundFile = useCompoundFile;
 				writer.Close();
@@ -778,7 +778,7 @@ namespace Lucene.Net.Index
 				for (int i = 0; i < N + 1; i++)
 				{
 
-                    writer = new IndexWriter(dir, new WhitespaceAnalyzer(), false, policy, IndexWriter.MaxFieldLength.UNLIMITED);
+                    writer = new IndexWriter(dir, new WhitespaceAnalyzer(), false, policy, IndexWriter.MaxFieldLength.UNLIMITED, null);
 					writer.SetMaxBufferedDocs(10);
 					writer.UseCompoundFile = useCompoundFile;
 					for (int j = 0; j < 17; j++)
@@ -787,17 +787,17 @@ namespace Lucene.Net.Index
 					}
 					// this is a commit
 					writer.Close();
-					IndexReader reader = IndexReader.Open(dir, policy, false);
-					reader.DeleteDocument(3);
-					reader.SetNorm(5, "content", 2.0F);
+					IndexReader reader = IndexReader.Open(dir, policy, false, null);
+					reader.DeleteDocument(3, null);
+					reader.SetNorm(5, "content", 2.0F, null);
 					IndexSearcher searcher = new IndexSearcher(reader);
-					ScoreDoc[] hits = searcher.Search(query, null, 1000).ScoreDocs;
+					ScoreDoc[] hits = searcher.Search(query, null, 1000, null).ScoreDocs;
 					Assert.AreEqual(16, hits.Length);
 					// this is a commit
 					reader.Close();
 					searcher.Close();
 
-                    writer = new IndexWriter(dir, new WhitespaceAnalyzer(), true, policy, IndexWriter.MaxFieldLength.UNLIMITED);
+                    writer = new IndexWriter(dir, new WhitespaceAnalyzer(), true, policy, IndexWriter.MaxFieldLength.UNLIMITED, null);
 					// This will not commit: there are no changes
 					// pending because we opened for "create":
 					writer.Close();
@@ -806,27 +806,27 @@ namespace Lucene.Net.Index
 				Assert.AreEqual(1 + 3 * (N + 1), policy.numOnInit);
 				Assert.AreEqual(3 * (N + 1), policy.numOnCommit);
 				
-				IndexSearcher searcher2 = new IndexSearcher(dir, false);
-				ScoreDoc[] hits2 = searcher2.Search(query, null, 1000).ScoreDocs;
+				IndexSearcher searcher2 = new IndexSearcher(dir, false, null);
+				ScoreDoc[] hits2 = searcher2.Search(query, null, 1000, null).ScoreDocs;
 				Assert.AreEqual(0, hits2.Length);
 				
 				// Simplistic check: just verify only the past N segments_N's still
 				// exist, and, I can open a reader on each:
-				long gen = SegmentInfos.GetCurrentSegmentGeneration(dir);
+				long gen = SegmentInfos.GetCurrentSegmentGeneration(dir, null);
 				
-				dir.DeleteFile(IndexFileNames.SEGMENTS_GEN);
+				dir.DeleteFile(IndexFileNames.SEGMENTS_GEN, null);
 				int expectedCount = 0;
 				
 				for (int i = 0; i < N + 1; i++)
 				{
 					try
 					{
-						IndexReader reader = IndexReader.Open(dir, true);
+						IndexReader reader = IndexReader.Open(dir, true, null);
 						
 						// Work backwards in commits on what the expected
 						// count should be.
 						searcher2 = new IndexSearcher(reader);
-						hits2 = searcher2.Search(query, null, 1000).ScoreDocs;
+						hits2 = searcher2.Search(query, null, 1000, null).ScoreDocs;
 						Assert.AreEqual(expectedCount, hits2.Length);
 						searcher2.Close();
 						if (expectedCount == 0)
@@ -856,7 +856,7 @@ namespace Lucene.Net.Index
 					}
 					if (i < N)
 					{
-						dir.DeleteFile(IndexFileNames.FileNameFromGeneration(IndexFileNames.SEGMENTS, "", gen));
+						dir.DeleteFile(IndexFileNames.FileNameFromGeneration(IndexFileNames.SEGMENTS, "", gen), null);
 					}
 					gen--;
 				}
@@ -869,7 +869,7 @@ namespace Lucene.Net.Index
 		{
 			Document doc = new Document();
 			doc.Add(new Field("content", "aaa", Field.Store.NO, Field.Index.ANALYZED));
-			writer.AddDocument(doc);
+			writer.AddDocument(doc, null);
 		}
 	}
 }

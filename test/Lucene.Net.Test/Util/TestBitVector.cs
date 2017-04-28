@@ -163,8 +163,8 @@ namespace Lucene.Net.Util
 				bv.Set(i);
 				Assert.IsTrue(bv.Get(i));
 				Assert.AreEqual(i + 1, bv.Count());
-				bv.Write(d, "TESTBV");
-				BitVector compare = new BitVector(d, "TESTBV");
+				bv.Write(d, "TESTBV", null);
+				BitVector compare = new BitVector(d, "TESTBV", null);
 				// compare bit vectors with bits set incrementally
 				Assert.IsTrue(DoCompare(bv, compare));
 			}
@@ -193,26 +193,26 @@ namespace Lucene.Net.Util
 				bv.Set(i);
 				Assert.AreEqual(i + 1, bv.Count());
 			}
-			bv.Write(d, "TESTBV");
+			bv.Write(d, "TESTBV", null);
 			// gradually increase number of set bits
 			for (int i = count1; i < count2; i++)
 			{
-				BitVector bv2 = new BitVector(d, "TESTBV");
+				BitVector bv2 = new BitVector(d, "TESTBV", null);
 				Assert.IsTrue(DoCompare(bv, bv2));
 				bv = bv2;
 				bv.Set(i);
 				Assert.AreEqual(i + 1, bv.Count());
-				bv.Write(d, "TESTBV");
+				bv.Write(d, "TESTBV", null);
 			}
 			// now start decreasing number of set bits
 			for (int i = count2 - 1; i >= count1; i--)
 			{
-				BitVector bv2 = new BitVector(d, "TESTBV");
+				BitVector bv2 = new BitVector(d, "TESTBV", null);
 				Assert.IsTrue(DoCompare(bv, bv2));
 				bv = bv2;
 				bv.Clear(i);
 				Assert.AreEqual(i, bv.Count());
-				bv.Write(d, "TESTBV");
+				bv.Write(d, "TESTBV", null);
 			}
 		}
 		/// <summary> Compare two BitVectors.

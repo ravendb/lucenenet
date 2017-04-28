@@ -191,7 +191,7 @@ namespace Lucene.Net.Search.Function
         {
             protected override CustomScoreProvider GetCustomScoreProvider(IndexReader reader) 
             {
-                int[] values = FieldCache_Fields.DEFAULT.GetInts(reader, INT_FIELD);
+                int[] values = FieldCache_Fields.DEFAULT.GetInts(reader, INT_FIELD, null);
                 return new AnonymousCustomScoreProvider(reader,values);
             }
             
@@ -225,8 +225,8 @@ namespace Lucene.Net.Search.Function
             Query q = new CustomExternalQuery(q1);
             Log(q);
 
-            IndexSearcher s = new IndexSearcher(dir);
-            TopDocs hits = s.Search(q, 1000);
+            IndexSearcher s = new IndexSearcher(dir, null);
+            TopDocs hits = s.Search(q, 1000, null);
             Assert.AreEqual(N_DOCS, hits.TotalHits);
             for(int i=0;i<N_DOCS;i++) 
             {
@@ -242,7 +242,7 @@ namespace Lucene.Net.Search.Function
 		private void  DoTestCustomScore(System.String field, FieldScoreQuery.Type tp, double dboost)
 		{
 			float boost = (float) dboost;
-			IndexSearcher s = new IndexSearcher(dir, true);
+			IndexSearcher s = new IndexSearcher(dir, true, null);
 			FieldScoreQuery qValSrc = new FieldScoreQuery(field, tp); // a query that would score by the field
 			QueryParser qp = new QueryParser(Util.Version.LUCENE_CURRENT, TEXT_FIELD, anlzr);
 			System.String qtxt = "first aid text"; // from the doc texts in FunctionQuerySetup.
@@ -275,11 +275,11 @@ namespace Lucene.Net.Search.Function
 			Log(q5CustomMulAdd);
 			
 			// do al the searches 
-			TopDocs td1 = s.Search(q1, null, 1000);
-			TopDocs td2CustomNeutral = s.Search(q2CustomNeutral, null, 1000);
-			TopDocs td3CustomMul = s.Search(q3CustomMul, null, 1000);
-			TopDocs td4CustomAdd = s.Search(q4CustomAdd, null, 1000);
-			TopDocs td5CustomMulAdd = s.Search(q5CustomMulAdd, null, 1000);
+			TopDocs td1 = s.Search(q1, null, 1000, null);
+			TopDocs td2CustomNeutral = s.Search(q2CustomNeutral, null, 1000, null);
+			TopDocs td3CustomMul = s.Search(q3CustomMul, null, 1000, null);
+			TopDocs td4CustomAdd = s.Search(q4CustomAdd, null, 1000, null);
+			TopDocs td5CustomMulAdd = s.Search(q5CustomMulAdd, null, 1000, null);
 			
 			// put results in map so we can verify the scores although they have changed
 			System.Collections.Hashtable h1 = TopDocsToMap(td1);
@@ -310,7 +310,7 @@ namespace Lucene.Net.Search.Function
 				int doc = x;
 				Log("doc = " + doc);
 				
-				float fieldScore = ExpectedFieldScore(s.IndexReader.Document(doc).Get(ID_FIELD));
+				float fieldScore = ExpectedFieldScore(s.IndexReader.Document(doc, null).Get(ID_FIELD, null));
 				Log("fieldScore = " + fieldScore);
 				Assert.IsTrue(fieldScore > 0, "fieldScore should not be 0");
 				
@@ -340,7 +340,7 @@ namespace Lucene.Net.Search.Function
 			QueryUtils.Check(q, s);
 			Log(msg + " " + score1);
 			Log("Explain by: " + q);
-			Log(s.Explain(q, doc));
+			Log(s.Explain(q, doc, null));
 		}
 		
 		// since custom scoring modifies the order of docs, map results 

@@ -161,7 +161,7 @@ namespace Lucene.Net.Search.Payloads
 			base.SetUp();
 			directory = new RAMDirectory();
 			PayloadAnalyzer analyzer = new PayloadAnalyzer(this);
-			IndexWriter writer = new IndexWriter(directory, analyzer, true, IndexWriter.MaxFieldLength.LIMITED);
+			IndexWriter writer = new IndexWriter(directory, analyzer, true, IndexWriter.MaxFieldLength.LIMITED, null);
 			writer.SetSimilarity(similarity);
 			//writer.infoStream = System.out;
 			for (int i = 0; i < 1000; i++)
@@ -172,12 +172,12 @@ namespace Lucene.Net.Search.Payloads
 				doc.Add(noPayloadField);
 				doc.Add(new Field("field", English.IntToEnglish(i), Field.Store.YES, Field.Index.ANALYZED));
 				doc.Add(new Field("multiField", English.IntToEnglish(i) + "  " + English.IntToEnglish(i), Field.Store.YES, Field.Index.ANALYZED));
-				writer.AddDocument(doc);
+				writer.AddDocument(doc, null);
 			}
-			writer.Optimize();
+			writer.Optimize(null);
 			writer.Close();
 			
-			searcher = new IndexSearcher(directory, true);
+			searcher = new IndexSearcher(directory, true, null);
 			searcher.Similarity = similarity;
 		}
 		
@@ -185,7 +185,7 @@ namespace Lucene.Net.Search.Payloads
 		public virtual void  Test()
 		{
 			PayloadTermQuery query = new PayloadTermQuery(new Term("field", "seventy"), new MaxPayloadFunction());
-			TopDocs hits = searcher.Search(query, null, 100);
+			TopDocs hits = searcher.Search(query, null, 100, null);
 			Assert.IsTrue(hits != null, "hits is null and it shouldn't be");
 			Assert.IsTrue(hits.TotalHits == 100, "hits Size: " + hits.TotalHits + " is not: " + 100);
 			
@@ -199,7 +199,7 @@ namespace Lucene.Net.Search.Payloads
 				Assert.IsTrue(doc.Score == 1, doc.Score + " does not equal: " + 1);
 			}
 			CheckHits.CheckExplanations(query, PayloadHelper.FIELD, searcher, true);
-			Lucene.Net.Search.Spans.Spans spans = query.GetSpans(searcher.IndexReader);
+			Lucene.Net.Search.Spans.Spans spans = query.GetSpans(searcher.IndexReader, null);
 			Assert.IsTrue(spans != null, "spans is null and it shouldn't be");
 			Assert.IsTrue(spans is TermSpans, "spans is not an instanceof " + typeof(TermSpans));
             /*float score = hits.score(0);
@@ -228,7 +228,7 @@ namespace Lucene.Net.Search.Payloads
 		public virtual void  TestMultipleMatchesPerDoc()
 		{
 			PayloadTermQuery query = new PayloadTermQuery(new Term(PayloadHelper.MULTI_FIELD, "seventy"), new MaxPayloadFunction());
-			TopDocs hits = searcher.Search(query, null, 100);
+			TopDocs hits = searcher.Search(query, null, 100, null);
 			Assert.IsTrue(hits != null, "hits is null and it shouldn't be");
 			Assert.IsTrue(hits.TotalHits == 100, "hits Size: " + hits.TotalHits + " is not: " + 100);
 			
@@ -255,13 +255,13 @@ namespace Lucene.Net.Search.Payloads
 			}
 			Assert.IsTrue(numTens == 10, numTens + " does not equal: " + 10);
 			CheckHits.CheckExplanations(query, "field", searcher, true);
-			Lucene.Net.Search.Spans.Spans spans = query.GetSpans(searcher.IndexReader);
+			Lucene.Net.Search.Spans.Spans spans = query.GetSpans(searcher.IndexReader, null);
 			Assert.IsTrue(spans != null, "spans is null and it shouldn't be");
 			Assert.IsTrue(spans is TermSpans, "spans is not an instanceof " + typeof(TermSpans));
 			//should be two matches per document
 			int count = 0;
 			//100 hits times 2 matches per hit, we should have 200 in count
-			while (spans.Next())
+			while (spans.Next(null))
 			{
 				count++;
 			}
@@ -274,9 +274,9 @@ namespace Lucene.Net.Search.Payloads
 		{
 			PayloadTermQuery query = new PayloadTermQuery(new Term(PayloadHelper.MULTI_FIELD, "seventy"), new MaxPayloadFunction(), false);
 			
-			IndexSearcher theSearcher = new IndexSearcher(directory, true);
+			IndexSearcher theSearcher = new IndexSearcher(directory, true, null);
 			theSearcher.Similarity = new FullSimilarity();
-			TopDocs hits = searcher.Search(query, null, 100);
+			TopDocs hits = searcher.Search(query, null, 100, null);
 			Assert.IsTrue(hits != null, "hits is null and it shouldn't be");
 			Assert.IsTrue(hits.TotalHits == 100, "hits Size: " + hits.TotalHits + " is not: " + 100);
 			
@@ -303,13 +303,13 @@ namespace Lucene.Net.Search.Payloads
 			}
 			Assert.IsTrue(numTens == 10, numTens + " does not equal: " + 10);
 			CheckHits.CheckExplanations(query, "field", searcher, true);
-			Lucene.Net.Search.Spans.Spans spans = query.GetSpans(searcher.IndexReader);
+			Lucene.Net.Search.Spans.Spans spans = query.GetSpans(searcher.IndexReader, null);
 			Assert.IsTrue(spans != null, "spans is null and it shouldn't be");
 			Assert.IsTrue(spans is TermSpans, "spans is not an instanceof " + typeof(TermSpans));
 			//should be two matches per document
 			int count = 0;
 			//100 hits times 2 matches per hit, we should have 200 in count
-			while (spans.Next())
+			while (spans.Next(null))
 			{
 				count++;
 			}
@@ -319,7 +319,7 @@ namespace Lucene.Net.Search.Payloads
 		public virtual void  TestNoMatch()
 		{
 			PayloadTermQuery query = new PayloadTermQuery(new Term(PayloadHelper.FIELD, "junk"), new MaxPayloadFunction());
-			TopDocs hits = searcher.Search(query, null, 100);
+			TopDocs hits = searcher.Search(query, null, 100, null);
 			Assert.IsTrue(hits != null, "hits is null and it shouldn't be");
 			Assert.IsTrue(hits.TotalHits == 0, "hits Size: " + hits.TotalHits + " is not: " + 0);
 		}
@@ -334,7 +334,7 @@ namespace Lucene.Net.Search.Payloads
 			BooleanQuery query = new BooleanQuery();
 			query.Add(c1);
 			query.Add(c2);
-			TopDocs hits = searcher.Search(query, null, 100);
+			TopDocs hits = searcher.Search(query, null, 100, null);
 			Assert.IsTrue(hits != null, "hits is null and it shouldn't be");
 			Assert.IsTrue(hits.TotalHits == 1, "hits Size: " + hits.TotalHits + " is not: " + 1);
 			int[] results = new int[1];

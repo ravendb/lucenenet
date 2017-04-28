@@ -50,29 +50,29 @@ namespace Lucene.Net.Search
 			base.SetUp();
 			// Create an index writer.
 			directory = new RAMDirectory();
-			IndexWriter writer = new IndexWriter(directory, new WhitespaceAnalyzer(), true, IndexWriter.MaxFieldLength.LIMITED);
+			IndexWriter writer = new IndexWriter(directory, new WhitespaceAnalyzer(), true, IndexWriter.MaxFieldLength.LIMITED, null);
 			
 			// oldest doc:
 			// Add the first document.  text = "Document 1"  dateTime = Oct 10 03:25:22 EDT 2007
-			writer.AddDocument(CreateDocument("Document 1", 1192001122000L));
+			writer.AddDocument(CreateDocument("Document 1", 1192001122000L), null);
 			// Add the second document.  text = "Document 2"  dateTime = Oct 10 03:25:26 EDT 2007 
-			writer.AddDocument(CreateDocument("Document 2", 1192001126000L));
+			writer.AddDocument(CreateDocument("Document 2", 1192001126000L), null);
 			// Add the third document.  text = "Document 3"  dateTime = Oct 11 07:12:13 EDT 2007 
-			writer.AddDocument(CreateDocument("Document 3", 1192101133000L));
+			writer.AddDocument(CreateDocument("Document 3", 1192101133000L), null);
 			// Add the fourth document.  text = "Document 4"  dateTime = Oct 11 08:02:09 EDT 2007
-			writer.AddDocument(CreateDocument("Document 4", 1192104129000L));
+			writer.AddDocument(CreateDocument("Document 4", 1192104129000L), null);
 			// latest doc:
 			// Add the fifth document.  text = "Document 5"  dateTime = Oct 12 13:25:43 EDT 2007
-			writer.AddDocument(CreateDocument("Document 5", 1192209943000L));
+			writer.AddDocument(CreateDocument("Document 5", 1192209943000L), null);
 			
-			writer.Optimize();
+			writer.Optimize(null);
 			writer.Close();
 		}
 		
 		[Test]
 		public virtual void  TestReverseDateSort()
 		{
-			IndexSearcher searcher = new IndexSearcher(directory, true);
+			IndexSearcher searcher = new IndexSearcher(directory, true, null);
 			
 			Sort sort = new Sort(new SortField(DATE_TIME_FIELD, SortField.STRING, true));
 			
@@ -81,11 +81,11 @@ namespace Lucene.Net.Search
 			
 			// Execute the search and process the search results.
 			System.String[] actualOrder = new System.String[5];
-			ScoreDoc[] hits = searcher.Search(query, null, 1000, sort).ScoreDocs;
+			ScoreDoc[] hits = searcher.Search(query, null, 1000, sort, null).ScoreDocs;
 			for (int i = 0; i < hits.Length; i++)
 			{
-				Document document = searcher.Doc(hits[i].Doc);
-				System.String text = document.Get(TEXT_FIELD);
+				Document document = searcher.Doc(hits[i].Doc, null);
+				System.String text = document.Get(TEXT_FIELD, null);
 				actualOrder[i] = text;
 			}
 			searcher.Close();

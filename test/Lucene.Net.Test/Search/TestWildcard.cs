@@ -68,32 +68,32 @@ namespace Lucene.Net.Search
         public virtual void TestTermWithoutWildcard()
 		{
 		    RAMDirectory indexStore = GetIndexStore("field", new System.String[] {"nowildcard", "nowildcardx"});
-		    IndexSearcher searcher = new IndexSearcher(indexStore, true);
+		    IndexSearcher searcher = new IndexSearcher(indexStore, true, null);
 
 		    MultiTermQuery wq = new WildcardQuery(new Term("field", "nowildcard"));
 		    AssertMatches(searcher, wq, 1);
 
 		    wq.RewriteMethod = MultiTermQuery.SCORING_BOOLEAN_QUERY_REWRITE;
 		    wq.Boost = 0.1f;
-		    Query q = searcher.Rewrite(wq);
+		    Query q = searcher.Rewrite(wq, null);
 		    Assert.IsTrue(q is TermQuery);
 		    Assert.AreEqual(q.Boost, wq.Boost);
 
 		    wq.RewriteMethod = MultiTermQuery.CONSTANT_SCORE_FILTER_REWRITE;
 		    wq.Boost = 0.2f;
-		    q = searcher.Rewrite(wq);
+		    q = searcher.Rewrite(wq, null);
 		    Assert.True(q is ConstantScoreQuery);
 		    Assert.AreEqual(q.Boost, wq.Boost);
 
 		    wq.RewriteMethod = MultiTermQuery.CONSTANT_SCORE_AUTO_REWRITE_DEFAULT;
 		    wq.Boost = 0.3F;
-		    q = searcher.Rewrite(wq);
+		    q = searcher.Rewrite(wq, null);
 		    Assert.True(q is ConstantScoreQuery);
 		    Assert.AreEqual(q.Boost, wq.Boost);
 
 		    wq.RewriteMethod = MultiTermQuery.CONSTANT_SCORE_BOOLEAN_QUERY_REWRITE;
 		    wq.Boost = 0.4F;
-		    q = searcher.Rewrite(wq);
+		    q = searcher.Rewrite(wq, null);
 		    Assert.True(q is ConstantScoreQuery);
 		    Assert.AreEqual(q.Boost, wq.Boost);
 		}
@@ -105,13 +105,13 @@ namespace Lucene.Net.Search
         public void TestEmptyTerm()
         {
             RAMDirectory indexStore = GetIndexStore("field", new String[] { "nowildcard", "nowildcardx" });
-            IndexSearcher searcher = new IndexSearcher(indexStore, true);
+            IndexSearcher searcher = new IndexSearcher(indexStore, true, null);
 
             MultiTermQuery wq = new WildcardQuery(new Term("field", ""));
             wq.RewriteMethod = MultiTermQuery.SCORING_BOOLEAN_QUERY_REWRITE;
             AssertMatches(searcher, wq, 0);
             BooleanQuery expected = new BooleanQuery(true);
-            Assert.AreEqual(searcher.Rewrite(expected), searcher.Rewrite(wq));
+            Assert.AreEqual(searcher.Rewrite(expected, null), searcher.Rewrite(wq, null));
         }
 
         /// <summary>
@@ -123,7 +123,7 @@ namespace Lucene.Net.Search
         public void TestPrefixTerm()
         {
             RAMDirectory indexStore = GetIndexStore("field", new String[] { "prefix", "prefixx" });
-            IndexSearcher searcher = new IndexSearcher(indexStore, true);
+            IndexSearcher searcher = new IndexSearcher(indexStore, true, null);
 
             MultiTermQuery wq = new WildcardQuery(new Term("field", "prefix*"));
             AssertMatches(searcher, wq, 2);
@@ -133,25 +133,25 @@ namespace Lucene.Net.Search
             wq.Boost = 0.1F;
             expected.RewriteMethod = wq.RewriteMethod;
             expected.Boost = wq.Boost;
-            Assert.AreEqual(searcher.Rewrite(expected), searcher.Rewrite(wq));
+            Assert.AreEqual(searcher.Rewrite(expected, null), searcher.Rewrite(wq, null));
 
             wq.RewriteMethod = MultiTermQuery.CONSTANT_SCORE_FILTER_REWRITE;
             wq.Boost = 0.2F;
             expected.RewriteMethod = wq.RewriteMethod;
             expected.Boost = wq.Boost;
-            Assert.AreEqual(searcher.Rewrite(expected), searcher.Rewrite(wq));
+            Assert.AreEqual(searcher.Rewrite(expected, null), searcher.Rewrite(wq, null));
 
             wq.RewriteMethod = MultiTermQuery.CONSTANT_SCORE_AUTO_REWRITE_DEFAULT;
             wq.Boost = 0.3F;
             expected.RewriteMethod = wq.RewriteMethod;
             expected.Boost = wq.Boost;
-            Assert.AreEqual(searcher.Rewrite(expected), searcher.Rewrite(wq));
+            Assert.AreEqual(searcher.Rewrite(expected, null), searcher.Rewrite(wq, null));
 
             wq.RewriteMethod = MultiTermQuery.CONSTANT_SCORE_BOOLEAN_QUERY_REWRITE;
             wq.Boost = 0.4F;
             expected.RewriteMethod = wq.RewriteMethod;
             expected.Boost = wq.Boost;
-            Assert.AreEqual(searcher.Rewrite(expected), searcher.Rewrite(wq));
+            Assert.AreEqual(searcher.Rewrite(expected, null), searcher.Rewrite(wq, null));
         }
 
 	    /// <summary> Tests Wildcard queries with an asterisk.</summary>
@@ -159,7 +159,7 @@ namespace Lucene.Net.Search
 		public virtual void  TestAsterisk()
 		{
 			RAMDirectory indexStore = GetIndexStore("body", new System.String[]{"metal", "metals"});
-	        IndexSearcher searcher = new IndexSearcher(indexStore, true);
+	        IndexSearcher searcher = new IndexSearcher(indexStore, true, null);
 			Query query1 = new TermQuery(new Term("body", "metal"));
 			Query query2 = new WildcardQuery(new Term("body", "metal*"));
 			Query query3 = new WildcardQuery(new Term("body", "m*tal"));
@@ -197,7 +197,7 @@ namespace Lucene.Net.Search
         public void TestLotsOfAsterisks()
         {
             RAMDirectory indexStore = GetIndexStore("body", new String[] { "metal", "metals" });
-            IndexSearcher searcher = new IndexSearcher(indexStore, true);
+            IndexSearcher searcher = new IndexSearcher(indexStore, true, null);
             System.Text.StringBuilder term = new System.Text.StringBuilder();
             term.Append("m");
             for (int i = 0; i < 512; i++)
@@ -218,7 +218,7 @@ namespace Lucene.Net.Search
 		public virtual void  TestQuestionmark()
 		{
 			RAMDirectory indexStore = GetIndexStore("body", new System.String[]{"metal", "metals", "mXtals", "mXtXls"});
-		    IndexSearcher searcher = new IndexSearcher(indexStore, true);
+		    IndexSearcher searcher = new IndexSearcher(indexStore, true, null);
 			Query query1 = new WildcardQuery(new Term("body", "m?tal"));
 			Query query2 = new WildcardQuery(new Term("body", "metal?"));
 			Query query3 = new WildcardQuery(new Term("body", "metals?"));
@@ -237,14 +237,14 @@ namespace Lucene.Net.Search
 		private RAMDirectory GetIndexStore(System.String field, System.String[] contents)
 		{
 			RAMDirectory indexStore = new RAMDirectory();
-			IndexWriter writer = new IndexWriter(indexStore, new SimpleAnalyzer(), true, IndexWriter.MaxFieldLength.LIMITED);
+			IndexWriter writer = new IndexWriter(indexStore, new SimpleAnalyzer(), true, IndexWriter.MaxFieldLength.LIMITED, null);
 			for (int i = 0; i < contents.Length; ++i)
 			{
 				Document doc = new Document();
 				doc.Add(new Field(field, contents[i], Field.Store.YES, Field.Index.ANALYZED));
-				writer.AddDocument(doc);
+				writer.AddDocument(doc, null);
 			}
-			writer.Optimize();
+			writer.Optimize(null);
 			writer.Close();
 			
 			return indexStore;
@@ -252,7 +252,7 @@ namespace Lucene.Net.Search
 		
 		private void  AssertMatches(IndexSearcher searcher, Query q, int expectedMatches)
 		{
-			ScoreDoc[] result = searcher.Search(q, null, 1000).ScoreDocs;
+			ScoreDoc[] result = searcher.Search(q, null, 1000, null).ScoreDocs;
 			Assert.AreEqual(expectedMatches, result.Length);
 		}
 		
@@ -281,16 +281,16 @@ namespace Lucene.Net.Search
 			
 			// prepare the index
 			RAMDirectory dir = new RAMDirectory();
-			IndexWriter iw = new IndexWriter(dir, new WhitespaceAnalyzer(), IndexWriter.MaxFieldLength.LIMITED);
+			IndexWriter iw = new IndexWriter(dir, new WhitespaceAnalyzer(), IndexWriter.MaxFieldLength.LIMITED, null);
 			for (int i = 0; i < docs.Length; i++)
 			{
 				Document doc = new Document();
 				doc.Add(new Field(field, docs[i], Field.Store.NO, Field.Index.ANALYZED));
-				iw.AddDocument(doc);
+				iw.AddDocument(doc, null);
 			}
 			iw.Close();
 
-		    IndexSearcher searcher = new IndexSearcher(dir, true);
+		    IndexSearcher searcher = new IndexSearcher(dir, true, null);
 			
 			// test queries that must find all
 			for (int i = 0; i < matchAll.Length; i++)
@@ -301,7 +301,7 @@ namespace Lucene.Net.Search
 				{
 					System.Console.Out.WriteLine("matchAll: qtxt=" + qtxt + " q=" + q + " " + q.GetType().FullName);
 				}
-				ScoreDoc[] hits = searcher.Search(q, null, 1000).ScoreDocs;
+				ScoreDoc[] hits = searcher.Search(q, null, 1000, null).ScoreDocs;
 				Assert.AreEqual(docs.Length, hits.Length);
 			}
 			
@@ -314,7 +314,7 @@ namespace Lucene.Net.Search
 				{
 					System.Console.Out.WriteLine("matchNone: qtxt=" + qtxt + " q=" + q + " " + q.GetType().FullName);
 				}
-				ScoreDoc[] hits = searcher.Search(q, null, 1000).ScoreDocs;
+				ScoreDoc[] hits = searcher.Search(q, null, 1000, null).ScoreDocs;
 				Assert.AreEqual(0, hits.Length);
 			}
 			
@@ -330,7 +330,7 @@ namespace Lucene.Net.Search
 						System.Console.Out.WriteLine("match 1 prefix: doc=" + docs[i] + " qtxt=" + qtxt + " q=" + q + " " + q.GetType().FullName);
 					}
 					Assert.AreEqual(typeof(PrefixQuery), q.GetType());
-					ScoreDoc[] hits = searcher.Search(q, null, 1000).ScoreDocs;
+					ScoreDoc[] hits = searcher.Search(q, null, 1000, null).ScoreDocs;
 					Assert.AreEqual(1, hits.Length);
 					Assert.AreEqual(i, hits[0].Doc);
 				}
@@ -348,7 +348,7 @@ namespace Lucene.Net.Search
 						System.Console.Out.WriteLine("match 1 wild: doc=" + docs[i] + " qtxt=" + qtxt + " q=" + q + " " + q.GetType().FullName);
 					}
 					Assert.AreEqual(typeof(WildcardQuery), q.GetType());
-					ScoreDoc[] hits = searcher.Search(q, null, 1000).ScoreDocs;
+					ScoreDoc[] hits = searcher.Search(q, null, 1000, null).ScoreDocs;
 					Assert.AreEqual(1, hits.Length);
 					Assert.AreEqual(i, hits[0].Doc);
 				}

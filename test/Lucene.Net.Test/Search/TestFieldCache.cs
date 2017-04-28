@@ -17,9 +17,10 @@
 
 using System;
 using System.IO;
-
+using Lucene.Net.Index;
+using Lucene.Net.Store;
 using NUnit.Framework;
-
+using Directory = Lucene.Net.Store.Directory;
 using WhitespaceAnalyzer = Lucene.Net.Analysis.WhitespaceAnalyzer;
 using Document = Lucene.Net.Documents.Document;
 using Field = Lucene.Net.Documents.Field;
@@ -42,7 +43,7 @@ namespace Lucene.Net.Search
 		{
 			base.SetUp();
 			RAMDirectory directory = new RAMDirectory();
-			IndexWriter writer = new IndexWriter(directory, new WhitespaceAnalyzer(), true, IndexWriter.MaxFieldLength.LIMITED);
+			IndexWriter writer = new IndexWriter(directory, new WhitespaceAnalyzer(), true, IndexWriter.MaxFieldLength.LIMITED, null);
 			long theLong = System.Int64.MaxValue;
 			double theDouble = System.Double.MaxValue;
 			sbyte theByte = (sbyte) System.SByte.MaxValue;
@@ -58,10 +59,10 @@ namespace Lucene.Net.Search
 				doc.Add(new Field("theShort", System.Convert.ToString(theShort--), Field.Store.NO, Field.Index.NOT_ANALYZED));
 				doc.Add(new Field("theInt", System.Convert.ToString(theInt--), Field.Store.NO, Field.Index.NOT_ANALYZED));
 				doc.Add(new Field("theFloat", (theFloat--).ToString("E8"), Field.Store.NO, Field.Index.NOT_ANALYZED));
-				writer.AddDocument(doc);
+				writer.AddDocument(doc, null);
 			}
 			writer.Close();
-		    reader = IndexReader.Open(directory, true);
+		    reader = IndexReader.Open((Directory) directory, true, null);
 		}
 		
 		[Test]
@@ -73,8 +74,8 @@ namespace Lucene.Net.Search
 				System.IO.MemoryStream bos = new System.IO.MemoryStream(1024);
                 System.IO.StreamWriter writer = new System.IO.StreamWriter(bos);
 				cache.InfoStream = writer;
-				double[] doubles = cache.GetDoubles(reader, "theDouble");
-				float[] floats = cache.GetFloats(reader, "theDouble");
+				double[] doubles = cache.GetDoubles(reader, "theDouble", null);
+				float[] floats = cache.GetFloats(reader, "theDouble", null);
                 writer.Flush();
 			    bos.Position = 0;
 			    using (var sr = new StreamReader(bos))
@@ -93,54 +94,54 @@ namespace Lucene.Net.Search
 		public virtual void  Test()
 		{
 			FieldCache cache = Lucene.Net.Search.FieldCache_Fields.DEFAULT;
-			double[] doubles = cache.GetDoubles(reader, "theDouble");
-			Assert.AreSame(doubles, cache.GetDoubles(reader, "theDouble"), "Second request to cache return same array");
-			Assert.AreSame(doubles, cache.GetDoubles(reader, "theDouble", Lucene.Net.Search.FieldCache_Fields.DEFAULT_DOUBLE_PARSER), "Second request with explicit parser return same array");
+			double[] doubles = cache.GetDoubles(reader, "theDouble", null);
+			Assert.AreSame(doubles, cache.GetDoubles(reader, "theDouble", null), "Second request to cache return same array");
+			Assert.AreSame(doubles, cache.GetDoubles(reader, "theDouble", Lucene.Net.Search.FieldCache_Fields.DEFAULT_DOUBLE_PARSER, null), "Second request with explicit parser return same array");
 			Assert.IsTrue(doubles.Length == NUM_DOCS, "doubles Size: " + doubles.Length + " is not: " + NUM_DOCS);
 			for (int i = 0; i < doubles.Length; i++)
 			{
 				Assert.IsTrue(doubles[i] == (System.Double.MaxValue - i), doubles[i] + " does not equal: " + (System.Double.MaxValue - i));
 			}
 			
-			long[] longs = cache.GetLongs(reader, "theLong");
-			Assert.AreSame(longs, cache.GetLongs(reader, "theLong"), "Second request to cache return same array");
-			Assert.AreSame(longs, cache.GetLongs(reader, "theLong", Lucene.Net.Search.FieldCache_Fields.DEFAULT_LONG_PARSER), "Second request with explicit parser return same array");
+			long[] longs = cache.GetLongs(reader, (string) "theLong", (IState) null);
+			Assert.AreSame(longs, cache.GetLongs(reader, (string) "theLong", (IState) null), "Second request to cache return same array");
+			Assert.AreSame(longs, cache.GetLongs(reader, "theLong", Lucene.Net.Search.FieldCache_Fields.DEFAULT_LONG_PARSER, null), "Second request with explicit parser return same array");
 			Assert.IsTrue(longs.Length == NUM_DOCS, "longs Size: " + longs.Length + " is not: " + NUM_DOCS);
 			for (int i = 0; i < longs.Length; i++)
 			{
 				Assert.IsTrue(longs[i] == (System.Int64.MaxValue - i), longs[i] + " does not equal: " + (System.Int64.MaxValue - i));
 			}
 			
-			sbyte[] bytes = cache.GetBytes(reader, "theByte");
-			Assert.AreSame(bytes, cache.GetBytes(reader, "theByte"), "Second request to cache return same array");
-			Assert.AreSame(bytes, cache.GetBytes(reader, "theByte", Lucene.Net.Search.FieldCache_Fields.DEFAULT_BYTE_PARSER), "Second request with explicit parser return same array");
+			sbyte[] bytes = cache.GetBytes(reader, "theByte", null);
+			Assert.AreSame(bytes, cache.GetBytes(reader, "theByte", null), "Second request to cache return same array");
+			Assert.AreSame(bytes, cache.GetBytes(reader, "theByte", Lucene.Net.Search.FieldCache_Fields.DEFAULT_BYTE_PARSER, null), "Second request with explicit parser return same array");
 			Assert.IsTrue(bytes.Length == NUM_DOCS, "bytes Size: " + bytes.Length + " is not: " + NUM_DOCS);
 			for (int i = 0; i < bytes.Length; i++)
 			{
 				Assert.IsTrue(bytes[i] == (sbyte) ((byte) System.SByte.MaxValue - i), bytes[i] + " does not equal: " + ((byte) System.SByte.MaxValue - i));
 			}
 			
-			short[] shorts = cache.GetShorts(reader, "theShort");
-			Assert.AreSame(shorts, cache.GetShorts(reader, "theShort"), "Second request to cache return same array");
-			Assert.AreSame(shorts, cache.GetShorts(reader, "theShort", Lucene.Net.Search.FieldCache_Fields.DEFAULT_SHORT_PARSER), "Second request with explicit parser return same array");
+			short[] shorts = cache.GetShorts(reader, "theShort", null);
+			Assert.AreSame(shorts, cache.GetShorts(reader, "theShort", null), "Second request to cache return same array");
+			Assert.AreSame(shorts, cache.GetShorts(reader, "theShort", Lucene.Net.Search.FieldCache_Fields.DEFAULT_SHORT_PARSER, null), "Second request with explicit parser return same array");
 			Assert.IsTrue(shorts.Length == NUM_DOCS, "shorts Size: " + shorts.Length + " is not: " + NUM_DOCS);
 			for (int i = 0; i < shorts.Length; i++)
 			{
 				Assert.IsTrue(shorts[i] == (short) (System.Int16.MaxValue - i), shorts[i] + " does not equal: " + (System.Int16.MaxValue - i));
 			}
 			
-			int[] ints = cache.GetInts(reader, "theInt");
-			Assert.AreSame(ints, cache.GetInts(reader, "theInt"), "Second request to cache return same array");
-			Assert.AreSame(ints, cache.GetInts(reader, "theInt", Lucene.Net.Search.FieldCache_Fields.DEFAULT_INT_PARSER), "Second request with explicit parser return same array");
+			int[] ints = cache.GetInts(reader, "theInt", null);
+			Assert.AreSame(ints, cache.GetInts(reader, "theInt", null), "Second request to cache return same array");
+			Assert.AreSame(ints, cache.GetInts(reader, "theInt", Lucene.Net.Search.FieldCache_Fields.DEFAULT_INT_PARSER, null), "Second request with explicit parser return same array");
 			Assert.IsTrue(ints.Length == NUM_DOCS, "ints Size: " + ints.Length + " is not: " + NUM_DOCS);
 			for (int i = 0; i < ints.Length; i++)
 			{
 				Assert.IsTrue(ints[i] == (System.Int32.MaxValue - i), ints[i] + " does not equal: " + (System.Int32.MaxValue - i));
 			}
 			
-			float[] floats = cache.GetFloats(reader, "theFloat");
-			Assert.AreSame(floats, cache.GetFloats(reader, "theFloat"), "Second request to cache return same array");
-			Assert.AreSame(floats, cache.GetFloats(reader, "theFloat", Lucene.Net.Search.FieldCache_Fields.DEFAULT_FLOAT_PARSER), "Second request with explicit parser return same array");
+			float[] floats = cache.GetFloats(reader, "theFloat", null);
+			Assert.AreSame(floats, cache.GetFloats(reader, "theFloat", null), "Second request to cache return same array");
+			Assert.AreSame(floats, cache.GetFloats(reader, "theFloat", Lucene.Net.Search.FieldCache_Fields.DEFAULT_FLOAT_PARSER, null), "Second request with explicit parser return same array");
 			Assert.IsTrue(floats.Length == NUM_DOCS, "floats Size: " + floats.Length + " is not: " + NUM_DOCS);
 			for (int i = 0; i < floats.Length; i++)
 			{

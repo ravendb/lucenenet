@@ -127,25 +127,25 @@ namespace Lucene.Net.Search
 		{
 			Analyzer analyzer = new AnonymousClassAnalyzer(this);
 			Directory store = new MockRAMDirectory();
-			IndexWriter writer = new IndexWriter(store, analyzer, true, IndexWriter.MaxFieldLength.LIMITED);
+			IndexWriter writer = new IndexWriter(store, analyzer, true, IndexWriter.MaxFieldLength.LIMITED, null);
 			Document d = new Document();
 			d.Add(new Field("field", "bogus", Field.Store.YES, Field.Index.ANALYZED));
-			writer.AddDocument(d);
-			writer.Optimize();
+			writer.AddDocument(d, null);
+			writer.Optimize(null);
 			writer.Close();
 
 
-		    IndexSearcher searcher = new IndexSearcher(store, true);
+		    IndexSearcher searcher = new IndexSearcher(store, true, null);
 			
-			TermPositions pos = searcher.IndexReader.TermPositions(new Term("field", "1"));
-			pos.Next();
+			TermPositions pos = searcher.IndexReader.TermPositions(new Term("field", "1"), null);
+			pos.Next(null);
 			// first token should be at position 0
-			Assert.AreEqual(0, pos.NextPosition());
+			Assert.AreEqual(0, pos.NextPosition(null));
 			
-			pos = searcher.IndexReader.TermPositions(new Term("field", "2"));
-			pos.Next();
+			pos = searcher.IndexReader.TermPositions(new Term("field", "2"), null);
+			pos.Next(null);
 			// second token should be at position 2
-			Assert.AreEqual(2, pos.NextPosition());
+			Assert.AreEqual(2, pos.NextPosition(null));
 			
 			PhraseQuery q;
 			ScoreDoc[] hits;
@@ -153,40 +153,40 @@ namespace Lucene.Net.Search
 			q = new PhraseQuery();
 			q.Add(new Term("field", "1"));
 			q.Add(new Term("field", "2"));
-			hits = searcher.Search(q, null, 1000).ScoreDocs;
+			hits = searcher.Search(q, null, 1000, null).ScoreDocs;
 			Assert.AreEqual(0, hits.Length);
 			
 			// same as previous, just specify positions explicitely.
 			q = new PhraseQuery();
 			q.Add(new Term("field", "1"), 0);
 			q.Add(new Term("field", "2"), 1);
-			hits = searcher.Search(q, null, 1000).ScoreDocs;
+			hits = searcher.Search(q, null, 1000, null).ScoreDocs;
 			Assert.AreEqual(0, hits.Length);
 			
 			// specifying correct positions should find the phrase.
 			q = new PhraseQuery();
 			q.Add(new Term("field", "1"), 0);
 			q.Add(new Term("field", "2"), 2);
-			hits = searcher.Search(q, null, 1000).ScoreDocs;
+			hits = searcher.Search(q, null, 1000, null).ScoreDocs;
 			Assert.AreEqual(1, hits.Length);
 			
 			q = new PhraseQuery();
 			q.Add(new Term("field", "2"));
 			q.Add(new Term("field", "3"));
-			hits = searcher.Search(q, null, 1000).ScoreDocs;
+			hits = searcher.Search(q, null, 1000, null).ScoreDocs;
 			Assert.AreEqual(1, hits.Length);
 			
 			q = new PhraseQuery();
 			q.Add(new Term("field", "3"));
 			q.Add(new Term("field", "4"));
-			hits = searcher.Search(q, null, 1000).ScoreDocs;
+			hits = searcher.Search(q, null, 1000, null).ScoreDocs;
 			Assert.AreEqual(0, hits.Length);
 			
 			// phrase query would find it when correct positions are specified. 
 			q = new PhraseQuery();
 			q.Add(new Term("field", "3"), 0);
 			q.Add(new Term("field", "4"), 0);
-			hits = searcher.Search(q, null, 1000).ScoreDocs;
+			hits = searcher.Search(q, null, 1000, null).ScoreDocs;
 			Assert.AreEqual(1, hits.Length);
 			
 			// phrase query should fail for non existing searched term 
@@ -194,68 +194,68 @@ namespace Lucene.Net.Search
 			q = new PhraseQuery();
 			q.Add(new Term("field", "3"), 0);
 			q.Add(new Term("field", "9"), 0);
-			hits = searcher.Search(q, null, 1000).ScoreDocs;
+			hits = searcher.Search(q, null, 1000, null).ScoreDocs;
 			Assert.AreEqual(0, hits.Length);
 			
 			// multi-phrase query should succed for non existing searched term
 			// because there exist another searched terms in the same searched position. 
 			MultiPhraseQuery mq = new MultiPhraseQuery();
 			mq.Add(new Term[]{new Term("field", "3"), new Term("field", "9")}, 0);
-			hits = searcher.Search(mq, null, 1000).ScoreDocs;
+			hits = searcher.Search(mq, null, 1000, null).ScoreDocs;
 			Assert.AreEqual(1, hits.Length);
 			
 			q = new PhraseQuery();
 			q.Add(new Term("field", "2"));
 			q.Add(new Term("field", "4"));
-			hits = searcher.Search(q, null, 1000).ScoreDocs;
+			hits = searcher.Search(q, null, 1000, null).ScoreDocs;
 			Assert.AreEqual(1, hits.Length);
 			
 			q = new PhraseQuery();
 			q.Add(new Term("field", "3"));
 			q.Add(new Term("field", "5"));
-			hits = searcher.Search(q, null, 1000).ScoreDocs;
+			hits = searcher.Search(q, null, 1000, null).ScoreDocs;
 			Assert.AreEqual(1, hits.Length);
 			
 			q = new PhraseQuery();
 			q.Add(new Term("field", "4"));
 			q.Add(new Term("field", "5"));
-			hits = searcher.Search(q, null, 1000).ScoreDocs;
+			hits = searcher.Search(q, null, 1000, null).ScoreDocs;
 			Assert.AreEqual(1, hits.Length);
 			
 			q = new PhraseQuery();
 			q.Add(new Term("field", "2"));
 			q.Add(new Term("field", "5"));
-			hits = searcher.Search(q, null, 1000).ScoreDocs;
+			hits = searcher.Search(q, null, 1000, null).ScoreDocs;
 			Assert.AreEqual(0, hits.Length);
 			
 			// should not find "1 2" because there is a gap of 1 in the index
 			QueryParser qp = new QueryParser(Util.Version.LUCENE_CURRENT, "field", new StopWhitespaceAnalyzer(false));
 			q = (PhraseQuery) qp.Parse("\"1 2\"");
-			hits = searcher.Search(q, null, 1000).ScoreDocs;
+			hits = searcher.Search(q, null, 1000, null).ScoreDocs;
 			Assert.AreEqual(0, hits.Length);
 			
 			// omitted stop word cannot help because stop filter swallows the increments. 
 			q = (PhraseQuery) qp.Parse("\"1 stop 2\"");
-			hits = searcher.Search(q, null, 1000).ScoreDocs;
+			hits = searcher.Search(q, null, 1000, null).ScoreDocs;
 			Assert.AreEqual(0, hits.Length);
 			
 			// query parser alone won't help, because stop filter swallows the increments. 
 		    qp.EnablePositionIncrements = true;
 			q = (PhraseQuery) qp.Parse("\"1 stop 2\"");
-			hits = searcher.Search(q, null, 1000).ScoreDocs;
+			hits = searcher.Search(q, null, 1000, null).ScoreDocs;
 			Assert.AreEqual(0, hits.Length);
 			
 			// stop filter alone won't help, because query parser swallows the increments. 
 		    qp.EnablePositionIncrements = false;
 			q = (PhraseQuery) qp.Parse("\"1 stop 2\"");
-			hits = searcher.Search(q, null, 1000).ScoreDocs;
+			hits = searcher.Search(q, null, 1000, null).ScoreDocs;
 			Assert.AreEqual(0, hits.Length);
 			
 			// when both qp qnd stopFilter propagate increments, we should find the doc.
 			qp = new QueryParser(Util.Version.LUCENE_CURRENT, "field", new StopWhitespaceAnalyzer(true));
 		    qp.EnablePositionIncrements = true;
 			q = (PhraseQuery) qp.Parse("\"1 stop 2\"");
-			hits = searcher.Search(q, null, 1000).ScoreDocs;
+			hits = searcher.Search(q, null, 1000, null).ScoreDocs;
 			Assert.AreEqual(1, hits.Length);
 		}
 		
@@ -279,7 +279,7 @@ namespace Lucene.Net.Search
         {
             Directory dir = new MockRAMDirectory();
             IndexWriter writer = new IndexWriter(dir, new TestPayloadAnalyzer(), true,
-                                                 IndexWriter.MaxFieldLength.LIMITED);
+                                                 IndexWriter.MaxFieldLength.LIMITED, null);
             Document doc = new Document();
             System.IO.MemoryStream ms = new System.IO.MemoryStream();
             System.IO.StreamWriter sw = new System.IO.StreamWriter(ms);
@@ -288,23 +288,23 @@ namespace Lucene.Net.Search
             sw.Flush();
             ms.Position = 0;
             doc.Add(new Field("content", new System.IO.StreamReader(ms)));
-            writer.AddDocument(doc);
+            writer.AddDocument(doc, null);
 
-            IndexReader r = writer.GetReader();
+            IndexReader r = writer.GetReader(null);
 
-            TermPositions tp = r.TermPositions(new Term("content", "a"));
+            TermPositions tp = r.TermPositions(new Term("content", "a"), null);
             int count = 0;
-            Assert.IsTrue(tp.Next());
+            Assert.IsTrue(tp.Next(null));
             // "a" occurs 4 times
             Assert.AreEqual(4, tp.Freq);
             int expected = 0;
-            Assert.AreEqual(expected, tp.NextPosition());
-            Assert.AreEqual(1, tp.NextPosition());
-            Assert.AreEqual(3, tp.NextPosition());
-            Assert.AreEqual(6, tp.NextPosition());
+            Assert.AreEqual(expected, tp.NextPosition(null));
+            Assert.AreEqual(1, tp.NextPosition(null));
+            Assert.AreEqual(3, tp.NextPosition(null));
+            Assert.AreEqual(6, tp.NextPosition(null));
 
             // only one doc has "a"
-            Assert.IsFalse(tp.Next());
+            Assert.IsFalse(tp.Next(null));
 
             IndexSearcher is_Renamed = new IndexSearcher(r);
 
@@ -316,11 +316,11 @@ namespace Lucene.Net.Search
             count = 0;
             bool sawZero = false;
             //System.out.println("\ngetPayloadSpans test");
-            Lucene.Net.Search.Spans.Spans pspans = snq.GetSpans(is_Renamed.IndexReader);
-            while (pspans.Next())
+            Lucene.Net.Search.Spans.Spans pspans = snq.GetSpans(is_Renamed.IndexReader, null);
+            while (pspans.Next(null))
             {
                 //System.out.println(pspans.doc() + " - " + pspans.start() + " - "+ pspans.end());
-                System.Collections.Generic.ICollection<byte[]> payloads = pspans.GetPayload();
+                System.Collections.Generic.ICollection<byte[]> payloads = pspans.GetPayload(null);
                 sawZero |= pspans.Start() == 0;
                 for (System.Collections.IEnumerator it = payloads.GetEnumerator(); it.MoveNext();)
                 {
@@ -333,10 +333,10 @@ namespace Lucene.Net.Search
             Assert.IsTrue(sawZero);
 
             //System.out.println("\ngetSpans test");
-            Lucene.Net.Search.Spans.Spans spans = snq.GetSpans(is_Renamed.IndexReader);
+            Lucene.Net.Search.Spans.Spans spans = snq.GetSpans(is_Renamed.IndexReader, null);
             count = 0;
             sawZero = false;
-            while (spans.Next())
+            while (spans.Next(null))
             {
                 count++;
                 sawZero |= spans.Start() == 0;
@@ -349,7 +349,7 @@ namespace Lucene.Net.Search
 
             sawZero = false;
             PayloadSpanUtil psu = new PayloadSpanUtil(is_Renamed.IndexReader);
-            System.Collections.Generic.ICollection<byte[]> pls = psu.GetPayloadsForQuery(snq);
+            System.Collections.Generic.ICollection<byte[]> pls = psu.GetPayloadsForQuery(snq, null);
             count = pls.Count;
             for (System.Collections.IEnumerator it = pls.GetEnumerator(); it.MoveNext();)
             {

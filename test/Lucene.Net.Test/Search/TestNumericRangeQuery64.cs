@@ -71,20 +71,20 @@ namespace Lucene.Net.Search
 					case 0: 
 						type = " (constant score filter rewrite)";
 						q.RewriteMethod = MultiTermQuery.CONSTANT_SCORE_FILTER_REWRITE;
-						topDocs = searcher.Search(q, null, noDocs, Sort.INDEXORDER);
+						topDocs = searcher.Search(q, null, noDocs, Sort.INDEXORDER, null);
 						terms = q.TotalNumberOfTerms;
 						break;
 					
 					case 1: 
 						type = " (constant score boolean rewrite)";
 						q.RewriteMethod = MultiTermQuery.CONSTANT_SCORE_BOOLEAN_QUERY_REWRITE;
-						topDocs = searcher.Search(q, null, noDocs, Sort.INDEXORDER);
+						topDocs = searcher.Search(q, null, noDocs, Sort.INDEXORDER, null);
 						terms = q.TotalNumberOfTerms;
 						break;
 					
 					case 2: 
 						type = " (filter)";
-						topDocs = searcher.Search(new MatchAllDocsQuery(), f, noDocs, Sort.INDEXORDER);
+						topDocs = searcher.Search(new MatchAllDocsQuery(), f, noDocs, Sort.INDEXORDER, null);
 						terms = f.TotalNumberOfTerms;
 						break;
 					
@@ -96,10 +96,10 @@ namespace Lucene.Net.Search
 				ScoreDoc[] sd = topDocs.ScoreDocs;
 				Assert.IsNotNull(sd);
 				Assert.AreEqual(count, sd.Length, "Score doc count" + type);
-				Document doc = searcher.Doc(sd[0].Doc);
-				Assert.AreEqual(2 * distance + startOffset, System.Int64.Parse(doc.Get(field)), "First doc" + type);
-				doc = searcher.Doc(sd[sd.Length - 1].Doc);
-				Assert.AreEqual((1 + count) * distance + startOffset, System.Int64.Parse(doc.Get(field)), "Last doc" + type);
+				Document doc = searcher.Doc(sd[0].Doc, null);
+				Assert.AreEqual(2 * distance + startOffset, System.Int64.Parse(doc.Get(field, null)), "First doc" + type);
+				doc = searcher.Doc(sd[sd.Length - 1].Doc, null);
+				Assert.AreEqual((1 + count) * distance + startOffset, System.Int64.Parse(doc.Get(field, null)), "Last doc" + type);
 				if (i > 0)
 				{
 					Assert.AreEqual(lastTerms, terms, "Distinct term number is equal for all query types");
@@ -138,15 +138,15 @@ namespace Lucene.Net.Search
 			System.Int64 tempAux = 1000L;
 			System.Int64 tempAux2 = - 1000L;
             NumericRangeFilter<long> f = NumericRangeFilter.NewLongRange("field8", 8, tempAux, tempAux2, true, true);
-			Assert.AreSame(DocIdSet.EMPTY_DOCIDSET, f.GetDocIdSet(searcher.IndexReader), "A inverse range should return the EMPTY_DOCIDSET instance");
+			Assert.AreSame(DocIdSet.EMPTY_DOCIDSET, f.GetDocIdSet(searcher.IndexReader, null), "A inverse range should return the EMPTY_DOCIDSET instance");
 			//UPGRADE_TODO: The 'System.Int64' structure does not have an equivalent to NULL. "ms-help://MS.VSCC.v80/dv_commoner/local/redirect.htm?index='!DefaultContextWindowIndex'&keyword='jlca1291'"
 			System.Int64 tempAux3 = (long) System.Int64.MaxValue;
 			f = NumericRangeFilter.NewLongRange("field8", 8, tempAux3, null, false, false);
-			Assert.AreSame(DocIdSet.EMPTY_DOCIDSET, f.GetDocIdSet(searcher.IndexReader), "A exclusive range starting with Long.MAX_VALUE should return the EMPTY_DOCIDSET instance");
+			Assert.AreSame(DocIdSet.EMPTY_DOCIDSET, f.GetDocIdSet(searcher.IndexReader, null), "A exclusive range starting with Long.MAX_VALUE should return the EMPTY_DOCIDSET instance");
 			//UPGRADE_TODO: The 'System.Int64' structure does not have an equivalent to NULL. "ms-help://MS.VSCC.v80/dv_commoner/local/redirect.htm?index='!DefaultContextWindowIndex'&keyword='jlca1291'"
 			System.Int64 tempAux4 = (long) System.Int64.MinValue;
 			f = NumericRangeFilter.NewLongRange("field8", 8, null, tempAux4, false, false);
-			Assert.AreSame(DocIdSet.EMPTY_DOCIDSET, f.GetDocIdSet(searcher.IndexReader), "A exclusive range ending with Long.MIN_VALUE should return the EMPTY_DOCIDSET instance");
+			Assert.AreSame(DocIdSet.EMPTY_DOCIDSET, f.GetDocIdSet(searcher.IndexReader, null), "A exclusive range ending with Long.MIN_VALUE should return the EMPTY_DOCIDSET instance");
 		}
 		
         [Test]
@@ -157,7 +157,7 @@ namespace Lucene.Net.Search
 			System.Int64 tempAux2 = 1000L;
             NumericRangeQuery<long> q = NumericRangeQuery.NewLongRange("ascfield8", 8, tempAux, tempAux2, true, true);
             Assert.AreSame(MultiTermQuery.CONSTANT_SCORE_BOOLEAN_QUERY_REWRITE, q.RewriteMethod);
-			TopDocs topDocs = searcher.Search(q, noDocs);
+			TopDocs topDocs = searcher.Search(q, noDocs, null);
 			ScoreDoc[] sd = topDocs.ScoreDocs;
 			Assert.IsNotNull(sd);
 			Assert.AreEqual(1, sd.Length, "Score doc count");
@@ -171,15 +171,15 @@ namespace Lucene.Net.Search
 			//UPGRADE_TODO: The 'System.Int64' structure does not have an equivalent to NULL. "ms-help://MS.VSCC.v80/dv_commoner/local/redirect.htm?index='!DefaultContextWindowIndex'&keyword='jlca1291'"
 			System.Int64 tempAux = (long) upper;
             NumericRangeQuery<long> q = NumericRangeQuery.NewLongRange(field, precisionStep, null, tempAux, true, true);
-			TopDocs topDocs = searcher.Search(q, null, noDocs, Sort.INDEXORDER);
+			TopDocs topDocs = searcher.Search(q, null, noDocs, Sort.INDEXORDER, null);
 			System.Console.Out.WriteLine("Found " + q.TotalNumberOfTerms + " distinct terms in left open range for field '" + field + "'.");
 			ScoreDoc[] sd = topDocs.ScoreDocs;
 			Assert.IsNotNull(sd);
 			Assert.AreEqual(count, sd.Length, "Score doc count");
-			Document doc = searcher.Doc(sd[0].Doc);
-			Assert.AreEqual(startOffset, System.Int64.Parse(doc.Get(field)), "First doc");
-			doc = searcher.Doc(sd[sd.Length - 1].Doc);
-			Assert.AreEqual((count - 1) * distance + startOffset, System.Int64.Parse(doc.Get(field)), "Last doc");
+			Document doc = searcher.Doc(sd[0].Doc, null);
+			Assert.AreEqual(startOffset, System.Int64.Parse(doc.Get(field, null)), "First doc");
+			doc = searcher.Doc(sd[sd.Length - 1].Doc, null);
+			Assert.AreEqual((count - 1) * distance + startOffset, System.Int64.Parse(doc.Get(field, null)), "Last doc");
 		}
 		
         [Test]
@@ -214,15 +214,15 @@ namespace Lucene.Net.Search
 			//UPGRADE_TODO: The 'System.Int64' structure does not have an equivalent to NULL. "ms-help://MS.VSCC.v80/dv_commoner/local/redirect.htm?index='!DefaultContextWindowIndex'&keyword='jlca1291'"
 			System.Int64 tempAux = (long) lower;
 			NumericRangeQuery<long> q = NumericRangeQuery.NewLongRange(field, precisionStep, tempAux, null, true, true);
-			TopDocs topDocs = searcher.Search(q, null, noDocs, Sort.INDEXORDER);
+			TopDocs topDocs = searcher.Search(q, null, noDocs, Sort.INDEXORDER, null);
 			System.Console.Out.WriteLine("Found " + q.TotalNumberOfTerms + " distinct terms in right open range for field '" + field + "'.");
 			ScoreDoc[] sd = topDocs.ScoreDocs;
 			Assert.IsNotNull(sd);
 			Assert.AreEqual(noDocs - count, sd.Length, "Score doc count");
-			Document doc = searcher.Doc(sd[0].Doc);
-			Assert.AreEqual(count * distance + startOffset, System.Int64.Parse(doc.Get(field)), "First doc");
-			doc = searcher.Doc(sd[sd.Length - 1].Doc);
-			Assert.AreEqual((noDocs - 1) * distance + startOffset, System.Int64.Parse(doc.Get(field)), "Last doc");
+			Document doc = searcher.Doc(sd[0].Doc, null);
+			Assert.AreEqual(count * distance + startOffset, System.Int64.Parse(doc.Get(field, null)), "First doc");
+			doc = searcher.Doc(sd[sd.Length - 1].Doc, null);
+			Assert.AreEqual((noDocs - 1) * distance + startOffset, System.Int64.Parse(doc.Get(field, null)), "Last doc");
 		}
 		
         [Test]
@@ -267,8 +267,8 @@ namespace Lucene.Net.Search
 				System.Int64 tempAux2 = (long) upper;
                 NumericRangeQuery<long> tq = NumericRangeQuery.NewLongRange(field, precisionStep, tempAux, tempAux2, true, true);
 				TermRangeQuery cq = new TermRangeQuery(field, NumericUtils.LongToPrefixCoded(lower), NumericUtils.LongToPrefixCoded(upper), true, true);
-				TopDocs tTopDocs = searcher.Search(tq, 1);
-				TopDocs cTopDocs = searcher.Search(cq, 1);
+				TopDocs tTopDocs = searcher.Search(tq, 1, null);
+				TopDocs cTopDocs = searcher.Search(cq, 1, null);
 				Assert.AreEqual(cTopDocs.TotalHits, tTopDocs.TotalHits, "Returned count for NumericRangeQuery and TermRangeQuery must be equal");
 				termCountT += tq.TotalNumberOfTerms;
 				termCountC += cq.TotalNumberOfTerms;
@@ -277,8 +277,8 @@ namespace Lucene.Net.Search
 				System.Int64 tempAux4 = (long) upper;
 				tq = NumericRangeQuery.NewLongRange(field, precisionStep, tempAux3, tempAux4, false, false);
 				cq = new TermRangeQuery(field, NumericUtils.LongToPrefixCoded(lower), NumericUtils.LongToPrefixCoded(upper), false, false);
-				tTopDocs = searcher.Search(tq, 1);
-				cTopDocs = searcher.Search(cq, 1);
+				tTopDocs = searcher.Search(tq, 1, null);
+				cTopDocs = searcher.Search(cq, 1, null);
 				Assert.AreEqual(cTopDocs.TotalHits, tTopDocs.TotalHits, "Returned count for NumericRangeQuery and TermRangeQuery must be equal");
 				termCountT += tq.TotalNumberOfTerms;
 				termCountC += cq.TotalNumberOfTerms;
@@ -287,8 +287,8 @@ namespace Lucene.Net.Search
 				System.Int64 tempAux6 = (long) upper;
 				tq = NumericRangeQuery.NewLongRange(field, precisionStep, tempAux5, tempAux6, false, true);
 				cq = new TermRangeQuery(field, NumericUtils.LongToPrefixCoded(lower), NumericUtils.LongToPrefixCoded(upper), false, true);
-				tTopDocs = searcher.Search(tq, 1);
-				cTopDocs = searcher.Search(cq, 1);
+				tTopDocs = searcher.Search(tq, 1, null);
+				cTopDocs = searcher.Search(cq, 1, null);
 				Assert.AreEqual(cTopDocs.TotalHits, tTopDocs.TotalHits, "Returned count for NumericRangeQuery and TermRangeQuery must be equal");
 				termCountT += tq.TotalNumberOfTerms;
 				termCountC += cq.TotalNumberOfTerms;
@@ -297,8 +297,8 @@ namespace Lucene.Net.Search
 				System.Int64 tempAux8 = (long) upper;
 				tq = NumericRangeQuery.NewLongRange(field, precisionStep, tempAux7, tempAux8, true, false);
 				cq = new TermRangeQuery(field, NumericUtils.LongToPrefixCoded(lower), NumericUtils.LongToPrefixCoded(upper), true, false);
-				tTopDocs = searcher.Search(tq, 1);
-				cTopDocs = searcher.Search(cq, 1);
+				tTopDocs = searcher.Search(tq, 1, null);
+				cTopDocs = searcher.Search(cq, 1, null);
 				Assert.AreEqual(cTopDocs.TotalHits, tTopDocs.TotalHits, "Returned count for NumericRangeQuery and TermRangeQuery must be equal");
 				termCountT += tq.TotalNumberOfTerms;
 				termCountC += cq.TotalNumberOfTerms;
@@ -362,25 +362,25 @@ namespace Lucene.Net.Search
 				System.Int64 tempAux = (long) lower;
 				System.Int64 tempAux2 = (long) upper;
 				Query tq = NumericRangeQuery.NewLongRange(field, precisionStep, tempAux, tempAux2, true, true);
-				TopDocs tTopDocs = searcher.Search(tq, 1);
+				TopDocs tTopDocs = searcher.Search(tq, 1, null);
 				Assert.AreEqual(upper - lower + 1, tTopDocs.TotalHits, "Returned count of range query must be equal to inclusive range length");
 				// test exclusive range
 				System.Int64 tempAux3 = (long) lower;
 				System.Int64 tempAux4 = (long) upper;
 				tq = NumericRangeQuery.NewLongRange(field, precisionStep, tempAux3, tempAux4, false, false);
-				tTopDocs = searcher.Search(tq, 1);
+				tTopDocs = searcher.Search(tq, 1, null);
 				Assert.AreEqual(System.Math.Max(upper - lower - 1, 0), tTopDocs.TotalHits, "Returned count of range query must be equal to exclusive range length");
 				// test left exclusive range
 				System.Int64 tempAux5 = (long) lower;
 				System.Int64 tempAux6 = (long) upper;
 				tq = NumericRangeQuery.NewLongRange(field, precisionStep, tempAux5, tempAux6, false, true);
-				tTopDocs = searcher.Search(tq, 1);
+				tTopDocs = searcher.Search(tq, 1, null);
 				Assert.AreEqual(upper - lower, tTopDocs.TotalHits, "Returned count of range query must be equal to half exclusive range length");
 				// test right exclusive range
 				System.Int64 tempAux7 = (long) lower;
 				System.Int64 tempAux8 = (long) upper;
 				tq = NumericRangeQuery.NewLongRange(field, precisionStep, tempAux7, tempAux8, true, false);
-				tTopDocs = searcher.Search(tq, 1);
+				tTopDocs = searcher.Search(tq, 1, null);
 				Assert.AreEqual(upper - lower, tTopDocs.TotalHits, "Returned count of range query must be equal to half exclusive range length");
 			}
 		}
@@ -419,13 +419,13 @@ namespace Lucene.Net.Search
 			System.Double tempAux = (double) NumericUtils.SortableLongToDouble(lower);
 			System.Double tempAux2 = (double) NumericUtils.SortableLongToDouble(upper);
 			Query tq = NumericRangeQuery.NewDoubleRange(field, precisionStep, tempAux, tempAux2, true, true);
-			TopDocs tTopDocs = searcher.Search(tq, 1);
+			TopDocs tTopDocs = searcher.Search(tq, 1, null);
 			Assert.AreEqual(upper - lower + 1, tTopDocs.TotalHits, "Returned count of range query must be equal to inclusive range length");
 			
 			System.Double tempAux3 = (double) NumericUtils.SortableLongToDouble(lower);
 			System.Double tempAux4 = (double) NumericUtils.SortableLongToDouble(upper);
 			Filter tf = NumericRangeFilter.NewDoubleRange(field, precisionStep, tempAux3, tempAux4, true, true);
-			tTopDocs = searcher.Search(new MatchAllDocsQuery(), tf, 1);
+			tTopDocs = searcher.Search(new MatchAllDocsQuery(), tf, 1, null);
 			Assert.AreEqual(upper - lower + 1, tTopDocs.TotalHits, "Returned count of range filter must be equal to inclusive range length");
 		}
 		
@@ -470,15 +470,15 @@ namespace Lucene.Net.Search
 				System.Int64 tempAux = (long) lower;
 				System.Int64 tempAux2 = (long) upper;
 				Query tq = NumericRangeQuery.NewLongRange(field, precisionStep, tempAux, tempAux2, true, true);
-				TopDocs topDocs = searcher.Search(tq, null, noDocs, new Sort(new SortField(field, SortField.LONG, true)));
+				TopDocs topDocs = searcher.Search(tq, null, noDocs, new Sort(new SortField(field, SortField.LONG, true)), null);
 				if (topDocs.TotalHits == 0)
 					continue;
 				ScoreDoc[] sd = topDocs.ScoreDocs;
 				Assert.IsNotNull(sd);
-				long last = System.Int64.Parse(searcher.Doc(sd[0].Doc).Get(field));
+				long last = System.Int64.Parse(searcher.Doc(sd[0].Doc, null).Get(field, null));
 				for (int j = 1; j < sd.Length; j++)
 				{
-					long act = System.Int64.Parse(searcher.Doc(sd[j].Doc).Get(field));
+					long act = System.Int64.Parse(searcher.Doc(sd[j].Doc, null).Get(field, null));
 					Assert.IsTrue(last > act, "Docs should be sorted backwards");
 					last = act;
 				}
@@ -548,7 +548,7 @@ namespace Lucene.Net.Search
 					BooleanQuery.MaxClauseCount = 7 * 255 * 2 + 255;
 					
 					directory = new RAMDirectory();
-					IndexWriter writer = new IndexWriter(directory, new WhitespaceAnalyzer(), true, MaxFieldLength.UNLIMITED);
+					IndexWriter writer = new IndexWriter(directory, new WhitespaceAnalyzer(), true, MaxFieldLength.UNLIMITED, null);
 					
 					NumericField field8 = new NumericField("field8", 8, Field.Store.YES, true), field6 = new NumericField("field6", 6, Field.Store.YES, true), field4 = new NumericField("field4", 4, Field.Store.YES, true), field2 = new NumericField("field2", 2, Field.Store.YES, true), fieldNoTrie = new NumericField("field" + System.Int32.MaxValue, System.Int32.MaxValue, Field.Store.YES, true), ascfield8 = new NumericField("ascfield8", 8, Field.Store.NO, true), ascfield6 = new NumericField("ascfield6", 6, Field.Store.NO, true), ascfield4 = new NumericField("ascfield4", 4, Field.Store.NO, true), ascfield2 = new NumericField("ascfield2", 2, Field.Store.NO, true);
 					
@@ -573,12 +573,12 @@ namespace Lucene.Net.Search
 						ascfield6.SetLongValue(val);
 						ascfield4.SetLongValue(val);
 						ascfield2.SetLongValue(val);
-						writer.AddDocument(doc);
+						writer.AddDocument(doc, null);
 					}
 					
-					writer.Optimize();
+					writer.Optimize(null);
 					writer.Close();
-					searcher = new IndexSearcher(directory, true);
+					searcher = new IndexSearcher(directory, true, null);
 				}
 				catch (System.Exception e)
 				{
