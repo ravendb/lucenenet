@@ -41,23 +41,23 @@ namespace Lucene.Net.Support
                 IndexWriter writer;
                 IndexReader reader;
 
-                using (writer = new IndexWriter(dir, new WhitespaceAnalyzer(), true, IndexWriter.MaxFieldLength.UNLIMITED))
+                using (writer = new IndexWriter(dir, new WhitespaceAnalyzer(), true, IndexWriter.MaxFieldLength.UNLIMITED, null))
                 {
                     Field field = new Field("name", "value", Field.Store.YES,Field.Index.ANALYZED);
                     doc = new Document();
                     doc.Add(field);
-                    writer.AddDocument(doc);
-                    writer.Commit();
+                    writer.AddDocument(doc, null);
+                    writer.Commit(null);
 
-                    using (reader = writer.GetReader())
+                    using (reader = writer.GetReader(null))
                     {
-                        IndexReader r1 = reader.Reopen();
+                        IndexReader r1 = reader.Reopen(null);
                     }
 
-                    Assert.Throws<AlreadyClosedException>(() => reader.Reopen(), "IndexReader shouldn't be open here");
+                    Assert.Throws<AlreadyClosedException>(() => reader.Reopen(null), "IndexReader shouldn't be open here");
                 }
                 
-                Assert.Throws<AlreadyClosedException>(() => writer.AddDocument(doc), "IndexWriter shouldn't be open here");
+                Assert.Throws<AlreadyClosedException>(() => writer.AddDocument(doc, null), "IndexWriter shouldn't be open here");
 
                 Assert.IsTrue(dir.isOpen_ForNUnit, "RAMDirectory");
             }

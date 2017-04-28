@@ -16,6 +16,7 @@
  */
 
 using System;
+using Lucene.Net.Store;
 using Lucene.Net.Util;
 using NUnit.Framework;
 
@@ -43,7 +44,7 @@ namespace Lucene.Net.Search
 		internal sealed class JustCompileSearcher:Searcher
 		{
 			
-			public /*protected internal*/ override Weight CreateWeight(Query query)
+			public /*protected internal*/ override Weight CreateWeight(Query query, IState state)
 			{
 				throw new System.NotSupportedException(Lucene.Net.Search.JustCompileSearch.UNSUPPORTED_MSG);
 			}
@@ -53,17 +54,17 @@ namespace Lucene.Net.Search
                 throw new System.NotSupportedException(Lucene.Net.Search.JustCompileSearch.UNSUPPORTED_MSG);
             }
 			
-			public override Document Doc(int i)
+			public override Document Doc(int i, IState state)
 			{
 				throw new System.NotSupportedException(Lucene.Net.Search.JustCompileSearch.UNSUPPORTED_MSG);
 			}
 			
-			public override int[] DocFreqs(Term[] terms)
+			public override int[] DocFreqs(Term[] terms, IState state)
 			{
 				throw new System.NotSupportedException(Lucene.Net.Search.JustCompileSearch.UNSUPPORTED_MSG);
 			}
 			
-			public override Explanation Explain(Query query, int doc)
+			public override Explanation Explain(Query query, int doc, IState state)
 			{
 				throw new System.NotSupportedException(Lucene.Net.Search.JustCompileSearch.UNSUPPORTED_MSG);
 			}
@@ -74,37 +75,37 @@ namespace Lucene.Net.Search
 		        set { throw new System.NotSupportedException(Lucene.Net.Search.JustCompileSearch.UNSUPPORTED_MSG); }
 		    }
 
-		    public override void  Search(Query query, Collector results)
+		    public override void  Search(Query query, Collector results, IState state)
 			{
 				throw new System.NotSupportedException(Lucene.Net.Search.JustCompileSearch.UNSUPPORTED_MSG);
 			}
 			
-			public override void  Search(Query query, Filter filter, Collector results)
+			public override void  Search(Query query, Filter filter, Collector results, IState state)
 			{
 				throw new System.NotSupportedException(Lucene.Net.Search.JustCompileSearch.UNSUPPORTED_MSG);
 			}
 			
-			public override TopDocs Search(Query query, Filter filter, int n)
+			public override TopDocs Search(Query query, Filter filter, int n, IState state)
 			{
 				throw new System.NotSupportedException(Lucene.Net.Search.JustCompileSearch.UNSUPPORTED_MSG);
 			}
 			
-			public override TopFieldDocs Search(Query query, Filter filter, int n, Sort sort)
+			public override TopFieldDocs Search(Query query, Filter filter, int n, Sort sort, IState state)
 			{
 				throw new System.NotSupportedException(Lucene.Net.Search.JustCompileSearch.UNSUPPORTED_MSG);
 			}
 			
-			public override TopDocs Search(Query query, int n)
+			public override TopDocs Search(Query query, int n, IState state)
 			{
 				throw new System.NotSupportedException(Lucene.Net.Search.JustCompileSearch.UNSUPPORTED_MSG);
 			}
 
-		    public override int DocFreq(Term term)
+		    public override int DocFreq(Term term, IState state)
 			{
 				throw new System.NotSupportedException(Lucene.Net.Search.JustCompileSearch.UNSUPPORTED_MSG);
 			}
 			
-			public override Explanation Explain(Weight weight, int doc)
+			public override Explanation Explain(Weight weight, int doc, IState state)
 			{
 				throw new System.NotSupportedException(Lucene.Net.Search.JustCompileSearch.UNSUPPORTED_MSG);
 			}
@@ -117,27 +118,27 @@ namespace Lucene.Net.Search
                 }
 			}
 			
-			public override Query Rewrite(Query query)
+			public override Query Rewrite(Query query, IState state)
 			{
 				throw new System.NotSupportedException(Lucene.Net.Search.JustCompileSearch.UNSUPPORTED_MSG);
 			}
 			
-			public override void  Search(Weight weight, Filter filter, Collector results)
+			public override void  Search(Weight weight, Filter filter, Collector results, IState state)
 			{
 				throw new System.NotSupportedException(Lucene.Net.Search.JustCompileSearch.UNSUPPORTED_MSG);
 			}
 			
-			public override TopDocs Search(Weight weight, Filter filter, int n)
+			public override TopDocs Search(Weight weight, Filter filter, int n, IState state)
 			{
 				throw new System.NotSupportedException(Lucene.Net.Search.JustCompileSearch.UNSUPPORTED_MSG);
 			}
 			
-			public override TopFieldDocs Search(Weight weight, Filter filter, int n, Sort sort)
+			public override TopFieldDocs Search(Weight weight, Filter filter, int n, Sort sort, IState state)
 			{
 				throw new System.NotSupportedException(Lucene.Net.Search.JustCompileSearch.UNSUPPORTED_MSG);
 			}
 			
-			public override Document Doc(int n, FieldSelector fieldSelector)
+			public override Document Doc(int n, FieldSelector fieldSelector, IState state)
 			{
 				throw new System.NotSupportedException(Lucene.Net.Search.JustCompileSearch.UNSUPPORTED_MSG);
 			}
@@ -146,12 +147,12 @@ namespace Lucene.Net.Search
 		internal sealed class JustCompileCollector:Collector
 		{
 			
-			public override void  Collect(int doc)
+			public override void  Collect(int doc, IState state)
 			{
 				throw new System.NotSupportedException(Lucene.Net.Search.JustCompileSearch.UNSUPPORTED_MSG);
 			}
 			
-			public override void  SetNextReader(IndexReader reader, int docBase)
+			public override void  SetNextReader(IndexReader reader, int docBase, IState state)
 			{
 				throw new System.NotSupportedException(Lucene.Net.Search.JustCompileSearch.UNSUPPORTED_MSG);
 			}
@@ -170,7 +171,7 @@ namespace Lucene.Net.Search
 		internal sealed class JustCompileDocIdSet:DocIdSet
 		{
 			
-			public override DocIdSetIterator Iterator()
+			public override DocIdSetIterator Iterator(IState state)
 			{
 				throw new System.NotSupportedException(Lucene.Net.Search.JustCompileSearch.UNSUPPORTED_MSG);
 			}
@@ -183,12 +184,12 @@ namespace Lucene.Net.Search
 				throw new System.NotSupportedException(Lucene.Net.Search.JustCompileSearch.UNSUPPORTED_MSG);
 			}
 			
-			public override int NextDoc()
+			public override int NextDoc(IState state)
 			{
 				throw new System.NotSupportedException(Lucene.Net.Search.JustCompileSearch.UNSUPPORTED_MSG);
 			}
 			
-			public override int Advance(int target)
+			public override int Advance(int target, IState state)
 			{
 				throw new System.NotSupportedException(Lucene.Net.Search.JustCompileSearch.UNSUPPORTED_MSG);
 			}
@@ -222,12 +223,12 @@ namespace Lucene.Net.Search
 				throw new System.NotSupportedException(Lucene.Net.Search.JustCompileSearch.UNSUPPORTED_MSG);
 			}
 			
-			public override int CompareBottom(int doc)
+			public override int CompareBottom(int doc, IState state)
 			{
 				throw new System.NotSupportedException(Lucene.Net.Search.JustCompileSearch.UNSUPPORTED_MSG);
 			}
 			
-			public override void  Copy(int slot, int doc)
+			public override void  Copy(int slot, int doc, IState state)
 			{
 				throw new System.NotSupportedException(Lucene.Net.Search.JustCompileSearch.UNSUPPORTED_MSG);
 			}
@@ -237,7 +238,7 @@ namespace Lucene.Net.Search
 				throw new System.NotSupportedException(Lucene.Net.Search.JustCompileSearch.UNSUPPORTED_MSG);
 			}
 			
-			public override void  SetNextReader(IndexReader reader, int docBase)
+			public override void  SetNextReader(IndexReader reader, int docBase, IState state)
 			{
 				throw new System.NotSupportedException(Lucene.Net.Search.JustCompileSearch.UNSUPPORTED_MSG);
 			}
@@ -263,7 +264,7 @@ namespace Lucene.Net.Search
 		{
 			// Filter is just an abstract class with no abstract methods. However it is
 			// still added here in case someone will add abstract methods in the future.
-            public override DocIdSet GetDocIdSet(IndexReader reader)
+            public override DocIdSet GetDocIdSet(IndexReader reader, IState state)
             {
                 return null;
             }
@@ -345,12 +346,12 @@ namespace Lucene.Net.Search
 			{
 			}
 			
-			public /*protected internal*/ override bool Score(Collector collector, int max, int firstDocID)
+			public /*protected internal*/ override bool Score(Collector collector, int max, int firstDocID, IState state)
 			{
 				throw new System.NotSupportedException(Lucene.Net.Search.JustCompileSearch.UNSUPPORTED_MSG);
 			}
 			
-			public override float Score()
+			public override float Score(IState state)
 			{
 				throw new System.NotSupportedException(Lucene.Net.Search.JustCompileSearch.UNSUPPORTED_MSG);
 			}
@@ -360,12 +361,12 @@ namespace Lucene.Net.Search
 				throw new System.NotSupportedException(Lucene.Net.Search.JustCompileSearch.UNSUPPORTED_MSG);
 			}
 			
-			public override int NextDoc()
+			public override int NextDoc(IState state)
 			{
 				throw new System.NotSupportedException(Lucene.Net.Search.JustCompileSearch.UNSUPPORTED_MSG);
 			}
 			
-			public override int Advance(int target)
+			public override int Advance(int target, IState state)
 			{
 				throw new System.NotSupportedException(Lucene.Net.Search.JustCompileSearch.UNSUPPORTED_MSG);
 			}
@@ -409,11 +410,11 @@ namespace Lucene.Net.Search
 		[Serializable]
 		internal sealed class JustCompileSpanFilter:SpanFilter
 		{
-			public override SpanFilterResult BitSpans(IndexReader reader)
+			public override SpanFilterResult BitSpans(IndexReader reader, IState state)
 			{
 				throw new System.NotSupportedException(Lucene.Net.Search.JustCompileSearch.UNSUPPORTED_MSG);
 			}
-            public override DocIdSet GetDocIdSet(IndexReader reader)
+            public override DocIdSet GetDocIdSet(IndexReader reader, IState state)
             {
                 return null;
             }
@@ -427,12 +428,12 @@ namespace Lucene.Net.Search
 			{
 			}
 			
-			public override void  Collect(int doc)
+			public override void  Collect(int doc, IState state)
 			{
 				throw new System.NotSupportedException(Lucene.Net.Search.JustCompileSearch.UNSUPPORTED_MSG);
 			}
 			
-			public override void  SetNextReader(IndexReader reader, int docBase)
+			public override void  SetNextReader(IndexReader reader, int docBase, IState state)
 			{
 				throw new System.NotSupportedException(Lucene.Net.Search.JustCompileSearch.UNSUPPORTED_MSG);
 			}
@@ -452,7 +453,7 @@ namespace Lucene.Net.Search
 		internal sealed class JustCompileWeight:Weight
 		{
 			
-			public override Explanation Explain(IndexReader reader, int doc)
+			public override Explanation Explain(IndexReader reader, int doc, IState state)
 			{
 				throw new System.NotSupportedException(Lucene.Net.Search.JustCompileSearch.UNSUPPORTED_MSG);
 			}
@@ -477,7 +478,7 @@ namespace Lucene.Net.Search
 		        throw new System.NotSupportedException(Lucene.Net.Search.JustCompileSearch.UNSUPPORTED_MSG);
 		    }
 
-		    public override Scorer Scorer(IndexReader reader, bool scoreDocsInOrder, bool topScorer)
+		    public override Scorer Scorer(IndexReader reader, bool scoreDocsInOrder, bool topScorer, IState state)
 			{
 				throw new System.NotSupportedException(Lucene.Net.Search.JustCompileSearch.UNSUPPORTED_MSG);
 			}

@@ -16,7 +16,8 @@
  */
 
 using System;
-
+using Lucene.Net.Index;
+using Lucene.Net.Store;
 using NUnit.Framework;
 
 using KeywordAnalyzer = Lucene.Net.Analysis.KeywordAnalyzer;
@@ -44,17 +45,17 @@ namespace Lucene.Net.Search
 		{
 			System.String fieldName = "field1";
 			MockRAMDirectory rd = new MockRAMDirectory();
-			IndexWriter w = new IndexWriter(rd, new KeywordAnalyzer(), MaxFieldLength.UNLIMITED);
+			IndexWriter w = new IndexWriter(rd, new KeywordAnalyzer(), MaxFieldLength.UNLIMITED, null);
 			for (int i = 0; i < 100; i++)
 			{
 				Document doc = new Document();
 				int term = i * 10; //terms are units of 10;
 				doc.Add(new Field(fieldName, "" + term, Field.Store.YES, Field.Index.NOT_ANALYZED));
-				w.AddDocument(doc);
+				w.AddDocument(doc, null);
 			}
 			w.Close();
 
-            IndexReader reader = IndexReader.Open(rd, true);
+            IndexReader reader = IndexReader.Open((Directory) rd, true, null);
 			IndexSearcher searcher = new IndexSearcher(reader);
 			int numDocs = reader.NumDocs();
 			ScoreDoc[] results;
@@ -62,18 +63,18 @@ namespace Lucene.Net.Search
 			
 			System.Collections.ArrayList terms = new System.Collections.ArrayList();
 			terms.Add("5");
-			results = searcher.Search(q, new FieldCacheTermsFilter(fieldName, (System.String[]) terms.ToArray(typeof(System.String))), numDocs).ScoreDocs;
+			results = searcher.Search(q, new FieldCacheTermsFilter(fieldName, (System.String[]) terms.ToArray(typeof(System.String))), numDocs, null).ScoreDocs;
 			Assert.AreEqual(0, results.Length, "Must match nothing");
 			
 			terms = new System.Collections.ArrayList();
 			terms.Add("10");
-            results = searcher.Search(q, new FieldCacheTermsFilter(fieldName, (System.String[])terms.ToArray(typeof(System.String))), numDocs).ScoreDocs;
+            results = searcher.Search(q, new FieldCacheTermsFilter(fieldName, (System.String[])terms.ToArray(typeof(System.String))), numDocs, null).ScoreDocs;
 			Assert.AreEqual(1, results.Length, "Must match 1");
 			
 			terms = new System.Collections.ArrayList();
 			terms.Add("10");
 			terms.Add("20");
-			results = searcher.Search(q, new FieldCacheTermsFilter(fieldName, (System.String[]) terms.ToArray(typeof(System.String))), numDocs).ScoreDocs;
+			results = searcher.Search(q, new FieldCacheTermsFilter(fieldName, (System.String[]) terms.ToArray(typeof(System.String))), numDocs, null).ScoreDocs;
 			Assert.AreEqual(2, results.Length, "Must match 2");
 			
 			reader.Close();

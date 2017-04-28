@@ -49,7 +49,7 @@ namespace Lucene.Net.Index
 			base.SetUp();
 			DocHelper.SetupDoc(testDoc);
 			SegmentInfo info = DocHelper.WriteDoc(dir, testDoc);
-            reader = SegmentReader.Get(true, info, IndexReader.DEFAULT_TERMS_INDEX_DIVISOR);
+            reader = SegmentReader.Get(true, info, IndexReader.DEFAULT_TERMS_INDEX_DIVISOR, null);
 		}
 
         [TearDown]
@@ -73,7 +73,7 @@ namespace Lucene.Net.Index
 		{
 			Assert.IsTrue(reader.NumDocs() == 1);
 			Assert.IsTrue(reader.MaxDoc >= 1);
-			Document result = reader.Document(0);
+			Document result = reader.Document(0, null);
 			Assert.IsTrue(result != null);
 			//There are 2 unstored fields on the document that are not preserved across writing
 			Assert.IsTrue(DocHelper.NumFields(result) == DocHelper.NumFields(testDoc) - DocHelper.unstored.Count);
@@ -92,10 +92,10 @@ namespace Lucene.Net.Index
 			Document docToDelete = new Document();
 			DocHelper.SetupDoc(docToDelete);
 			SegmentInfo info = DocHelper.WriteDoc(dir, docToDelete);
-            SegmentReader deleteReader = SegmentReader.Get(false, info, IndexReader.DEFAULT_TERMS_INDEX_DIVISOR);
+            SegmentReader deleteReader = SegmentReader.Get(false, info, IndexReader.DEFAULT_TERMS_INDEX_DIVISOR, null);
 			Assert.IsTrue(deleteReader != null);
 			Assert.IsTrue(deleteReader.NumDocs() == 1);
-			deleteReader.DeleteDocument(0);
+			deleteReader.DeleteDocument(0, null);
 			Assert.IsTrue(deleteReader.IsDeleted(0) == true);
 			Assert.IsTrue(deleteReader.HasDeletions == true);
 			Assert.IsTrue(deleteReader.NumDocs() == 0);
@@ -138,9 +138,9 @@ namespace Lucene.Net.Index
 		[Test]
 		public virtual void  TestTerms()
 		{
-			TermEnum terms = reader.Terms();
+			TermEnum terms = reader.Terms(null);
 			Assert.IsTrue(terms != null);
-			while (terms.Next() == true)
+			while (terms.Next(null) == true)
 			{
 				Term term = terms.Term;
 				Assert.IsTrue(term != null);
@@ -149,20 +149,20 @@ namespace Lucene.Net.Index
 				Assert.IsTrue(fieldValue.IndexOf(term.Text) != - 1);
 			}
 			
-			TermDocs termDocs = reader.TermDocs();
+			TermDocs termDocs = reader.TermDocs(null);
 			Assert.IsTrue(termDocs != null);
-			termDocs.Seek(new Term(DocHelper.TEXT_FIELD_1_KEY, "field"));
-			Assert.IsTrue(termDocs.Next() == true);
+			termDocs.Seek(new Term(DocHelper.TEXT_FIELD_1_KEY, "field"), null);
+			Assert.IsTrue(termDocs.Next(null) == true);
 			
-			termDocs.Seek(new Term(DocHelper.NO_NORMS_KEY, DocHelper.NO_NORMS_TEXT));
-			Assert.IsTrue(termDocs.Next() == true);
+			termDocs.Seek(new Term(DocHelper.NO_NORMS_KEY, DocHelper.NO_NORMS_TEXT), null);
+			Assert.IsTrue(termDocs.Next(null) == true);
 			
 			
-			TermPositions positions = reader.TermPositions();
-			positions.Seek(new Term(DocHelper.TEXT_FIELD_1_KEY, "field"));
+			TermPositions positions = reader.TermPositions(null);
+			positions.Seek(new Term(DocHelper.TEXT_FIELD_1_KEY, "field"), null);
 			Assert.IsTrue(positions != null);
 			Assert.IsTrue(positions.Doc == 0);
-			Assert.IsTrue(positions.NextPosition() >= 0);
+			Assert.IsTrue(positions.NextPosition(null) >= 0);
 		}
 		
 		[Test]
@@ -190,16 +190,16 @@ namespace Lucene.Net.Index
 				IFieldable f = DocHelper.fields[i];
 				if (f.IsIndexed)
 				{
-					Assert.AreEqual(reader.HasNorms(f.Name), !f.OmitNorms);
-					Assert.AreEqual(reader.HasNorms(f.Name), !DocHelper.noNorms.Contains(f.Name));
-					if (!reader.HasNorms(f.Name))
+					Assert.AreEqual(reader.HasNorms(f.Name, null), !f.OmitNorms);
+					Assert.AreEqual(reader.HasNorms(f.Name, null), !DocHelper.noNorms.Contains(f.Name));
+					if (!reader.HasNorms(f.Name, null))
 					{
 						// test for fake norms of 1.0 or null depending on the flag
-						byte[] norms = reader.Norms(f.Name);
+						byte[] norms = reader.Norms(f.Name, null);
 						byte norm1 = DefaultSimilarity.EncodeNorm(1.0f);
 						Assert.IsNull(norms);
 						norms = new byte[reader.MaxDoc];
-						reader.Norms(f.Name, norms, 0);
+						reader.Norms(f.Name, norms, 0, null);
 						for (int j = 0; j < reader.MaxDoc; j++)
 						{
 							Assert.AreEqual(norms[j], norm1);
@@ -212,7 +212,7 @@ namespace Lucene.Net.Index
 		[Test]
 		public virtual void  TestTermVectors()
 		{
-			ITermFreqVector result = reader.GetTermFreqVector(0, DocHelper.TEXT_FIELD_2_KEY);
+			ITermFreqVector result = reader.GetTermFreqVector(0, DocHelper.TEXT_FIELD_2_KEY, null);
 			Assert.IsTrue(result != null);
 			System.String[] terms = result.GetTerms();
 			int[] freqs = result.GetTermFrequencies();
@@ -225,7 +225,7 @@ namespace Lucene.Net.Index
 				Assert.IsTrue(freq > 0);
 			}
 			
-			ITermFreqVector[] results = reader.GetTermFreqVectors(0);
+			ITermFreqVector[] results = reader.GetTermFreqVectors(0, null);
 			Assert.IsTrue(results != null);
 			Assert.IsTrue(results.Length == 3, "We do not have 3 term freq vectors, we have: " + results.Length);
 		}

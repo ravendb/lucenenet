@@ -16,7 +16,7 @@
  */
 
 using System;
-
+using Lucene.Net.Store;
 using NUnit.Framework;
 
 using WhitespaceAnalyzer = Lucene.Net.Analysis.WhitespaceAnalyzer;
@@ -42,7 +42,7 @@ namespace Lucene.Net.Search
 		[Serializable]
 		private class AnonymousClassFilter:Filter
 		{
-			public override DocIdSet GetDocIdSet(IndexReader reader)
+			public override DocIdSet GetDocIdSet(IndexReader reader, IState state)
 			{
 				System.Collections.BitArray bitset = new System.Collections.BitArray((5 % 64 == 0?5 / 64:5 / 64 + 1) * 64);
 				bitset.Set(1, true);
@@ -53,7 +53,7 @@ namespace Lucene.Net.Search
 		[Serializable]
 		private class AnonymousClassFilter1:Filter
 		{
-			public override DocIdSet GetDocIdSet(IndexReader reader)
+			public override DocIdSet GetDocIdSet(IndexReader reader, IState state)
 			{
 				System.Collections.BitArray bitset = new System.Collections.BitArray((5 % 64 == 0?5 / 64:5 / 64 + 1) * 64);
 				for (int i = 0; i < 5; i++) bitset.Set(i, true);
@@ -71,32 +71,32 @@ namespace Lucene.Net.Search
 		{
 			base.SetUp();
 			directory = new RAMDirectory();
-			IndexWriter writer = new IndexWriter(directory, new WhitespaceAnalyzer(), true, IndexWriter.MaxFieldLength.LIMITED);
+			IndexWriter writer = new IndexWriter(directory, new WhitespaceAnalyzer(), true, IndexWriter.MaxFieldLength.LIMITED, null);
 			
 			Document doc = new Document();
 			doc.Add(new Field("field", "one two three four five", Field.Store.YES, Field.Index.ANALYZED));
 			doc.Add(new Field("sorter", "b", Field.Store.YES, Field.Index.ANALYZED));
-			writer.AddDocument(doc);
+			writer.AddDocument(doc, null);
 			
 			doc = new Document();
 			doc.Add(new Field("field", "one two three four", Field.Store.YES, Field.Index.ANALYZED));
 			doc.Add(new Field("sorter", "d", Field.Store.YES, Field.Index.ANALYZED));
-			writer.AddDocument(doc);
+			writer.AddDocument(doc, null);
 			
 			doc = new Document();
 			doc.Add(new Field("field", "one two three y", Field.Store.YES, Field.Index.ANALYZED));
 			doc.Add(new Field("sorter", "a", Field.Store.YES, Field.Index.ANALYZED));
-			writer.AddDocument(doc);
+			writer.AddDocument(doc, null);
 			
 			doc = new Document();
 			doc.Add(new Field("field", "one two x", Field.Store.YES, Field.Index.ANALYZED));
 			doc.Add(new Field("sorter", "c", Field.Store.YES, Field.Index.ANALYZED));
-			writer.AddDocument(doc);
+			writer.AddDocument(doc, null);
 			
-			writer.Optimize();
+			writer.Optimize(null);
 			writer.Close();
 			
-			searcher = new IndexSearcher(directory, true);
+			searcher = new IndexSearcher(directory, true, null);
 			query = new TermQuery(new Term("field", "three"));
 			filter = NewStaticFilterB();
 		}
@@ -119,28 +119,28 @@ namespace Lucene.Net.Search
 		public virtual void  TestFilteredQuery_Renamed()
 		{
 			Query filteredquery = new FilteredQuery(query, filter);
-			ScoreDoc[] hits = searcher.Search(filteredquery, null, 1000).ScoreDocs;
+			ScoreDoc[] hits = searcher.Search(filteredquery, null, 1000, null).ScoreDocs;
 			Assert.AreEqual(1, hits.Length);
 			Assert.AreEqual(1, hits[0].Doc);
 			QueryUtils.Check(filteredquery, searcher);
 			
-			hits = searcher.Search(filteredquery, null, 1000, new Sort(new SortField("sorter", SortField.STRING))).ScoreDocs;
+			hits = searcher.Search(filteredquery, null, 1000, new Sort(new SortField("sorter", SortField.STRING)), null).ScoreDocs;
 			Assert.AreEqual(1, hits.Length);
 			Assert.AreEqual(1, hits[0].Doc);
 			
 			filteredquery = new FilteredQuery(new TermQuery(new Term("field", "one")), filter);
-			hits = searcher.Search(filteredquery, null, 1000).ScoreDocs;
+			hits = searcher.Search(filteredquery, null, 1000, null).ScoreDocs;
 			Assert.AreEqual(2, hits.Length);
 			QueryUtils.Check(filteredquery, searcher);
 			
 			filteredquery = new FilteredQuery(new TermQuery(new Term("field", "x")), filter);
-			hits = searcher.Search(filteredquery, null, 1000).ScoreDocs;
+			hits = searcher.Search(filteredquery, null, 1000, null).ScoreDocs;
 			Assert.AreEqual(1, hits.Length);
 			Assert.AreEqual(3, hits[0].Doc);
 			QueryUtils.Check(filteredquery, searcher);
 			
 			filteredquery = new FilteredQuery(new TermQuery(new Term("field", "y")), filter);
-			hits = searcher.Search(filteredquery, null, 1000).ScoreDocs;
+			hits = searcher.Search(filteredquery, null, 1000, null).ScoreDocs;
 			Assert.AreEqual(0, hits.Length);
 			QueryUtils.Check(filteredquery, searcher);
 			
@@ -175,8 +175,8 @@ namespace Lucene.Net.Search
 		/// <summary> Tests whether the scores of the two queries are the same.</summary>
 		public virtual void  AssertScoreEquals(Query q1, Query q2)
 		{
-			ScoreDoc[] hits1 = searcher.Search(q1, null, 1000).ScoreDocs;
-			ScoreDoc[] hits2 = searcher.Search(q2, null, 1000).ScoreDocs;
+			ScoreDoc[] hits1 = searcher.Search(q1, null, 1000, null).ScoreDocs;
+			ScoreDoc[] hits2 = searcher.Search(q2, null, 1000, null).ScoreDocs;
 			
 			Assert.AreEqual(hits1.Length, hits2.Length);
 			
@@ -193,7 +193,7 @@ namespace Lucene.Net.Search
 			TermRangeQuery rq = new TermRangeQuery("sorter", "b", "d", true, true);
 			
 			Query filteredquery = new FilteredQuery(rq, filter);
-			ScoreDoc[] hits = searcher.Search(filteredquery, null, 1000).ScoreDocs;
+			ScoreDoc[] hits = searcher.Search(filteredquery, null, 1000, null).ScoreDocs;
 			Assert.AreEqual(2, hits.Length);
 			QueryUtils.Check(filteredquery, searcher);
 		}
@@ -206,7 +206,7 @@ namespace Lucene.Net.Search
 			bq.Add(query, Occur.MUST);
 			query = new FilteredQuery(new MatchAllDocsQuery(), new SingleDocTestFilter(1));
 			bq.Add(query, Occur.MUST);
-			ScoreDoc[] hits = searcher.Search(bq, null, 1000).ScoreDocs;
+			ScoreDoc[] hits = searcher.Search(bq, null, 1000, null).ScoreDocs;
 			Assert.AreEqual(0, hits.Length);
 			QueryUtils.Check(query, searcher);
 		}
@@ -220,7 +220,7 @@ namespace Lucene.Net.Search
 			Query query = new FilteredQuery(bq, new SingleDocTestFilter(0));
 			bq.Add(new TermQuery(new Term("field", "one")), Occur.SHOULD);
 			bq.Add(new TermQuery(new Term("field", "two")), Occur.SHOULD);
-			ScoreDoc[] hits = searcher.Search(query, 1000).ScoreDocs;
+			ScoreDoc[] hits = searcher.Search(query, 1000, null).ScoreDocs;
 			Assert.AreEqual(1, hits.Length);
 			QueryUtils.Check(query, searcher);
 		}

@@ -108,14 +108,14 @@ namespace Lucene.Net.Index
 					else
 					{
 						// not synchronized
-						IndexReader refreshed = r.Reopen();
+						IndexReader refreshed = r.Reopen(null);
 						
 						
 						IndexSearcher searcher = new IndexSearcher(refreshed);
-						ScoreDoc[] hits = searcher.Search(new TermQuery(new Term("field1", "a" + rnd.Next(refreshed.MaxDoc))), null, 1000).ScoreDocs;
+						ScoreDoc[] hits = searcher.Search(new TermQuery(new Term("field1", "a" + rnd.Next(refreshed.MaxDoc))), null, 1000, null).ScoreDocs;
 						if (hits.Length > 0)
 						{
-							searcher.Doc(hits[0].Doc);
+							searcher.Doc(hits[0].Doc, null);
 						}
 						
 						// r might have changed because this is not a 
@@ -190,7 +190,7 @@ namespace Lucene.Net.Index
 		    PerformDefaultTests(new InjectableTestReopen
 		                            {
 		                                ModifyIndexAction = i => ModifyIndex(i, dir1),
-		                                OpenReaderFunc = () => IndexReader.Open(dir1, false)
+		                                OpenReaderFunc = () => IndexReader.Open(dir1, false, null)
                                     });
 			dir1.Close();
 			
@@ -200,7 +200,7 @@ namespace Lucene.Net.Index
 		    PerformDefaultTests(new InjectableTestReopen
 		                            {
 		                                ModifyIndexAction = i => ModifyIndex(i, dir2),
-                                        OpenReaderFunc = () => IndexReader.Open(dir2, false)
+                                        OpenReaderFunc = () => IndexReader.Open(dir2, false, null)
                                      });
 			dir2.Close();
 		}
@@ -223,8 +223,8 @@ namespace Lucene.Net.Index
                                         OpenReaderFunc = () =>
                                                              {
                                                                  ParallelReader pr = new ParallelReader();
-                                                                 pr.Add(IndexReader.Open(dir1, false));
-                                                                 pr.Add(IndexReader.Open(dir2, false));
+                                                                 pr.Add(IndexReader.Open(dir1, false, null));
+                                                                 pr.Add(IndexReader.Open(dir2, false, null));
                                                                  return pr;
                                                              }
                                     });
@@ -246,11 +246,11 @@ namespace Lucene.Net.Index
                                                       OpenReaderFunc = () =>
                                                                            {
                                                                                ParallelReader pr = new ParallelReader();
-                                                                               pr.Add(IndexReader.Open(dir3, false));
-                                                                               pr.Add(IndexReader.Open(dir4, false));
+                                                                               pr.Add(IndexReader.Open(dir3, false, null));
+                                                                               pr.Add(IndexReader.Open(dir4, false, null));
                                                                                // Does not implement reopen, so
                                                                                // hits exception:
-                                                                               pr.Add(new FilterIndexReader(IndexReader.Open(dir3, false)));
+                                                                               pr.Add(new FilterIndexReader(IndexReader.Open(dir3, false, null)));
                                                                                return pr;
                                                                            }
                                                   });
@@ -293,9 +293,9 @@ namespace Lucene.Net.Index
 		
 		private void  DoTestReopenWithCommit(Directory dir, bool withReopen)
 		{
-			IndexWriter iwriter = new IndexWriter(dir, new KeywordAnalyzer(), true, MaxFieldLength.LIMITED);
-			iwriter.SetMergeScheduler(new SerialMergeScheduler());
-			IndexReader reader = IndexReader.Open(dir, false);
+			IndexWriter iwriter = new IndexWriter(dir, new KeywordAnalyzer(), true, MaxFieldLength.LIMITED, null);
+			iwriter.SetMergeScheduler(new SerialMergeScheduler(), null);
+			IndexReader reader = IndexReader.Open(dir, false, null);
 			try
 			{
 				int M = 3;
@@ -307,22 +307,22 @@ namespace Lucene.Net.Index
 						doc.Add(new Field("id", i + "_" + j, Field.Store.YES, Field.Index.NOT_ANALYZED));
 						doc.Add(new Field("id2", i + "_" + j, Field.Store.YES, Field.Index.NOT_ANALYZED_NO_NORMS));
 						doc.Add(new Field("id3", i + "_" + j, Field.Store.YES, Field.Index.NO));
-						iwriter.AddDocument(doc);
+						iwriter.AddDocument(doc, null);
 						if (i > 0)
 						{
 							int k = i - 1;
 							int n = j + k * M;
-							Document prevItereationDoc = reader.Document(n);
+							Document prevItereationDoc = reader.Document(n, null);
 							Assert.IsNotNull(prevItereationDoc);
-							System.String id = prevItereationDoc.Get("id");
+							System.String id = prevItereationDoc.Get("id", null);
 							Assert.AreEqual(k + "_" + j, id);
 						}
 					}
-					iwriter.Commit();
+					iwriter.Commit(null);
 					if (withReopen)
 					{
 						// reopen
-						IndexReader r2 = reader.Reopen();
+						IndexReader r2 = reader.Reopen(null);
 						if (reader != r2)
 						{
 							reader.Close();
@@ -333,7 +333,7 @@ namespace Lucene.Net.Index
 					{
 						// recreate
 						reader.Close();
-						reader = IndexReader.Open(dir, false);
+						reader = IndexReader.Open(dir, false, null);
 					}
 				}
 			}
@@ -363,8 +363,8 @@ namespace Lucene.Net.Index
                                                                 },
                                         OpenReaderFunc = () => new MultiReader(new[]
                                                                                    {
-                                                                                       IndexReader.Open(dir1, false),
-                                                                                       IndexReader.Open(dir2, false)
+                                                                                       IndexReader.Open(dir1, false, null),
+                                                                                       IndexReader.Open(dir2, false, null)
                                                                                    })
                                     });
 			
@@ -386,11 +386,11 @@ namespace Lucene.Net.Index
 		                                                                      },
 		                                              OpenReaderFunc = () => new MultiReader(new[]
 		                                                                                         {
-		                                                                                             IndexReader.Open(dir3, false),
-		                                                                                             IndexReader.Open(dir4, false),
+		                                                                                             IndexReader.Open(dir3, false, null),
+		                                                                                             IndexReader.Open(dir4, false, null),
 		                                                                                             //does not implement reopen,
 		                                                                                             //so hits exception
-		                                                                                             new FilterIndexReader(IndexReader.Open(dir3, false))
+		                                                                                             new FilterIndexReader(IndexReader.Open(dir3, false, null))
 		                                                                                         })
 		                                          });
 			dir3.Close();
@@ -424,13 +424,13 @@ namespace Lucene.Net.Index
                                         OpenReaderFunc = () =>
                                                              {
                                                                  ParallelReader pr = new ParallelReader();
-                                                                 pr.Add(IndexReader.Open(dir1, false));
-                                                                 pr.Add(IndexReader.Open(dir2, false));
-                                                                 MultiReader mr = new MultiReader(new []{IndexReader.Open(dir3, false), IndexReader.Open(dir4, false)});
+                                                                 pr.Add(IndexReader.Open(dir1, false, null));
+                                                                 pr.Add(IndexReader.Open(dir2, false, null));
+                                                                 MultiReader mr = new MultiReader(new []{IndexReader.Open(dir3, false, null), IndexReader.Open(dir4, false, null)});
                                                                  return new MultiReader(new[]
                                                                                              {
                                                                                                  pr, mr,
-                                                                                                 IndexReader.Open(dir5, false)
+                                                                                                 IndexReader.Open(dir5, false, null)
                                                                                              });
                                                              }
                                     });
@@ -498,7 +498,7 @@ namespace Lucene.Net.Index
 				Directory dir1 = new MockRAMDirectory();
 				CreateIndex(dir1, true);
 				
-				IndexReader reader0 = IndexReader.Open(dir1, false);
+				IndexReader reader0 = IndexReader.Open(dir1, false, null);
 				AssertRefCountEquals(1, reader0);
 				
 				Assert.IsTrue(reader0 is DirectoryReader);
@@ -509,8 +509,8 @@ namespace Lucene.Net.Index
 				}
 				
 				// delete first document, so that only one of the subReaders have to be re-opened
-				IndexReader modifier = IndexReader.Open(dir1, false);
-				modifier.DeleteDocument(0);
+				IndexReader modifier = IndexReader.Open(dir1, false, null);
+				modifier.DeleteDocument(0, null);
 				modifier.Close();
 				
 				IndexReader reader1 = RefreshReader(reader0, true).refreshedReader;
@@ -532,8 +532,8 @@ namespace Lucene.Net.Index
 				}
 				
 				// delete first document, so that only one of the subReaders have to be re-opened
-				modifier = IndexReader.Open(dir1, false);
-				modifier.DeleteDocument(1);
+				modifier = IndexReader.Open(dir1, false, null);
+				modifier.DeleteDocument(1, null);
 				modifier.Close();
 				
 				IndexReader reader2 = RefreshReader(reader1, true).refreshedReader;
@@ -628,20 +628,20 @@ namespace Lucene.Net.Index
 				Directory dir2 = new MockRAMDirectory();
 				CreateIndex(dir2, true);
 				
-				IndexReader reader1 = IndexReader.Open(dir1, false);
+				IndexReader reader1 = IndexReader.Open(dir1, false, null);
 				AssertRefCountEquals(1, reader1);
 				
-				IndexReader initReader2 = IndexReader.Open(dir2, false);
+				IndexReader initReader2 = IndexReader.Open(dir2, false, null);
 				IndexReader multiReader1 = new MultiReader(new IndexReader[]{reader1, initReader2}, (mode == 0));
 				ModifyIndex(0, dir2);
 				AssertRefCountEquals(1 + mode, reader1);
 				
-				IndexReader multiReader2 = multiReader1.Reopen();
+				IndexReader multiReader2 = multiReader1.Reopen(null);
 				// index1 hasn't changed, so multiReader2 should share reader1 now with multiReader1
 				AssertRefCountEquals(2 + mode, reader1);
 				
 				ModifyIndex(0, dir1);
-				IndexReader reader2 = reader1.Reopen();
+				IndexReader reader2 = reader1.Reopen(null);
 				AssertRefCountEquals(2 + mode, reader1);
 				
 				if (mode == 1)
@@ -650,7 +650,7 @@ namespace Lucene.Net.Index
 				}
 				
 				ModifyIndex(1, dir1);
-				IndexReader reader3 = reader2.Reopen();
+				IndexReader reader3 = reader2.Reopen(null);
 				AssertRefCountEquals(2 + mode, reader1);
 				AssertRefCountEquals(1, reader2);
 				
@@ -703,23 +703,23 @@ namespace Lucene.Net.Index
 				Directory dir2 = new MockRAMDirectory();
 				CreateIndex(dir2, true);
 				
-				IndexReader reader1 = IndexReader.Open(dir1, false);
+				IndexReader reader1 = IndexReader.Open(dir1, false, null);
 				AssertRefCountEquals(1, reader1);
 				
 				ParallelReader parallelReader1 = new ParallelReader(mode == 0);
 				parallelReader1.Add(reader1);
-                IndexReader initReader2 = IndexReader.Open(dir2, false);
+                IndexReader initReader2 = IndexReader.Open(dir2, false, null);
 				parallelReader1.Add(initReader2);
 				ModifyIndex(1, dir2);
 				AssertRefCountEquals(1 + mode, reader1);
 				
-				IndexReader parallelReader2 = parallelReader1.Reopen();
+				IndexReader parallelReader2 = parallelReader1.Reopen(null);
 				// index1 hasn't changed, so parallelReader2 should share reader1 now with multiReader1
 				AssertRefCountEquals(2 + mode, reader1);
 				
 				ModifyIndex(0, dir1);
 				ModifyIndex(0, dir2);
-				IndexReader reader2 = reader1.Reopen();
+				IndexReader reader2 = reader1.Reopen(null);
 				AssertRefCountEquals(2 + mode, reader1);
 				
 				if (mode == 1)
@@ -728,7 +728,7 @@ namespace Lucene.Net.Index
 				}
 				
 				ModifyIndex(4, dir1);
-				IndexReader reader3 = reader2.Reopen();
+				IndexReader reader3 = reader2.Reopen(null);
 				AssertRefCountEquals(2 + mode, reader1);
 				AssertRefCountEquals(1, reader2);
 				
@@ -778,30 +778,30 @@ namespace Lucene.Net.Index
 			Directory dir1 = new MockRAMDirectory();
 			CreateIndex(dir1, false);
 
-            IndexReader reader1 = IndexReader.Open(dir1, false);
+            IndexReader reader1 = IndexReader.Open(dir1, false, null);
 			SegmentReader segmentReader1 = SegmentReader.GetOnlySegmentReader(reader1);
-            IndexReader modifier = IndexReader.Open(dir1, false);
-			modifier.DeleteDocument(0);
+            IndexReader modifier = IndexReader.Open(dir1, false, null);
+			modifier.DeleteDocument(0, null);
 			modifier.Close();
 			
-			IndexReader reader2 = reader1.Reopen();
-            modifier = IndexReader.Open(dir1, false);
-			modifier.SetNorm(1, "field1", 50);
-			modifier.SetNorm(1, "field2", 50);
+			IndexReader reader2 = reader1.Reopen(null);
+            modifier = IndexReader.Open(dir1, false, null);
+			modifier.SetNorm(1, "field1", (float) 50, null);
+			modifier.SetNorm(1, "field2", (float) 50, null);
 			modifier.Close();
 			
-			IndexReader reader3 = reader2.Reopen();
+			IndexReader reader3 = reader2.Reopen(null);
 			SegmentReader segmentReader3 = SegmentReader.GetOnlySegmentReader(reader3);
-            modifier = IndexReader.Open(dir1, false);
-			modifier.DeleteDocument(2);
+            modifier = IndexReader.Open(dir1, false, null);
+			modifier.DeleteDocument(2, null);
 			modifier.Close();
 			
-			IndexReader reader4 = reader3.Reopen();
-            modifier = IndexReader.Open(dir1, false);
-			modifier.DeleteDocument(3);
+			IndexReader reader4 = reader3.Reopen(null);
+            modifier = IndexReader.Open(dir1, false, null);
+			modifier.DeleteDocument(3, null);
 			modifier.Close();
 			
-			IndexReader reader5 = reader3.Reopen();
+			IndexReader reader5 = reader3.Reopen(null);
 			
 			// Now reader2-reader5 references reader1. reader1 and reader2
 			// share the same norms. reader3, reader4, reader5 also share norms.
@@ -866,48 +866,48 @@ namespace Lucene.Net.Index
 			Directory dir = new MockRAMDirectory();
 			int n = 150;
 			
-			IndexWriter writer = new IndexWriter(dir, new StandardAnalyzer(Util.Version.LUCENE_CURRENT), IndexWriter.MaxFieldLength.LIMITED);
+			IndexWriter writer = new IndexWriter(dir, new StandardAnalyzer(Util.Version.LUCENE_CURRENT), IndexWriter.MaxFieldLength.LIMITED, null);
 			for (int i = 0; i < n; i++)
 			{
-				writer.AddDocument(CreateDocument(i, 3));
+				writer.AddDocument(CreateDocument(i, 3), null);
 			}
-			writer.Optimize();
+			writer.Optimize(null);
 			writer.Close();
 
 		    TestReopen test = new InjectableTestReopen
 		                          {
-                                      OpenReaderFunc = () => IndexReader.Open(dir, false),
+                                      OpenReaderFunc = () => IndexReader.Open(dir, false, null),
 		                              ModifyIndexAction = i =>
 		                                                      {
 		                                                          if (i%3 == 0)
 		                                                          {
-		                                                              IndexReader modifier = IndexReader.Open(dir, false);
-		                                                              modifier.SetNorm(i, "field1", 50);
+		                                                              IndexReader modifier = IndexReader.Open(dir, false, null);
+		                                                              modifier.SetNorm(i, "field1", (float) 50, null);
 		                                                              modifier.Close();
 		                                                          }
 		                                                          else if (i%3 == 1)
 		                                                          {
-		                                                              IndexReader modifier = IndexReader.Open(dir, false);
-		                                                              modifier.DeleteDocument(i%modifier.MaxDoc);
+		                                                              IndexReader modifier = IndexReader.Open(dir, false, null);
+		                                                              modifier.DeleteDocument(i%modifier.MaxDoc, null);
 		                                                              modifier.Close();
 		                                                          }
 		                                                          else
 		                                                          {
 		                                                              IndexWriter modifier = new IndexWriter(dir,
 		                                                                                                     new StandardAnalyzer
-		                                                                                                         (Util.Version
-		                                                                                                              .
-		                                                                                                              LUCENE_CURRENT),
+		                                                                                                     (Util.Version
+		                                                                                                         .
+		                                                                                                         LUCENE_CURRENT),
 		                                                                                                     IndexWriter.
 		                                                                                                         MaxFieldLength
-		                                                                                                         .LIMITED);
-		                                                              modifier.AddDocument(CreateDocument(n + i, 6));
+		                                                                                                         .LIMITED, null);
+		                                                              modifier.AddDocument(CreateDocument(n + i, 6), null);
 		                                                              modifier.Close();
 		                                                          }
 		                                                      }};
 			
 			System.Collections.IList readers = (System.Collections.IList) System.Collections.ArrayList.Synchronized(new System.Collections.ArrayList(new System.Collections.ArrayList()));
-			IndexReader firstReader = IndexReader.Open(dir, false);
+			IndexReader firstReader = IndexReader.Open(dir, false, null);
 			IndexReader reader = firstReader;
 			System.Random rnd = NewRandom();
 			
@@ -918,7 +918,7 @@ namespace Lucene.Net.Index
 			{
 				if (i % 10 == 0)
 				{
-					IndexReader refreshed = reader.Reopen();
+					IndexReader refreshed = reader.Reopen(null);
 					if (refreshed != reader)
 					{
 						CollectionsHelper.AddIfNotContains(readersToClose, reader);
@@ -1064,7 +1064,7 @@ namespace Lucene.Net.Index
 				IndexReader refreshed = null;
 				try
 				{
-					refreshed = reader.Reopen();
+					refreshed = reader.Reopen(null);
 				}
 				finally
 				{
@@ -1097,27 +1097,27 @@ namespace Lucene.Net.Index
 		public static void  CreateIndex(Directory dir, bool multiSegment)
 		{
 			IndexWriter.Unlock(dir);
-			IndexWriter w = new IndexWriter(dir, new WhitespaceAnalyzer(), IndexWriter.MaxFieldLength.LIMITED);
+			IndexWriter w = new IndexWriter(dir, new WhitespaceAnalyzer(), IndexWriter.MaxFieldLength.LIMITED, null);
 			
 			w.SetMergePolicy(new LogDocMergePolicy(w));
 			
 			for (int i = 0; i < 100; i++)
 			{
-				w.AddDocument(CreateDocument(i, 4));
+				w.AddDocument(CreateDocument(i, 4), null);
 				if (multiSegment && (i % 10) == 0)
 				{
-					w.Commit();
+					w.Commit(null);
 				}
 			}
 			
 			if (!multiSegment)
 			{
-				w.Optimize();
+				w.Optimize(null);
 			}
 			
 			w.Close();
 			
-			IndexReader r = IndexReader.Open(dir, false);
+			IndexReader r = IndexReader.Open(dir, false, null);
 			if (multiSegment)
 			{
 				Assert.IsTrue(r.GetSequentialSubReaders().Length > 1);
@@ -1153,50 +1153,50 @@ namespace Lucene.Net.Index
 			{
 				
 				case 0:  {
-						IndexWriter w = new IndexWriter(dir, new WhitespaceAnalyzer(), IndexWriter.MaxFieldLength.LIMITED);
-						w.DeleteDocuments(new Term("field2", "a11"));
-						w.DeleteDocuments(new Term("field2", "b30"));
+						IndexWriter w = new IndexWriter(dir, new WhitespaceAnalyzer(), IndexWriter.MaxFieldLength.LIMITED, null);
+						w.DeleteDocuments(null, new Term("field2", "a11"));
+						w.DeleteDocuments(null, new Term("field2", "b30"));
 						w.Close();
 						break;
 					}
 				
 				case 1:  {
-						IndexReader reader = IndexReader.Open(dir, false);
-						reader.SetNorm(4, "field1", 123);
-						reader.SetNorm(44, "field2", 222);
-						reader.SetNorm(44, "field4", 22);
+						IndexReader reader = IndexReader.Open(dir, false, null);
+						reader.SetNorm(4, "field1", (float) 123, null);
+						reader.SetNorm(44, "field2", (float) 222, null);
+						reader.SetNorm(44, "field4", (float) 22, null);
 						reader.Close();
 						break;
 					}
 				
 				case 2:  {
-						IndexWriter w = new IndexWriter(dir, new WhitespaceAnalyzer(), IndexWriter.MaxFieldLength.LIMITED);
-						w.Optimize();
+						IndexWriter w = new IndexWriter(dir, new WhitespaceAnalyzer(), IndexWriter.MaxFieldLength.LIMITED, null);
+						w.Optimize(null);
 						w.Close();
 						break;
 					}
 				
 				case 3:  {
-						IndexWriter w = new IndexWriter(dir, new WhitespaceAnalyzer(), IndexWriter.MaxFieldLength.LIMITED);
-						w.AddDocument(CreateDocument(101, 4));
-						w.Optimize();
-						w.AddDocument(CreateDocument(102, 4));
-						w.AddDocument(CreateDocument(103, 4));
+						IndexWriter w = new IndexWriter(dir, new WhitespaceAnalyzer(), IndexWriter.MaxFieldLength.LIMITED, null);
+						w.AddDocument(CreateDocument(101, 4), null);
+						w.Optimize(null);
+						w.AddDocument(CreateDocument(102, 4), null);
+						w.AddDocument(CreateDocument(103, 4), null);
 						w.Close();
 						break;
 					}
 				
 				case 4:  {
-						IndexReader reader = IndexReader.Open(dir, false);
-						reader.SetNorm(5, "field1", 123);
-						reader.SetNorm(55, "field2", 222);
+						IndexReader reader = IndexReader.Open(dir, false, null);
+						reader.SetNorm(5, "field1", (float) 123, null);
+						reader.SetNorm(55, "field2", (float) 222, null);
 						reader.Close();
 						break;
 					}
 				
 				case 5:  {
-						IndexWriter w = new IndexWriter(dir, new WhitespaceAnalyzer(), IndexWriter.MaxFieldLength.LIMITED);
-						w.AddDocument(CreateDocument(101, 4));
+						IndexWriter w = new IndexWriter(dir, new WhitespaceAnalyzer(), IndexWriter.MaxFieldLength.LIMITED, null);
+						w.AddDocument(CreateDocument(101, 4), null);
 						w.Close();
 						break;
 					}
@@ -1283,15 +1283,15 @@ namespace Lucene.Net.Index
 		{
 			Directory dir = new MockRAMDirectory();
 			CreateIndex(dir, false);
-			IndexReader r1 = IndexReader.Open(dir, false);
-            IndexReader r2 = IndexReader.Open(dir, false);
-			r2.DeleteDocument(0);
+			IndexReader r1 = IndexReader.Open(dir, false, null);
+            IndexReader r2 = IndexReader.Open(dir, false, null);
+			r2.DeleteDocument(0, null);
 			r2.Close();
 			
-			IndexReader r3 = r1.Reopen();
+			IndexReader r3 = r1.Reopen(null);
 			Assert.IsTrue(r1 != r3);
 			r1.Close();
-            Assert.Throws<AlreadyClosedException>(() => r1.Document(2), "did not hit exception");
+            Assert.Throws<AlreadyClosedException>(() => r1.Document(2, null), "did not hit exception");
 			r3.Close();
 			dir.Close();
 		}
@@ -1305,11 +1305,11 @@ namespace Lucene.Net.Index
 			ModifyIndex(0, dir); // Get delete bitVector on 1st segment
 			ModifyIndex(5, dir); // Add a doc (2 segments)
 
-            IndexReader r1 = IndexReader.Open(dir, false); // MSR
+            IndexReader r1 = IndexReader.Open(dir, false, null); // MSR
 			
 			ModifyIndex(5, dir); // Add another doc (3 segments)
 			
-			IndexReader r2 = r1.Reopen(); // MSR
+			IndexReader r2 = r1.Reopen(null); // MSR
 			Assert.IsTrue(r1 != r2);
 			
 			SegmentReader sr1 = (SegmentReader) r1.GetSequentialSubReaders()[0]; // Get SRs for the first segment from original
@@ -1318,7 +1318,7 @@ namespace Lucene.Net.Index
 			// At this point they share the same BitVector
 			Assert.IsTrue(sr1.deletedDocs_ForNUnit == sr2.deletedDocs_ForNUnit);
 			
-			r2.DeleteDocument(0);
+			r2.DeleteDocument(0, null);
 			
 			// r1 should not see the delete
 			Assert.IsFalse(r1.IsDeleted(0));
@@ -1338,12 +1338,12 @@ namespace Lucene.Net.Index
 			CreateIndex(dir, false);
 			// Get delete bitVector
 			ModifyIndex(0, dir);
-            IndexReader r1 = IndexReader.Open(dir, false);
+            IndexReader r1 = IndexReader.Open(dir, false, null);
 			
 			// Add doc:
 			ModifyIndex(5, dir);
 			
-			IndexReader r2 = r1.Reopen();
+			IndexReader r2 = r1.Reopen(null);
 			Assert.IsTrue(r1 != r2);
 			
 			IndexReader[] rs2 = r2.GetSequentialSubReaders();
@@ -1356,7 +1356,7 @@ namespace Lucene.Net.Index
 			BitVector delDocs = sr1.deletedDocs_ForNUnit;
 			r1.Close();
 			
-			r2.DeleteDocument(0);
+			r2.DeleteDocument(0, null);
 			Assert.IsTrue(delDocs == sr2.deletedDocs_ForNUnit);
 			r2.Close();
 			dir.Close();
@@ -1376,38 +1376,38 @@ namespace Lucene.Net.Index
 		public virtual void  TestReopenOnCommit()
 		{
 			Directory dir = new MockRAMDirectory();
-			IndexWriter writer = new IndexWriter(dir, new WhitespaceAnalyzer(), new KeepAllCommits(), IndexWriter.MaxFieldLength.UNLIMITED);
+			IndexWriter writer = new IndexWriter(dir, new WhitespaceAnalyzer(), new KeepAllCommits(), IndexWriter.MaxFieldLength.UNLIMITED, null);
 			for (int i = 0; i < 4; i++)
 			{
 				Document doc = new Document();
 				doc.Add(new Field("id", "" + i, Field.Store.NO, Field.Index.NOT_ANALYZED));
-				writer.AddDocument(doc);
+				writer.AddDocument(doc, null);
                 System.Collections.Generic.IDictionary<string, string> data = new System.Collections.Generic.Dictionary<string, string>();
 				data["index"] = i + "";
-				writer.Commit(data);
+				writer.Commit(data, null);
 			}
 			for (int i = 0; i < 4; i++)
 			{
-				writer.DeleteDocuments(new Term("id", "" + i));
+				writer.DeleteDocuments(null, new Term("id", "" + i));
                 System.Collections.Generic.IDictionary<string, string> data = new System.Collections.Generic.Dictionary<string,string>();
 				data["index"] = (4 + i) + "";
-				writer.Commit(data);
+				writer.Commit(data, null);
 			}
 			writer.Close();
 
-            IndexReader r = IndexReader.Open(dir, false);
+            IndexReader r = IndexReader.Open(dir, false, null);
 			Assert.AreEqual(0, r.NumDocs());
 			Assert.AreEqual(4, r.MaxDoc);
                         
-			System.Collections.IEnumerator it = IndexReader.ListCommits(dir).GetEnumerator();
+			System.Collections.IEnumerator it = IndexReader.ListCommits(dir, null).GetEnumerator();
 			while (it.MoveNext())
 			{
 				IndexCommit commit = (IndexCommit) it.Current;
-				IndexReader r2 = r.Reopen(commit);
+				IndexReader r2 = r.Reopen(commit, null);
 				Assert.IsTrue(r2 != r);
 				
 				// Reader should be readOnly
-			    Assert.Throws<NotSupportedException>(() => r2.DeleteDocument(0), "no exception hit");
+			    Assert.Throws<NotSupportedException>(() => r2.DeleteDocument(0, null), "no exception hit");
 
                 System.Collections.Generic.IDictionary<string, string> s = commit.UserData;
 				int v;

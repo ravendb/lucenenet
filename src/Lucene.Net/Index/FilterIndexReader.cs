@@ -268,7 +268,7 @@ namespace Lucene.Net.Index
 		
 		protected internal override void  DoSetNorm(int d, System.String f, byte b, IState state)
 		{
-			in_Renamed.SetNorm(d, f, b);
+			in_Renamed.SetNorm(d, f, b, state);
 		}
 		
 		public override TermEnum Terms(IState state)

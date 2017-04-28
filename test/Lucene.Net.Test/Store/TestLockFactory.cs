@@ -51,7 +51,7 @@ namespace Lucene.Net.Store
 			// Lock prefix should have been set:
 			Assert.IsTrue(lf.lockPrefixSet, "lock prefix was not set by the RAMDirectory");
 			
-			IndexWriter writer = new IndexWriter(dir, new WhitespaceAnalyzer(), true, IndexWriter.MaxFieldLength.LIMITED);
+			IndexWriter writer = new IndexWriter(dir, new WhitespaceAnalyzer(), true, IndexWriter.MaxFieldLength.LIMITED, null);
 			
 			// add 100 documents (so that commit lock is used)
 			for (int i = 0; i < 100; i++)
@@ -84,14 +84,14 @@ namespace Lucene.Net.Store
 			
 			Assert.IsTrue(dir.LockFactory is NoLockFactory, "RAMDirectory.setLockFactory did not take");
 			
-			IndexWriter writer = new IndexWriter(dir, new WhitespaceAnalyzer(), true, IndexWriter.MaxFieldLength.LIMITED);
+			IndexWriter writer = new IndexWriter(dir, new WhitespaceAnalyzer(), true, IndexWriter.MaxFieldLength.LIMITED, null);
 			
 			// Create a 2nd IndexWriter.  This is normally not allowed but it should run through since we're not
 			// using any locks:
 			IndexWriter writer2 = null;
 			try
 			{
-				writer2 = new IndexWriter(dir, new WhitespaceAnalyzer(), false, IndexWriter.MaxFieldLength.LIMITED);
+				writer2 = new IndexWriter(dir, new WhitespaceAnalyzer(), false, IndexWriter.MaxFieldLength.LIMITED, null);
 			}
 			catch (System.Exception e)
 			{
@@ -115,13 +115,13 @@ namespace Lucene.Net.Store
 			
 			Assert.IsTrue(dir.LockFactory is SingleInstanceLockFactory, "RAMDirectory did not use correct LockFactory: got " + dir.LockFactory);
 			
-			IndexWriter writer = new IndexWriter(dir, new WhitespaceAnalyzer(), true, IndexWriter.MaxFieldLength.LIMITED);
+			IndexWriter writer = new IndexWriter(dir, new WhitespaceAnalyzer(), true, IndexWriter.MaxFieldLength.LIMITED, null);
 			
 			// Create a 2nd IndexWriter.  This should fail:
 			IndexWriter writer2 = null;
 
 		    Assert.Throws<LockObtainFailedException>(
-		        () => writer2 = new IndexWriter(dir, new WhitespaceAnalyzer(), false, IndexWriter.MaxFieldLength.LIMITED),
+		        () => writer2 = new IndexWriter(dir, new WhitespaceAnalyzer(), false, IndexWriter.MaxFieldLength.LIMITED, null),
 		        "Should have hit an IOException with two IndexWriters on default SingleInstanceLockFactory");
 			
 			writer.Close();
@@ -163,7 +163,7 @@ namespace Lucene.Net.Store
 			FSDirectory fs1 = FSDirectory.Open(new System.IO.DirectoryInfo(indexDir.FullName), lockFactory);
 			
 			// First create a 1 doc index:
-			IndexWriter w = new IndexWriter(fs1, new WhitespaceAnalyzer(), true, IndexWriter.MaxFieldLength.LIMITED);
+			IndexWriter w = new IndexWriter(fs1, new WhitespaceAnalyzer(), true, IndexWriter.MaxFieldLength.LIMITED, null);
 			AddDoc(w);
 			w.Close();
 			
@@ -281,7 +281,7 @@ namespace Lucene.Net.Store
 				{
 					try
 					{
-						writer = new IndexWriter(dir, analyzer, false, IndexWriter.MaxFieldLength.LIMITED);
+						writer = new IndexWriter(dir, analyzer, false, IndexWriter.MaxFieldLength.LIMITED, null);
 					}
 					catch (System.IO.IOException e)
 					{
@@ -370,7 +370,7 @@ namespace Lucene.Net.Store
 				{
 					try
 					{
-						searcher = new IndexSearcher(dir, false);
+						searcher = new IndexSearcher(dir, false, null);
 					}
 					catch (System.Exception e)
 					{
@@ -384,7 +384,7 @@ namespace Lucene.Net.Store
 						ScoreDoc[] hits = null;
 						try
 						{
-							hits = searcher.Search(query, null, 1000).ScoreDocs;
+							hits = searcher.Search(query, null, 1000, null).ScoreDocs;
 						}
 						catch (System.IO.IOException e)
 						{
@@ -500,7 +500,7 @@ namespace Lucene.Net.Store
 		{
 			Document doc = new Document();
 			doc.Add(new Field("content", "aaa", Field.Store.NO, Field.Index.ANALYZED));
-			writer.AddDocument(doc);
+			writer.AddDocument(doc, null);
 		}
 	}
 }

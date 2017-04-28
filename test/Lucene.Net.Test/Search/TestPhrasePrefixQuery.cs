@@ -16,7 +16,8 @@
  */
 
 using System;
-
+using Lucene.Net.Index;
+using Lucene.Net.Store;
 using NUnit.Framework;
 
 using SimpleAnalyzer = Lucene.Net.Analysis.SimpleAnalyzer;
@@ -45,7 +46,7 @@ namespace Lucene.Net.Search
 		public virtual void  TestPhrasePrefix()
 		{
 			RAMDirectory indexStore = new RAMDirectory();
-			IndexWriter writer = new IndexWriter(indexStore, new SimpleAnalyzer(), true, IndexWriter.MaxFieldLength.LIMITED);
+			IndexWriter writer = new IndexWriter(indexStore, new SimpleAnalyzer(), true, IndexWriter.MaxFieldLength.LIMITED, null);
 			Document doc1 = new Document();
 			Document doc2 = new Document();
 			Document doc3 = new Document();
@@ -56,15 +57,15 @@ namespace Lucene.Net.Search
 			doc3.Add(new Field("body", "blueberry pizza", Field.Store.YES, Field.Index.ANALYZED));
 			doc4.Add(new Field("body", "blueberry chewing gum", Field.Store.YES, Field.Index.ANALYZED));
 			doc5.Add(new Field("body", "piccadilly circus", Field.Store.YES, Field.Index.ANALYZED));
-			writer.AddDocument(doc1);
-			writer.AddDocument(doc2);
-			writer.AddDocument(doc3);
-			writer.AddDocument(doc4);
-			writer.AddDocument(doc5);
-			writer.Optimize();
+			writer.AddDocument(doc1, null);
+			writer.AddDocument(doc2, null);
+			writer.AddDocument(doc3, null);
+			writer.AddDocument(doc4, null);
+			writer.AddDocument(doc5, null);
+			writer.Optimize(null);
 			writer.Close();
 
-		    IndexSearcher searcher = new IndexSearcher(indexStore, true);
+		    IndexSearcher searcher = new IndexSearcher(indexStore, true, null);
 			
 			//PhrasePrefixQuery query1 = new PhrasePrefixQuery();
 			MultiPhraseQuery query1 = new MultiPhraseQuery();
@@ -74,11 +75,11 @@ namespace Lucene.Net.Search
 			query2.Add(new Term("body", "strawberry"));
 			
 			System.Collections.ArrayList termsWithPrefix = new System.Collections.ArrayList();
-		    IndexReader ir = IndexReader.Open(indexStore, true);
+		    IndexReader ir = IndexReader.Open((Directory) indexStore, true, null);
 			
 			// this TermEnum gives "piccadilly", "pie" and "pizza".
 			System.String prefix = "pi";
-			TermEnum te = ir.Terms(new Term("body", prefix + "*"));
+			TermEnum te = ir.Terms(new Term("body", prefix + "*"), null);
 			do 
 			{
 				if (te.Term.Text.StartsWith(prefix))
@@ -86,16 +87,16 @@ namespace Lucene.Net.Search
 					termsWithPrefix.Add(te.Term);
 				}
 			}
-			while (te.Next());
+			while (te.Next(null));
 			
 			query1.Add((Term[]) termsWithPrefix.ToArray(typeof(Term)));
 			query2.Add((Term[]) termsWithPrefix.ToArray(typeof(Term)));
 			
 			ScoreDoc[] result;
-			result = searcher.Search(query1, null, 1000).ScoreDocs;
+			result = searcher.Search(query1, null, 1000, null).ScoreDocs;
 			Assert.AreEqual(2, result.Length);
 			
-			result = searcher.Search(query2, null, 1000).ScoreDocs;
+			result = searcher.Search(query2, null, 1000, null).ScoreDocs;
 			Assert.AreEqual(0, result.Length);
 		}
 	}

@@ -22,6 +22,7 @@ using NUnit.Framework;
 
 using SimpleAnalyzer = Lucene.Net.Analysis.SimpleAnalyzer;
 using Lucene.Net.Documents;
+using Lucene.Net.Store;
 using IndexReader = Lucene.Net.Index.IndexReader;
 using IndexWriter = Lucene.Net.Index.IndexWriter;
 using RAMDirectory = Lucene.Net.Store.RAMDirectory;
@@ -41,7 +42,7 @@ namespace Lucene.Net.Search
 		public override void  SetUp()
 		{
 			base.SetUp();
-			IndexWriter writer = new IndexWriter(directory, new SimpleAnalyzer(), true, IndexWriter.MaxFieldLength.LIMITED);
+			IndexWriter writer = new IndexWriter(directory, new SimpleAnalyzer(), true, IndexWriter.MaxFieldLength.LIMITED, null);
 			//writer.setUseCompoundFile(false);
 			//writer.infoStream = System.out;
 			for (int i = 0; i < numDocs; i++)
@@ -49,7 +50,7 @@ namespace Lucene.Net.Search
 				Document doc = new Document();
 				IFieldable fld = new Field("field", English.IntToEnglish(i), Field.Store.YES, Field.Index.NOT_ANALYZED, Field.TermVector.YES);
 				doc.Add(fld);
-				writer.AddDocument(doc);
+				writer.AddDocument(doc, null);
 			}
 			writer.Close();
 		}
@@ -62,7 +63,7 @@ namespace Lucene.Net.Search
 			
 			try
 			{
-			    reader = IndexReader.Open(directory, true);
+			    reader = IndexReader.Open((Directory) directory, true, null);
 				for (int i = 1; i <= numThreads; i++)
 					TestTermPositionVectors(reader, i);
 			}
@@ -176,14 +177,14 @@ namespace Lucene.Net.Search
 			for (int docId = 0; docId < numDocs; docId++)
 			{
 				start = (DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond);
-				ITermFreqVector[] vectors = reader.GetTermFreqVectors(docId);
+				ITermFreqVector[] vectors = reader.GetTermFreqVectors(docId, null);
 				timeElapsed += (DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond) - start;
 				
 				// verify vectors result
 				VerifyVectors(vectors, docId);
 				
 				start = (DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond);
-				ITermFreqVector vector = reader.GetTermFreqVector(docId, "field");
+				ITermFreqVector vector = reader.GetTermFreqVector(docId, "field", null);
 				timeElapsed += (DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond) - start;
 				
 				vectors = new ITermFreqVector[1];

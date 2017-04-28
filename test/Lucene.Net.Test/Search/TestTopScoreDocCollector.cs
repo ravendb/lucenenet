@@ -47,12 +47,12 @@ namespace Lucene.Net.Search
         {
 
             Directory dir = new RAMDirectory();
-            IndexWriter writer = new IndexWriter(dir, null, MaxFieldLength.UNLIMITED);
+            IndexWriter writer = new IndexWriter(dir, null, MaxFieldLength.UNLIMITED, null);
             for (int i = 0; i < 10; i++)
             {
-                writer.AddDocument(new Document());
+                writer.AddDocument(new Document(), null);
             }
-            writer.Commit();
+            writer.Commit(null);
             writer.Close();
 
             bool[] inOrder = new bool[] {false, true};
@@ -66,13 +66,13 @@ namespace Lucene.Net.Search
             // Set minNrShouldMatch to 1 so that BQ will not optimize rewrite to return
             // the clause instead of BQ.
             bq.MinimumNumberShouldMatch = 1;
-            IndexSearcher searcher = new IndexSearcher(dir, true);
+            IndexSearcher searcher = new IndexSearcher(dir, true, null);
             for (int i = 0; i < inOrder.Length; i++)
             {
                 TopDocsCollector<ScoreDoc> tdc = TopScoreDocCollector.Create(3, inOrder[i]);
                 Assert.AreEqual("Lucene.Net.Search.TopScoreDocCollector+" + actualTSDCClass[i], tdc.GetType().FullName);
 
-                searcher.Search(new MatchAllDocsQuery(), tdc);
+                searcher.Search(new MatchAllDocsQuery(), tdc, null);
 
                 ScoreDoc[] sd = tdc.TopDocs().ScoreDocs;
                 Assert.AreEqual(3, sd.Length);

@@ -38,19 +38,19 @@ namespace Lucene.Net.Search
         public void TestEnforceDeletions()
         {
             Directory dir = new MockRAMDirectory();
-            IndexWriter writer = new IndexWriter(dir, new WhitespaceAnalyzer(), IndexWriter.MaxFieldLength.UNLIMITED);
-            IndexReader reader = writer.GetReader();
+            IndexWriter writer = new IndexWriter(dir, new WhitespaceAnalyzer(), IndexWriter.MaxFieldLength.UNLIMITED, null);
+            IndexReader reader = writer.GetReader(null);
             IndexSearcher searcher = new IndexSearcher(reader);
 
             // add a doc, refresh the reader, and check that its there
             Document doc = new Document();
             doc.Add(new Field("id", "1", Field.Store.YES, Field.Index.NOT_ANALYZED));
-            writer.AddDocument(doc);
+            writer.AddDocument(doc, null);
 
             reader = RefreshReader(reader);
             searcher = new IndexSearcher(reader);
 
-            TopDocs docs = searcher.Search(new MatchAllDocsQuery(), 1);
+            TopDocs docs = searcher.Search(new MatchAllDocsQuery(), 1, null);
             Assert.AreEqual(1, docs.TotalHits, "Should find a hit...");
 
             SpanFilter startFilter = new SpanQueryFilter(new SpanTermQuery(new Term("id", "1")));
@@ -58,37 +58,37 @@ namespace Lucene.Net.Search
             // ignore deletions
             CachingSpanFilter filter = new CachingSpanFilter(startFilter, CachingWrapperFilter.DeletesMode.IGNORE);
 
-            docs = searcher.Search(new MatchAllDocsQuery(), filter, 1);
+            docs = searcher.Search(new MatchAllDocsQuery(), filter, 1, null);
             Assert.AreEqual(1, docs.TotalHits, "[query + filter] Should find a hit...");
             ConstantScoreQuery constantScore = new ConstantScoreQuery(filter);
-            docs = searcher.Search(constantScore, 1);
+            docs = searcher.Search(constantScore, 1, null);
             Assert.AreEqual(1, docs.TotalHits, "[just filter] Should find a hit...");
 
             // now delete the doc, refresh the reader, and see that it's not there
-            writer.DeleteDocuments(new Term("id", "1"));
+            writer.DeleteDocuments(null, new Term("id", "1"));
 
             reader = RefreshReader(reader);
             searcher = new IndexSearcher(reader);
 
-            docs = searcher.Search(new MatchAllDocsQuery(), filter, 1);
+            docs = searcher.Search(new MatchAllDocsQuery(), filter, 1, null);
             Assert.AreEqual(0, docs.TotalHits, "[query + filter] Should *not* find a hit...");
 
-            docs = searcher.Search(constantScore, 1);
+            docs = searcher.Search(constantScore, 1, null);
             Assert.AreEqual(1, docs.TotalHits, "[just filter] Should find a hit...");
 
 
             // force cache to regenerate:
             filter = new CachingSpanFilter(startFilter, CachingWrapperFilter.DeletesMode.RECACHE);
 
-            writer.AddDocument(doc);
+            writer.AddDocument(doc, null);
             reader = RefreshReader(reader);
             searcher = new IndexSearcher(reader);
 
-            docs = searcher.Search(new MatchAllDocsQuery(), filter, 1);
+            docs = searcher.Search(new MatchAllDocsQuery(), filter, 1, null);
             Assert.AreEqual(1, docs.TotalHits, "[query + filter] Should find a hit...");
 
             constantScore = new ConstantScoreQuery(filter);
-            docs = searcher.Search(constantScore, 1);
+            docs = searcher.Search(constantScore, 1, null);
             Assert.AreEqual(1, docs.TotalHits, "[just filter] Should find a hit...");
 
             // make sure we get a cache hit when we reopen readers
@@ -98,27 +98,27 @@ namespace Lucene.Net.Search
             reader = newReader;
             searcher = new IndexSearcher(reader);
             int missCount = filter.missCount;
-            docs = searcher.Search(constantScore, 1);
+            docs = searcher.Search(constantScore, 1, null);
             Assert.AreEqual(1, docs.TotalHits, "[just filter] Should find a hit...");
             Assert.AreEqual(missCount, filter.missCount);
 
             // now delete the doc, refresh the reader, and see that it's not there
-            writer.DeleteDocuments(new Term("id", "1"));
+            writer.DeleteDocuments(null, new Term("id", "1"));
 
             reader = RefreshReader(reader);
             searcher = new IndexSearcher(reader);
 
-            docs = searcher.Search(new MatchAllDocsQuery(), filter, 1);
+            docs = searcher.Search(new MatchAllDocsQuery(), filter, 1, null);
             Assert.AreEqual(0, docs.TotalHits, "[query + filter] Should *not* find a hit...");
 
-            docs = searcher.Search(constantScore, 1);
+            docs = searcher.Search(constantScore, 1, null);
             Assert.AreEqual(0, docs.TotalHits, "[just filter] Should *not* find a hit...");
         }
 
         private static IndexReader RefreshReader(IndexReader reader)
         {
             IndexReader oldReader = reader;
-            reader = reader.Reopen();
+            reader = reader.Reopen(null);
             if (reader != oldReader)
             {
                 oldReader.Close();

@@ -16,7 +16,7 @@
  */
 
 using System;
-
+using Lucene.Net.Store;
 using NUnit.Framework;
 
 using IndexReader = Lucene.Net.Index.IndexReader;
@@ -68,7 +68,7 @@ namespace Lucene.Net.Search.Function
 				throw new System.NotSupportedException(Lucene.Net.Search.Function.JustCompileSearchFunction.UNSUPPORTED_MSG);
 			}
 			
-			public override DocValues GetCachedFieldValues(FieldCache cache, System.String field, IndexReader reader)
+			public override DocValues GetCachedFieldValues(FieldCache cache, System.String field, IndexReader reader, IState state)
 			{
 				throw new System.NotSupportedException(Lucene.Net.Search.Function.JustCompileSearchFunction.UNSUPPORTED_MSG);
 			}
@@ -88,7 +88,7 @@ namespace Lucene.Net.Search.Function
 				throw new System.NotSupportedException(Lucene.Net.Search.Function.JustCompileSearchFunction.UNSUPPORTED_MSG);
 			}
 			
-			public override DocValues GetValues(IndexReader reader)
+			public override DocValues GetValues(IndexReader reader, IState state)
 			{
 				throw new System.NotSupportedException(Lucene.Net.Search.Function.JustCompileSearchFunction.UNSUPPORTED_MSG);
 			}

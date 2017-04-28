@@ -17,6 +17,8 @@
 
 using System;
 using Lucene.Net.Analysis.Tokenattributes;
+using Lucene.Net.Index;
+using Lucene.Net.Store;
 using Lucene.Net.Test.Analysis;
 using NUnit.Framework;
 using Document = Lucene.Net.Documents.Document;
@@ -47,16 +49,16 @@ namespace Lucene.Net.Analysis
 		{
 			base.SetUp();
 			directory = new RAMDirectory();
-			IndexWriter writer = new IndexWriter(directory, new SimpleAnalyzer(), true, IndexWriter.MaxFieldLength.LIMITED);
+			IndexWriter writer = new IndexWriter(directory, new SimpleAnalyzer(), true, IndexWriter.MaxFieldLength.LIMITED, null);
 			
 			Document doc = new Document();
 			doc.Add(new Field("partnum", "Q36", Field.Store.YES, Field.Index.NOT_ANALYZED));
 			doc.Add(new Field("description", "Illidium Space Modulator", Field.Store.YES, Field.Index.ANALYZED));
-			writer.AddDocument(doc);
+			writer.AddDocument(doc, null);
 			
 			writer.Close();
 			
-			searcher = new IndexSearcher(directory, true);
+			searcher = new IndexSearcher(directory, true, null);
 		}
 		
         [Test]
@@ -68,7 +70,7 @@ namespace Lucene.Net.Analysis
 			QueryParser queryParser = new QueryParser(Version.LUCENE_CURRENT, "description", analyzer);
 			Query query = queryParser.Parse("partnum:Q36 AND SPACE");
 			
-			ScoreDoc[] hits = searcher.Search(query, null, 1000).ScoreDocs;
+			ScoreDoc[] hits = searcher.Search(query, null, 1000, null).ScoreDocs;
 			Assert.AreEqual("+partnum:Q36 +space", query.ToString("description"), "Q36 kept as-is");
 			Assert.AreEqual(1, hits.Length, "doc found!");
 		}
@@ -77,20 +79,20 @@ namespace Lucene.Net.Analysis
 		public virtual void  TestMutipleDocument()
 		{
 			RAMDirectory dir = new RAMDirectory();
-			IndexWriter writer = new IndexWriter(dir, new KeywordAnalyzer(), true, IndexWriter.MaxFieldLength.LIMITED);
+			IndexWriter writer = new IndexWriter(dir, new KeywordAnalyzer(), true, IndexWriter.MaxFieldLength.LIMITED, null);
 			Document doc = new Document();
 			doc.Add(new Field("partnum", "Q36", Field.Store.YES, Field.Index.ANALYZED));
-			writer.AddDocument(doc);
+			writer.AddDocument(doc, null);
 			doc = new Document();
 			doc.Add(new Field("partnum", "Q37", Field.Store.YES, Field.Index.ANALYZED));
-			writer.AddDocument(doc);
+			writer.AddDocument(doc, null);
 			writer.Close();
 			
-			IndexReader reader = IndexReader.Open(dir, true);
-			TermDocs td = reader.TermDocs(new Term("partnum", "Q36"));
-			Assert.IsTrue(td.Next());
-			td = reader.TermDocs(new Term("partnum", "Q37"));
-			Assert.IsTrue(td.Next());
+			IndexReader reader = IndexReader.Open((Directory) dir, true, null);
+			TermDocs td = reader.TermDocs(new Term("partnum", "Q36"), null);
+			Assert.IsTrue(td.Next(null));
+			td = reader.TermDocs(new Term("partnum", "Q37"), null);
+			Assert.IsTrue(td.Next(null));
 		}
 		
 		// LUCENE-1441

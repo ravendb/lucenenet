@@ -34,7 +34,7 @@ namespace Lucene.Net.Support
             Lucene.Net.Store.Directory directory = new Lucene.Net.Store.SimpleFSDirectory(path, null);
             try
             {
-                Lucene.Net.Store.IndexOutput io = directory.CreateOutput("syncfile");
+                Lucene.Net.Store.IndexOutput io = directory.CreateOutput("syncfile", null);
                 io.Close();
                 directory.Sync("syncfile");
             }

@@ -16,7 +16,7 @@
  */
 
 using System;
-
+using Lucene.Net.Store;
 using NUnit.Framework;
 
 using IndexReader = Lucene.Net.Index.IndexReader;
@@ -38,7 +38,7 @@ namespace Lucene.Net.Search
 			{
 			}
 			
-			public override float Score()
+			public override float Score(IState state)
 			{
 				// advance idx on purpose, so that consecutive calls to score will get
 				// different results. This is to emulate computation of a score. If
@@ -52,12 +52,12 @@ namespace Lucene.Net.Search
 				return doc;
 			}
 			
-			public override int NextDoc()
+			public override int NextDoc(IState state)
 			{
 				return ++doc < scores.Length?doc:NO_MORE_DOCS;
 			}
 			
-			public override int Advance(int target)
+			public override int Advance(int target, IState state)
 			{
 				doc = target;
 				return doc < scores.Length?doc:NO_MORE_DOCS;
@@ -76,7 +76,7 @@ namespace Lucene.Net.Search
 				mscores = new float[numToCollect];
 			}
 			
-			public override void  Collect(int doc)
+			public override void  Collect(int doc, IState state)
 			{
 				// just a sanity check to avoid IOOB.
 				if (idx == mscores.Length)
@@ -85,13 +85,13 @@ namespace Lucene.Net.Search
 				}
 				
 				// just call score() a couple of times and record the score.
-				mscores[idx] = scorer.Score();
-				mscores[idx] = scorer.Score();
-				mscores[idx] = scorer.Score();
+				mscores[idx] = scorer.Score(null);
+				mscores[idx] = scorer.Score(null);
+				mscores[idx] = scorer.Score(null);
 				++idx;
 			}
 			
-			public override void  SetNextReader(IndexReader reader, int docBase)
+			public override void  SetNextReader(IndexReader reader, int docBase, IState state)
 			{
 			}
 			
@@ -118,9 +118,9 @@ namespace Lucene.Net.Search
 			
 			// We need to iterate on the scorer so that its doc() advances.
 			int doc;
-			while ((doc = s.NextDoc()) != DocIdSetIterator.NO_MORE_DOCS)
+			while ((doc = s.NextDoc(null)) != DocIdSetIterator.NO_MORE_DOCS)
 			{
-				scc.Collect(doc);
+				scc.Collect(doc, null);
 			}
 			
 			for (int i = 0; i < scores.Length; i++)

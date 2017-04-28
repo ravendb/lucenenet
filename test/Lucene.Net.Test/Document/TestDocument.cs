@@ -59,17 +59,17 @@ namespace Lucene.Net.Documents
 			Assert.IsFalse(binaryFld.IsIndexed);
 			Assert.IsFalse(binaryFld.IsTokenized);
 			
-			System.String binaryTest = new System.String(System.Text.UTF8Encoding.UTF8.GetChars(doc.GetBinaryValue("binary")));
+			System.String binaryTest = new System.String(System.Text.UTF8Encoding.UTF8.GetChars(doc.GetBinaryValue("binary", null)));
 			Assert.IsTrue(binaryTest.Equals(binaryVal));
 			
-			System.String stringTest = doc.Get("string");
+			System.String stringTest = doc.Get("string", null);
 			Assert.IsTrue(binaryTest.Equals(stringTest));
 			
 			doc.Add(binaryFld2);
 			
 			Assert.AreEqual(3, doc.fields_ForNUnit.Count);
 			
-			byte[][] binaryTests = doc.GetBinaryValues("binary");
+			byte[][] binaryTests = doc.GetBinaryValues("binary", null);
 			
 			Assert.AreEqual(2, binaryTests.Length);
 			
@@ -152,20 +152,20 @@ namespace Lucene.Net.Documents
 		public virtual void  TestGetValuesForIndexedDocument()
 		{
 			RAMDirectory dir = new RAMDirectory();
-			IndexWriter writer = new IndexWriter(dir, new StandardAnalyzer(Lucene.Net.Util.Version.LUCENE_CURRENT), true, IndexWriter.MaxFieldLength.LIMITED);
-			writer.AddDocument(MakeDocumentWithFields());
+			IndexWriter writer = new IndexWriter(dir, new StandardAnalyzer(Lucene.Net.Util.Version.LUCENE_CURRENT), true, IndexWriter.MaxFieldLength.LIMITED, null);
+			writer.AddDocument(MakeDocumentWithFields(), null);
 			writer.Close();
 			
-			Searcher searcher = new IndexSearcher(dir, true);
+			Searcher searcher = new IndexSearcher(dir, true, null);
 			
 			// search for something that does exists
 			Query query = new TermQuery(new Term("keyword", "test1"));
 			
 			// ensure that queries return expected results without DateFilter first
-			ScoreDoc[] hits = searcher.Search(query, null, 1000).ScoreDocs;
+			ScoreDoc[] hits = searcher.Search(query, null, 1000, null).ScoreDocs;
 			Assert.AreEqual(1, hits.Length);
 			
-			DoAssert(searcher.Doc(hits[0].Doc), true);
+			DoAssert(searcher.Doc(hits[0].Doc, null), true);
 			searcher.Close();
 		}
 		
@@ -185,10 +185,10 @@ namespace Lucene.Net.Documents
 		
 		private void  DoAssert(Document doc, bool fromIndex)
 		{
-			System.String[] keywordFieldValues = doc.GetValues("keyword");
-			System.String[] textFieldValues = doc.GetValues("text");
-			System.String[] unindexedFieldValues = doc.GetValues("unindexed");
-			System.String[] unstoredFieldValues = doc.GetValues("unstored");
+			System.String[] keywordFieldValues = doc.GetValues("keyword", null);
+			System.String[] textFieldValues = doc.GetValues("text", null);
+			System.String[] unindexedFieldValues = doc.GetValues("unindexed", null);
+			System.String[] unstoredFieldValues = doc.GetValues("unstored", null);
 			
 			Assert.IsTrue(keywordFieldValues.Length == 2);
 			Assert.IsTrue(textFieldValues.Length == 2);
@@ -225,31 +225,31 @@ namespace Lucene.Net.Documents
 			doc.Add(new Field("keyword", "test", Field.Store.YES, Field.Index.NOT_ANALYZED));
 			
 			RAMDirectory dir = new RAMDirectory();
-			IndexWriter writer = new IndexWriter(dir, new StandardAnalyzer(Lucene.Net.Util.Version.LUCENE_CURRENT), true, IndexWriter.MaxFieldLength.LIMITED);
-			writer.AddDocument(doc);
+			IndexWriter writer = new IndexWriter(dir, new StandardAnalyzer(Lucene.Net.Util.Version.LUCENE_CURRENT), true, IndexWriter.MaxFieldLength.LIMITED, null);
+			writer.AddDocument(doc, null);
 			field.SetValue("id2");
-			writer.AddDocument(doc);
+			writer.AddDocument(doc, null);
 			field.SetValue("id3");
-			writer.AddDocument(doc);
+			writer.AddDocument(doc, null);
 			writer.Close();
 			
-			Searcher searcher = new IndexSearcher(dir, true);
+			Searcher searcher = new IndexSearcher(dir, true, null);
 			
 			Query query = new TermQuery(new Term("keyword", "test"));
 			
 			// ensure that queries return expected results without DateFilter first
-			ScoreDoc[] hits = searcher.Search(query, null, 1000).ScoreDocs;
+			ScoreDoc[] hits = searcher.Search(query, null, 1000, null).ScoreDocs;
 			Assert.AreEqual(3, hits.Length);
 			int result = 0;
 			for (int i = 0; i < 3; i++)
 			{
-				Document doc2 = searcher.Doc(hits[i].Doc);
+				Document doc2 = searcher.Doc(hits[i].Doc, null);
 				Field f = doc2.GetField("id");
-				if (f.StringValue.Equals("id1"))
+				if (f.StringValue(null).Equals("id1"))
 					result |= 1;
-				else if (f.StringValue.Equals("id2"))
+				else if (f.StringValue(null).Equals("id2"))
 					result |= 2;
-				else if (f.StringValue.Equals("id3"))
+				else if (f.StringValue(null).Equals("id3"))
 					result |= 4;
 				else
 					Assert.Fail("unexpected id field");

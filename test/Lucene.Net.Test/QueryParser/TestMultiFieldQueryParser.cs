@@ -291,17 +291,17 @@ namespace Lucene.Net.QueryParsers
 		{
 			Analyzer analyzer = new StandardAnalyzer(Util.Version.LUCENE_CURRENT);
 			Directory ramDir = new RAMDirectory();
-			var iw = new IndexWriter(ramDir, analyzer, true, IndexWriter.MaxFieldLength.LIMITED);
+			var iw = new IndexWriter(ramDir, analyzer, true, IndexWriter.MaxFieldLength.LIMITED, null);
             var doc = new Document();
 			doc.Add(new Field("body", "blah the footest blah", Field.Store.NO, Field.Index.ANALYZED));
-			iw.AddDocument(doc);
+			iw.AddDocument(doc, null);
 			iw.Close();
 
             var mfqp = new MultiFieldQueryParser(Util.Version.LUCENE_CURRENT, new[] { "body" }, analyzer);
 			mfqp.DefaultOperator = QueryParser.Operator.AND;
             var q = mfqp.Parse("the footest");
-            var is_Renamed = new IndexSearcher(ramDir, true);
-            var hits = is_Renamed.Search(q, null, 1000).ScoreDocs;
+            var is_Renamed = new IndexSearcher(ramDir, true, null);
+            var hits = is_Renamed.Search(q, null, 1000, null).ScoreDocs;
 			Assert.AreEqual(1, hits.Length);
 			is_Renamed.Close();
 		}

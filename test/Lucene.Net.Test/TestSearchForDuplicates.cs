@@ -97,7 +97,7 @@ namespace Lucene.Net
 		{
 			Directory directory = new RAMDirectory();
 			Analyzer analyzer = new SimpleAnalyzer();
-			IndexWriter writer = new IndexWriter(directory, analyzer, true, IndexWriter.MaxFieldLength.LIMITED);
+			IndexWriter writer = new IndexWriter(directory, analyzer, true, IndexWriter.MaxFieldLength.LIMITED, null);
 			
 			writer.UseCompoundFile = useCompoundFiles;
 			
@@ -108,26 +108,26 @@ namespace Lucene.Net
 				Document d = new Document();
 				d.Add(new Field(PRIORITY_FIELD, HIGH_PRIORITY, Field.Store.YES, Field.Index.ANALYZED));
 				d.Add(new Field(ID_FIELD, System.Convert.ToString(j), Field.Store.YES, Field.Index.ANALYZED));
-				writer.AddDocument(d);
+				writer.AddDocument(d, null);
 			}
 			writer.Close();
 			
 			// try a search without OR
-			Searcher searcher = new IndexSearcher(directory, true);
+			Searcher searcher = new IndexSearcher(directory, true, null);
 			
 			QueryParser parser = new QueryParser(Util.Version.LUCENE_CURRENT, PRIORITY_FIELD, analyzer);
 			
 			Query query = parser.Parse(HIGH_PRIORITY);
 			out_Renamed.WriteLine("Query: " + query.ToString(PRIORITY_FIELD));
 			
-			ScoreDoc[] hits = searcher.Search(query, null, MAX_DOCS).ScoreDocs;
+			ScoreDoc[] hits = searcher.Search(query, null, MAX_DOCS, null).ScoreDocs;
 			PrintHits(out_Renamed, hits, searcher);
 			CheckHits(hits, MAX_DOCS, searcher);
 			
 			searcher.Close();
 			
 			// try a new search with OR
-		    searcher = new IndexSearcher(directory, true);
+		    searcher = new IndexSearcher(directory, true, null);
 			hits = null;
 			
 			parser = new QueryParser(Util.Version.LUCENE_CURRENT, PRIORITY_FIELD, analyzer);
@@ -135,7 +135,7 @@ namespace Lucene.Net
 			query = parser.Parse(HIGH_PRIORITY + " OR " + MED_PRIORITY);
 			out_Renamed.WriteLine("Query: " + query.ToString(PRIORITY_FIELD));
 			
-			hits = searcher.Search(query, null, MAX_DOCS).ScoreDocs;
+			hits = searcher.Search(query, null, MAX_DOCS, null).ScoreDocs;
 			PrintHits(out_Renamed, hits, searcher);
 			CheckHits(hits, MAX_DOCS, searcher);
 			
@@ -150,8 +150,8 @@ namespace Lucene.Net
 			{
 				if (i < 10 || (i > 94 && i < 105))
 				{
-					Document d = searcher.Doc(hits[i].Doc);
-					out_Renamed.WriteLine(i + " " + d.Get(ID_FIELD));
+					Document d = searcher.Doc(hits[i].Doc, null);
+					out_Renamed.WriteLine(i + " " + d.Get(ID_FIELD, null));
 				}
 			}
 		}
@@ -163,8 +163,8 @@ namespace Lucene.Net
 			{
 				if (i < 10 || (i > 94 && i < 105))
 				{
-					Document d = searcher.Doc(hits[i].Doc);
-					Assert.AreEqual(System.Convert.ToString(i), d.Get(ID_FIELD), "check " + i);
+					Document d = searcher.Doc(hits[i].Doc, null);
+					Assert.AreEqual(System.Convert.ToString(i), d.Get(ID_FIELD, null), "check " + i);
 				}
 			}
 		}

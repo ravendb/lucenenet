@@ -16,7 +16,7 @@
  */
 
 using System;
-
+using Lucene.Net.Store;
 using Lucene.Net.Test.Util;
 
 using NUnit.Framework;
@@ -105,14 +105,14 @@ namespace Lucene.Net
 					}
 					
 				}
-				public MyMergeThread(MyMergeScheduler enclosingInstance, IndexWriter writer, MergePolicy.OneMerge merge):base(enclosingInstance, writer, merge)
+				public MyMergeThread(MyMergeScheduler enclosingInstance, IndexWriter writer, MergePolicy.OneMerge merge):base(enclosingInstance, writer, merge, null)
 				{
 					InitBlock(enclosingInstance);
 					Enclosing_Instance.Enclosing_Instance.mergeThreadCreated = true;
 				}
 			}
 			
-			protected internal override MergeThread GetMergeThread(IndexWriter writer, MergePolicy.OneMerge merge)
+			protected internal override MergeThread GetMergeThread(IndexWriter writer, MergePolicy.OneMerge merge, IState state)
 			{
 				MergeThread thread = new MyMergeThread(this, writer, merge);
 #if !DNXCORE50
@@ -129,10 +129,10 @@ namespace Lucene.Net
 			}
 
             [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
-            protected internal override void DoMerge(MergePolicy.OneMerge merge)
+            protected internal override void DoMerge(MergePolicy.OneMerge merge, IState state)
 			{
 				Enclosing_Instance.mergeCalled = true;
-				base.DoMerge(merge);
+				base.DoMerge(merge, null);
 			}
 		}
 		
@@ -161,14 +161,14 @@ namespace Lucene.Net
 			Field idField = new Field("id", "", Field.Store.YES, Field.Index.NOT_ANALYZED);
 			doc.Add(idField);
 			
-			IndexWriter writer = new IndexWriter(dir, new WhitespaceAnalyzer(), true, IndexWriter.MaxFieldLength.LIMITED);
+			IndexWriter writer = new IndexWriter(dir, new WhitespaceAnalyzer(), true, IndexWriter.MaxFieldLength.LIMITED, null);
 			MyMergeScheduler ms = new MyMergeScheduler(this);
             
-			writer.SetMergeScheduler(ms);
+			writer.SetMergeScheduler(ms, null);
 			writer.SetMaxBufferedDocs(2);
 			writer.SetRAMBufferSizeMB(Lucene.Net.Index.IndexWriter.DISABLE_AUTO_FLUSH);
 			for (int i = 0; i < 20; i++)
-				writer.AddDocument(doc);
+				writer.AddDocument(doc, null);
 			
 			ms.Sync();
 			writer.Close();

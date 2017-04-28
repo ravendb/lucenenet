@@ -16,7 +16,8 @@
  */
 
 using System;
-
+using Lucene.Net.Index;
+using Lucene.Net.Store;
 using NUnit.Framework;
 
 using StandardAnalyzer = Lucene.Net.Analysis.Standard.StandardAnalyzer;
@@ -57,25 +58,25 @@ namespace Lucene.Net.Documents
 			
 			/* add the doc to a ram index */
 			MockRAMDirectory dir = new MockRAMDirectory();
-			IndexWriter writer = new IndexWriter(dir, new StandardAnalyzer(Lucene.Net.Util.Version.LUCENE_CURRENT), true, IndexWriter.MaxFieldLength.LIMITED);
-			writer.AddDocument(doc);
+			IndexWriter writer = new IndexWriter(dir, new StandardAnalyzer(Lucene.Net.Util.Version.LUCENE_CURRENT), true, IndexWriter.MaxFieldLength.LIMITED, null);
+			writer.AddDocument(doc, null);
 			writer.Close();
 			
 			/* open a reader and fetch the document */
-			IndexReader reader = IndexReader.Open(dir, false);
-			Document docFromReader = reader.Document(0);
+			IndexReader reader = IndexReader.Open((Directory) dir, false, null);
+			Document docFromReader = reader.Document(0, null);
 			Assert.IsTrue(docFromReader != null);
 			
 			/* fetch the binary stored field and compare it's content with the original one */
-			System.String binaryFldStoredTest = new System.String(System.Text.UTF8Encoding.UTF8.GetChars(docFromReader.GetBinaryValue("binaryStored")));
+			System.String binaryFldStoredTest = new System.String(System.Text.UTF8Encoding.UTF8.GetChars(docFromReader.GetBinaryValue("binaryStored", null)));
 			Assert.IsTrue(binaryFldStoredTest.Equals(binaryValStored));
 			
 			/* fetch the string field and compare it's content with the original one */
-			System.String stringFldStoredTest = docFromReader.Get("stringStored");
+			System.String stringFldStoredTest = docFromReader.Get("stringStored", null);
 			Assert.IsTrue(stringFldStoredTest.Equals(binaryValStored));
 			
 			/* delete the document from index */
-			reader.DeleteDocument(0);
+			reader.DeleteDocument(0, null);
 			Assert.AreEqual(0, reader.NumDocs());
 			
 			reader.Close();
@@ -95,19 +96,19 @@ namespace Lucene.Net.Documents
 			
 			/* add the doc to a ram index */
 			MockRAMDirectory dir = new MockRAMDirectory();
-			IndexWriter writer = new IndexWriter(dir, new StandardAnalyzer(Lucene.Net.Util.Version.LUCENE_CURRENT), true, IndexWriter.MaxFieldLength.LIMITED);
-			writer.AddDocument(doc);
+			IndexWriter writer = new IndexWriter(dir, new StandardAnalyzer(Lucene.Net.Util.Version.LUCENE_CURRENT), true, IndexWriter.MaxFieldLength.LIMITED, null);
+			writer.AddDocument(doc, null);
 			writer.Close();
 			
 			/* open a reader and fetch the document */
-			IndexReader reader = IndexReader.Open(dir, false);
-			Document docFromReader = reader.Document(0);
+			IndexReader reader = IndexReader.Open((Directory) dir, false, null);
+			Document docFromReader = reader.Document(0, null);
 			Assert.IsTrue(docFromReader != null);
 			
 			/* fetch the binary compressed field and compare it's content with the original one */
-			System.String binaryFldCompressedTest = new System.String(System.Text.UTF8Encoding.UTF8.GetChars(CompressionTools.Decompress(docFromReader.GetBinaryValue("binaryCompressed"))));
+			System.String binaryFldCompressedTest = new System.String(System.Text.UTF8Encoding.UTF8.GetChars(CompressionTools.Decompress(docFromReader.GetBinaryValue("binaryCompressed", null))));
 			Assert.IsTrue(binaryFldCompressedTest.Equals(binaryValCompressed));
-			Assert.IsTrue(CompressionTools.DecompressString(docFromReader.GetBinaryValue("stringCompressed")).Equals(binaryValCompressed));
+			Assert.IsTrue(CompressionTools.DecompressString(docFromReader.GetBinaryValue("stringCompressed", null)).Equals(binaryValCompressed));
 			
 			reader.Close();
 			dir.Close();

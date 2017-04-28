@@ -47,7 +47,7 @@ namespace Lucene.Net.Search
 			System.Random rnd = NewRandom();
 			
 			RAMDirectory directory = new RAMDirectory();
-			IndexWriter writer = new IndexWriter(directory, new WhitespaceAnalyzer(), true, MaxFieldLength.UNLIMITED);
+			IndexWriter writer = new IndexWriter(directory, new WhitespaceAnalyzer(), true, MaxFieldLength.UNLIMITED, null);
 			
 			//DecimalFormat format = new DecimalFormat("00000000000", new System.Globalization.CultureInfo("en-US").NumberFormat);
 			
@@ -60,11 +60,11 @@ namespace Lucene.Net.Search
                     doc.Add(new Field("asc", value_Renamed.ToString().PadLeft(11, '0'), Field.Store.NO, Field.Index.NOT_ANALYZED));
 					doc.Add(new NumericField("trie", Field.Store.NO, true).SetIntValue(value_Renamed));
 				}
-				writer.AddDocument(doc);
+				writer.AddDocument(doc, null);
 			}
 			writer.Close();
 			
-			Searcher searcher = new IndexSearcher(directory, true);
+			Searcher searcher = new IndexSearcher(directory, true, null);
 			for (int i = 0; i < 50; i++)
 			{
 				int lower = rnd.Next(System.Int32.MaxValue);
@@ -75,8 +75,8 @@ namespace Lucene.Net.Search
 				}
 				TermRangeQuery cq = new TermRangeQuery("asc", lower.ToString().PadLeft(11, '0'),  upper.ToString().PadLeft(11, '0'), true, true);
                 NumericRangeQuery<int> tq = NumericRangeQuery.NewIntRange("trie", lower, upper, true, true);
-				TopDocs trTopDocs = searcher.Search(cq, 1);
-				TopDocs nrTopDocs = searcher.Search(tq, 1);
+				TopDocs trTopDocs = searcher.Search(cq, 1, null);
+				TopDocs nrTopDocs = searcher.Search(tq, 1, null);
 				Assert.AreEqual(trTopDocs.TotalHits, nrTopDocs.TotalHits, "Returned count for NumericRangeQuery and TermRangeQuery must be equal");
 			}
 			searcher.Close();

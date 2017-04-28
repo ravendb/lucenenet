@@ -38,20 +38,20 @@ namespace Lucene.Net.Search
 		public virtual void  TestNot_Renamed()
 		{
 			RAMDirectory store = new RAMDirectory();
-			IndexWriter writer = new IndexWriter(store, new SimpleAnalyzer(), true, IndexWriter.MaxFieldLength.LIMITED);
+			IndexWriter writer = new IndexWriter(store, new SimpleAnalyzer(), true, IndexWriter.MaxFieldLength.LIMITED, null);
 			
 			Document d1 = new Document();
 			d1.Add(new Field("field", "a b", Field.Store.YES, Field.Index.ANALYZED));
 			
-			writer.AddDocument(d1);
-			writer.Optimize();
+			writer.AddDocument(d1, null);
+			writer.Optimize(null);
 			writer.Close();
 			
-			Searcher searcher = new IndexSearcher(store, true);
+			Searcher searcher = new IndexSearcher(store, true, null);
 			QueryParser parser = new QueryParser(Util.Version.LUCENE_CURRENT, "field", new SimpleAnalyzer());
 			Query query = parser.Parse("a NOT b");
 			//System.out.println(query);
-			ScoreDoc[] hits = searcher.Search(query, null, 1000).ScoreDocs;
+			ScoreDoc[] hits = searcher.Search(query, null, 1000, null).ScoreDocs;
 			Assert.AreEqual(0, hits.Length);
 		}
 	}

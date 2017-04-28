@@ -16,7 +16,7 @@
  */
 
 using System;
-
+using Lucene.Net.Store;
 using NUnit.Framework;
 
 using WhitespaceAnalyzer = Lucene.Net.Analysis.WhitespaceAnalyzer;
@@ -44,9 +44,9 @@ namespace Lucene.Net.Index
 				}
 				
 				/// <summary>Scan for terms containing the letter 'e'.</summary>
-				public override bool Next()
+				public override bool Next(IState state)
 				{
-					while (in_Renamed.Next())
+					while (in_Renamed.Next(null))
 					{
 						if (in_Renamed.Term.Text.IndexOf('e') != - 1)
 							return true;
@@ -63,9 +63,9 @@ namespace Lucene.Net.Index
 				}
 				
 				/// <summary>Scan for odd numbered documents. </summary>
-				public override bool Next()
+				public override bool Next(IState state)
 				{
-					while (in_Renamed.Next())
+					while (in_Renamed.Next(null))
 					{
 						if ((in_Renamed.Doc % 2) == 1)
 							return true;
@@ -79,15 +79,15 @@ namespace Lucene.Net.Index
 			}
 			
 			/// <summary>Filter terms with TestTermEnum. </summary>
-			public override TermEnum Terms()
+			public override TermEnum Terms(IState state)
 			{
-				return new TestTermEnum(in_Renamed.Terms());
+				return new TestTermEnum(in_Renamed.Terms(null));
 			}
 			
 			/// <summary>Filter positions with TestTermPositions. </summary>
-			public override TermPositions TermPositions()
+			public override TermPositions TermPositions(IState state)
 			{
-				return new TestTermPositions(in_Renamed.TermPositions());
+				return new TestTermPositions(in_Renamed.TermPositions(null));
 			}
 		}
 
@@ -106,35 +106,35 @@ namespace Lucene.Net.Index
 		public virtual void  TestFilterIndexReader_Renamed()
 		{
 			RAMDirectory directory = new MockRAMDirectory();
-			IndexWriter writer = new IndexWriter(directory, new WhitespaceAnalyzer(), true, IndexWriter.MaxFieldLength.LIMITED);
+			IndexWriter writer = new IndexWriter(directory, new WhitespaceAnalyzer(), true, IndexWriter.MaxFieldLength.LIMITED, null);
 			
 			Document d1 = new Document();
 			d1.Add(new Field("default", "one two", Field.Store.YES, Field.Index.ANALYZED));
-			writer.AddDocument(d1);
+			writer.AddDocument(d1, null);
 			
 			Document d2 = new Document();
 			d2.Add(new Field("default", "one three", Field.Store.YES, Field.Index.ANALYZED));
-			writer.AddDocument(d2);
+			writer.AddDocument(d2, null);
 			
 			Document d3 = new Document();
 			d3.Add(new Field("default", "two four", Field.Store.YES, Field.Index.ANALYZED));
-			writer.AddDocument(d3);
+			writer.AddDocument(d3, null);
 			
 			writer.Close();
 			
-			IndexReader reader = new TestReader(IndexReader.Open(directory, true));
+			IndexReader reader = new TestReader(IndexReader.Open((Directory) directory, true, null));
 			
 			Assert.IsTrue(reader.IsOptimized());
 			
-			TermEnum terms = reader.Terms();
-			while (terms.Next())
+			TermEnum terms = reader.Terms(null);
+			while (terms.Next(null))
 			{
 				Assert.IsTrue(terms.Term.Text.IndexOf('e') != - 1);
 			}
 			terms.Close();
 			
-			TermPositions positions = reader.TermPositions(new Term("default", "one"));
-			while (positions.Next())
+			TermPositions positions = reader.TermPositions(new Term("default", "one"), null);
+			while (positions.Next(null))
 			{
 				Assert.IsTrue((positions.Doc % 2) == 1);
 			}
@@ -144,7 +144,7 @@ namespace Lucene.Net.Index
             TermDocs td = reader.TermDocs(null);
 			for (int i = 0; i < NUM_DOCS; i++)
 			{
-				Assert.IsTrue(td.Next());
+				Assert.IsTrue(td.Next(null));
 				Assert.AreEqual(i, td.Doc);
 				Assert.AreEqual(1, td.Freq);
 			}

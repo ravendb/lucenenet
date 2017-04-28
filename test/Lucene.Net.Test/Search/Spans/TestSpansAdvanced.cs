@@ -59,13 +59,13 @@ namespace Lucene.Net.Search.Spans
 			
 			// create test index
 			mDirectory = new RAMDirectory();
-			IndexWriter writer = new IndexWriter(mDirectory, new StandardAnalyzer(Util.Version.LUCENE_CURRENT), true, IndexWriter.MaxFieldLength.LIMITED);
+			IndexWriter writer = new IndexWriter(mDirectory, new StandardAnalyzer(Util.Version.LUCENE_CURRENT), true, IndexWriter.MaxFieldLength.LIMITED, null);
 			addDocument(writer, "1", "I think it should work.");
 			addDocument(writer, "2", "I think it should work.");
 			addDocument(writer, "3", "I think it should work.");
 			addDocument(writer, "4", "I think it should work.");
 			writer.Close();
-			searcher = new IndexSearcher(mDirectory, true);
+			searcher = new IndexSearcher(mDirectory, true, null);
 		}
 		
 		[TearDown]
@@ -93,7 +93,7 @@ namespace Lucene.Net.Search.Spans
 			Document document = new Document();
 			document.Add(new Field(FIELD_ID, id, Field.Store.YES, Field.Index.NOT_ANALYZED));
 			document.Add(new Field(FIELD_TEXT, text, Field.Store.YES, Field.Index.ANALYZED));
-			writer.AddDocument(document);
+			writer.AddDocument(document, null);
 		}
 		
 		/// <summary> Tests two span queries.
@@ -145,7 +145,7 @@ namespace Lucene.Net.Search.Spans
 			
 			// Hits hits = searcher.search(query);
 			// hits normalizes and throws things off if one score is greater than 1.0
-			TopDocs topdocs = s.Search(query, null, 10000);
+			TopDocs topdocs = s.Search(query, null, 10000, null);
 			
 			/***
 			// display the hits
@@ -164,16 +164,16 @@ namespace Lucene.Net.Search.Spans
 				
 				int id = topdocs.ScoreDocs[i].Doc;
 				float score = topdocs.ScoreDocs[i].Score;
-				Document doc = s.Doc(id);
-				Assert.AreEqual(expectedIds[i], doc.Get(FIELD_ID));
+				Document doc = s.Doc(id, null);
+				Assert.AreEqual(expectedIds[i], doc.Get(FIELD_ID, null));
 				bool scoreEq = System.Math.Abs(expectedScores[i] - score) < tolerance;
 				if (!scoreEq)
 				{
 					System.Console.Out.WriteLine(i + " warning, expected score: " + expectedScores[i] + ", actual " + score);
-					System.Console.Out.WriteLine(s.Explain(query, id));
+					System.Console.Out.WriteLine(s.Explain(query, id, null));
 				}
 				Assert.AreEqual(expectedScores[i], score, tolerance);
-				Assert.AreEqual(s.Explain(query, id).Value, score, tolerance);
+				Assert.AreEqual(s.Explain(query, id, null).Value, score, tolerance);
 			}
 		}
 	}

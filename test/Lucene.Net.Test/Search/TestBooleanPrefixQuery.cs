@@ -16,7 +16,8 @@
  */
 
 using System;
-
+using Lucene.Net.Index;
+using Lucene.Net.Store;
 using NUnit.Framework;
 
 using WhitespaceAnalyzer = Lucene.Net.Analysis.WhitespaceAnalyzer;
@@ -59,9 +60,9 @@ namespace Lucene.Net.Search
 			}
 			else if (q is ConstantScoreQuery)
 			{
-				DocIdSetIterator iter = ((ConstantScoreQuery) q).Filter.GetDocIdSet(r).Iterator();
+				DocIdSetIterator iter = ((ConstantScoreQuery) q).Filter.GetDocIdSet(r, null).Iterator(null);
 				int count = 0;
-				while (iter.NextDoc() != DocIdSetIterator.NO_MORE_DOCS)
+				while (iter.NextDoc(null) != DocIdSetIterator.NO_MORE_DOCS)
 				{
 					count++;
 				}
@@ -85,23 +86,23 @@ namespace Lucene.Net.Search
 			IndexReader reader = null;
 			try
 			{
-				IndexWriter writer = new IndexWriter(directory, new WhitespaceAnalyzer(), true, IndexWriter.MaxFieldLength.LIMITED);
+				IndexWriter writer = new IndexWriter(directory, new WhitespaceAnalyzer(), true, IndexWriter.MaxFieldLength.LIMITED, null);
 				for (int i = 0; i < categories.Length; i++)
 				{
 					Document doc = new Document();
 					doc.Add(new Field("category", categories[i], Field.Store.YES, Field.Index.NOT_ANALYZED));
-					writer.AddDocument(doc);
+					writer.AddDocument(doc, null);
 				}
 				writer.Close();
 
-			    reader = IndexReader.Open(directory, true);
+			    reader = IndexReader.Open((Directory) directory, true, null);
 				PrefixQuery query = new PrefixQuery(new Term("category", "foo"));
-				rw1 = query.Rewrite(reader);
+				rw1 = query.Rewrite(reader, null);
 				
 				BooleanQuery bq = new BooleanQuery();
 				bq.Add(query, Occur.MUST);
 				
-				rw2 = bq.Rewrite(reader);
+				rw2 = bq.Rewrite(reader, null);
 			}
 			catch (System.IO.IOException e)
 			{

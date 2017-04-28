@@ -16,6 +16,7 @@
  */
 
 using System;
+using Lucene.Net.Store;
 using Lucene.Net.Support;
 using NUnit.Framework;
 
@@ -60,7 +61,7 @@ namespace Lucene.Net.Search
 				if (ignore.Contains((System.Int32) doc))
 					continue;
 				
-				Explanation exp = searcher.Explain(q, doc);
+				Explanation exp = searcher.Explain(q, doc, null);
 				Assert.IsNotNull(exp, "Explanation of [[" + d + "]] for #" + doc + " is null");
 				Assert.AreEqual(0.0f, exp.Value, 0.0f, "Explanation of [[" + d + "]] for #" + doc + " doesn't indicate non-match: " + exp.ToString());
 			}
@@ -99,13 +100,13 @@ namespace Lucene.Net.Search
 			System.Collections.Hashtable actual = new System.Collections.Hashtable();
 			Collector c = new SetCollector(actual);
 			
-			searcher.Search(query, c);
+			searcher.Search(query, c, null);
 			Assert.AreEqual(correct, actual, "Simple: " + query.ToString(defaultFieldName));
 			
 			for (int i = - 1; i < 2; i++)
 			{
 				actual.Clear();
-				QueryUtils.WrapSearcher(searcher, i).Search(query, c);
+				QueryUtils.WrapSearcher(searcher, i).Search(query, c, null);
 				Assert.AreEqual(correct, actual, "Wrap Searcher " + i + ": " + query.ToString(defaultFieldName));
 			}
 			
@@ -115,7 +116,7 @@ namespace Lucene.Net.Search
 			for (int i = - 1; i < 2; i++)
 			{
 				actual.Clear();
-				QueryUtils.WrapUnderlyingReader((IndexSearcher) searcher, i).Search(query, c);
+				QueryUtils.WrapUnderlyingReader((IndexSearcher) searcher, i).Search(query, c, null);
 				Assert.AreEqual(correct, actual, "Wrap Reader " + i + ": " + query.ToString(defaultFieldName));
 			}
 		}
@@ -131,11 +132,11 @@ namespace Lucene.Net.Search
 			public override void  SetScorer(Scorer scorer)
 			{
 			}
-			public override void  Collect(int doc)
+			public override void  Collect(int doc, IState state)
 			{
 				CollectionsHelper.AddIfNotContains(bag, (System.Int32)(doc + base_Renamed));
 			}
-			public override void  SetNextReader(IndexReader reader, int docBase)
+			public override void  SetNextReader(IndexReader reader, int docBase, IState state)
 			{
 				base_Renamed = docBase;
 			}
@@ -172,7 +173,7 @@ namespace Lucene.Net.Search
 				QueryUtils.Check(query, searcher);
 			}
 			
-			ScoreDoc[] hits = searcher.Search(query, null, 1000).ScoreDocs;
+			ScoreDoc[] hits = searcher.Search(query, null, 1000, null).ScoreDocs;
 			
 			System.Collections.ArrayList correct = new System.Collections.ArrayList();
 			for (int i = 0; i < results.Length; i++)
@@ -326,7 +327,7 @@ namespace Lucene.Net.Search
 		public static void  CheckExplanations(Query query, System.String defaultFieldName, Searcher searcher, bool deep)
 		{
 			
-			searcher.Search(query, new ExplanationAsserter(query, defaultFieldName, searcher, deep));
+			searcher.Search(query, new ExplanationAsserter(query, defaultFieldName, searcher, deep), null);
 		}
 		
 		/// <summary> Assert that an explanation has the expected score, and optionally that its
@@ -438,7 +439,7 @@ namespace Lucene.Net.Search
 		/// </seealso>
 		public class ExplanationAssertingSearcher:IndexSearcher
 		{
-			public ExplanationAssertingSearcher(Directory d):base(d, true)
+			public ExplanationAssertingSearcher(Directory d):base(d, true, null)
 			{
 			}
 			public ExplanationAssertingSearcher(IndexReader r):base(r)
@@ -446,29 +447,29 @@ namespace Lucene.Net.Search
 			}
 			protected internal virtual void  CheckExplanations(Query q)
 			{
-				base.Search(q, null, new ExplanationAsserter(q, null, this));
+				base.Search(q, null, new ExplanationAsserter(q, null, this), null);
 			}
-			public override TopFieldDocs Search(Query query, Filter filter, int n, Sort sort)
+			public override TopFieldDocs Search(Query query, Filter filter, int n, Sort sort, IState state)
 			{
 				
 				CheckExplanations(query);
-				return base.Search(query, filter, n, sort);
+				return base.Search(query, filter, n, sort, null);
 			}
-			public override void  Search(Query query, Collector results)
+			public override void  Search(Query query, Collector results, IState state)
 			{
 				CheckExplanations(query);
-				base.Search(query, results);
+				base.Search(query, results, null);
 			}
-			public override void  Search(Query query, Filter filter, Collector results)
+			public override void  Search(Query query, Filter filter, Collector results, IState state)
 			{
 				CheckExplanations(query);
-				base.Search(query, filter, results);
+				base.Search(query, filter, results, null);
 			}
-			public override TopDocs Search(Query query, Filter filter, int n)
+			public override TopDocs Search(Query query, Filter filter, int n, IState state)
 			{
 				
 				CheckExplanations(query);
-				return base.Search(query, filter, n);
+				return base.Search(query, filter, n, null);
 			}
 		}
 		
@@ -515,13 +516,13 @@ namespace Lucene.Net.Search
 				this.scorer = scorer;
 			}
 			
-			public override void  Collect(int doc)
+			public override void  Collect(int doc, IState state)
 			{
 				Explanation exp = null;
 				doc = doc + base_Renamed;
 				try
 				{
-					exp = s.Explain(q, doc);
+					exp = s.Explain(q, doc, null);
 				}
 				catch (System.IO.IOException e)
 				{
@@ -529,9 +530,9 @@ namespace Lucene.Net.Search
 				}
 				
 				Assert.IsNotNull(exp, "Explanation of [[" + d + "]] for #" + doc + " is null");
-				Lucene.Net.Search.CheckHits.VerifyExplanation(d, doc, scorer.Score(), deep, exp);
+				Lucene.Net.Search.CheckHits.VerifyExplanation(d, doc, scorer.Score(null), deep, exp);
 			}
-			public override void  SetNextReader(IndexReader reader, int docBase)
+			public override void  SetNextReader(IndexReader reader, int docBase, IState state)
 			{
 				base_Renamed = docBase;
 			}

@@ -39,9 +39,9 @@ namespace Lucene.Net.Index
 		public virtual void  TestIndexing()
 		{
 			Directory mainDir = new MockRAMDirectory();
-			IndexWriter writer = new IndexWriter(mainDir, new WhitespaceAnalyzer(), IndexWriter.MaxFieldLength.LIMITED);
+			IndexWriter writer = new IndexWriter(mainDir, new WhitespaceAnalyzer(), IndexWriter.MaxFieldLength.LIMITED, null);
 			writer.UseCompoundFile = false;
-			IndexReader reader = writer.GetReader(); // start pooling readers
+			IndexReader reader = writer.GetReader(null); // start pooling readers
 			reader.Close();
 			writer.MergeFactor = 2;
 			writer.SetMaxBufferedDocs(10);
@@ -117,18 +117,18 @@ namespace Lucene.Net.Index
 						{
 							int i = Enclosing_Instance.seq.AddAndGet(1);
 							Document doc = TestIndexWriterReader.CreateDocument(i, "index1", 10);
-							writer.AddDocument(doc);
+							writer.AddDocument(doc, null);
 							addCount++;
 						}
 						else if (type == 1)
 						{
 							// we may or may not delete because the term may not exist,
 							// however we're opening and closing the reader rapidly
-							IndexReader reader = writer.GetReader();
+							IndexReader reader = writer.GetReader(null);
 							int id = Enclosing_Instance.random.Next(Enclosing_Instance.seq.IntValue());
 							Term term = new Term("id", System.Convert.ToString(id));
 							int count = TestIndexWriterReader.Count(term, reader);
-							writer.DeleteDocuments(term);
+							writer.DeleteDocuments(null, term);
 							reader.Close();
 							delCount += count;
 						}

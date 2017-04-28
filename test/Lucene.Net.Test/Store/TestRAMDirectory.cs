@@ -17,6 +17,7 @@
 
 using System;
 using System.IO;
+using Lucene.Net.Index;
 using Lucene.Net.Support;
 using NUnit.Framework;
 
@@ -71,7 +72,7 @@ namespace Lucene.Net.Store
 					doc.Add(new Field("sizeContent", English.IntToEnglish(num * Enclosing_Instance.docsPerThread + j).Trim(), Field.Store.YES, Field.Index.NOT_ANALYZED));
 					try
 					{
-						writer.AddDocument(doc);
+						writer.AddDocument(doc, null);
 					}
 					catch (System.IO.IOException e)
 					{
@@ -97,14 +98,14 @@ namespace Lucene.Net.Store
 			indexDir = new System.IO.DirectoryInfo(Path.Combine(tempDir, "RAMDirIndex"));
 
 		    Directory dir = FSDirectory.Open(indexDir);
-			IndexWriter writer = new IndexWriter(dir, new WhitespaceAnalyzer(), true, IndexWriter.MaxFieldLength.LIMITED);
+			IndexWriter writer = new IndexWriter(dir, new WhitespaceAnalyzer(), true, IndexWriter.MaxFieldLength.LIMITED, null);
 			// add some documents
 			Document doc = null;
 			for (int i = 0; i < docsToAdd; i++)
 			{
 				doc = new Document();
 				doc.Add(new Field("content", English.IntToEnglish(i).Trim(), Field.Store.YES, Field.Index.NOT_ANALYZED));
-				writer.AddDocument(doc);
+				writer.AddDocument(doc, null);
 			}
 			Assert.AreEqual(docsToAdd, writer.MaxDoc());
 			writer.Close();
@@ -125,7 +126,7 @@ namespace Lucene.Net.Store
 			Assert.AreEqual(ramDir.SizeInBytes(), ramDir.GetRecomputedSizeInBytes());
 			
 			// open reader to test document count
-			IndexReader reader = IndexReader.Open(ramDir, true);
+			IndexReader reader = IndexReader.Open((Directory) ramDir, true, null);
 			Assert.AreEqual(docsToAdd, reader.NumDocs());
 			
 			// open search zo check if all doc's are there
@@ -134,7 +135,7 @@ namespace Lucene.Net.Store
 			// search for all documents
 			for (int i = 0; i < docsToAdd; i++)
 			{
-				Document doc = searcher.Doc(i);
+				Document doc = searcher.Doc(i, null);
 				Assert.IsTrue(doc.GetField("content") != null);
 			}
 			
@@ -152,8 +153,8 @@ namespace Lucene.Net.Store
             Directory dir = FSDirectory.Open(indexDir);
 			MockRAMDirectory ramDir = new MockRAMDirectory(dir);
             dir.Close();
-			IndexWriter writer = new IndexWriter(ramDir, new WhitespaceAnalyzer(), false, IndexWriter.MaxFieldLength.LIMITED);
-			writer.Optimize();
+			IndexWriter writer = new IndexWriter(ramDir, new WhitespaceAnalyzer(), false, IndexWriter.MaxFieldLength.LIMITED, null);
+			writer.Optimize(null);
 			
 			Assert.AreEqual(ramDir.SizeInBytes(), ramDir.GetRecomputedSizeInBytes());
 			
@@ -168,7 +169,7 @@ namespace Lucene.Net.Store
 			for (int i = 0; i < numThreads; i++)
 				threads[i].Join();
 			
-			writer.Optimize();
+			writer.Optimize(null);
 			Assert.AreEqual(ramDir.SizeInBytes(), ramDir.GetRecomputedSizeInBytes());
 			
 			writer.Close();
@@ -210,12 +211,12 @@ namespace Lucene.Net.Store
 		public virtual void  TestIllegalEOF()
 		{
 			RAMDirectory dir = new RAMDirectory();
-			IndexOutput o = dir.CreateOutput("out");
+			IndexOutput o = dir.CreateOutput("out", null);
 			byte[] b = new byte[1024];
 			o.WriteBytes(b, 0, 1024);
 			o.Close();
-			IndexInput i = dir.OpenInput("out");
-			i.Seek(1024);
+			IndexInput i = dir.OpenInput("out", null);
+			i.Seek(1024, null);
 			i.Close();
 			dir.Close();
 		}

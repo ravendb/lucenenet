@@ -16,7 +16,8 @@
  */
 
 using System;
-
+using Lucene.Net.Index;
+using Lucene.Net.Store;
 using NUnit.Framework;
 
 using WhitespaceAnalyzer = Lucene.Net.Analysis.WhitespaceAnalyzer;
@@ -77,26 +78,26 @@ namespace Lucene.Net.Search
 				this.sc = scorer;
 			}
 			
-			public override void  Collect(int doc)
+			public override void  Collect(int doc, IState state)
 			{
-				float score = sc.Score();
+				float score = sc.Score(null);
 			    lastDoc[0] = doc;
 				try
 				{
                     if (scorer == null)
                     {
-                        Weight w = q.Weight(s);
-                        scorer = w.Scorer(reader, true, false);
+                        Weight w = q.Weight(s, null);
+                        scorer = w.Scorer(reader, true, false, null);
                     }
 					int op = order[(opidx[0]++) % order.Length];
 					// System.out.println(op==skip_op ?
 					// "skip("+(sdoc[0]+1)+")":"next()");
 				    bool more = op == skip_op
-				                    ? scorer.Advance(scorer.DocID() + 1) != DocIdSetIterator.NO_MORE_DOCS
-				                    : scorer.NextDoc() != DocIdSetIterator.NO_MORE_DOCS;
+				                    ? scorer.Advance(scorer.DocID() + 1, null) != DocIdSetIterator.NO_MORE_DOCS
+				                    : scorer.NextDoc(null) != DocIdSetIterator.NO_MORE_DOCS;
 					int scorerDoc = scorer.DocID();
-					float scorerScore = scorer.Score();
-					float scorerScore2 = scorer.Score();
+					float scorerScore = scorer.Score(null);
+					float scorerScore2 = scorer.Score(null);
 					float scoreDiff = System.Math.Abs(score - scorerScore);
 					float scorerDiff = System.Math.Abs(scorerScore2 - scorerScore);
 					if (!more || doc != scorerDoc || scoreDiff > maxDiff || scorerDiff > maxDiff)
@@ -121,16 +122,16 @@ namespace Lucene.Net.Search
 				}
 			}
 			
-			public override void  SetNextReader(IndexReader reader, int docBase)
+			public override void  SetNextReader(IndexReader reader, int docBase, IState state)
 			{
 				// confirm that skipping beyond the last doc, on the
                 // previous reader, hits NO_MORE_DOCS
                 if (lastReader[0] != null) {
                   IndexReader previousReader = lastReader[0];
-                  Weight w = q.Weight(new IndexSearcher(previousReader));
-                  Scorer scorer = w.Scorer(previousReader, true, false);
+                  Weight w = q.Weight(new IndexSearcher(previousReader), null);
+                  Scorer scorer = w.Scorer(previousReader, true, false, null);
                   if (scorer != null) {
-                    bool more = scorer.Advance(lastDoc[0] + 1) != DocIdSetIterator.NO_MORE_DOCS;
+                    bool more = scorer.Advance(lastDoc[0] + 1, null) != DocIdSetIterator.NO_MORE_DOCS;
                     Assert.IsFalse(more, "query's last doc was "+ lastDoc[0] +" but skipTo("+(lastDoc[0]+1)+") got to "+scorer.DocID());
                   }
                 }
@@ -170,21 +171,21 @@ namespace Lucene.Net.Search
 			{
 				this.scorer = scorer;
 			}
-			public override void  Collect(int doc)
+			public override void  Collect(int doc, IState state)
 			{
 				//System.out.println("doc="+doc);
-				float score = this.scorer.Score();
+				float score = this.scorer.Score(null);
 				try
 				{
 					
 					for (int i = lastDoc[0] + 1; i <= doc; i++)
 					{
-						Weight w = q.Weight(s);
-						Scorer scorer = w.Scorer(reader, true, false);
-						Assert.IsTrue(scorer.Advance(i) != DocIdSetIterator.NO_MORE_DOCS, "query collected " + doc + " but skipTo(" + i + ") says no more docs!");
+						Weight w = q.Weight(s, null);
+						Scorer scorer = w.Scorer(reader, true, false, null);
+						Assert.IsTrue(scorer.Advance(i, null) != DocIdSetIterator.NO_MORE_DOCS, "query collected " + doc + " but skipTo(" + i + ") says no more docs!");
 						Assert.AreEqual(doc, scorer.DocID(), "query collected " + doc + " but skipTo(" + i + ") got to " + scorer.DocID());
-						float skipToScore = scorer.Score();
-						Assert.AreEqual(skipToScore, scorer.Score(), maxDiff, "unstable skipTo(" + i + ") score!");
+						float skipToScore = scorer.Score(null);
+						Assert.AreEqual(skipToScore, scorer.Score(null), maxDiff, "unstable skipTo(" + i + ") score!");
 						Assert.AreEqual(score, skipToScore, maxDiff, "query assigned doc " + doc + " a score of <" + score + "> but skipTo(" + i + ") has <" + skipToScore + ">!");
 					}
 					lastDoc[0] = doc;
@@ -194,18 +195,18 @@ namespace Lucene.Net.Search
 					throw new System.SystemException("", e);
 				}
 			}
-			public override void  SetNextReader(IndexReader reader, int docBase)
+			public override void  SetNextReader(IndexReader reader, int docBase, IState state)
 			{
 		        // confirm that skipping beyond the last doc, on the
                 // previous reader, hits NO_MORE_DOCS
                 if (lastReader[0] != null) 
                 {
                     IndexReader previousReader = lastReader[0];
-                    Weight w = q.Weight(new IndexSearcher(previousReader));
-                    Scorer scorer = w.Scorer(previousReader, true, false);
+                    Weight w = q.Weight(new IndexSearcher(previousReader), null);
+                    Scorer scorer = w.Scorer(previousReader, true, false, null);
                     if (scorer != null)
                     {
-                        bool more = scorer.Advance(lastDoc[0] + 1) != DocIdSetIterator.NO_MORE_DOCS;
+                        bool more = scorer.Advance(lastDoc[0] + 1, null) != DocIdSetIterator.NO_MORE_DOCS;
                         Assert.IsFalse(more, "query's last doc was " + lastDoc[0] + " but skipTo(" + (lastDoc[0] + 1) + ") got to " + scorer.DocID());
                     }
                 }
@@ -314,7 +315,7 @@ namespace Lucene.Net.Search
 					CheckSerialization(q1, s);
 					
 					Query q2 = (Query) q1.Clone();
-					CheckEqual(s.Rewrite(q1), s.Rewrite(q2));
+					CheckEqual(s.Rewrite(q1, null), s.Rewrite(q2, null));
 				}
 			}
 			catch (System.IO.IOException e)
@@ -342,21 +343,21 @@ namespace Lucene.Net.Search
 			// it will throw off the docIds
 		    IndexReader[] readers = new IndexReader[]
 		                                {
-		                                    edge < 0 ? r : IndexReader.Open(MakeEmptyIndex(0), true),
-		                                    IndexReader.Open(MakeEmptyIndex(0), true),
+		                                    edge < 0 ? r : IndexReader.Open((Directory) MakeEmptyIndex(0), true, null),
+		                                    IndexReader.Open((Directory) MakeEmptyIndex(0), true, null),
 		                                    new MultiReader(new IndexReader[]
 		                                                        {
-		                                                            IndexReader.Open(MakeEmptyIndex(edge < 0 ? 4 : 0), true),
-		                                                            IndexReader.Open(MakeEmptyIndex(0), true),
-		                                                            0 == edge ? r : IndexReader.Open(MakeEmptyIndex(0), true)
+		                                                            IndexReader.Open((Directory) MakeEmptyIndex(edge < 0 ? 4 : 0), true, null),
+		                                                            IndexReader.Open((Directory) MakeEmptyIndex(0), true, null),
+		                                                            0 == edge ? r : IndexReader.Open((Directory) MakeEmptyIndex(0), true, null)
 		                                                        }),
-		                                    IndexReader.Open(MakeEmptyIndex(0 < edge ? 0 : 7), true),
-		                                    IndexReader.Open(MakeEmptyIndex(0), true),
+		                                    IndexReader.Open((Directory) MakeEmptyIndex(0 < edge ? 0 : 7), true, null),
+		                                    IndexReader.Open((Directory) MakeEmptyIndex(0), true, null),
 		                                    new MultiReader(new IndexReader[]
 		                                                        {
-		                                                            IndexReader.Open(MakeEmptyIndex(0 < edge ? 0 : 5), true),
-		                                                            IndexReader.Open(MakeEmptyIndex(0), true),
-		                                                            0 < edge ? r : IndexReader.Open(MakeEmptyIndex(0), true)
+		                                                            IndexReader.Open((Directory) MakeEmptyIndex(0 < edge ? 0 : 5), true, null),
+		                                                            IndexReader.Open((Directory) MakeEmptyIndex(0), true, null),
+		                                                            0 < edge ? r : IndexReader.Open((Directory) MakeEmptyIndex(0), true, null)
 		                                                        })
 		                                };
 			IndexSearcher out_Renamed = new IndexSearcher(new MultiReader(readers));
@@ -380,20 +381,20 @@ namespace Lucene.Net.Search
 			// it will through off the docIds
 		    Searcher[] searchers = new Searcher[]
 		                               {
-		                                   edge < 0 ? s : new IndexSearcher(MakeEmptyIndex(0), true),
+		                                   edge < 0 ? s : new IndexSearcher(MakeEmptyIndex(0), true, null),
 		                                   new MultiSearcher(new Searcher[]
 		                                                         {
-		                                                             new IndexSearcher(MakeEmptyIndex(edge < 0 ? 65 : 0), true),
-		                                                             new IndexSearcher(MakeEmptyIndex(0), true),
-		                                                             0 == edge ? s : new IndexSearcher(MakeEmptyIndex(0), true)
+		                                                             new IndexSearcher(MakeEmptyIndex(edge < 0 ? 65 : 0), true, null),
+		                                                             new IndexSearcher(MakeEmptyIndex(0), true, null),
+		                                                             0 == edge ? s : new IndexSearcher(MakeEmptyIndex(0), true, null)
 		                                                         }),
-		                                   new IndexSearcher(MakeEmptyIndex(0 < edge ? 0 : 3), true),
-		                                   new IndexSearcher(MakeEmptyIndex(0), true),
+		                                   new IndexSearcher(MakeEmptyIndex(0 < edge ? 0 : 3), true, null),
+		                                   new IndexSearcher(MakeEmptyIndex(0), true, null),
 		                                   new MultiSearcher(new Searcher[]
 		                                                         {
-		                                                             new IndexSearcher(MakeEmptyIndex(0 < edge ? 0 : 5), true),
-		                                                             new IndexSearcher(MakeEmptyIndex(0), true),
-		                                                             0 < edge ? s : new IndexSearcher(MakeEmptyIndex(0), true)
+		                                                             new IndexSearcher(MakeEmptyIndex(0 < edge ? 0 : 5), true, null),
+		                                                             new IndexSearcher(MakeEmptyIndex(0), true, null),
+		                                                             0 < edge ? s : new IndexSearcher(MakeEmptyIndex(0), true, null)
 		                                                         })
 		                               };
 			MultiSearcher out_Renamed = new MultiSearcher(searchers);
@@ -404,22 +405,22 @@ namespace Lucene.Net.Search
 		private static RAMDirectory MakeEmptyIndex(int numDeletedDocs)
 		{
 			RAMDirectory d = new RAMDirectory();
-			IndexWriter w = new IndexWriter(d, new WhitespaceAnalyzer(), true, MaxFieldLength.LIMITED);
+			IndexWriter w = new IndexWriter(d, new WhitespaceAnalyzer(), true, MaxFieldLength.LIMITED, null);
 			for (int i = 0; i < numDeletedDocs; i++)
 			{
-				w.AddDocument(new Document());
+				w.AddDocument(new Document(), null);
 			}
-			w.Commit();
-			w.DeleteDocuments(new MatchAllDocsQuery());
-			w.Commit();
+			w.Commit(null);
+			w.DeleteDocuments(null, new MatchAllDocsQuery());
+			w.Commit(null);
 			
 			if (0 < numDeletedDocs)
-				Assert.IsTrue(w.HasDeletions(), "writer has no deletions");
+				Assert.IsTrue(w.HasDeletions(null), "writer has no deletions");
 			
 			Assert.AreEqual(numDeletedDocs, w.MaxDoc(), "writer is missing some deleted docs");
-			Assert.AreEqual(0, w.NumDocs(), "writer has non-deleted docs");
+			Assert.AreEqual(0, w.NumDocs(null), "writer has non-deleted docs");
 			w.Close();
-            IndexReader r = IndexReader.Open(d, true);
+            IndexReader r = IndexReader.Open((Directory) d, true, null);
 			Assert.AreEqual(numDeletedDocs, r.NumDeletedDocs, "reader has wrong number of deleted docs");
 			r.Close();
 			return d;
@@ -465,7 +466,7 @@ namespace Lucene.Net.Search
 		{
 			//System.out.println("Checking "+q);
 			
-			if (q.Weight(s).GetScoresDocsOutOfOrder())
+			if (q.Weight(s, null).GetScoresDocsOutOfOrder())
 				return ; // in this case order of skipTo() might differ from that of next().
 			
 			int skip_op = 0;
@@ -486,18 +487,18 @@ namespace Lucene.Net.Search
 				float maxDiff = 1e-5f;
 			    IndexReader[] lastReader = new IndexReader[] {null};
 
-				s.Search(q, new AnonymousClassCollector(order, opidx, skip_op, lastReader, maxDiff, q, s, lastDoc));
+				s.Search(q, new AnonymousClassCollector(order, opidx, skip_op, lastReader, maxDiff, q, s, lastDoc), null);
 
                 if (lastReader[0] != null)
                 {
                     // Confirm that skipping beyond the last doc, on the
                     // previous reader, hits NO_MORE_DOCS
                     IndexReader previousReader = lastReader[0];
-                    Weight w = q.Weight(new IndexSearcher(previousReader));
-                    Scorer scorer = w.Scorer(previousReader, true, false);
+                    Weight w = q.Weight(new IndexSearcher(previousReader), null);
+                    Scorer scorer = w.Scorer(previousReader, true, false, null);
                     if (scorer != null)
                     {
-                        bool more = scorer.Advance(lastDoc[0] + 1) != DocIdSetIterator.NO_MORE_DOCS;
+                        bool more = scorer.Advance(lastDoc[0] + 1, null) != DocIdSetIterator.NO_MORE_DOCS;
                         Assert.IsFalse(more, "query's last doc was " + lastDoc[0] + " but skipTo(" + (lastDoc[0] + 1) + ") got to " + scorer.DocID());
                     }
                 }
@@ -512,19 +513,19 @@ namespace Lucene.Net.Search
 			int[] lastDoc = new int[]{- 1};
             IndexReader[] lastReader = {null};
 
-			s.Search(q, new AnonymousClassCollector1(lastDoc, q, s, maxDiff, lastReader));
+			s.Search(q, new AnonymousClassCollector1(lastDoc, q, s, maxDiff, lastReader), null);
 			
 			if(lastReader[0] != null)
             {
                 // confirm that skipping beyond the last doc, on the
                 // previous reader, hits NO_MORE_DOCS
                 IndexReader previousReader = lastReader[0];
-                Weight w = q.Weight(new IndexSearcher(previousReader));
-                Scorer scorer = w.Scorer(previousReader, true, false);
+                Weight w = q.Weight(new IndexSearcher(previousReader), null);
+                Scorer scorer = w.Scorer(previousReader, true, false, null);
 
 				if (scorer != null)
 				{
-					bool more = scorer.Advance(lastDoc[0] + 1) != DocIdSetIterator.NO_MORE_DOCS;					
+					bool more = scorer.Advance(lastDoc[0] + 1, null) != DocIdSetIterator.NO_MORE_DOCS;					
 					Assert.IsFalse(more, "query's last doc was " + lastDoc[0] + " but skipTo(" + (lastDoc[0] + 1) + ") got to " + scorer.DocID());
 				}
 			}

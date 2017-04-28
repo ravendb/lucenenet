@@ -77,7 +77,7 @@ namespace Lucene.Net.Index
 					{
 						Document d = new Document();
 						d.Add(new Field(field, new PoolingPayloadTokenStream(enclosingInstance, pool)));
-						writer.AddDocument(d);
+						writer.AddDocument(d, null);
 					}
 				}
 				catch (System.Exception e)
@@ -139,7 +139,7 @@ namespace Lucene.Net.Index
 			rnd = NewRandom();
 			Directory ram = new RAMDirectory();
 			PayloadAnalyzer analyzer = new PayloadAnalyzer();
-			IndexWriter writer = new IndexWriter(ram, analyzer, true, IndexWriter.MaxFieldLength.LIMITED);
+			IndexWriter writer = new IndexWriter(ram, analyzer, true, IndexWriter.MaxFieldLength.LIMITED, null);
 			Document d = new Document();
 			// this field won't have any payloads
 			d.Add(new Field("f1", "This field has no payloads", Field.Store.NO, Field.Index.ANALYZED));
@@ -153,11 +153,11 @@ namespace Lucene.Net.Index
 			d.Add(new Field("f3", "This field has payloads in some docs", Field.Store.NO, Field.Index.ANALYZED));
 			// only add payload data for field f2
 			analyzer.SetPayloadData("f2", 1, System.Text.UTF8Encoding.UTF8.GetBytes("somedata"), 0, 1);
-			writer.AddDocument(d);
+			writer.AddDocument(d, null);
 			// flush
 			writer.Close();
 			
-			SegmentReader reader = SegmentReader.GetOnlySegmentReader(ram);
+			SegmentReader reader = SegmentReader.GetOnlySegmentReader(ram, null);
 			FieldInfos fi = reader.FieldInfos();
 			Assert.IsFalse(fi.FieldInfo("f1").storePayloads_ForNUnit, "Payload field bit should not be set.");
 			Assert.IsTrue(fi.FieldInfo("f2").storePayloads_ForNUnit, "Payload field bit should be set.");
@@ -166,7 +166,7 @@ namespace Lucene.Net.Index
 			
 			// now we add another document which has payloads for field f3 and verify if the SegmentMerger
 			// enabled payloads for that field
-			writer = new IndexWriter(ram, analyzer, true, IndexWriter.MaxFieldLength.LIMITED);
+			writer = new IndexWriter(ram, analyzer, true, IndexWriter.MaxFieldLength.LIMITED, null);
 			d = new Document();
 			d.Add(new Field("f1", "This field has no payloads", Field.Store.NO, Field.Index.ANALYZED));
 			d.Add(new Field("f2", "This field has payloads in all docs", Field.Store.NO, Field.Index.ANALYZED));
@@ -175,13 +175,13 @@ namespace Lucene.Net.Index
 			// add payload data for field f2 and f3
 			analyzer.SetPayloadData("f2", System.Text.UTF8Encoding.UTF8.GetBytes("somedata"), 0, 1);
 			analyzer.SetPayloadData("f3", System.Text.UTF8Encoding.UTF8.GetBytes("somedata"), 0, 3);
-			writer.AddDocument(d);
+			writer.AddDocument(d, null);
 			// force merge
-			writer.Optimize();
+			writer.Optimize(null);
 			// flush
 			writer.Close();
 			
-			reader = SegmentReader.GetOnlySegmentReader(ram);
+			reader = SegmentReader.GetOnlySegmentReader(ram, null);
 			fi = reader.FieldInfos();
 			Assert.IsFalse(fi.FieldInfo("f1").storePayloads_ForNUnit, "Payload field bit should not be set.");
 			Assert.IsTrue(fi.FieldInfo("f2").storePayloads_ForNUnit, "Payload field bit should be set.");
@@ -210,7 +210,7 @@ namespace Lucene.Net.Index
 		private void  PerformTest(Directory dir)
 		{
 			PayloadAnalyzer analyzer = new PayloadAnalyzer();
-			IndexWriter writer = new IndexWriter(dir, analyzer, true, IndexWriter.MaxFieldLength.LIMITED);
+			IndexWriter writer = new IndexWriter(dir, analyzer, true, IndexWriter.MaxFieldLength.LIMITED, null);
 			
 			// should be in sync with value in TermInfosWriter
 			int skipInterval = 16;
@@ -242,21 +242,21 @@ namespace Lucene.Net.Index
 			{
 				analyzer.SetPayloadData(fieldName, payloadData, offset, 1);
 				offset += numTerms;
-				writer.AddDocument(d);
+				writer.AddDocument(d, null);
 			}
 			
 			// make sure we create more than one segment to test merging
-			writer.Commit();
+			writer.Commit(null);
 			
 			// now we make sure to have different payload lengths next at the next skip point        
 			for (int i = 0; i < numDocs; i++)
 			{
 				analyzer.SetPayloadData(fieldName, payloadData, offset, i);
 				offset += i * numTerms;
-				writer.AddDocument(d);
+				writer.AddDocument(d, null);
 			}
 			
-			writer.Optimize();
+			writer.Optimize(null);
 			// flush
 			writer.Close();
 			
@@ -265,21 +265,21 @@ namespace Lucene.Net.Index
 			* Verify the index
 			* first we test if all payloads are stored correctly
 			*/
-		    IndexReader reader = IndexReader.Open(dir, true);
+		    IndexReader reader = IndexReader.Open(dir, true, null);
 			
 			byte[] verifyPayloadData = new byte[payloadDataLength];
 			offset = 0;
 			TermPositions[] tps = new TermPositions[numTerms];
 			for (int i = 0; i < numTerms; i++)
 			{
-				tps[i] = reader.TermPositions(terms[i]);
+				tps[i] = reader.TermPositions(terms[i], null);
 			}
 			
-			while (tps[0].Next())
+			while (tps[0].Next(null))
 			{
 				for (int i = 1; i < numTerms; i++)
 				{
-					tps[i].Next();
+					tps[i].Next(null);
 				}
 				int freq = tps[0].Freq;
 				
@@ -287,8 +287,8 @@ namespace Lucene.Net.Index
 				{
 					for (int j = 0; j < numTerms; j++)
 					{
-						tps[j].NextPosition();
-						tps[j].GetPayload(verifyPayloadData, offset);
+						tps[j].NextPosition(null);
+						tps[j].GetPayload(verifyPayloadData, offset, null);
 						offset += tps[j].PayloadLength;
 					}
 				}
@@ -304,55 +304,55 @@ namespace Lucene.Net.Index
 			/*
 			*  test lazy skipping
 			*/
-			TermPositions tp = reader.TermPositions(terms[0]);
-			tp.Next();
-			tp.NextPosition();
+			TermPositions tp = reader.TermPositions(terms[0], null);
+			tp.Next(null);
+			tp.NextPosition(null);
 			// now we don't read this payload
-			tp.NextPosition();
+			tp.NextPosition(null);
 			Assert.AreEqual(1, tp.PayloadLength, "Wrong payload length.");
-			byte[] payload = tp.GetPayload(null, 0);
+			byte[] payload = tp.GetPayload(null, 0, null);
 			Assert.AreEqual(payload[0], payloadData[numTerms]);
-			tp.NextPosition();
+			tp.NextPosition(null);
 			
 			// we don't read this payload and skip to a different document
-			tp.SkipTo(5);
-			tp.NextPosition();
+			tp.SkipTo(5, null);
+			tp.NextPosition(null);
 			Assert.AreEqual(1, tp.PayloadLength, "Wrong payload length.");
-			payload = tp.GetPayload(null, 0);
+			payload = tp.GetPayload(null, 0, null);
 			Assert.AreEqual(payload[0], payloadData[5 * numTerms]);
 			
 			
 			/*
 			* Test different lengths at skip points
 			*/
-			tp.Seek(terms[1]);
-			tp.Next();
-			tp.NextPosition();
+			tp.Seek(terms[1], null);
+			tp.Next(null);
+			tp.NextPosition(null);
 			Assert.AreEqual(1, tp.PayloadLength, "Wrong payload length.");
-			tp.SkipTo(skipInterval - 1);
-			tp.NextPosition();
+			tp.SkipTo(skipInterval - 1, null);
+			tp.NextPosition(null);
 			Assert.AreEqual(1, tp.PayloadLength, "Wrong payload length.");
-			tp.SkipTo(2 * skipInterval - 1);
-			tp.NextPosition();
+			tp.SkipTo(2 * skipInterval - 1, null);
+			tp.NextPosition(null);
 			Assert.AreEqual(1, tp.PayloadLength, "Wrong payload length.");
-			tp.SkipTo(3 * skipInterval - 1);
-			tp.NextPosition();
+			tp.SkipTo(3 * skipInterval - 1, null);
+			tp.NextPosition(null);
 			Assert.AreEqual(3 * skipInterval - 2 * numDocs - 1, tp.PayloadLength, "Wrong payload length.");
 			
 			/*
 			* Test multiple call of getPayload()
 			*/
-			tp.GetPayload(null, 0);
+			tp.GetPayload(null, 0, null);
 
 			// it is forbidden to call getPayload() more than once
 			// without calling nextPosition()
-            Assert.Throws<IOException>(() => tp.GetPayload(null, 0), "Expected exception not thrown");
+            Assert.Throws<IOException>(() => tp.GetPayload(null, 0, null), "Expected exception not thrown");
 			
 			reader.Close();
 			
 			// test long payload
 			analyzer = new PayloadAnalyzer();
-			writer = new IndexWriter(dir, analyzer, true, IndexWriter.MaxFieldLength.LIMITED);
+			writer = new IndexWriter(dir, analyzer, true, IndexWriter.MaxFieldLength.LIMITED, null);
 			System.String singleTerm = "lucene";
 			
 			d = new Document();
@@ -360,20 +360,20 @@ namespace Lucene.Net.Index
 			// add a payload whose length is greater than the buffer size of BufferedIndexOutput
 			payloadData = GenerateRandomData(2000);
 			analyzer.SetPayloadData(fieldName, payloadData, 100, 1500);
-			writer.AddDocument(d);
+			writer.AddDocument(d, null);
 			
 			
-			writer.Optimize();
+			writer.Optimize(null);
 			// flush
 			writer.Close();
 
-		    reader = IndexReader.Open(dir, true);
-			tp = reader.TermPositions(new Term(fieldName, singleTerm));
-			tp.Next();
-			tp.NextPosition();
+		    reader = IndexReader.Open(dir, true, null);
+			tp = reader.TermPositions(new Term(fieldName, singleTerm), null);
+			tp.Next(null);
+			tp.NextPosition(null);
 			
 			verifyPayloadData = new byte[tp.PayloadLength];
-			tp.GetPayload(verifyPayloadData, 0);
+			tp.GetPayload(verifyPayloadData, 0, null);
 			byte[] portion = new byte[1500];
 			Array.Copy(payloadData, 100, portion, 0, 1500);
 			
@@ -530,7 +530,7 @@ namespace Lucene.Net.Index
 			ByteArrayPool pool = new ByteArrayPool(numThreads, 5);
 			
 			Directory dir = new RAMDirectory();
-			IndexWriter writer = new IndexWriter(dir, new WhitespaceAnalyzer(), IndexWriter.MaxFieldLength.LIMITED);
+			IndexWriter writer = new IndexWriter(dir, new WhitespaceAnalyzer(), IndexWriter.MaxFieldLength.LIMITED, null);
 			System.String field = "test";
 			
 			ThreadClass[] ingesters = new ThreadClass[numThreads];
@@ -545,18 +545,18 @@ namespace Lucene.Net.Index
 				ingesters[i].Join();
 			}
 			writer.Close();
-		    IndexReader reader = IndexReader.Open(dir, true);
-			TermEnum terms = reader.Terms();
-			while (terms.Next())
+		    IndexReader reader = IndexReader.Open(dir, true, null);
+			TermEnum terms = reader.Terms(null);
+			while (terms.Next(null))
 			{
-				TermPositions tp = reader.TermPositions(terms.Term);
-				while (tp.Next())
+				TermPositions tp = reader.TermPositions(terms.Term, null);
+				while (tp.Next(null))
 				{
 					int freq = tp.Freq;
 					for (int i = 0; i < freq; i++)
 					{
-						tp.NextPosition();
-						Assert.AreEqual(pool.BytesToString(tp.GetPayload(new byte[5], 0)), terms.Term.Text);
+						tp.NextPosition(null);
+						Assert.AreEqual(pool.BytesToString(tp.GetPayload(new byte[5], 0, null)), terms.Term.Text);
 					}
 				}
 				tp.Close();

@@ -16,7 +16,8 @@
  */
 
 using System;
-
+using Lucene.Net.Store;
+using Lucene.Net.Util;
 using NUnit.Framework;
 
 using WhitespaceAnalyzer = Lucene.Net.Analysis.WhitespaceAnalyzer;
@@ -68,9 +69,9 @@ namespace Lucene.Net.Index
 				}
 				
 			}
-			public override IndexInput OpenInput(System.String name)
+			public override IndexInput OpenInput(System.String name, IState state)
 			{
-				IndexInput ii = base.OpenInput(name);
+				IndexInput ii = base.OpenInput(name, null);
 				if (name.EndsWith(".prx"))
 				{
 					// we decorate the proxStream with a wrapper class that allows to count the number of calls of seek()
@@ -85,7 +86,7 @@ namespace Lucene.Net.Index
 			int numDocs = 500;
 			
 			Directory directory = new SeekCountingDirectory(this);
-			IndexWriter writer = new IndexWriter(directory, new WhitespaceAnalyzer(), true, IndexWriter.MaxFieldLength.LIMITED);
+			IndexWriter writer = new IndexWriter(directory, new WhitespaceAnalyzer(), true, IndexWriter.MaxFieldLength.LIMITED, null);
 			writer.UseCompoundFile = false;
 			writer.SetMaxBufferedDocs(10);
 			for (int i = 0; i < numDocs; i++)
@@ -109,14 +110,14 @@ namespace Lucene.Net.Index
 				}
 				
 				doc.Add(new Field(this.field, content, Field.Store.YES, Field.Index.ANALYZED));
-				writer.AddDocument(doc);
+				writer.AddDocument(doc, null);
 			}
 			
 			// make sure the index has only a single segment
-			writer.Optimize();
+			writer.Optimize(null);
 			writer.Close();
 			
-			SegmentReader reader = SegmentReader.GetOnlySegmentReader(directory);
+			SegmentReader reader = SegmentReader.GetOnlySegmentReader(directory, null);
 			
 			this.searcher = new IndexSearcher(reader);
 		}
@@ -127,7 +128,7 @@ namespace Lucene.Net.Index
 			PhraseQuery pq = new PhraseQuery();
 			pq.Add(new Term(this.field, this.term1));
 			pq.Add(new Term(this.field, this.term2));
-			return this.searcher.Search(pq, null, 1000).ScoreDocs;
+			return this.searcher.Search(pq, null, 1000, null).ScoreDocs;
 		}
 		
 		private void  PerformTest(int numHits)
@@ -155,37 +156,37 @@ namespace Lucene.Net.Index
 		public virtual void  TestSeek()
 		{
 			Directory directory = new RAMDirectory();
-			IndexWriter writer = new IndexWriter(directory, new WhitespaceAnalyzer(), true, IndexWriter.MaxFieldLength.LIMITED);
+			IndexWriter writer = new IndexWriter(directory, new WhitespaceAnalyzer(), true, IndexWriter.MaxFieldLength.LIMITED, null);
 			for (int i = 0; i < 10; i++)
 			{
 				Document doc = new Document();
 				doc.Add(new Field(this.field, "a b", Field.Store.YES, Field.Index.ANALYZED));
-				writer.AddDocument(doc);
+				writer.AddDocument(doc, null);
 			}
 			
 			writer.Close();
-		    IndexReader reader = IndexReader.Open(directory, true);
-			TermPositions tp = reader.TermPositions();
-			tp.Seek(new Term(this.field, "b"));
+		    IndexReader reader = IndexReader.Open(directory, true, null);
+			TermPositions tp = reader.TermPositions(null);
+			tp.Seek(new Term(this.field, "b"), null);
 			for (int i = 0; i < 10; i++)
 			{
-				tp.Next();
+				tp.Next(null);
 				Assert.AreEqual(tp.Doc, i);
-				Assert.AreEqual(tp.NextPosition(), 1);
+				Assert.AreEqual(tp.NextPosition(null), 1);
 			}
-			tp.Seek(new Term(this.field, "a"));
+			tp.Seek(new Term(this.field, "a"), null);
 			for (int i = 0; i < 10; i++)
 			{
-				tp.Next();
+				tp.Next(null);
 				Assert.AreEqual(tp.Doc, i);
-				Assert.AreEqual(tp.NextPosition(), 0);
+				Assert.AreEqual(tp.NextPosition(null), 0);
 			}
 		}
 		
 		
 		// Simply extends IndexInput in a way that we are able to count the number
 		// of invocations of seek()
-		internal class SeeksCountingStream:IndexInput, System.ICloneable
+		internal class SeeksCountingStream:IndexInput, ILuceneCloneable
 		{
 			private void  InitBlock(TestLazyProxSkipping enclosingInstance)
 			{
@@ -210,14 +211,14 @@ namespace Lucene.Net.Index
 				this.input = input;
 			}
 			
-			public override byte ReadByte()
+			public override byte ReadByte(IState state)
 			{
-				return this.input.ReadByte();
+				return this.input.ReadByte(null);
 			}
 			
-			public override void  ReadBytes(byte[] b, int offset, int len)
+			public override void  ReadBytes(byte[] b, int offset, int len, IState state)
 			{
-				this.input.ReadBytes(b, offset, len);
+				this.input.ReadBytes(b, offset, len, null);
 			}
 
             protected override void Dispose(bool disposing)
@@ -231,25 +232,25 @@ namespace Lucene.Net.Index
                 isDisposed = true;
             }
 
-		    public override long FilePointer
+		    public override long FilePointer(IState state)
 		    {
-		        get { return this.input.FilePointer; }
+		        return this.input.FilePointer(null);
 		    }
 
-		    public override void  Seek(long pos)
+		    public override void  Seek(long pos, IState state)
 			{
 				Enclosing_Instance.seeksCounter++;
-				this.input.Seek(pos);
+				this.input.Seek(pos, null);
 			}
 			
-			public override long Length()
+			public override long Length(IState state)
 			{
-				return this.input.Length();
+				return this.input.Length(null);
 			}
 			
-			public override System.Object Clone()
+			public override System.Object Clone(IState state)
 			{
-				return new SeeksCountingStream(enclosingInstance, (IndexInput) this.input.Clone());
+				return new SeeksCountingStream(enclosingInstance, (IndexInput) this.input.Clone(null));
 			}
 		}
 	}

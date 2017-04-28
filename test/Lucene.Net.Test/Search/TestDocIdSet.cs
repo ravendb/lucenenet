@@ -16,6 +16,7 @@
  */
 
 using System;
+using Lucene.Net.Store;
 using Lucene.Net.Support;
 using NUnit.Framework;
 
@@ -74,16 +75,16 @@ namespace Lucene.Net.Search
 				}
 				
 				//@Override
-				public override int NextDoc()
+				public override int NextDoc(IState state)
 				{
 					docid++;
 					return docid < maxdoc?docid:(docid = NO_MORE_DOCS);
 				}
 				
 				//@Override
-				public override int Advance(int target)
+				public override int Advance(int target, IState state)
 				{
-					while (NextDoc() < target)
+					while (NextDoc(null) < target)
 					{
 					}
 					return docid;
@@ -105,7 +106,7 @@ namespace Lucene.Net.Search
 				
 			}
 			
-			public override DocIdSetIterator Iterator()
+			public override DocIdSetIterator Iterator(IState state)
 			{
 				return new AnonymousClassDocIdSetIterator(maxdoc, this);
 			}
@@ -155,7 +156,7 @@ namespace Lucene.Net.Search
 				}
 				
 			}
-			public override DocIdSet GetDocIdSet(IndexReader reader)
+			public override DocIdSet GetDocIdSet(IndexReader reader, IState state)
 			{
 				return null;
 			}
@@ -169,13 +170,13 @@ namespace Lucene.Net.Search
 			
 			DocIdSet filteredSet = new AnonymousClassFilteredDocIdSet(this, innerSet);
 			
-			DocIdSetIterator iter = filteredSet.Iterator();
+			DocIdSetIterator iter = filteredSet.Iterator(null);
 			System.Collections.ArrayList list = new System.Collections.ArrayList();
-			int doc = iter.Advance(3);
+			int doc = iter.Advance(3, null);
 			if (doc != DocIdSetIterator.NO_MORE_DOCS)
 			{
 				list.Add((System.Int32) doc);
-				while ((doc = iter.NextDoc()) != DocIdSetIterator.NO_MORE_DOCS)
+				while ((doc = iter.NextDoc(null)) != DocIdSetIterator.NO_MORE_DOCS)
 				{
 					list.Add((System.Int32) doc);
 				}
@@ -204,20 +205,20 @@ namespace Lucene.Net.Search
 			// Tests that if a Filter produces a null DocIdSet, which is given to
 			// IndexSearcher, everything works fine. This came up in LUCENE-1754.
 			Directory dir = new RAMDirectory();
-			IndexWriter writer = new IndexWriter(dir, new WhitespaceAnalyzer(), MaxFieldLength.UNLIMITED);
+			IndexWriter writer = new IndexWriter(dir, new WhitespaceAnalyzer(), MaxFieldLength.UNLIMITED, null);
 			Document doc = new Document();
 			doc.Add(new Field("c", "val", Field.Store.NO, Field.Index.NOT_ANALYZED_NO_NORMS));
-			writer.AddDocument(doc);
+			writer.AddDocument(doc, null);
 			writer.Close();
 			
 			// First verify the document is searchable.
-			IndexSearcher searcher = new IndexSearcher(dir, true);
-			Assert.AreEqual(1, searcher.Search(new MatchAllDocsQuery(), 10).TotalHits);
+			IndexSearcher searcher = new IndexSearcher(dir, true, null);
+			Assert.AreEqual(1, searcher.Search(new MatchAllDocsQuery(), 10, null).TotalHits);
 			
 			// Now search w/ a Filter which returns a null DocIdSet
 			Filter f = new AnonymousClassFilter(this);
 			
-			Assert.AreEqual(0, searcher.Search(new MatchAllDocsQuery(), f, 10).TotalHits);
+			Assert.AreEqual(0, searcher.Search(new MatchAllDocsQuery(), f, 10, null).TotalHits);
 			searcher.Close();
 		}
 	}

@@ -17,6 +17,7 @@
 
 using System;
 using Lucene.Net.Search;
+using Lucene.Net.Store;
 using NUnit.Framework;
 
 using Analyzer = Lucene.Net.Analysis.Analyzer;
@@ -65,12 +66,12 @@ namespace Lucene.Net.Index
 			{
 				this.scorer = scorer;
 			}
-			public override void  Collect(int doc)
+			public override void  Collect(int doc, IState state)
 			{
 				//System.out.println("Q1: Doc=" + doc + " score=" + score);
-				float score = scorer.Score();
+				float score = scorer.Score(null);
 				Assert.IsTrue(score == 1.0f);
-				base.Collect(doc);
+				base.Collect(doc, null);
 			}
 		}
 		
@@ -98,12 +99,12 @@ namespace Lucene.Net.Index
 			{
 				this.scorer = scorer;
 			}
-			public override void  Collect(int doc)
+			public override void  Collect(int doc, IState state)
 			{
 				//System.out.println("Q2: Doc=" + doc + " score=" + score);
-				float score = scorer.Score();
+				float score = scorer.Score(null);
 				Assert.IsTrue(score == 1.0f + doc);
-				base.Collect(doc);
+				base.Collect(doc, null);
 			}
 		}
 		
@@ -131,13 +132,13 @@ namespace Lucene.Net.Index
 			{
 				this.scorer = scorer;
 			}
-			public override void  Collect(int doc)
+			public override void  Collect(int doc, IState state)
 			{
 				//System.out.println("Q1: Doc=" + doc + " score=" + score);
-				float score = scorer.Score();
+				float score = scorer.Score(null);
 				Assert.IsTrue(score == 1.0f);
 				Assert.IsFalse(doc % 2 == 0);
-				base.Collect(doc);
+				base.Collect(doc, null);
 			}
 		}
 		
@@ -165,13 +166,13 @@ namespace Lucene.Net.Index
 			{
 				this.scorer = scorer;
 			}
-			public override void  Collect(int doc)
+			public override void  Collect(int doc, IState state)
 			{
-				float score = scorer.Score();
+				float score = scorer.Score(null);
 				//System.out.println("Q1: Doc=" + doc + " score=" + score);
 				Assert.IsTrue(score == 1.0f);
 				Assert.IsTrue(doc % 2 == 0);
-				base.Collect(doc);
+				base.Collect(doc, null);
 			}
 		}
 		
@@ -194,10 +195,10 @@ namespace Lucene.Net.Index
 				}
 				
 			}
-			public override void  Collect(int doc)
+			public override void  Collect(int doc, IState state)
 			{
 				//System.out.println("BQ: Doc=" + doc + " score=" + score);
-				base.Collect(doc);
+				base.Collect(doc, null);
 			}
 		}
 		
@@ -243,7 +244,7 @@ namespace Lucene.Net.Index
 			{
 				return 1.0f;
 			}
-            public override Search.Explanation.IDFExplanation IdfExplain(System.Collections.Generic.ICollection<Term> terms, Searcher searcher)
+            public override Search.Explanation.IDFExplanation IdfExplain(System.Collections.Generic.ICollection<Term> terms, Searcher searcher, IState state)
             {
                 return new AnonymousIDFExplanation();
             }
@@ -256,7 +257,7 @@ namespace Lucene.Net.Index
 		{
 			Directory ram = new MockRAMDirectory();
 			Analyzer analyzer = new StandardAnalyzer(Util.Version.LUCENE_CURRENT);
-			IndexWriter writer = new IndexWriter(ram, analyzer, true, IndexWriter.MaxFieldLength.LIMITED);
+			IndexWriter writer = new IndexWriter(ram, analyzer, true, IndexWriter.MaxFieldLength.LIMITED, null);
 			Document d = new Document();
 			
 			// this field will have Tf
@@ -268,8 +269,8 @@ namespace Lucene.Net.Index
 			f2.OmitTermFreqAndPositions = true;
 			d.Add(f2);
 			
-			writer.AddDocument(d);
-			writer.Optimize();
+			writer.AddDocument(d, null);
+			writer.Optimize(null);
 			// now we add another document which has term freq for field f2 and not for f1 and verify if the SegmentMerger
 			// keep things constant
 			d = new Document();
@@ -281,14 +282,14 @@ namespace Lucene.Net.Index
 			f2.OmitTermFreqAndPositions = false;
 			d.Add(f2);
 			
-			writer.AddDocument(d);
+			writer.AddDocument(d, null);
 			// force merge
-			writer.Optimize();
+			writer.Optimize(null);
 			// flush
 			writer.Close();
 			_TestUtil.CheckIndex(ram);
 			
-			SegmentReader reader = SegmentReader.GetOnlySegmentReader(ram);
+			SegmentReader reader = SegmentReader.GetOnlySegmentReader(ram, null);
 			FieldInfos fi = reader.FieldInfos();
 			Assert.IsTrue(fi.FieldInfo("f1").omitTermFreqAndPositions_ForNUnit, "OmitTermFreqAndPositions field bit should be set.");
 			Assert.IsTrue(fi.FieldInfo("f2").omitTermFreqAndPositions_ForNUnit, "OmitTermFreqAndPositions field bit should be set.");
@@ -304,7 +305,7 @@ namespace Lucene.Net.Index
 		{
 			Directory ram = new MockRAMDirectory();
 			Analyzer analyzer = new StandardAnalyzer(Util.Version.LUCENE_CURRENT);
-			IndexWriter writer = new IndexWriter(ram, analyzer, true, IndexWriter.MaxFieldLength.LIMITED);
+			IndexWriter writer = new IndexWriter(ram, analyzer, true, IndexWriter.MaxFieldLength.LIMITED, null);
 			writer.SetMaxBufferedDocs(3);
 			writer.MergeFactor = 2;
 			Document d = new Document();
@@ -319,7 +320,7 @@ namespace Lucene.Net.Index
 			d.Add(f2);
 			
 			for (int i = 0; i < 30; i++)
-				writer.AddDocument(d);
+				writer.AddDocument(d, null);
 			
 			// now we add another document which has term freq for field f2 and not for f1 and verify if the SegmentMerger
 			// keep things constant
@@ -333,16 +334,16 @@ namespace Lucene.Net.Index
 			d.Add(f2);
 			
 			for (int i = 0; i < 30; i++)
-				writer.AddDocument(d);
+				writer.AddDocument(d, null);
 			
 			// force merge
-			writer.Optimize();
+			writer.Optimize(null);
 			// flush
 			writer.Close();
 			
 			_TestUtil.CheckIndex(ram);
 			
-			SegmentReader reader = SegmentReader.GetOnlySegmentReader(ram);
+			SegmentReader reader = SegmentReader.GetOnlySegmentReader(ram, null);
 			FieldInfos fi = reader.FieldInfos();
 			Assert.IsTrue(fi.FieldInfo("f1").omitTermFreqAndPositions_ForNUnit, "OmitTermFreqAndPositions field bit should be set.");
 			Assert.IsTrue(fi.FieldInfo("f2").omitTermFreqAndPositions_ForNUnit, "OmitTermFreqAndPositions field bit should be set.");
@@ -359,7 +360,7 @@ namespace Lucene.Net.Index
 		{
 			Directory ram = new MockRAMDirectory();
 			Analyzer analyzer = new StandardAnalyzer(Util.Version.LUCENE_CURRENT);
-			IndexWriter writer = new IndexWriter(ram, analyzer, true, IndexWriter.MaxFieldLength.LIMITED);
+			IndexWriter writer = new IndexWriter(ram, analyzer, true, IndexWriter.MaxFieldLength.LIMITED, null);
 			writer.SetMaxBufferedDocs(10);
 			writer.MergeFactor = 2;
 			Document d = new Document();
@@ -373,22 +374,22 @@ namespace Lucene.Net.Index
 			d.Add(f2);
 			
 			for (int i = 0; i < 5; i++)
-				writer.AddDocument(d);
+				writer.AddDocument(d, null);
 			
 			f2.OmitTermFreqAndPositions = true;
 			
 			for (int i = 0; i < 20; i++)
-				writer.AddDocument(d);
+				writer.AddDocument(d, null);
 			
 			// force merge
-			writer.Optimize();
+			writer.Optimize(null);
 			
 			// flush
 			writer.Close();
 			
 			_TestUtil.CheckIndex(ram);
 			
-			SegmentReader reader = SegmentReader.GetOnlySegmentReader(ram);
+			SegmentReader reader = SegmentReader.GetOnlySegmentReader(ram, null);
 			FieldInfos fi = reader.FieldInfos();
 			Assert.IsTrue(!fi.FieldInfo("f1").omitTermFreqAndPositions_ForNUnit, "OmitTermFreqAndPositions field bit should not be set.");
 			Assert.IsTrue(fi.FieldInfo("f2").omitTermFreqAndPositions_ForNUnit, "OmitTermFreqAndPositions field bit should be set.");
@@ -399,7 +400,7 @@ namespace Lucene.Net.Index
 		
 		private void  AssertNoPrx(Directory dir)
 		{
-			System.String[] files = dir.ListAll();
+			System.String[] files = dir.ListAll(null);
 			for (int i = 0; i < files.Length; i++)
 				Assert.IsFalse(files[i].EndsWith(".prx"));
 		}
@@ -410,7 +411,7 @@ namespace Lucene.Net.Index
 		{
 			Directory ram = new MockRAMDirectory();
 			Analyzer analyzer = new StandardAnalyzer(Util.Version.LUCENE_CURRENT);
-			IndexWriter writer = new IndexWriter(ram, analyzer, true, IndexWriter.MaxFieldLength.LIMITED);
+			IndexWriter writer = new IndexWriter(ram, analyzer, true, IndexWriter.MaxFieldLength.LIMITED, null);
 			writer.SetMaxBufferedDocs(3);
 			writer.MergeFactor = 2;
 			writer.UseCompoundFile = false;
@@ -421,14 +422,14 @@ namespace Lucene.Net.Index
 			d.Add(f1);
 			
 			for (int i = 0; i < 30; i++)
-				writer.AddDocument(d);
+				writer.AddDocument(d, null);
 			
-			writer.Commit();
+			writer.Commit(null);
 			
 			AssertNoPrx(ram);
 			
 			// force merge
-			writer.Optimize();
+			writer.Optimize(null);
 			// flush
 			writer.Close();
 			
@@ -443,7 +444,7 @@ namespace Lucene.Net.Index
 		{
 			Directory dir = new MockRAMDirectory();
 			Analyzer analyzer = new StandardAnalyzer(Util.Version.LUCENE_CURRENT);
-			IndexWriter writer = new IndexWriter(dir, analyzer, true, IndexWriter.MaxFieldLength.LIMITED);
+			IndexWriter writer = new IndexWriter(dir, analyzer, true, IndexWriter.MaxFieldLength.LIMITED, null);
 			writer.MergeFactor = 2;
 			writer.SetMaxBufferedDocs(2);
 			writer.SetSimilarity(new SimpleSimilarity());
@@ -463,11 +464,11 @@ namespace Lucene.Net.Index
 				Field tf = new Field("tf", content + (i % 2 == 0?" tf":""), Field.Store.NO, Field.Index.ANALYZED);
 				d.Add(tf);
 				
-				writer.AddDocument(d);
+				writer.AddDocument(d, null);
 				//System.out.println(d);
 			}
 			
-			writer.Optimize();
+			writer.Optimize(null);
 			// flush
 			writer.Close();
 			_TestUtil.CheckIndex(dir);
@@ -475,7 +476,7 @@ namespace Lucene.Net.Index
 			/*
 			* Verify the index
 			*/
-			Searcher searcher = new IndexSearcher(dir, true);
+			Searcher searcher = new IndexSearcher(dir, true, null);
 			searcher.Similarity = new SimpleSimilarity();
 			
 			Term a = new Term("noTf", term);
@@ -488,22 +489,22 @@ namespace Lucene.Net.Index
 			TermQuery q4 = new TermQuery(d2);
 			
 			
-			searcher.Search(q1, new AnonymousClassCountingHitCollector(this));
+			searcher.Search(q1, new AnonymousClassCountingHitCollector(this), null);
 			//System.out.println(CountingHitCollector.getCount());
 			
 			
-			searcher.Search(q2, new AnonymousClassCountingHitCollector1(this));
+			searcher.Search(q2, new AnonymousClassCountingHitCollector1(this), null);
 			//System.out.println(CountingHitCollector.getCount());
 			
 			
 			
 			
 			
-			searcher.Search(q3, new AnonymousClassCountingHitCollector2(this));
+			searcher.Search(q3, new AnonymousClassCountingHitCollector2(this), null);
 			//System.out.println(CountingHitCollector.getCount());
 			
 			
-			searcher.Search(q4, new AnonymousClassCountingHitCollector3(this));
+			searcher.Search(q4, new AnonymousClassCountingHitCollector3(this), null);
 			//System.out.println(CountingHitCollector.getCount());
 			
 			
@@ -512,7 +513,7 @@ namespace Lucene.Net.Index
 			bq.Add(q1, Occur.MUST);
 			bq.Add(q4, Occur.MUST);
 			
-			searcher.Search(bq, new AnonymousClassCountingHitCollector4(this));
+			searcher.Search(bq, new AnonymousClassCountingHitCollector4(this), null);
 			Assert.IsTrue(15 == CountingHitCollector.GetCount());
 			
 			searcher.Close();
@@ -531,7 +532,7 @@ namespace Lucene.Net.Index
 			public override void  SetScorer(Scorer scorer)
 			{
 			}
-			public override void  Collect(int doc)
+			public override void  Collect(int doc, IState state)
 			{
 				count++;
 				sum += doc + docBase; // use it to avoid any possibility of being optimized away
@@ -546,7 +547,7 @@ namespace Lucene.Net.Index
 				return sum;
 			}
 			
-			public override void  SetNextReader(IndexReader reader, int docBase)
+			public override void  SetNextReader(IndexReader reader, int docBase, IState state)
 			{
 				this.docBase = docBase;
 			}

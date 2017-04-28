@@ -42,10 +42,10 @@ namespace Lucene.Net.Search
 		public virtual void  TestBasic()
 		{
 			Directory dir = new RAMDirectory();
-			IndexWriter writer = new IndexWriter(dir, new StandardAnalyzer(Util.Version.LUCENE_CURRENT), true, IndexWriter.MaxFieldLength.LIMITED);
+			IndexWriter writer = new IndexWriter(dir, new StandardAnalyzer(Util.Version.LUCENE_CURRENT), true, IndexWriter.MaxFieldLength.LIMITED, null);
 			Document doc = new Document();
 			doc.Add(new Field("field", "value", Field.Store.NO, Field.Index.ANALYZED));
-			writer.AddDocument(doc);
+			writer.AddDocument(doc, null);
 			writer.Close();
 			
 			TermQuery termQuery = new TermQuery(new Term("field", "value"));
@@ -53,8 +53,8 @@ namespace Lucene.Net.Search
 			// should not throw exception with primitive query
 			QueryWrapperFilter qwf = new QueryWrapperFilter(termQuery);
 			
-			IndexSearcher searcher = new IndexSearcher(dir, true);
-			TopDocs hits = searcher.Search(new MatchAllDocsQuery(), qwf, 10);
+			IndexSearcher searcher = new IndexSearcher(dir, true, null);
+			TopDocs hits = searcher.Search(new MatchAllDocsQuery(), qwf, 10, null);
 			Assert.AreEqual(1, hits.TotalHits);
 			
 			// should not throw exception with complex primitive query
@@ -63,14 +63,14 @@ namespace Lucene.Net.Search
 			booleanQuery.Add(new TermQuery(new Term("field", "missing")), Occur.MUST_NOT);
 			qwf = new QueryWrapperFilter(termQuery);
 			
-			hits = searcher.Search(new MatchAllDocsQuery(), qwf, 10);
+			hits = searcher.Search(new MatchAllDocsQuery(), qwf, 10, null);
 			Assert.AreEqual(1, hits.TotalHits);
 			
 			// should not throw exception with non primitive Query (doesn't implement
 			// Query#createWeight)
 			qwf = new QueryWrapperFilter(new FuzzyQuery(new Term("field", "valu")));
 			
-			hits = searcher.Search(new MatchAllDocsQuery(), qwf, 10);
+			hits = searcher.Search(new MatchAllDocsQuery(), qwf, 10, null);
 			Assert.AreEqual(1, hits.TotalHits);
 		}
 	}

@@ -36,17 +36,17 @@ namespace Lucene.Net.Index
         public void TestRollbackIntegrityWithBufferFlush()
         {
             Directory dir = new MockRAMDirectory();
-            IndexWriter w = new IndexWriter(dir, new WhitespaceAnalyzer(), IndexWriter.MaxFieldLength.UNLIMITED);
+            IndexWriter w = new IndexWriter(dir, new WhitespaceAnalyzer(), IndexWriter.MaxFieldLength.UNLIMITED, null);
             for (int i = 0; i < 5; i++)
             {
                 Document doc = new Document();
                 doc.Add(new Field("pk", i.ToString(), Field.Store.YES, Field.Index.ANALYZED_NO_NORMS));
-                w.AddDocument(doc);
+                w.AddDocument(doc, null);
             }
             w.Close();
 
             // If buffer size is small enough to cause a flush, errors ensue...
-            w = new IndexWriter(dir, new WhitespaceAnalyzer(), IndexWriter.MaxFieldLength.UNLIMITED);
+            w = new IndexWriter(dir, new WhitespaceAnalyzer(), IndexWriter.MaxFieldLength.UNLIMITED, null);
             w.SetMaxBufferedDocs(2);
 
             Term pkTerm = new Term("pk", "");
@@ -56,11 +56,11 @@ namespace Lucene.Net.Index
                 String value = i.ToString();
                 doc.Add(new Field("pk", value, Field.Store.YES, Field.Index.ANALYZED_NO_NORMS));
                 doc.Add(new Field("text", "foo", Field.Store.YES, Field.Index.ANALYZED_NO_NORMS));
-                w.UpdateDocument(pkTerm.CreateTerm(value), doc);
+                w.UpdateDocument(pkTerm.CreateTerm(value), doc, null);
             }
-            w.Rollback();
+            w.Rollback(null);
 
-            IndexReader r = IndexReader.Open(dir, true);
+            IndexReader r = IndexReader.Open(dir, true, null);
             Assert.AreEqual(5, r.NumDocs(), "index should contain same number of docs post rollback");
             r.Close();
             dir.Close();

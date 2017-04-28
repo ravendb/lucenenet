@@ -41,7 +41,7 @@ namespace Lucene.Net.Index
 		{
 			IndexWriter writer = null;
 			
-			writer = new IndexWriter(dir, new WhitespaceAnalyzer(), true, IndexWriter.MaxFieldLength.LIMITED);
+			writer = new IndexWriter(dir, new WhitespaceAnalyzer(), true, IndexWriter.MaxFieldLength.LIMITED, null);
 			
 			// ADD 100 documents with term : aaa
 			// add 100 documents with terms: aaa bbb
@@ -58,8 +58,8 @@ namespace Lucene.Net.Index
 			VerifyDocFreq();
 			
 			// merge segments by optimizing the index
-			writer = new IndexWriter(dir, new WhitespaceAnalyzer(), false, IndexWriter.MaxFieldLength.LIMITED);
-			writer.Optimize();
+			writer = new IndexWriter(dir, new WhitespaceAnalyzer(), false, IndexWriter.MaxFieldLength.LIMITED, null);
+			writer.Optimize(null);
 			writer.Close();
 			
 			// verify document frequency of terms in an optimized index
@@ -70,34 +70,34 @@ namespace Lucene.Net.Index
 		public virtual void  TestPrevTermAtEnd()
 		{
 			Directory dir = new MockRAMDirectory();
-			IndexWriter writer = new IndexWriter(dir, new WhitespaceAnalyzer(), true, IndexWriter.MaxFieldLength.LIMITED);
+			IndexWriter writer = new IndexWriter(dir, new WhitespaceAnalyzer(), true, IndexWriter.MaxFieldLength.LIMITED, null);
 			AddDoc(writer, "aaa bbb");
 			writer.Close();
-			SegmentReader reader = SegmentReader.GetOnlySegmentReader(dir);
-			SegmentTermEnum termEnum = (SegmentTermEnum) reader.Terms();
-			Assert.IsTrue(termEnum.Next());
+			SegmentReader reader = SegmentReader.GetOnlySegmentReader(dir, null);
+			SegmentTermEnum termEnum = (SegmentTermEnum) reader.Terms(null);
+			Assert.IsTrue(termEnum.Next(null));
 			Assert.AreEqual("aaa", termEnum.Term.Text);
-			Assert.IsTrue(termEnum.Next());
+			Assert.IsTrue(termEnum.Next(null));
 			Assert.AreEqual("aaa", termEnum.Prev().Text);
 			Assert.AreEqual("bbb", termEnum.Term.Text);
-			Assert.IsFalse(termEnum.Next());
+			Assert.IsFalse(termEnum.Next(null));
 			Assert.AreEqual("bbb", termEnum.Prev().Text);
 		}
 		
 		private void  VerifyDocFreq()
 		{
-		    IndexReader reader = IndexReader.Open(dir, true);
+		    IndexReader reader = IndexReader.Open(dir, true, null);
 			TermEnum termEnum = null;
 			
 			// create enumeration of all terms
-			termEnum = reader.Terms();
+			termEnum = reader.Terms(null);
 			// go to the first term (aaa)
-			termEnum.Next();
+			termEnum.Next(null);
 			// assert that term is 'aaa'
 			Assert.AreEqual("aaa", termEnum.Term.Text);
 			Assert.AreEqual(200, termEnum.DocFreq());
 			// go to the second term (bbb)
-			termEnum.Next();
+			termEnum.Next(null);
 			// assert that term is 'bbb'
 			Assert.AreEqual("bbb", termEnum.Term.Text);
 			Assert.AreEqual(100, termEnum.DocFreq());
@@ -106,12 +106,12 @@ namespace Lucene.Net.Index
 			
 			
 			// create enumeration of terms after term 'aaa', including 'aaa'
-			termEnum = reader.Terms(new Term("content", "aaa"));
+			termEnum = reader.Terms(new Term("content", "aaa"), null);
 			// assert that term is 'aaa'
 			Assert.AreEqual("aaa", termEnum.Term.Text);
 			Assert.AreEqual(200, termEnum.DocFreq());
 			// go to term 'bbb'
-			termEnum.Next();
+			termEnum.Next(null);
 			// assert that term is 'bbb'
 			Assert.AreEqual("bbb", termEnum.Term.Text);
 			Assert.AreEqual(100, termEnum.DocFreq());
@@ -123,7 +123,7 @@ namespace Lucene.Net.Index
 		{
 			Document doc = new Document();
 			doc.Add(new Field("content", value_Renamed, Field.Store.NO, Field.Index.ANALYZED));
-			writer.AddDocument(doc);
+			writer.AddDocument(doc, null);
 		}
 	}
 }

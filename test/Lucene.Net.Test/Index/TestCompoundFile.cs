@@ -76,7 +76,7 @@ namespace Lucene.Net.Index
 		/// <summary>Creates a file of the specified size with random data. </summary>
 		private void  CreateRandomFile(Directory dir, System.String name, int size)
 		{
-			IndexOutput os = dir.CreateOutput(name);
+			IndexOutput os = dir.CreateOutput(name, null);
 			for (int i = 0; i < size; i++)
 			{
 				byte b = (byte) ((new System.Random().NextDouble()) * 256);
@@ -91,7 +91,7 @@ namespace Lucene.Net.Index
 		/// </summary>
 		private void  CreateSequenceFile(Directory dir, System.String name, byte start, int size)
 		{
-			IndexOutput os = dir.CreateOutput(name);
+			IndexOutput os = dir.CreateOutput(name, null);
 			for (int i = 0; i < size; i++)
 			{
 				os.WriteByte(start);
@@ -105,18 +105,18 @@ namespace Lucene.Net.Index
 		{
 			Assert.IsNotNull(expected, msg + " null expected");
 			Assert.IsNotNull(test, msg + " null test");
-			Assert.AreEqual(expected.Length(), test.Length(), msg + " length");
-			Assert.AreEqual(expected.FilePointer, test.FilePointer, msg + " position");
+			Assert.AreEqual(expected.Length(null), test.Length(null), msg + " length");
+			Assert.AreEqual(expected.FilePointer(null), test.FilePointer(null), msg + " position");
 			
 			byte[] expectedBuffer = new byte[512];
 			byte[] testBuffer = new byte[expectedBuffer.Length];
 			
-			long remainder = expected.Length() - expected.FilePointer;
+			long remainder = expected.Length(null) - expected.FilePointer(null);
 			while (remainder > 0)
 			{
 				int readLen = (int) System.Math.Min(remainder, expectedBuffer.Length);
-				expected.ReadBytes(expectedBuffer, 0, readLen);
-				test.ReadBytes(testBuffer, 0, readLen);
+				expected.ReadBytes(expectedBuffer, 0, readLen, null);
+				test.ReadBytes(testBuffer, 0, readLen, null);
 				AssertEqualArrays(msg + ", remainder " + remainder, expectedBuffer, testBuffer, 0, readLen);
 				remainder -= readLen;
 			}
@@ -125,10 +125,10 @@ namespace Lucene.Net.Index
 		
 		private void  AssertSameStreams(System.String msg, IndexInput expected, IndexInput actual, long seekTo)
 		{
-			if (seekTo >= 0 && seekTo < expected.Length())
+			if (seekTo >= 0 && seekTo < expected.Length(null))
 			{
-				expected.Seek(seekTo);
-				actual.Seek(seekTo);
+				expected.Seek(seekTo, null);
+				actual.Seek(seekTo, null);
 				AssertSameStreams(msg + ", seek(mid)", expected, actual);
 			}
 		}
@@ -142,23 +142,23 @@ namespace Lucene.Net.Index
 			AssertSameStreams(msg + ", seek(0)", expected, actual, point);
 			
 			// seek to middle
-			point = expected.Length() / 2L;
+			point = expected.Length(null) / 2L;
 			AssertSameStreams(msg + ", seek(mid)", expected, actual, point);
 			
 			// seek to end - 2
-			point = expected.Length() - 2;
+			point = expected.Length(null) - 2;
 			AssertSameStreams(msg + ", seek(end-2)", expected, actual, point);
 			
 			// seek to end - 1
-			point = expected.Length() - 1;
+			point = expected.Length(null) - 1;
 			AssertSameStreams(msg + ", seek(end-1)", expected, actual, point);
 			
 			// seek to the end
-			point = expected.Length();
+			point = expected.Length(null);
 			AssertSameStreams(msg + ", seek(end)", expected, actual, point);
 			
 			// seek past end
-			point = expected.Length() + 1;
+			point = expected.Length(null) + 1;
 			AssertSameStreams(msg + ", seek(end+1)", expected, actual, point);
 		}
 		
@@ -195,9 +195,9 @@ namespace Lucene.Net.Index
 				csw.AddFile(name);
 				csw.Close();
 				
-				CompoundFileReader csr = new CompoundFileReader(dir, name + ".cfs");
-				IndexInput expected = dir.OpenInput(name);
-				IndexInput actual = csr.OpenInput(name);
+				CompoundFileReader csr = new CompoundFileReader(dir, name + ".cfs", null);
+				IndexInput expected = dir.OpenInput(name, null);
+				IndexInput actual = csr.OpenInput(name, null);
 				AssertSameStreams(name, expected, actual);
 				AssertSameSeekBehavior(name, expected, actual);
 				expected.Close();
@@ -221,16 +221,16 @@ namespace Lucene.Net.Index
 			csw.AddFile("d2");
 			csw.Close();
 			
-			CompoundFileReader csr = new CompoundFileReader(dir, "d.csf");
-			IndexInput expected = dir.OpenInput("d1");
-			IndexInput actual = csr.OpenInput("d1");
+			CompoundFileReader csr = new CompoundFileReader(dir, "d.csf", null);
+			IndexInput expected = dir.OpenInput("d1", null);
+			IndexInput actual = csr.OpenInput("d1", null);
 			AssertSameStreams("d1", expected, actual);
 			AssertSameSeekBehavior("d1", expected, actual);
 			expected.Close();
 			actual.Close();
 			
-			expected = dir.OpenInput("d2");
-			actual = csr.OpenInput("d2");
+			expected = dir.OpenInput("d2", null);
+			actual = csr.OpenInput("d2", null);
 			AssertSameStreams("d2", expected, actual);
 			AssertSameSeekBehavior("d2", expected, actual);
 			expected.Close();
@@ -276,11 +276,11 @@ namespace Lucene.Net.Index
 			}
 			csw.Close();
 			
-			CompoundFileReader csr = new CompoundFileReader(dir, "test.cfs");
+			CompoundFileReader csr = new CompoundFileReader(dir, "test.cfs", null);
 			for (int i = 0; i < data.Length; i++)
 			{
-				IndexInput check = dir.OpenInput(segment + data[i]);
-				IndexInput test = csr.OpenInput(segment + data[i]);
+				IndexInput check = dir.OpenInput(segment + data[i], null);
+				IndexInput test = csr.OpenInput(segment + data[i], null);
 				AssertSameStreams(data[i], check, test);
 				AssertSameSeekBehavior(data[i], check, test);
 				test.Close();
@@ -316,31 +316,31 @@ namespace Lucene.Net.Index
 		private void  Demo_FSIndexInputBug(Directory fsdir, System.String file)
 		{
 			// Setup the test file - we need more than 1024 bytes
-			IndexOutput os = fsdir.CreateOutput(file);
+			IndexOutput os = fsdir.CreateOutput(file, null);
 			for (int i = 0; i < 2000; i++)
 			{
 				os.WriteByte((byte) i);
 			}
 			os.Close();
 			
-			IndexInput in_Renamed = fsdir.OpenInput(file);
+			IndexInput in_Renamed = fsdir.OpenInput(file, null);
 			
 			// This read primes the buffer in IndexInput
-			byte b = in_Renamed.ReadByte();
+			byte b = in_Renamed.ReadByte(null);
 			
 			// Close the file
 			in_Renamed.Close();
 			
 			// ERROR: this call should fail, but succeeds because the buffer
 			// is still filled
-			b = in_Renamed.ReadByte();
+			b = in_Renamed.ReadByte(null);
 			
 			// ERROR: this call should fail, but succeeds for some reason as well
-			in_Renamed.Seek(1099);
+			in_Renamed.Seek(1099, null);
 			
 			// OK: this call correctly fails. We are now past the 1024 internal
 			// buffer, so an actual IO is attempted, which fails
-            Assert.Throws<NullReferenceException>(() => in_Renamed.ReadByte(), "expected readByte() to throw exception");
+            Assert.Throws<NullReferenceException>(() => in_Renamed.ReadByte(null), "expected readByte() to throw exception");
 		}
 		
 		
@@ -368,23 +368,23 @@ namespace Lucene.Net.Index
 		public virtual void  TestClonedStreamsClosing()
 		{
 			SetUp_2();
-			CompoundFileReader cr = new CompoundFileReader(dir, "f.comp");
+			CompoundFileReader cr = new CompoundFileReader(dir, "f.comp", null);
 			
 			// basic clone
-			IndexInput expected = dir.OpenInput("f11");
+			IndexInput expected = dir.OpenInput("f11", null);
 			
 			// this test only works for FSIndexInput
 			Assert.IsTrue(_TestHelper.IsSimpleFSIndexInput(expected));
 			Assert.IsTrue(_TestHelper.IsSimpleFSIndexInputOpen(expected));
 			
-			IndexInput one = cr.OpenInput("f11");
+			IndexInput one = cr.OpenInput("f11", null);
 			Assert.IsTrue(IsCSIndexInputOpen(one));
 			
-			IndexInput two = (IndexInput) one.Clone();
+			IndexInput two = (IndexInput) one.Clone(null);
 			Assert.IsTrue(IsCSIndexInputOpen(two));
 			
 			AssertSameStreams("basic clone one", expected, one);
-			expected.Seek(0);
+			expected.Seek(0, null);
 			AssertSameStreams("basic clone two", expected, two);
 			
 			// Now close the first stream
@@ -394,8 +394,8 @@ namespace Lucene.Net.Index
 			// The following should really fail since we couldn't expect to
 			// access a file once close has been called on it (regardless of
 			// buffering and/or clone magic)
-			expected.Seek(0);
-			two.Seek(0);
+			expected.Seek(0, null);
+			two.Seek(0, null);
 			AssertSameStreams("basic clone two/2", expected, two);
 			
 			
@@ -405,15 +405,15 @@ namespace Lucene.Net.Index
 			Assert.IsFalse(IsCSIndexInputOpen(two), "Now closed two");
 			
 			// The following may also fail since the compound stream is closed
-			expected.Seek(0);
-			two.Seek(0);
+			expected.Seek(0, null);
+			two.Seek(0, null);
 			//assertSameStreams("basic clone two/3", expected, two);
 			
 			
 			// Now close the second clone
 			two.Close();
-			expected.Seek(0);
-			two.Seek(0);
+			expected.Seek(0, null);
+			two.Seek(0, null);
 			//assertSameStreams("basic clone two/4", expected, two);
 			
 			expected.Close();
@@ -427,71 +427,71 @@ namespace Lucene.Net.Index
 		public virtual void  TestRandomAccess()
 		{
 			SetUp_2();
-			CompoundFileReader cr = new CompoundFileReader(dir, "f.comp");
+			CompoundFileReader cr = new CompoundFileReader(dir, "f.comp", null);
 			
 			// Open two files
-			IndexInput e1 = dir.OpenInput("f11");
-			IndexInput e2 = dir.OpenInput("f3");
+			IndexInput e1 = dir.OpenInput("f11", null);
+			IndexInput e2 = dir.OpenInput("f3", null);
 			
-			IndexInput a1 = cr.OpenInput("f11");
-			IndexInput a2 = dir.OpenInput("f3");
+			IndexInput a1 = cr.OpenInput("f11", null);
+			IndexInput a2 = dir.OpenInput("f3", null);
 			
 			// Seek the first pair
-			e1.Seek(100);
-			a1.Seek(100);
-			Assert.AreEqual(100, e1.FilePointer);
-			Assert.AreEqual(100, a1.FilePointer);
-			byte be1 = e1.ReadByte();
-			byte ba1 = a1.ReadByte();
+			e1.Seek(100, null);
+			a1.Seek(100, null);
+			Assert.AreEqual(100, e1.FilePointer(null));
+			Assert.AreEqual(100, a1.FilePointer(null));
+			byte be1 = e1.ReadByte(null);
+			byte ba1 = a1.ReadByte(null);
 			Assert.AreEqual(be1, ba1);
 			
 			// Now seek the second pair
-			e2.Seek(1027);
-			a2.Seek(1027);
-			Assert.AreEqual(1027, e2.FilePointer);
-			Assert.AreEqual(1027, a2.FilePointer);
-			byte be2 = e2.ReadByte();
-			byte ba2 = a2.ReadByte();
+			e2.Seek(1027, null);
+			a2.Seek(1027, null);
+			Assert.AreEqual(1027, e2.FilePointer(null));
+			Assert.AreEqual(1027, a2.FilePointer(null));
+			byte be2 = e2.ReadByte(null);
+			byte ba2 = a2.ReadByte(null);
 			Assert.AreEqual(be2, ba2);
 			
 			// Now make sure the first one didn't move
-			Assert.AreEqual(101, e1.FilePointer);
-			Assert.AreEqual(101, a1.FilePointer);
-			be1 = e1.ReadByte();
-			ba1 = a1.ReadByte();
+			Assert.AreEqual(101, e1.FilePointer(null));
+			Assert.AreEqual(101, a1.FilePointer(null));
+			be1 = e1.ReadByte(null);
+			ba1 = a1.ReadByte(null);
 			Assert.AreEqual(be1, ba1);
 			
 			// Now more the first one again, past the buffer length
-			e1.Seek(1910);
-			a1.Seek(1910);
-			Assert.AreEqual(1910, e1.FilePointer);
-			Assert.AreEqual(1910, a1.FilePointer);
-			be1 = e1.ReadByte();
-			ba1 = a1.ReadByte();
+			e1.Seek(1910, null);
+			a1.Seek(1910, null);
+			Assert.AreEqual(1910, e1.FilePointer(null));
+			Assert.AreEqual(1910, a1.FilePointer(null));
+			be1 = e1.ReadByte(null);
+			ba1 = a1.ReadByte(null);
 			Assert.AreEqual(be1, ba1);
 			
 			// Now make sure the second set didn't move
-			Assert.AreEqual(1028, e2.FilePointer);
-			Assert.AreEqual(1028, a2.FilePointer);
-			be2 = e2.ReadByte();
-			ba2 = a2.ReadByte();
+			Assert.AreEqual(1028, e2.FilePointer(null));
+			Assert.AreEqual(1028, a2.FilePointer(null));
+			be2 = e2.ReadByte(null);
+			ba2 = a2.ReadByte(null);
 			Assert.AreEqual(be2, ba2);
 			
 			// Move the second set back, again cross the buffer size
-			e2.Seek(17);
-			a2.Seek(17);
-			Assert.AreEqual(17, e2.FilePointer);
-			Assert.AreEqual(17, a2.FilePointer);
-			be2 = e2.ReadByte();
-			ba2 = a2.ReadByte();
+			e2.Seek(17, null);
+			a2.Seek(17, null);
+			Assert.AreEqual(17, e2.FilePointer(null));
+			Assert.AreEqual(17, a2.FilePointer(null));
+			be2 = e2.ReadByte(null);
+			ba2 = a2.ReadByte(null);
 			Assert.AreEqual(be2, ba2);
 			
 			// Finally, make sure the first set didn't move
 			// Now make sure the first one didn't move
-			Assert.AreEqual(1911, e1.FilePointer);
-			Assert.AreEqual(1911, a1.FilePointer);
-			be1 = e1.ReadByte();
-			ba1 = a1.ReadByte();
+			Assert.AreEqual(1911, e1.FilePointer(null));
+			Assert.AreEqual(1911, a1.FilePointer(null));
+			be1 = e1.ReadByte(null);
+			ba1 = a1.ReadByte(null);
 			Assert.AreEqual(be1, ba1);
 			
 			e1.Close();
@@ -508,71 +508,71 @@ namespace Lucene.Net.Index
 		public virtual void  TestRandomAccessClones()
 		{
 			SetUp_2();
-			CompoundFileReader cr = new CompoundFileReader(dir, "f.comp");
+			CompoundFileReader cr = new CompoundFileReader(dir, "f.comp", null);
 			
 			// Open two files
-			IndexInput e1 = cr.OpenInput("f11");
-			IndexInput e2 = cr.OpenInput("f3");
+			IndexInput e1 = cr.OpenInput("f11", null);
+			IndexInput e2 = cr.OpenInput("f3", null);
 			
-			IndexInput a1 = (IndexInput) e1.Clone();
-			IndexInput a2 = (IndexInput) e2.Clone();
+			IndexInput a1 = (IndexInput) e1.Clone(null);
+			IndexInput a2 = (IndexInput) e2.Clone(null);
 			
 			// Seek the first pair
-			e1.Seek(100);
-			a1.Seek(100);
-			Assert.AreEqual(100, e1.FilePointer);
-			Assert.AreEqual(100, a1.FilePointer);
-			byte be1 = e1.ReadByte();
-			byte ba1 = a1.ReadByte();
+			e1.Seek(100, null);
+			a1.Seek(100, null);
+			Assert.AreEqual(100, e1.FilePointer(null));
+			Assert.AreEqual(100, a1.FilePointer(null));
+			byte be1 = e1.ReadByte(null);
+			byte ba1 = a1.ReadByte(null);
 			Assert.AreEqual(be1, ba1);
 			
 			// Now seek the second pair
-			e2.Seek(1027);
-			a2.Seek(1027);
-			Assert.AreEqual(1027, e2.FilePointer);
-			Assert.AreEqual(1027, a2.FilePointer);
-			byte be2 = e2.ReadByte();
-			byte ba2 = a2.ReadByte();
+			e2.Seek(1027, null);
+			a2.Seek(1027, null);
+			Assert.AreEqual(1027, e2.FilePointer(null));
+			Assert.AreEqual(1027, a2.FilePointer(null));
+			byte be2 = e2.ReadByte(null);
+			byte ba2 = a2.ReadByte(null);
 			Assert.AreEqual(be2, ba2);
 			
 			// Now make sure the first one didn't move
-			Assert.AreEqual(101, e1.FilePointer);
-			Assert.AreEqual(101, a1.FilePointer);
-			be1 = e1.ReadByte();
-			ba1 = a1.ReadByte();
+			Assert.AreEqual(101, e1.FilePointer(null));
+			Assert.AreEqual(101, a1.FilePointer(null));
+			be1 = e1.ReadByte(null);
+			ba1 = a1.ReadByte(null);
 			Assert.AreEqual(be1, ba1);
 			
 			// Now more the first one again, past the buffer length
-			e1.Seek(1910);
-			a1.Seek(1910);
-			Assert.AreEqual(1910, e1.FilePointer);
-			Assert.AreEqual(1910, a1.FilePointer);
-			be1 = e1.ReadByte();
-			ba1 = a1.ReadByte();
+			e1.Seek(1910, null);
+			a1.Seek(1910, null);
+			Assert.AreEqual(1910, e1.FilePointer(null));
+			Assert.AreEqual(1910, a1.FilePointer(null));
+			be1 = e1.ReadByte(null);
+			ba1 = a1.ReadByte(null);
 			Assert.AreEqual(be1, ba1);
 			
 			// Now make sure the second set didn't move
-			Assert.AreEqual(1028, e2.FilePointer);
-			Assert.AreEqual(1028, a2.FilePointer);
-			be2 = e2.ReadByte();
-			ba2 = a2.ReadByte();
+			Assert.AreEqual(1028, e2.FilePointer(null));
+			Assert.AreEqual(1028, a2.FilePointer(null));
+			be2 = e2.ReadByte(null);
+			ba2 = a2.ReadByte(null);
 			Assert.AreEqual(be2, ba2);
 			
 			// Move the second set back, again cross the buffer size
-			e2.Seek(17);
-			a2.Seek(17);
-			Assert.AreEqual(17, e2.FilePointer);
-			Assert.AreEqual(17, a2.FilePointer);
-			be2 = e2.ReadByte();
-			ba2 = a2.ReadByte();
+			e2.Seek(17, null);
+			a2.Seek(17, null);
+			Assert.AreEqual(17, e2.FilePointer(null));
+			Assert.AreEqual(17, a2.FilePointer(null));
+			be2 = e2.ReadByte(null);
+			ba2 = a2.ReadByte(null);
 			Assert.AreEqual(be2, ba2);
 			
 			// Finally, make sure the first set didn't move
 			// Now make sure the first one didn't move
-			Assert.AreEqual(1911, e1.FilePointer);
-			Assert.AreEqual(1911, a1.FilePointer);
-			be1 = e1.ReadByte();
-			ba1 = a1.ReadByte();
+			Assert.AreEqual(1911, e1.FilePointer(null));
+			Assert.AreEqual(1911, a1.FilePointer(null));
+			be1 = e1.ReadByte(null);
+			ba1 = a1.ReadByte(null);
 			Assert.AreEqual(be1, ba1);
 			
 			e1.Close();
@@ -587,9 +587,9 @@ namespace Lucene.Net.Index
 		public virtual void  TestFileNotFound()
 		{
 			SetUp_2();
-			CompoundFileReader cr = new CompoundFileReader(dir, "f.comp");
+			CompoundFileReader cr = new CompoundFileReader(dir, "f.comp", null);
 			// Open two files
-		    Assert.Throws<System.IO.IOException>(() => cr.OpenInput("bogus"), "File not found");
+		    Assert.Throws<System.IO.IOException>(() => cr.OpenInput("bogus", null), "File not found");
 			cr.Close();
 		}
 		
@@ -598,16 +598,16 @@ namespace Lucene.Net.Index
 		public virtual void  TestReadPastEOF()
 		{
 			SetUp_2();
-			CompoundFileReader cr = new CompoundFileReader(dir, "f.comp");
-			IndexInput is_Renamed = cr.OpenInput("f2");
-			is_Renamed.Seek(is_Renamed.Length() - 10);
+			CompoundFileReader cr = new CompoundFileReader(dir, "f.comp", null);
+			IndexInput is_Renamed = cr.OpenInput("f2", null);
+			is_Renamed.Seek(is_Renamed.Length(null) - 10, null);
 			byte[] b = new byte[100];
-			is_Renamed.ReadBytes(b, 0, 10);
+			is_Renamed.ReadBytes(b, 0, 10, null);
 			
-            Assert.Throws<System.IO.IOException>(() => is_Renamed.ReadByte(), "Single byte read past end of file");
+            Assert.Throws<System.IO.IOException>(() => is_Renamed.ReadByte(null), "Single byte read past end of file");
 			
-			is_Renamed.Seek(is_Renamed.Length() - 10);
-		    Assert.Throws<System.IO.IOException>(() => is_Renamed.ReadBytes(b, 0, 50), "Block read past end of file");
+			is_Renamed.Seek(is_Renamed.Length(null) - 10, null);
+		    Assert.Throws<System.IO.IOException>(() => is_Renamed.ReadBytes(b, 0, 50, null), "Block read past end of file");
 			
 			is_Renamed.Close();
 			cr.Close();
@@ -619,7 +619,7 @@ namespace Lucene.Net.Index
 		[Test]
 		public virtual void  TestLargeWrites()
 		{
-			IndexOutput os = dir.CreateOutput("testBufferStart.txt");
+			IndexOutput os = dir.CreateOutput("testBufferStart.txt", null);
 			
 			byte[] largeBuf = new byte[2048];
 			for (int i = 0; i < largeBuf.Length; i++)

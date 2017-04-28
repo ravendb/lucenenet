@@ -112,16 +112,16 @@ namespace Lucene.Net.Index
 			
 			Document doc = new Document();
 			doc.Add(new Field(field, val, Field.Store.NO, Field.Index.NOT_ANALYZED_NO_NORMS));
-			IndexWriter writer = new IndexWriter(dir, analyzer, true, IndexWriter.MaxFieldLength.LIMITED);
+			IndexWriter writer = new IndexWriter(dir, analyzer, true, IndexWriter.MaxFieldLength.LIMITED, null);
 			writer.SetMaxBufferedDocs(100);
 			writer.MergeFactor = 100;
 			
 			for (int i = 0; i < ndocs; i++)
 			{
-				writer.AddDocument(doc);
+				writer.AddDocument(doc, null);
 			}
 			
-			writer.Optimize();
+			writer.Optimize(null);
 			writer.Close();
 		}
 		
@@ -135,17 +135,17 @@ namespace Lucene.Net.Index
 			long end = (DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond);
 			System.Console.Out.WriteLine("milliseconds for creation of " + ndocs + " docs = " + (end - start));
 
-		    IndexReader reader = IndexReader.Open(dir, true);
-			TermEnum tenum = reader.Terms(new Term("foo", "val"));
-			TermDocs tdocs = reader.TermDocs();
+		    IndexReader reader = IndexReader.Open(dir, true, null);
+			TermEnum tenum = reader.Terms(new Term("foo", "val"), null);
+			TermDocs tdocs = reader.TermDocs(null);
 			
 			start = (DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond);
 			
 			int ret = 0;
 			for (int i = 0; i < iter; i++)
 			{
-				tdocs.Seek(tenum);
-				while (tdocs.Next())
+				tdocs.Seek(tenum, null);
+				while (tdocs.Next(null))
 				{
 					ret += tdocs.Doc;
 				}

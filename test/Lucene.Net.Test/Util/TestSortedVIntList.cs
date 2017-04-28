@@ -37,13 +37,13 @@ namespace Lucene.Net.Util
 					return ; // DocNrSkipper should not skip to same document.
 				}
 			}
-			DocIdSetIterator m = vintList.Iterator();
+			DocIdSetIterator m = vintList.Iterator(null);
 			for (int i = 0; i < ints.Length; i++)
 			{
-				Assert.IsTrue(m.NextDoc() != DocIdSetIterator.NO_MORE_DOCS, "No end of Matcher at: " + i);
+				Assert.IsTrue(m.NextDoc(null) != DocIdSetIterator.NO_MORE_DOCS, "No end of Matcher at: " + i);
 				Assert.AreEqual(ints[i], m.DocID());
 			}
-			Assert.IsTrue(m.NextDoc() == DocIdSetIterator.NO_MORE_DOCS, "End of Matcher");
+			Assert.IsTrue(m.NextDoc(null) == DocIdSetIterator.NO_MORE_DOCS, "End of Matcher");
 		}
 		
 		internal virtual void  TstVIntList(SortedVIntList vintList, int[] ints, int expectedByteSize)
@@ -72,7 +72,7 @@ namespace Lucene.Net.Util
 			}
 			SortedVIntList svil = new SortedVIntList(bs);
 			TstVIntList(svil, ints, expectedByteSize);
-			TstVIntList(new SortedVIntList(svil.Iterator()), ints, expectedByteSize);
+			TstVIntList(new SortedVIntList(svil.Iterator(null), null), ints, expectedByteSize);
 		}
 		
 		private const int VB1 = 0x7F;

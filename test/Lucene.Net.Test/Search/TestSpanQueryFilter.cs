@@ -16,7 +16,7 @@
  */
 
 using System;
-
+using Lucene.Net.Index;
 using NUnit.Framework;
 
 using SimpleAnalyzer = Lucene.Net.Analysis.SimpleAnalyzer;
@@ -41,20 +41,20 @@ namespace Lucene.Net.Search
 		public virtual void  TestFilterWorks()
 		{
 			Directory dir = new RAMDirectory();
-			IndexWriter writer = new IndexWriter(dir, new SimpleAnalyzer(), true, IndexWriter.MaxFieldLength.LIMITED);
+			IndexWriter writer = new IndexWriter(dir, new SimpleAnalyzer(), true, IndexWriter.MaxFieldLength.LIMITED, null);
 			for (int i = 0; i < 500; i++)
 			{
 				Document document = new Document();
 				document.Add(new Field("field", English.IntToEnglish(i) + " equals " + English.IntToEnglish(i), Field.Store.NO, Field.Index.ANALYZED));
-				writer.AddDocument(document);
+				writer.AddDocument(document, null);
 			}
 			writer.Close();
 			
-			IndexReader reader = IndexReader.Open(dir, true);
+			IndexReader reader = IndexReader.Open(dir, true, null);
 			
 			SpanTermQuery query = new SpanTermQuery(new Term("field", English.IntToEnglish(10).Trim()));
 			SpanQueryFilter filter = new SpanQueryFilter(query);
-			SpanFilterResult result = filter.BitSpans(reader);
+			SpanFilterResult result = filter.BitSpans(reader, null);
 			DocIdSet docIdSet = result.DocIdSet;
 			Assert.IsTrue(docIdSet != null, "docIdSet is null and it shouldn't be");
 			AssertContainsDocId("docIdSet doesn't contain docId 10", docIdSet, 10);
@@ -77,8 +77,8 @@ namespace Lucene.Net.Search
 		internal virtual int GetDocIdSetSize(DocIdSet docIdSet)
 		{
 			int size = 0;
-			DocIdSetIterator it = docIdSet.Iterator();
-			while (it.NextDoc() != DocIdSetIterator.NO_MORE_DOCS)
+			DocIdSetIterator it = docIdSet.Iterator(null);
+			while (it.NextDoc(null) != DocIdSetIterator.NO_MORE_DOCS)
 			{
 				size++;
 			}
@@ -87,8 +87,8 @@ namespace Lucene.Net.Search
 		
 		public virtual void  AssertContainsDocId(System.String msg, DocIdSet docIdSet, int docId)
 		{
-			DocIdSetIterator it = docIdSet.Iterator();
-			Assert.IsTrue(it.Advance(docId) != DocIdSetIterator.NO_MORE_DOCS, msg);
+			DocIdSetIterator it = docIdSet.Iterator(null);
+			Assert.IsTrue(it.Advance(docId, null) != DocIdSetIterator.NO_MORE_DOCS, msg);
 			Assert.IsTrue(it.DocID() == docId, msg);
 		}
 	}

@@ -21,6 +21,8 @@ using NUnit.Framework;
 
 using SimpleAnalyzer = Lucene.Net.Analysis.SimpleAnalyzer;
 using Lucene.Net.Documents;
+using Lucene.Net.Index;
+using Lucene.Net.Store;
 using IndexReader = Lucene.Net.Index.IndexReader;
 using IndexWriter = Lucene.Net.Index.IndexWriter;
 using Term = Lucene.Net.Index.Term;
@@ -62,11 +64,11 @@ namespace Lucene.Net.Search
 			{
 				this.scorer = scorer;
 			}
-			public override void  Collect(int doc)
+			public override void  Collect(int doc, IState state)
 			{
-				scores[doc + base_Renamed] = scorer.Score();
+				scores[doc + base_Renamed] = scorer.Score(null);
 			}
-			public override void  SetNextReader(IndexReader reader, int docBase)
+			public override void  SetNextReader(IndexReader reader, int docBase, IState state)
 			{
 				base_Renamed = docBase;
 			}
@@ -81,30 +83,30 @@ namespace Lucene.Net.Search
 		public virtual void  TestSetNorm_Renamed()
 		{
 			RAMDirectory store = new RAMDirectory();
-			IndexWriter writer = new IndexWriter(store, new SimpleAnalyzer(), true, IndexWriter.MaxFieldLength.LIMITED);
+			IndexWriter writer = new IndexWriter(store, new SimpleAnalyzer(), true, IndexWriter.MaxFieldLength.LIMITED, null);
 			
 			// add the same document four times
 			IFieldable f1 = new Field("field", "word", Field.Store.YES, Field.Index.ANALYZED);
 			Document d1 = new Document();
 			d1.Add(f1);
-			writer.AddDocument(d1);
-			writer.AddDocument(d1);
-			writer.AddDocument(d1);
-			writer.AddDocument(d1);
+			writer.AddDocument(d1, null);
+			writer.AddDocument(d1, null);
+			writer.AddDocument(d1, null);
+			writer.AddDocument(d1, null);
 			writer.Close();
 			
 			// reset the boost of each instance of this document
-			IndexReader reader = IndexReader.Open(store, false);
-			reader.SetNorm(0, "field", 1.0f);
-			reader.SetNorm(1, "field", 2.0f);
-			reader.SetNorm(2, "field", 4.0f);
-			reader.SetNorm(3, "field", 16.0f);
+			IndexReader reader = IndexReader.Open((Directory) store, false, null);
+			reader.SetNorm(0, "field", 1.0f, null);
+			reader.SetNorm(1, "field", 2.0f, null);
+			reader.SetNorm(2, "field", 4.0f, null);
+			reader.SetNorm(3, "field", 16.0f, null);
 			reader.Close();
 			
 			// check that searches are ordered by this boost
 			float[] scores = new float[4];
 			
-			new IndexSearcher(store, true).Search(new TermQuery(new Term("field", "word")), new AnonymousClassCollector(scores, this));
+			new IndexSearcher(store, true, null).Search(new TermQuery(new Term("field", "word")), new AnonymousClassCollector(scores, this), null);
 			
 			float lastScore = 0.0f;
 			

@@ -81,7 +81,7 @@ namespace Lucene.Net.Index
 			        {
 			            try
 			            {
-			                writer.AddDocument(doc);
+			                writer.AddDocument(doc, null);
 			            }
 			            catch (System.Exception t)
 			            {
@@ -92,7 +92,7 @@ namespace Lucene.Net.Index
 			            {
 			                try
 			                {
-			                    writer.Commit();
+			                    writer.Commit(null);
 			                }
 			                catch (Exception e)
 			                {
@@ -139,17 +139,17 @@ namespace Lucene.Net.Index
 			Directory dir = new MockRAMDirectory();
 			
 			SnapshotDeletionPolicy dp = new SnapshotDeletionPolicy(new KeepOnlyLastCommitDeletionPolicy());
-            IndexWriter writer = new IndexWriter(dir, new StandardAnalyzer(Util.Version.LUCENE_CURRENT), dp, IndexWriter.MaxFieldLength.UNLIMITED);
+            IndexWriter writer = new IndexWriter(dir, new StandardAnalyzer(Util.Version.LUCENE_CURRENT), dp, IndexWriter.MaxFieldLength.UNLIMITED, null);
 			// Force frequent flushes
 			writer.SetMaxBufferedDocs(2);
 			Document doc = new Document();
 			doc.Add(new Field("content", "aaa", Field.Store.YES, Field.Index.ANALYZED, Field.TermVector.WITH_POSITIONS_OFFSETS));
             for (int i = 0; i < 7; i++)
             {
-                writer.AddDocument(doc);
+                writer.AddDocument(doc, null);
                 if (i % 2 == 0)
                 {
-                    writer.Commit();
+                    writer.Commit(null);
                 }
             }
             IndexCommit cp =  dp.Snapshot();
@@ -157,21 +157,21 @@ namespace Lucene.Net.Index
 			writer.Close();
 			CopyFiles(dir, cp);
 
-            writer = new IndexWriter(dir, new StandardAnalyzer(Util.Version.LUCENE_CURRENT), dp, IndexWriter.MaxFieldLength.UNLIMITED);
+            writer = new IndexWriter(dir, new StandardAnalyzer(Util.Version.LUCENE_CURRENT), dp, IndexWriter.MaxFieldLength.UNLIMITED, null);
 			CopyFiles(dir, cp);
             for (int i = 0; i < 7; i++)
             {
-                writer.AddDocument(doc);
+                writer.AddDocument(doc, null);
                 if (i % 2 == 0)
                 {
-                    writer.Commit();
+                    writer.Commit(null);
                 }
             }
 			CopyFiles(dir, cp);
 			writer.Close();
 			CopyFiles(dir, cp);
 			dp.Release();
-            writer = new IndexWriter(dir, new StandardAnalyzer(Util.Version.LUCENE_CURRENT), dp, IndexWriter.MaxFieldLength.UNLIMITED);
+            writer = new IndexWriter(dir, new StandardAnalyzer(Util.Version.LUCENE_CURRENT), dp, IndexWriter.MaxFieldLength.UNLIMITED, null);
 			writer.Close();
 
             Assert.Throws<System.IO.FileNotFoundException>(() => CopyFiles(dir, cp), "did not hit expected IOException");
@@ -184,7 +184,7 @@ namespace Lucene.Net.Index
 			long stopTime = (DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond) + 7000;
 			
 			SnapshotDeletionPolicy dp = new SnapshotDeletionPolicy(new KeepOnlyLastCommitDeletionPolicy());
-			IndexWriter writer = new IndexWriter(dir, new StandardAnalyzer(Util.Version.LUCENE_CURRENT), dp, IndexWriter.MaxFieldLength.UNLIMITED);
+			IndexWriter writer = new IndexWriter(dir, new StandardAnalyzer(Util.Version.LUCENE_CURRENT), dp, IndexWriter.MaxFieldLength.UNLIMITED, null);
 			
 			// Force frequent flushes
 			writer.SetMaxBufferedDocs(2);
@@ -210,7 +210,7 @@ namespace Lucene.Net.Index
 			// delete again:
 			Document doc = new Document();
 			doc.Add(new Field("content", "aaa", Field.Store.YES, Field.Index.ANALYZED, Field.TermVector.WITH_POSITIONS_OFFSETS));
-			writer.AddDocument(doc);
+			writer.AddDocument(doc, null);
 			
 			// Make sure we don't have any leftover files in the
 			// directory:
@@ -263,10 +263,10 @@ namespace Lucene.Net.Index
 		
 		private void  ReadFile(Directory dir, System.String name)
 		{
-			IndexInput input = dir.OpenInput(name);
+			IndexInput input = dir.OpenInput(name, null);
 			try
 			{
-				long size = dir.FileLength(name);
+				long size = dir.FileLength(name, null);
 				long bytesLeft = size;
 				while (bytesLeft > 0)
 				{
@@ -275,7 +275,7 @@ namespace Lucene.Net.Index
 						numToRead = (int) bytesLeft;
 					else
 						numToRead = buffer.Length;
-					input.ReadBytes(buffer, 0, numToRead, false);
+					input.ReadBytes(buffer, 0, numToRead, false, null);
 					bytesLeft -= numToRead;
 				}
 				// Don't do this in your real backups!  This is just

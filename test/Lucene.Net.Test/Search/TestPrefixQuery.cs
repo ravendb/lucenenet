@@ -42,22 +42,22 @@ namespace Lucene.Net.Search
 			RAMDirectory directory = new RAMDirectory();
 			
 			System.String[] categories = new System.String[]{"/Computers", "/Computers/Mac", "/Computers/Windows"};
-			IndexWriter writer = new IndexWriter(directory, new WhitespaceAnalyzer(), true, IndexWriter.MaxFieldLength.LIMITED);
+			IndexWriter writer = new IndexWriter(directory, new WhitespaceAnalyzer(), true, IndexWriter.MaxFieldLength.LIMITED, null);
 			for (int i = 0; i < categories.Length; i++)
 			{
 				Document doc = new Document();
 				doc.Add(new Field("category", categories[i], Field.Store.YES, Field.Index.NOT_ANALYZED));
-				writer.AddDocument(doc);
+				writer.AddDocument(doc, null);
 			}
 			writer.Close();
 			
 			PrefixQuery query = new PrefixQuery(new Term("category", "/Computers"));
-		    IndexSearcher searcher = new IndexSearcher(directory, true);
-			ScoreDoc[] hits = searcher.Search(query, null, 1000).ScoreDocs;
+		    IndexSearcher searcher = new IndexSearcher(directory, true, null);
+			ScoreDoc[] hits = searcher.Search(query, null, 1000, null).ScoreDocs;
 			Assert.AreEqual(3, hits.Length, "All documents in /Computers category and below");
 			
 			query = new PrefixQuery(new Term("category", "/Computers/Mac"));
-			hits = searcher.Search(query, null, 1000).ScoreDocs;
+			hits = searcher.Search(query, null, 1000, null).ScoreDocs;
 			Assert.AreEqual(1, hits.Length, "One in /Computers/Mac");
 		}
 	}

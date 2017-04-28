@@ -67,17 +67,17 @@ namespace Lucene.Net.Index
 				{
 					for (int j = 0; j < Lucene.Net.Index.TestThreadedOptimize.NUM_ITER2; j++)
 					{
-						writerFinal.Optimize(false);
+						writerFinal.Optimize(false, null);
 						for (int k = 0; k < 17 * (1 + iFinal); k++)
 						{
 							Document d = new Document();
 							d.Add(new Field("id", iterFinal + "_" + iFinal + "_" + j + "_" + k, Field.Store.YES, Field.Index.NOT_ANALYZED));
 							d.Add(new Field("contents", English.IntToEnglish(iFinal + k), Field.Store.NO, Field.Index.ANALYZED));
-							writerFinal.AddDocument(d);
+							writerFinal.AddDocument(d, null);
 						}
 						for (int k = 0; k < 9 * (1 + iFinal); k++)
-							writerFinal.DeleteDocuments(new Term("id", iterFinal + "_" + iFinal + "_" + j + "_" + k));
-						writerFinal.Optimize();
+							writerFinal.DeleteDocuments(null, new Term("id", iterFinal + "_" + iFinal + "_" + j + "_" + k));
+						writerFinal.Optimize(null);
 					}
 				}
 				catch (System.Exception t)
@@ -110,10 +110,10 @@ namespace Lucene.Net.Index
 		public virtual void  runTest(Directory directory, MergeScheduler merger)
 		{
 			
-			IndexWriter writer = new IndexWriter(directory, ANALYZER, true, IndexWriter.MaxFieldLength.UNLIMITED);
+			IndexWriter writer = new IndexWriter(directory, ANALYZER, true, IndexWriter.MaxFieldLength.UNLIMITED, null);
 			writer.SetMaxBufferedDocs(2);
 			if (merger != null)
-				writer.SetMergeScheduler(merger);
+				writer.SetMergeScheduler(merger, null);
 			
 			for (int iter = 0; iter < NUM_ITER; iter++)
 			{
@@ -126,7 +126,7 @@ namespace Lucene.Net.Index
 					Document d = new Document();
 					d.Add(new Field("id", System.Convert.ToString(i), Field.Store.YES, Field.Index.NOT_ANALYZED));
 					d.Add(new Field("contents", English.IntToEnglish(i), Field.Store.NO, Field.Index.ANALYZED));
-					writer.AddDocument(d);
+					writer.AddDocument(d, null);
 				}
 				
 				writer.MergeFactor = 4;
@@ -156,10 +156,10 @@ namespace Lucene.Net.Index
 				Assert.AreEqual(expectedDocCount, writer.MaxDoc());
 				
 				writer.Close();
-				writer = new IndexWriter(directory, ANALYZER, false, IndexWriter.MaxFieldLength.UNLIMITED);
+				writer = new IndexWriter(directory, ANALYZER, false, IndexWriter.MaxFieldLength.UNLIMITED, null);
 				writer.SetMaxBufferedDocs(2);
 
-			    IndexReader reader = IndexReader.Open(directory, true);
+			    IndexReader reader = IndexReader.Open(directory, true, null);
 				Assert.IsTrue(reader.IsOptimized());
 				Assert.AreEqual(expectedDocCount, reader.NumDocs());
 				reader.Close();

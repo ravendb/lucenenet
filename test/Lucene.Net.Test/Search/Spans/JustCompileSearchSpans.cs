@@ -17,6 +17,7 @@
 
 using System;
 using System.Collections.Generic;
+using Lucene.Net.Store;
 using NUnit.Framework;
 
 using IndexReader = Lucene.Net.Index.IndexReader;
@@ -50,12 +51,12 @@ namespace Lucene.Net.Search.Spans
 				throw new System.NotSupportedException(Lucene.Net.Search.Spans.JustCompileSearchSpans.UNSUPPORTED_MSG);
 			}
 			
-			public override bool Next()
+			public override bool Next(IState state)
 			{
 				throw new System.NotSupportedException(Lucene.Net.Search.Spans.JustCompileSearchSpans.UNSUPPORTED_MSG);
 			}
 			
-			public override bool SkipTo(int target)
+			public override bool SkipTo(int target, IState state)
 			{
 				throw new System.NotSupportedException(Lucene.Net.Search.Spans.JustCompileSearchSpans.UNSUPPORTED_MSG);
 			}
@@ -65,7 +66,7 @@ namespace Lucene.Net.Search.Spans
 				throw new System.NotSupportedException(Lucene.Net.Search.Spans.JustCompileSearchSpans.UNSUPPORTED_MSG);
 			}
 
-		    public override ICollection<byte[]> GetPayload()
+		    public override ICollection<byte[]> GetPayload(IState state)
 		    {
 		        throw new System.NotSupportedException(Lucene.Net.Search.Spans.JustCompileSearchSpans.UNSUPPORTED_MSG);
 		    }
@@ -84,7 +85,7 @@ namespace Lucene.Net.Search.Spans
 		        get { throw new System.NotSupportedException(Lucene.Net.Search.Spans.JustCompileSearchSpans.UNSUPPORTED_MSG); }
 		    }
 
-		    public override Spans GetSpans(IndexReader reader)
+		    public override Spans GetSpans(IndexReader reader, IState state)
 			{
 				throw new System.NotSupportedException(Lucene.Net.Search.Spans.JustCompileSearchSpans.UNSUPPORTED_MSG);
 			}
@@ -97,7 +98,7 @@ namespace Lucene.Net.Search.Spans
 		
 		internal sealed class JustCompilePayloadSpans:Spans
 		{
-		    public override ICollection<byte[]> GetPayload()
+		    public override ICollection<byte[]> GetPayload(IState state)
 		    {
 		        throw new System.NotSupportedException(Lucene.Net.Search.Spans.JustCompileSearchSpans.UNSUPPORTED_MSG);
 		    }
@@ -117,12 +118,12 @@ namespace Lucene.Net.Search.Spans
 				throw new System.NotSupportedException(Lucene.Net.Search.Spans.JustCompileSearchSpans.UNSUPPORTED_MSG);
 			}
 			
-			public override bool Next()
+			public override bool Next(IState state)
 			{
 				throw new System.NotSupportedException(Lucene.Net.Search.Spans.JustCompileSearchSpans.UNSUPPORTED_MSG);
 			}
 			
-			public override bool SkipTo(int target)
+			public override bool SkipTo(int target, IState state)
 			{
 				throw new System.NotSupportedException(Lucene.Net.Search.Spans.JustCompileSearchSpans.UNSUPPORTED_MSG);
 			}
@@ -136,11 +137,11 @@ namespace Lucene.Net.Search.Spans
 		internal sealed class JustCompileSpanScorer:SpanScorer
 		{
 			
-			internal JustCompileSpanScorer(Spans spans, Weight weight, Similarity similarity, byte[] norms):base(spans, weight, similarity, norms)
+			internal JustCompileSpanScorer(Spans spans, Weight weight, Similarity similarity, byte[] norms):base(spans, weight, similarity, norms, null)
 			{
 			}
 			
-			public /*protected internal*/ override bool SetFreqCurrentDoc()
+			public /*protected internal*/ override bool SetFreqCurrentDoc(IState state)
 			{
 				throw new System.NotSupportedException(Lucene.Net.Search.Spans.JustCompileSearchSpans.UNSUPPORTED_MSG);
 			}

@@ -16,6 +16,7 @@
  */
 
 using System;
+using Lucene.Net.Store;
 using Lucene.Net.Support;
 using NUnit.Framework;
 
@@ -108,14 +109,14 @@ namespace Lucene.Net.Search
 			base.SetUp();
 			System.String[] docText = new System.String[]{"docThatNeverMatchesSoWeCanRequireLastDocCollectedToBeGreaterThanZero", "one blah three", "one foo three multiOne", "one foobar three multiThree", "blueberry pancakes", "blueberry pie", "blueberry strudel", "blueberry pizza"};
 			Directory directory = new RAMDirectory();
-			IndexWriter iw = new IndexWriter(directory, new WhitespaceAnalyzer(), true, MaxFieldLength.UNLIMITED);
+			IndexWriter iw = new IndexWriter(directory, new WhitespaceAnalyzer(), true, MaxFieldLength.UNLIMITED, null);
 			
 			for (int i = 0; i < N_DOCS; i++)
 			{
 				Add(docText[i % docText.Length], iw);
 			}
 			iw.Close();
-		    searcher = new IndexSearcher(directory, true);
+		    searcher = new IndexSearcher(directory, true, null);
 			
 			System.String qtxt = "one";
             // start from 1, so that the 0th doc never matches
@@ -127,7 +128,7 @@ namespace Lucene.Net.Search
 			query = queryParser.Parse(qtxt);
 			
 			// warm the searcher
-			searcher.Search(query, null, 1000);
+			searcher.Search(query, null, 1000, null);
 		}
 		
 		[TearDown]
@@ -141,12 +142,12 @@ namespace Lucene.Net.Search
 		{
 			Document d = new Document();
 			d.Add(new Field(FIELD_NAME, value_Renamed, Field.Store.NO, Field.Index.ANALYZED));
-			iw.AddDocument(d);
+			iw.AddDocument(d, null);
 		}
 		
 		private void  Search(Collector collector)
 		{
-			searcher.Search(query, collector);
+			searcher.Search(query, collector, null);
 		}
 		
 		/// <summary> test search correctness with no timeout</summary>
@@ -381,7 +382,7 @@ namespace Lucene.Net.Search
 				// scorer is not needed
 			}
 			
-			public override void  Collect(int doc)
+			public override void  Collect(int doc, IState state)
 			{
 				int docId = doc + docBase;
 				if (slowdown > 0)
@@ -401,7 +402,7 @@ namespace Lucene.Net.Search
 				lastDocCollected = docId;
 			}
 			
-			public override void  SetNextReader(IndexReader reader, int base_Renamed)
+			public override void  SetNextReader(IndexReader reader, int base_Renamed, IState state)
 			{
 				docBase = base_Renamed;
 			}

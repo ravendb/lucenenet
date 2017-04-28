@@ -16,7 +16,7 @@
  */
 
 using System;
-
+using Lucene.Net.Store;
 using NUnit.Framework;
 
 using IndexReader = Lucene.Net.Index.IndexReader;
@@ -30,7 +30,7 @@ namespace Lucene.Net.Search
 	{
 		private bool wasCalled;
 		
-		public override DocIdSet GetDocIdSet(IndexReader reader)
+		public override DocIdSet GetDocIdSet(IndexReader reader, IState state)
 		{
 			wasCalled = true;
 			return new DocIdBitSet(new System.Collections.BitArray(64));

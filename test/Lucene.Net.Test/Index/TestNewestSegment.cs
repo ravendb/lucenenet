@@ -34,7 +34,7 @@ namespace Lucene.Net.Index
         public void TestNewestSegment_Renamed()
         {
             RAMDirectory directory = new RAMDirectory();
-            IndexWriter writer = new IndexWriter(directory, new SimpleAnalyzer(), IndexWriter.MaxFieldLength.LIMITED);
+            IndexWriter writer = new IndexWriter(directory, new SimpleAnalyzer(), IndexWriter.MaxFieldLength.LIMITED, null);
             Assert.IsNull(writer.NewestSegment());
         }
     }

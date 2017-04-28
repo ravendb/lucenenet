@@ -55,7 +55,7 @@ namespace Lucene.Net.Index
 			}
 
             public MockIndexWriter(TestAtomicUpdate enclosingInstance, Directory dir, Analyzer a, bool create, IndexWriter.MaxFieldLength mfl)
-                : base(dir, a, create, mfl)
+                : base(dir, a, create, mfl, null)
 			{
 				InitBlock(enclosingInstance);
 			}
@@ -132,7 +132,7 @@ namespace Lucene.Net.Index
 					Document d = new Document();
 					d.Add(new Field("id", System.Convert.ToString(i), Field.Store.YES, Field.Index.NOT_ANALYZED));
 					d.Add(new Field("contents", English.IntToEnglish(i + 10 * count), Field.Store.NO, Field.Index.ANALYZED));
-					writer.UpdateDocument(new Term("id", System.Convert.ToString(i)), d);
+					writer.UpdateDocument(new Term("id", System.Convert.ToString(i)), d, null);
 				}
 			}
 		}
@@ -148,7 +148,7 @@ namespace Lucene.Net.Index
 			
 			public override void  DoWork()
 			{
-				IndexReader r = IndexReader.Open(directory, true);
+				IndexReader r = IndexReader.Open(directory, true, null);
 				Assert.AreEqual(100, r.NumDocs());
 				r.Close();
 			}
@@ -175,13 +175,13 @@ namespace Lucene.Net.Index
 				d.Add(new Field("contents", English.IntToEnglish(i), Field.Store.NO, Field.Index.ANALYZED));
                 if ((i - 1) % 7 == 0)
                 {
-                    writer.Commit();
+                    writer.Commit(null);
                 }
-				writer.AddDocument(d);
+				writer.AddDocument(d, null);
 			}
-			writer.Commit();
+			writer.Commit(null);
 			
-			IndexReader r = IndexReader.Open(directory, true);
+			IndexReader r = IndexReader.Open(directory, true, null);
 			Assert.AreEqual(100, r.NumDocs());
 			r.Close();
 			

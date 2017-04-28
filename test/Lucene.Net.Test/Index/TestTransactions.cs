@@ -131,12 +131,12 @@ namespace Lucene.Net.Index
 			public override void  DoWork()
 			{
 				
-				IndexWriter writer1 = new IndexWriter(dir1, new WhitespaceAnalyzer(), IndexWriter.MaxFieldLength.LIMITED);
+				IndexWriter writer1 = new IndexWriter(dir1, new WhitespaceAnalyzer(), IndexWriter.MaxFieldLength.LIMITED, null);
 				writer1.SetMaxBufferedDocs(3);
 				writer1.MergeFactor = 2;
 				((ConcurrentMergeScheduler) writer1.MergeScheduler).SetSuppressExceptions();
 				
-				IndexWriter writer2 = new IndexWriter(dir2, new WhitespaceAnalyzer(), IndexWriter.MaxFieldLength.LIMITED);
+				IndexWriter writer2 = new IndexWriter(dir2, new WhitespaceAnalyzer(), IndexWriter.MaxFieldLength.LIMITED, null);
 				// Intentionally use different params so flush/merge
 				// happen @ different times
 				writer2.SetMaxBufferedDocs(2);
@@ -153,27 +153,27 @@ namespace Lucene.Net.Index
 					{
 						try
 						{
-							writer1.PrepareCommit();
+							writer1.PrepareCommit(null);
 						}
 						catch (System.Exception t)
 						{
-							writer1.Rollback();
-							writer2.Rollback();
+							writer1.Rollback(null);
+							writer2.Rollback(null);
 							return ;
 						}
 						try
 						{
-							writer2.PrepareCommit();
+							writer2.PrepareCommit(null);
 						}
 						catch (System.Exception t)
 						{
-							writer1.Rollback();
-							writer2.Rollback();
+							writer1.Rollback(null);
+							writer2.Rollback(null);
 							return ;
 						}
 						
-						writer1.Commit();
-						writer2.Commit();
+						writer1.Commit(null);
+						writer2.Commit(null);
 					}
 				}
 				finally
@@ -194,14 +194,14 @@ namespace Lucene.Net.Index
 					int n = Enclosing_Instance.RANDOM.Next();
 					d.Add(new Field("id", System.Convert.ToString(nextID++), Field.Store.YES, Field.Index.NOT_ANALYZED));
 					d.Add(new Field("contents", English.IntToEnglish(n), Field.Store.NO, Field.Index.ANALYZED));
-					writer.AddDocument(d);
+					writer.AddDocument(d, null);
 				}
 				
 				// Delete 5 docs:
 				int deleteID = nextID - 1;
 				for (int j = 0; j < 5; j++)
 				{
-					writer.DeleteDocuments(new Term("id", "" + deleteID));
+					writer.DeleteDocuments(null, new Term("id", "" + deleteID));
 					deleteID -= 2;
 				}
 			}
@@ -225,8 +225,8 @@ namespace Lucene.Net.Index
 				IndexReader r1, r2;
 				lock (lock_Renamed)
 				{
-					r1 = IndexReader.Open(dir1, true);
-				    r2 = IndexReader.Open(dir2, true);
+					r1 = IndexReader.Open(dir1, true, null);
+				    r2 = IndexReader.Open(dir2, true, null);
 				}
 				if (r1.NumDocs() != r2.NumDocs())
 					throw new System.SystemException("doc counts differ: r1=" + r1.NumDocs() + " r2=" + r2.NumDocs());
@@ -237,13 +237,13 @@ namespace Lucene.Net.Index
 		
 		public virtual void  InitIndex(Directory dir)
 		{
-			IndexWriter writer = new IndexWriter(dir, new WhitespaceAnalyzer(), IndexWriter.MaxFieldLength.LIMITED);
+			IndexWriter writer = new IndexWriter(dir, new WhitespaceAnalyzer(), IndexWriter.MaxFieldLength.LIMITED, null);
 			for (int j = 0; j < 7; j++)
 			{
 				Document d = new Document();
 				int n = RANDOM.Next();
 				d.Add(new Field("contents", English.IntToEnglish(n), Field.Store.NO, Field.Index.ANALYZED));
-				writer.AddDocument(d);
+				writer.AddDocument(d, null);
 			}
 			writer.Close();
 		}

@@ -136,11 +136,11 @@ namespace Lucene.Net.Index
 			Directory dir3 = FSDirectory.Open(indexDir3);
 			
 			CreateIndex(dir3);
-			IndexWriter iw = new IndexWriter(dir3, anlzr, false, IndexWriter.MaxFieldLength.LIMITED);
+			IndexWriter iw = new IndexWriter(dir3, anlzr, false, IndexWriter.MaxFieldLength.LIMITED, null);
 			iw.SetMaxBufferedDocs(5);
 			iw.MergeFactor = 3;
-			iw.AddIndexesNoOptimize(new Directory[]{dir1, dir2});
-            iw.Optimize();
+			iw.AddIndexesNoOptimize(null, new Directory[]{dir1, dir2});
+            iw.Optimize(null);
 			iw.Close();
 			
 			norms1.AddRange(norms);
@@ -154,10 +154,10 @@ namespace Lucene.Net.Index
 			DoTestNorms(dir3);
 			
 			// now with optimize
-			iw = new IndexWriter(dir3, anlzr, false, IndexWriter.MaxFieldLength.LIMITED);
+			iw = new IndexWriter(dir3, anlzr, false, IndexWriter.MaxFieldLength.LIMITED, null);
 			iw.SetMaxBufferedDocs(5);
 			iw.MergeFactor = 3;
-			iw.Optimize();
+			iw.Optimize(null);
 			iw.Close();
 			VerifyIndex(dir3);
 			
@@ -183,7 +183,7 @@ namespace Lucene.Net.Index
 		
 		private void  CreateIndex(Directory dir)
 		{
-			IndexWriter iw = new IndexWriter(dir, anlzr, true, IndexWriter.MaxFieldLength.LIMITED);
+			IndexWriter iw = new IndexWriter(dir, anlzr, true, IndexWriter.MaxFieldLength.LIMITED, null);
 			iw.SetMaxBufferedDocs(5);
 			iw.MergeFactor = 3;
 			iw.SetSimilarity(similarityOne);
@@ -193,7 +193,7 @@ namespace Lucene.Net.Index
 		
 		private void  ModifyNormsForF1(Directory dir)
 		{
-			IndexReader ir = IndexReader.Open(dir, false);
+			IndexReader ir = IndexReader.Open(dir, false, null);
 			int n = ir.MaxDoc;
 			for (int i = 0; i < n; i += 3)
 			{
@@ -205,8 +205,8 @@ namespace Lucene.Net.Index
 				//System.out.println("      and: for "+k+" from "+newNorm+" to "+origNorm);
 				modifiedNorms[i] = newNorm;
 				modifiedNorms[k] = origNorm;
-				ir.SetNorm(i, "f" + 1, newNorm);
-				ir.SetNorm(k, "f" + 1, origNorm);
+				ir.SetNorm(i, "f" + 1, newNorm, null);
+				ir.SetNorm(k, "f" + 1, origNorm, null);
 			}
 			ir.Close();
 		}
@@ -214,11 +214,11 @@ namespace Lucene.Net.Index
 		
 		private void  VerifyIndex(Directory dir)
 		{
-		    IndexReader ir = IndexReader.Open(dir, false);
+		    IndexReader ir = IndexReader.Open(dir, false, null);
 			for (int i = 0; i < NUM_FIELDS; i++)
 			{
 				System.String field = "f" + i;
-				byte[] b = ir.Norms(field);
+				byte[] b = ir.Norms(field, null);
 				Assert.AreEqual(numDocNorms, b.Length, "number of norms mismatches");
 				System.Collections.ArrayList storedNorms = (i == 1?modifiedNorms:norms);
 				for (int j = 0; j < b.Length; j++)
@@ -232,14 +232,14 @@ namespace Lucene.Net.Index
 		
 		private void  AddDocs(Directory dir, int ndocs, bool compound)
 		{
-			IndexWriter iw = new IndexWriter(dir, anlzr, false, IndexWriter.MaxFieldLength.LIMITED);
+			IndexWriter iw = new IndexWriter(dir, anlzr, false, IndexWriter.MaxFieldLength.LIMITED, null);
 			iw.SetMaxBufferedDocs(5);
 			iw.MergeFactor = 3;
 			iw.SetSimilarity(similarityOne);
 			iw.UseCompoundFile = compound;
 			for (int i = 0; i < ndocs; i++)
 			{
-				iw.AddDocument(NewDoc());
+				iw.AddDocument(NewDoc(), null);
 			}
 			iw.Close();
 		}

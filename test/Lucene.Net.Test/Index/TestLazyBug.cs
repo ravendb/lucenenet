@@ -67,7 +67,7 @@ namespace Lucene.Net.Index
 			{
 				System.Random r = NewRandom();
 				Analyzer analyzer = new SimpleAnalyzer();
-				IndexWriter writer = new IndexWriter(dir, analyzer, true, IndexWriter.MaxFieldLength.LIMITED);
+				IndexWriter writer = new IndexWriter(dir, analyzer, true, IndexWriter.MaxFieldLength.LIMITED, null);
 				
 				writer.UseCompoundFile = false;
 				
@@ -78,7 +78,7 @@ namespace Lucene.Net.Index
 					{
 						doc.Add(new Field("f" + f, data[f % data.Length] + '#' + data[r.Next(data.Length)], Field.Store.YES, Field.Index.ANALYZED));
 					}
-					writer.AddDocument(doc);
+					writer.AddDocument(doc, null);
 				}
 				writer.Close();
 			}
@@ -96,11 +96,11 @@ namespace Lucene.Net.Index
                     dataset.Add(data[i], data[i]);
 
 			Directory dir = MakeIndex();
-		    IndexReader reader = IndexReader.Open(dir, true);
+		    IndexReader reader = IndexReader.Open(dir, true, null);
 			for (int i = 0; i < docs.Length; i++)
 			{
-				Document d = reader.Document(docs[i], SELECTOR);
-				d.Get(MAGIC_FIELD);
+				Document d = reader.Document(docs[i], SELECTOR, null);
+				d.Get(MAGIC_FIELD, null);
 				
 				var fields = d.GetFields();
 				for (System.Collections.IEnumerator fi = fields.GetEnumerator(); fi.MoveNext(); )
@@ -110,7 +110,7 @@ namespace Lucene.Net.Index
 					{
 						f = (IFieldable) fi.Current;
 						System.String fname = f.Name;
-						System.String fval = f.StringValue;
+						System.String fval = f.StringValue(null);
 						Assert.IsNotNull(docs[i] + " FIELD: " + fname, fval);
 						System.String[] vals = fval.Split('#');
                         Assert.IsTrue(dataset.Contains(vals[0]) || dataset.Contains(vals[1]), "FIELD:" + fname + ",VAL:" + fval);

@@ -159,11 +159,11 @@ namespace Lucene.Net.Index
 		/// <throws>  IOException </throws>
 		public static SegmentInfo WriteDoc(Directory dir, Analyzer analyzer, Similarity similarity, Document doc)
 		{
-			IndexWriter writer = new IndexWriter(dir, analyzer, IndexWriter.MaxFieldLength.LIMITED);
+			IndexWriter writer = new IndexWriter(dir, analyzer, IndexWriter.MaxFieldLength.LIMITED, null);
 			writer.SetSimilarity(similarity);
 			//writer.setUseCompoundFile(false);
-			writer.AddDocument(doc);
-            writer.Commit();
+			writer.AddDocument(doc, null);
+            writer.Commit(null);
 			SegmentInfo info = writer.NewestSegment();
 			writer.Close();
 			return info;

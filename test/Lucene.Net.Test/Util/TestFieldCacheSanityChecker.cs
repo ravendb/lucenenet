@@ -16,7 +16,8 @@
  */
 
 using System;
-
+using Lucene.Net.Index;
+using Lucene.Net.Store;
 using NUnit.Framework;
 
 using WhitespaceAnalyzer = Lucene.Net.Analysis.WhitespaceAnalyzer;
@@ -51,8 +52,8 @@ namespace Lucene.Net.Util
 			RAMDirectory dirA = new RAMDirectory();
 			RAMDirectory dirB = new RAMDirectory();
 			
-			IndexWriter wA = new IndexWriter(dirA, new WhitespaceAnalyzer(), true, IndexWriter.MaxFieldLength.LIMITED);
-			IndexWriter wB = new IndexWriter(dirB, new WhitespaceAnalyzer(), true, IndexWriter.MaxFieldLength.LIMITED);
+			IndexWriter wA = new IndexWriter(dirA, new WhitespaceAnalyzer(), true, IndexWriter.MaxFieldLength.LIMITED, null);
+			IndexWriter wB = new IndexWriter(dirB, new WhitespaceAnalyzer(), true, IndexWriter.MaxFieldLength.LIMITED, null);
 			
 			long theLong = System.Int64.MaxValue;
 			double theDouble = System.Double.MaxValue;
@@ -71,17 +72,17 @@ namespace Lucene.Net.Util
 				doc.Add(new Field("theFloat", (theFloat--).ToString("E8"), Field.Store.NO, Field.Index.NOT_ANALYZED));
 				if (0 == i % 3)
 				{
-					wA.AddDocument(doc);
+					wA.AddDocument(doc, null);
 				}
 				else
 				{
-					wB.AddDocument(doc);
+					wB.AddDocument(doc, null);
 				}
 			}
 			wA.Close();
 			wB.Close();
-			readerA = IndexReader.Open(dirA, true);
-			readerB = IndexReader.Open(dirB, true);
+			readerA = IndexReader.Open((Directory) dirA, true, null);
+			readerB = IndexReader.Open((Directory) dirB, true, null);
 			readerX = new MultiReader(new IndexReader[]{readerA, readerB});
 		}
 		
@@ -103,12 +104,12 @@ namespace Lucene.Net.Util
 			double[] doubles;
 			int[] ints;
 			
-			doubles = cache.GetDoubles(readerA, "theDouble");
-			doubles = cache.GetDoubles(readerA, "theDouble", Lucene.Net.Search.FieldCache_Fields.DEFAULT_DOUBLE_PARSER);
-			doubles = cache.GetDoubles(readerB, "theDouble", Lucene.Net.Search.FieldCache_Fields.DEFAULT_DOUBLE_PARSER);
+			doubles = cache.GetDoubles(readerA, "theDouble", null);
+			doubles = cache.GetDoubles(readerA, "theDouble", Lucene.Net.Search.FieldCache_Fields.DEFAULT_DOUBLE_PARSER, null);
+			doubles = cache.GetDoubles(readerB, "theDouble", Lucene.Net.Search.FieldCache_Fields.DEFAULT_DOUBLE_PARSER, null);
 			
-			ints = cache.GetInts(readerX, "theInt");
-			ints = cache.GetInts(readerX, "theInt", Lucene.Net.Search.FieldCache_Fields.DEFAULT_INT_PARSER);
+			ints = cache.GetInts(readerX, "theInt", null);
+			ints = cache.GetInts(readerX, "theInt", Lucene.Net.Search.FieldCache_Fields.DEFAULT_INT_PARSER, null);
 			
 			// // // 
 			
@@ -136,11 +137,11 @@ namespace Lucene.Net.Util
 			System.String[] strings;
 			sbyte[] bytes;
 			
-			ints = cache.GetInts(readerX, "theInt", Lucene.Net.Search.FieldCache_Fields.DEFAULT_INT_PARSER);
-			strings = cache.GetStrings(readerX, "theInt");
+			ints = cache.GetInts(readerX, "theInt", Lucene.Net.Search.FieldCache_Fields.DEFAULT_INT_PARSER, null);
+			strings = cache.GetStrings(readerX, "theInt", null);
 			
 			// this one is ok
-			bytes = cache.GetBytes(readerX, "theByte");
+			bytes = cache.GetBytes(readerX, "theByte", null);
 			
 			// // // 
 			
@@ -163,12 +164,12 @@ namespace Lucene.Net.Util
 			System.String[] strings;
 			sbyte[] bytes;
 			
-			strings = cache.GetStrings(readerA, "theString");
-			strings = cache.GetStrings(readerB, "theString");
-			strings = cache.GetStrings(readerX, "theString");
+			strings = cache.GetStrings(readerA, "theString", null);
+			strings = cache.GetStrings(readerB, "theString", null);
+			strings = cache.GetStrings(readerX, "theString", null);
 			
 			// this one is ok
-			bytes = cache.GetBytes(readerX, "theByte");
+			bytes = cache.GetBytes(readerX, "theByte", null);
 			
 			
 			// // // 

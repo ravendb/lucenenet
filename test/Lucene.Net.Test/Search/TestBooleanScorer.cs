@@ -17,6 +17,7 @@
 
 using System;
 using System.Collections.Generic;
+using Lucene.Net.Store;
 using NUnit.Framework;
 
 using WhitespaceAnalyzer = Lucene.Net.Analysis.WhitespaceAnalyzer;
@@ -53,7 +54,7 @@ namespace Lucene.Net.Search
 			}
 			private int doc = - 1;
 
-			public override float Score()
+			public override float Score(IState state)
 			{
 				return 0;
 			}
@@ -62,12 +63,12 @@ namespace Lucene.Net.Search
 				return doc;
 			}
 			
-			public override int NextDoc()
+			public override int NextDoc(IState state)
 			{
 			    return doc = doc == -1 ? 3000 : NO_MORE_DOCS;
 			}
 
-			public override int Advance(int target)
+			public override int Advance(int target, IState state)
 			{
 			    return doc = target <= 3000 ? 3000 : NO_MORE_DOCS;
 			}
@@ -88,12 +89,12 @@ namespace Lucene.Net.Search
 			
 			try
 			{
-				IndexWriter writer = new IndexWriter(directory, new WhitespaceAnalyzer(), true, IndexWriter.MaxFieldLength.LIMITED);
+				IndexWriter writer = new IndexWriter(directory, new WhitespaceAnalyzer(), true, IndexWriter.MaxFieldLength.LIMITED, null);
 				for (int i = 0; i < values.Length; i++)
 				{
 					Document doc = new Document();
 					doc.Add(new Field(FIELD, values[i], Field.Store.YES, Field.Index.NOT_ANALYZED));
-					writer.AddDocument(doc);
+					writer.AddDocument(doc, null);
 				}
 				writer.Close();
 				
@@ -105,8 +106,8 @@ namespace Lucene.Net.Search
 				query.Add(booleanQuery1, Occur.MUST);
 				query.Add(new TermQuery(new Term(FIELD, "9")), Occur.MUST_NOT);
 				
-				IndexSearcher indexSearcher = new IndexSearcher(directory, true);
-				ScoreDoc[] hits = indexSearcher.Search(query, null, 1000).ScoreDocs;
+				IndexSearcher indexSearcher = new IndexSearcher(directory, true, null);
+				ScoreDoc[] hits = indexSearcher.Search(query, null, 1000, null).ScoreDocs;
 				Assert.AreEqual(2, hits.Length, "Number of matched documents");
 			}
 			catch (System.IO.IOException e)
@@ -125,10 +126,10 @@ namespace Lucene.Net.Search
 			
 			Similarity sim = Similarity.Default;
 			Scorer[] scorers = new Scorer[]{new AnonymousClassScorer(this, sim)};
-			BooleanScorer bs = new BooleanScorer(sim, 1, new List<Scorer>(scorers), null);
+			BooleanScorer bs = new BooleanScorer(sim, 1, new List<Scorer>(scorers), null, null);
 			
-			Assert.AreEqual(3000, bs.NextDoc(), "should have received 3000");
-			Assert.AreEqual(DocIdSetIterator.NO_MORE_DOCS, bs.NextDoc(), "should have received NO_MORE_DOCS");
+			Assert.AreEqual(3000, bs.NextDoc(null), "should have received 3000");
+			Assert.AreEqual(DocIdSetIterator.NO_MORE_DOCS, bs.NextDoc(null), "should have received NO_MORE_DOCS");
 		}
 	}
 }

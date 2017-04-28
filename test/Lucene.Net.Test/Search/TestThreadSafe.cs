@@ -21,6 +21,7 @@ using NUnit.Framework;
 
 using WhitespaceAnalyzer = Lucene.Net.Analysis.WhitespaceAnalyzer;
 using Lucene.Net.Documents;
+using Lucene.Net.Index;
 using IndexReader = Lucene.Net.Index.IndexReader;
 using IndexWriter = Lucene.Net.Index.IndexWriter;
 using Directory = Lucene.Net.Store.Directory;
@@ -131,7 +132,7 @@ namespace Lucene.Net.Search
 			internal virtual void  loadDoc(IndexReader ir)
 			{
 				// beware of deleted docs in the future
-				Document doc = ir.Document(rand.Next(ir.MaxDoc), new AnonymousClassFieldSelector(this));
+				Document doc = ir.Document(rand.Next(ir.MaxDoc), new AnonymousClassFieldSelector(this), null);
 				
 				var fields = doc.GetFields();
 				for (int i = 0; i < fields.Count; i++)
@@ -145,7 +146,7 @@ namespace Lucene.Net.Search
 		
 		internal virtual void  ValidateField(IFieldable f)
 		{
-			System.String val = f.StringValue;
+			System.String val = f.StringValue(null);
 			if (!val.StartsWith("^") || !val.EndsWith("$"))
 			{
 				throw new System.SystemException("Invalid field:" + f.ToString() + " val=" + val);
@@ -156,7 +157,7 @@ namespace Lucene.Net.Search
 		
 		internal virtual void  BuildDir(Directory dir, int nDocs, int maxFields, int maxFieldLen)
 		{
-			IndexWriter iw = new IndexWriter(dir, new WhitespaceAnalyzer(), true, IndexWriter.MaxFieldLength.LIMITED);
+			IndexWriter iw = new IndexWriter(dir, new WhitespaceAnalyzer(), true, IndexWriter.MaxFieldLength.LIMITED, null);
 			iw.SetMaxBufferedDocs(10);
 			for (int j = 0; j < nDocs; j++)
 			{
@@ -173,7 +174,7 @@ namespace Lucene.Net.Search
 					Field.Index index = Field.Index.ANALYZED; // make random later
 					d.Add(new Field("f" + i, sb.ToString(), store, index));
 				}
-				iw.AddDocument(d);
+				iw.AddDocument(d, null);
 			}
 			iw.Close();
 		}
@@ -208,7 +209,7 @@ namespace Lucene.Net.Search
 			// do many small tests so the thread locals go away inbetween
 			for (int i = 0; i < 100; i++)
 			{
-			    ir1 = IndexReader.Open(dir1, false);
+			    ir1 = IndexReader.Open(dir1, false, null);
 				DoTest(10, 100);
 			}
 		}

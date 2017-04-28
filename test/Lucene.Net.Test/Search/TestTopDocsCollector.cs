@@ -16,7 +16,7 @@
  */
 
 using System;
-
+using Lucene.Net.Store;
 using NUnit.Framework;
 
 using KeywordAnalyzer = Lucene.Net.Analysis.KeywordAnalyzer;
@@ -69,13 +69,13 @@ namespace Lucene.Net.Search
 				return new TopDocs(internalTotalHits, results, maxScore);
 			}
 			
-			public override void  Collect(int doc)
+			public override void  Collect(int doc, IState state)
 			{
 				++internalTotalHits;
 				pq.InsertWithOverflow(new ScoreDoc(doc + base_Renamed, Lucene.Net.Search.TestTopDocsCollector.scores[idx++]));
 			}
 			
-			public override void  SetNextReader(IndexReader reader, int docBase)
+			public override void  SetNextReader(IndexReader reader, int docBase, IState state)
 			{
 				base_Renamed = docBase;
 			}
@@ -102,9 +102,9 @@ namespace Lucene.Net.Search
 		private TopDocsCollector<ScoreDoc> doSearch(int numResults)
 		{
 			Query q = new MatchAllDocsQuery();
-			IndexSearcher searcher = new IndexSearcher(dir, true);
+			IndexSearcher searcher = new IndexSearcher(dir, true, null);
             TopDocsCollector<ScoreDoc> tdc = new MyTopsDocCollector(numResults);
-			searcher.Search(q, tdc);
+			searcher.Search(q, tdc, null);
 			searcher.Close();
 			return tdc;
 		}
@@ -117,10 +117,10 @@ namespace Lucene.Net.Search
 			// populate an index with 30 documents, this should be enough for the test.
 			// The documents have no content - the test uses MatchAllDocsQuery().
             dir = new RAMDirectory();
-			IndexWriter writer = new IndexWriter(dir, new KeywordAnalyzer(), MaxFieldLength.UNLIMITED);
+			IndexWriter writer = new IndexWriter(dir, new KeywordAnalyzer(), MaxFieldLength.UNLIMITED, null);
 			for (int i = 0; i < 30; i++)
 			{
-				writer.AddDocument(new Document());
+				writer.AddDocument(new Document(), null);
 			}
 			writer.Close();
 		}
