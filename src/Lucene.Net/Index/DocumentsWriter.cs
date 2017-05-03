@@ -292,11 +292,11 @@ namespace Lucene.Net.Index
 		
 		// Deletes done after the last flush; these are discarded
 		// on abort
-		private BufferedDeletes deletesInRAM = new BufferedDeletes(false);
+		private readonly UnsortedBufferedDeletes deletesInRAM = new UnsortedBufferedDeletes();
 		
 		// Deletes done before the last flush; these are still
 		// kept on abort
-		private BufferedDeletes deletesFlushed = new BufferedDeletes(true);
+		private readonly SortedBufferedDeletes deletesFlushed = new SortedBufferedDeletes();
 		
 		// The max number of delete terms that can be buffered before
 		// they must be flushed to disk.
@@ -1116,7 +1116,7 @@ namespace Lucene.Net.Index
 		}
 		
 		// for testing
-		internal IDictionary<Term, BufferedDeletes.Num> GetBufferedDeleteTerms()
+		internal IDictionary<Term, DeleteTermNum> GetBufferedDeleteTerms()
 		{
 			lock (this)
 			{
@@ -1309,7 +1309,7 @@ namespace Lucene.Net.Index
 				TermDocs docs = reader.TermDocs(state);
 				try
 				{
-					foreach(KeyValuePair<Term, BufferedDeletes.Num> entry in deletesFlushed.terms)
+					foreach(var entry in deletesFlushed.terms)
 					{
 						Term term = entry.Key;
 						// LUCENE-2086: we should be iterating a TreeMap,
@@ -1376,10 +1376,10 @@ namespace Lucene.Net.Index
 		{
 			lock (this)
 			{
-				BufferedDeletes.Num num = deletesInRAM.terms[term];
+			    DeleteTermNum num = deletesInRAM.terms[term];
 				int docIDUpto = flushedDocCount + docCount;
 				if (num == null)
-					deletesInRAM.terms[term] = new BufferedDeletes.Num(docIDUpto);
+					deletesInRAM.terms[term] = new DeleteTermNum(docIDUpto);
 				else
 					num.SetNum(docIDUpto);
 				deletesInRAM.numTerms++;
