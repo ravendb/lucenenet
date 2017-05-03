@@ -16,6 +16,7 @@
  */
 
 using System;
+using System.Collections.Generic;
 
 namespace Lucene.Net.Util
 {
@@ -30,23 +31,21 @@ namespace Lucene.Net.Util
             InitBlock();
         }
 
-	    private void  InitBlock()
+	    private void InitBlock()
 	    {
-	        sizes = new IdentityDictionary<Type, int>()
-	                    {
-	                        {typeof (bool), 1},
-	                        {typeof (byte), 1},
-                            {typeof(sbyte), 1},
-	                        {typeof (char), 2},
-	                        {typeof (short), 2},
-	                        {typeof (int), 4},
-	                        {typeof (float), 4},
-	                        {typeof (double), 8},
-	                        {typeof (long), 8}
-	                    };
-	    }
+	        sizes = new FastDictionary<Type, int, IdentityStructComparer<Type>>(IdentityStructComparer<Type>.Default);
+	        sizes[typeof(bool)] = 1;
+            sizes[typeof (byte)] = 1;
+            sizes[typeof(sbyte)] = 1;
+            sizes[typeof (char)] = 2;
+            sizes[typeof (short)] = 2;
+            sizes[typeof (int)] = 4;
+	        sizes[typeof(float)] = 4;
+            sizes[typeof (double)] = 8;
+            sizes[typeof (long)] = 8;
+        }
 		// best guess primitive sizes
-        private System.Collections.Generic.Dictionary<Type, int> sizes;
+        private FastDictionary<Type, int, IdentityStructComparer<Type>> sizes;
 		
 		/*
 		* (non-Javadoc)

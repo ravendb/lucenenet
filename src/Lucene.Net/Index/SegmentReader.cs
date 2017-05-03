@@ -755,7 +755,7 @@ namespace Lucene.Net.Index
 			}
 		}
 		
-		internal System.Collections.Generic.IDictionary<string, Norm> norms = new HashMap<string, Norm>();
+		internal HashMap<string, Norm> norms = new HashMap<string, Norm>();
 		
 		/// <throws>  CorruptIndexException if the index is corrupt </throws>
 		/// <throws>  IOException if there is a low-level IO error </throws>

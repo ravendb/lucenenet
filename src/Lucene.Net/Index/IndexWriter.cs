@@ -160,7 +160,7 @@ namespace Lucene.Net.Index
     */
     public class IndexWriter : System.IDisposable
 	{
-		private void  InitBlock()
+		private void InitBlock()
 		{
 			similarity = Search.Similarity.Default;
 			mergePolicy = new LogByteSizeMergePolicy(this);
@@ -424,7 +424,7 @@ namespace Lucene.Net.Index
 				
 			}
 
-            private IDictionary<SegmentInfo, SegmentReader> readerMap = new HashMap<SegmentInfo, SegmentReader>();
+            private HashMap<SegmentInfo, SegmentReader> readerMap = new HashMap<SegmentInfo, SegmentReader>();
 			
 			/// <summary>Forcefully clear changes for the specifed segments,
 			/// and remove from the pool.   This is called on succesful merge. 
@@ -2301,7 +2301,7 @@ namespace Lucene.Net.Index
 		/// </summary>
 		/// <throws>  CorruptIndexException if the index is corrupt </throws>
 		/// <throws>  IOException if there is a low-level IO error </throws>
-		public virtual void  AddDocument(Document doc, IState state)
+		public virtual void AddDocument(Document doc, IState state)
 		{
 			AddDocument(doc, analyzer, state);
 		}
@@ -2322,7 +2322,7 @@ namespace Lucene.Net.Index
 		/// </summary>
 		/// <throws>  CorruptIndexException if the index is corrupt </throws>
 		/// <throws>  IOException if there is a low-level IO error </throws>
-		public virtual void  AddDocument(Document doc, Analyzer analyzer, IState state)
+		public virtual void AddDocument(Document doc, Analyzer analyzer, IState state)
 		{
 			EnsureOpen();
 			bool doFlush = false;

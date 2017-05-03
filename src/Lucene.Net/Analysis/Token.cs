@@ -16,6 +16,7 @@
  */
 
 using System;
+using System.Runtime.CompilerServices;
 using Lucene.Net.Analysis.Tokenattributes;
 using Lucene.Net.Support;
 using Lucene.Net.Util;
@@ -381,13 +382,14 @@ namespace Lucene.Net.Analysis
 			}
 			return termBuffer;
 		}
-		
-		/// <summary>Allocates a buffer char[] of at least newSize, without preserving the existing content.
-		/// its always used in places that set the content 
-		/// </summary>
-		/// <param name="newSize">minimum size of the buffer
-		/// </param>
-		private void  GrowTermBuffer(int newSize)
+
+        /// <summary>Allocates a buffer char[] of at least newSize, without preserving the existing content.
+        /// its always used in places that set the content 
+        /// </summary>
+        /// <param name="newSize">minimum size of the buffer
+        /// </param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void GrowTermBuffer(int newSize)
 		{
 			if (termBuffer == null)
 			{

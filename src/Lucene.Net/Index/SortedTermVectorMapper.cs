@@ -33,7 +33,7 @@ namespace Lucene.Net.Index
 	public class SortedTermVectorMapper:TermVectorMapper
 	{
         private SortedSet<TermVectorEntry> currentSet;
-		private IDictionary<string, TermVectorEntry> termToTVE = new HashMap<string, TermVectorEntry>();
+		private HashMap<string, TermVectorEntry> termToTVE = new HashMap<string, TermVectorEntry>();
 		private bool storeOffsets;
 		private bool storePositions;
 		/// <summary> Stand-in name for the field in <see cref="TermVectorEntry" />.</summary>

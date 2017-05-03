@@ -25,7 +25,7 @@ namespace Lucene.Net.Analysis
 	/// </summary>
 	public class NormalizeCharMap
 	{
-		internal System.Collections.Generic.IDictionary<char, NormalizeCharMap> submap;
+		internal HashMap<char, NormalizeCharMap> submap;
 		internal System.String normStr;
 		internal int diff;
 		

@@ -56,7 +56,7 @@ namespace Lucene.Net.Util
         // NOTE: Java has WeakReference<T>.  This isn't available for .Net until 4.5 (according to msdn docs)
         private ThreadLocal<WeakReference> t = new ThreadLocal<WeakReference>();
 
-        private IDictionary<Thread, T> hardRefs = new HashMap<Thread, T>();
+        private HashMap<Thread, T> hardRefs = new HashMap<Thread, T>();
 
         private bool isDisposed;
 

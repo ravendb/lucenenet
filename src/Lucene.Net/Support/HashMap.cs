@@ -22,10 +22,27 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
+using Lucene.Net.Util;
 
 namespace Lucene.Net.Support
 {
-    using Lucene.Net.Util;
+
+    public class HashMap<TKey, TValue> : HashMap<TKey, TValue, IEqualityComparer<TKey>>
+    {
+        public HashMap() : base (DictionaryHelper.KMinBuckets, EqualityComparer<TKey>.Default)
+        {
+        }
+
+        public HashMap(int initialCapacity)
+            : base(initialCapacity, EqualityComparer<TKey>.Default)
+        {
+        }
+
+        public HashMap(IEnumerable<KeyValuePair<TKey, TValue>> other) : base(other, EqualityComparer<TKey>.Default)
+        {            
+        }
+    }
 
     /// <summary>
     /// A C# emulation of the <a href="http://download.oracle.com/javase/1,5.0/docs/api/java/util/HashMap.html">Java Hashmap</a>
@@ -55,40 +72,29 @@ namespace Lucene.Net.Support
     /// <typeparam name="TKey">The type of keys in the dictionary</typeparam>
     /// <typeparam name="TValue">The type of values in the dictionary</typeparam>
 #if !DNXCORE50
-        [Serializable]
+    [Serializable]
 #endif
-    public class HashMap<TKey, TValue> : IDictionary<TKey, TValue>
+    public class HashMap<TKey, TValue, TComparer> : IDictionary<TKey, TValue> where TComparer : IEqualityComparer<TKey>
     {
-        internal IEqualityComparer<TKey> _comparer;
-        internal Dictionary<TKey, TValue> _dict;
-
+        internal readonly TComparer _comparer;
+        internal readonly FastDictionary<TKey, TValue, TComparer> _dict;
+        // Indicates the type of key is a non-nullable valuetype
+        private readonly bool _isValueType;
+        
         // Indicates if a null key has been assigned, used for iteration
         private bool _hasNullValue;
         // stores the value for the null key
         private TValue _nullValue;
-        // Indicates the type of key is a non-nullable valuetype
-        private bool _isValueType;
 
-        public HashMap()
-            : this(0)
-        { }
-
-        public HashMap(IEqualityComparer<TKey> comparer)
-            : this(0, comparer)
-        {
-            
+        public HashMap(TComparer comparer)
+            : this(DictionaryHelper.KMinBuckets, comparer)
+        {            
         }
 
-        public HashMap(int initialCapacity)
-            : this(initialCapacity, EqualityComparer<TKey>.Default)
-        {
-            
-        }
-
-        public HashMap(int initialCapacity, IEqualityComparer<TKey> comparer)
+        public HashMap(int initialCapacity, TComparer comparer)
         {
             _comparer = comparer;
-            _dict = new Dictionary<TKey, TValue>(initialCapacity, _comparer);
+            _dict = new FastDictionary<TKey, TValue, TComparer>(initialCapacity, _comparer);
             _hasNullValue = false;
 
             if (typeof(TKey).IsValueType())
@@ -97,8 +103,8 @@ namespace Lucene.Net.Support
             }
         }
 
-        public HashMap(IEnumerable<KeyValuePair<TKey, TValue>> other)
-            : this(0)
+        public HashMap(IEnumerable<KeyValuePair<TKey, TValue>> other, TComparer comparer)
+            : this(comparer)
         {
             foreach (var kvp in other)
             {
@@ -156,12 +162,12 @@ namespace Lucene.Net.Support
                 return _hasNullValue && EqualityComparer<TValue>.Default.Equals(item.Value, _nullValue);
             }
 
-            return ((ICollection<KeyValuePair<TKey, TValue>>)_dict).Contains(item);
+            return _dict.Contains(item.Key);
         }
 
         void ICollection<KeyValuePair<TKey, TValue>>.CopyTo(KeyValuePair<TKey, TValue>[] array, int arrayIndex)
         {
-            ((ICollection<KeyValuePair<TKey, TValue>>) _dict).CopyTo(array, arrayIndex);
+            _dict.CopyTo(array, arrayIndex);
             if(!_isValueType && _hasNullValue)
             {
                 array[array.Length - 1] = new KeyValuePair<TKey, TValue>(default(TKey), _nullValue);
@@ -180,16 +186,18 @@ namespace Lucene.Net.Support
                 return true;
             }
 
-            return ((ICollection<KeyValuePair<TKey, TValue>>)_dict).Remove(item);
+            return _dict.Remove(item.Key);
         }
 
         public int Count
         {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get { return _dict.Count + (_hasNullValue ? 1 : 0); }
         }
 
         public bool IsReadOnly
         {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get { return false; }
         }
 
@@ -197,80 +205,87 @@ namespace Lucene.Net.Support
 
         #region Implementation of IDictionary<TKey,TValue>
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool ContainsKey(TKey key)
         {
             if (!_isValueType && _comparer.Equals(key, default(TKey)))
-            {
-                if (_hasNullValue)
-                {
-                    return true;
-                }
-                return false;
-            }
+                goto Unlikely;
 
             return _dict.ContainsKey(key);
+
+            Unlikely:
+            if (_hasNullValue)
+                return true;
+            return false;
         }
 
-        public virtual void Add(TKey key, TValue value)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void Add(TKey key, TValue value)
         {
-            if (!_isValueType && _comparer.Equals(key, default(TKey)))
+            if (_isValueType || !_comparer.Equals(key, default(TKey)))
             {
-                _hasNullValue = true;
-                _nullValue = value;
+                _dict[key] = value;
             }
             else
             {
-                _dict[key] = value;
+                _hasNullValue = true;
+                _nullValue = value;
             }
         }
 
         public bool Remove(TKey key)
         {
-            if (!_isValueType && _comparer.Equals(key, default(TKey)))
+            if (_isValueType || !_comparer.Equals(key, default(TKey)))
+            {
+                return _dict.Remove(key);
+            }
+            else
             {
                 _hasNullValue = false;
                 _nullValue = default(TValue);
                 return true;
-            }
-            else
-            {
-                return _dict.Remove(key);
             }
         }
 
         public bool TryGetValue(TKey key, out TValue value)
         {
             if (!_isValueType && _comparer.Equals(key, default(TKey)))
-            {
-                if (_hasNullValue)
-                {
-                    value = _nullValue;
-                    return true;
-                }
+                goto Unlikely;
 
-                value = default(TValue);
-                return false;
+            return _dict.TryGetValue(key, out value);
+
+
+            Unlikely:
+            bool result = false;
+            if (_hasNullValue)
+            {
+                value = _nullValue;
+                result = true;
             }
             else
             {
-                return _dict.TryGetValue(key, out value);
+                value = default(TValue);
             }
+            return result;
         }
 
         public TValue this[TKey key]
         {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get
             {
                 if (!_isValueType && _comparer.Equals(key, default(TKey)))
-                {
-                    if (!_hasNullValue)
-                    {
-                        return default(TValue);
-                    }
-                    return _nullValue;
-                }
-                return _dict.ContainsKey(key) ? _dict[key] : default(TValue);
+                    goto Unlikely;                
+
+                _dict.TryGetValue(key, out TValue value);
+                return value;
+
+                Unlikely:
+                if (!_hasNullValue)
+                    return default(TValue);
+                return _nullValue;
             }
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             set { Add(key, value); }
         }
 
@@ -278,7 +293,8 @@ namespace Lucene.Net.Support
         {
             get
             {
-                if (!_hasNullValue) return _dict.Keys;
+                if (!_hasNullValue)
+                    return _dict.Keys;
 
                 // Using a List<T> to generate an ICollection<TKey>
                 // would incur a costly copy of the dict's KeyCollection
@@ -311,9 +327,9 @@ namespace Lucene.Net.Support
         class NullValueCollection : ICollection<TValue>
         {
             private readonly TValue _nullValue;
-            private readonly Dictionary<TKey, TValue> _internalDict;
+            private readonly FastDictionary<TKey, TValue, TComparer> _internalDict;
 
-            public NullValueCollection(Dictionary<TKey, TValue> dict, TValue nullValue)
+            public NullValueCollection(FastDictionary<TKey, TValue, TComparer> dict, TValue nullValue)
             {
                 _internalDict = dict;
                 _nullValue = nullValue;
@@ -390,9 +406,9 @@ namespace Lucene.Net.Support
         /// </summary>
         class NullKeyCollection : ICollection<TKey>
         {
-            private readonly Dictionary<TKey, TValue> _internalDict;
+            private readonly FastDictionary<TKey, TValue, TComparer> _internalDict;
 
-            public NullKeyCollection(Dictionary<TKey, TValue> dict)
+            public NullKeyCollection(FastDictionary<TKey, TValue, TComparer> dict)
             {
                 _internalDict = dict;
             }

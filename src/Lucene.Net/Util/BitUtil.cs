@@ -16,6 +16,7 @@
  */
 
 using System;
+using System.Runtime.CompilerServices;
 using Lucene.Net.Support;
 
 namespace Lucene.Net.Util
@@ -29,9 +30,8 @@ namespace Lucene.Net.Util
 	/// </version>
 	public class BitUtil
 	{
-		
-		/// <summary>Returns the number of bits set in the long </summary>
-		public static int Pop(long x)
+        /// <summary>Returns the number of bits set in the long </summary>
+        public static int Pop(long x)
 		{
 			/* Hacker's Delight 32 bit pop function:
 			* http://www.hackersdelight.org/HDcode/newCode/pop_arrayHS.cc
@@ -850,22 +850,25 @@ namespace Lucene.Net.Util
 			}
 			return n - (y & 1);
 		}
-		
-		
-		/// <summary>returns true if v is a power of two or zero</summary>
-		public static bool IsPowerOfTwo(int v)
+
+
+        /// <summary>returns true if v is a power of two or zero</summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool IsPowerOfTwo(int v)
 		{
 			return ((v & (v - 1)) == 0);
 		}
-		
-		/// <summary>returns true if v is a power of two or zero</summary>
-		public static bool IsPowerOfTwo(long v)
+
+        /// <summary>returns true if v is a power of two or zero</summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool IsPowerOfTwo(long v)
 		{
 			return ((v & (v - 1)) == 0);
 		}
-		
-		/// <summary>returns the next highest power of two, or the current value if it's already a power of two or zero</summary>
-		public static int NextHighestPowerOfTwo(int v)
+
+        /// <summary>returns the next highest power of two, or the current value if it's already a power of two or zero</summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static int NextHighestPowerOfTwo(int v)
 		{
 			v--;
 			v |= v >> 1;
@@ -876,9 +879,10 @@ namespace Lucene.Net.Util
 			v++;
 			return v;
 		}
-		
-		/// <summary>returns the next highest power of two, or the current value if it's already a power of two or zero</summary>
-		public static long NextHighestPowerOfTwo(long v)
+
+        /// <summary>returns the next highest power of two, or the current value if it's already a power of two or zero</summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static long NextHighestPowerOfTwo(long v)
 		{
 			v--;
 			v |= v >> 1;

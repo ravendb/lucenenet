@@ -28,9 +28,7 @@ namespace Lucene.Net.Support
     [TestFixture]
     public class TestWeakDictionaryBehavior
     {
-        IDictionary<object, object> dictionary;
-
-        public static IDictionary<object, object> CreateDictionary()
+        public static WeakDictionary<object, object> CreateDictionary()
         {
             return new WeakDictionary<object, object>();
         }
@@ -45,16 +43,12 @@ namespace Lucene.Net.Support
             }
         }
 
-        [SetUp]
-        public void Setup()
-        {
-            dictionary = CreateDictionary();
-        }
-
         [Test]
         public void Test_Dictionary_Add()
         {
             string key = "A";
+
+            var dictionary = CreateDictionary();
 
             dictionary.Add(key, "value");
             Assert.IsTrue(dictionary.ContainsKey(key));
@@ -70,6 +64,7 @@ namespace Lucene.Net.Support
             string key = "A";
             string key2 = "B";
 
+            var dictionary = CreateDictionary();
             dictionary.Add(key, "value");
             dictionary.Add(key2, "value2");
             Assert.IsTrue(dictionary.ContainsKey(key));
@@ -87,6 +82,8 @@ namespace Lucene.Net.Support
             string key = "A";
             string key2 = "B";
 
+            var dictionary = CreateDictionary();
+
             dictionary.Add(key, "value");
             CollectionAssert.AreEquivalent(dictionary.Keys, new object[] { key });
 
@@ -97,12 +94,14 @@ namespace Lucene.Net.Support
         [Test]
         public void Test_Dictionary_Add_Null()
         {
+            var dictionary = CreateDictionary();
             Assert.Throws<ArgumentNullException>(() => dictionary.Add(null, "value"));
         }
 
         [Test]
         public void Test_Dictionary_Set_Null()
         {
+            var dictionary = CreateDictionary();
             Assert.Throws<ArgumentNullException>(() => dictionary[null] = "value");
         }
 
@@ -111,6 +110,8 @@ namespace Lucene.Net.Support
         {
             string key = "A";
             string key2 = "a".ToUpper();
+
+            var dictionary = CreateDictionary();
 
             dictionary.Add(key, "value");
             dictionary[key2] = "value2";
@@ -125,6 +126,8 @@ namespace Lucene.Net.Support
         {
             string key = "A";
 
+            var dictionary = CreateDictionary();
+
             dictionary.Add(key, "value");
             dictionary.Remove(key);
 
@@ -137,6 +140,8 @@ namespace Lucene.Net.Support
         public void Test_Dictionary_Clear()
         {
             string key = "A";
+
+            var dictionary = CreateDictionary();
 
             dictionary.Add(key, "value");
             dictionary.Clear();
@@ -151,6 +156,8 @@ namespace Lucene.Net.Support
         {
             string key = "A";
 
+            var dictionary = CreateDictionary();
+
             dictionary.Add(key, "value");
             dictionary.Remove(key);
             dictionary.Remove(key);
@@ -163,12 +170,14 @@ namespace Lucene.Net.Support
         [Test]
         public void Test_Dictionary_Get_Null()
         {
+            var dictionary = CreateDictionary();
             Assert.Throws<ArgumentNullException>(() => { object value = dictionary[null]; });
         }
 
         [Test]
         public void Test_Dictionary_Remove_Null()
         {
+            var dictionary = CreateDictionary();
             Assert.Throws<ArgumentNullException>(() => dictionary.Remove(null));
         }
 
@@ -177,6 +186,7 @@ namespace Lucene.Net.Support
         {
             string key = "A";
 
+            var dictionary = CreateDictionary();
             dictionary.Add(key, "value");
 
             var de = dictionary.GetEnumerator();
@@ -190,6 +200,7 @@ namespace Lucene.Net.Support
         {
             string key = "A";
 
+            var dictionary = CreateDictionary();
             dictionary.Add(key, "value");
 
             foreach (var de in dictionary)
@@ -206,6 +217,7 @@ namespace Lucene.Net.Support
             CollisionTester key1 = new CollisionTester(1, 100);
             CollisionTester key2 = new CollisionTester(2, 100);
 
+            var dictionary = CreateDictionary();
             dictionary.Add(key1, "value1");
             dictionary.Add(key2, "value2");
 
@@ -222,6 +234,7 @@ namespace Lucene.Net.Support
             BigObject key = new BigObject(1);
             BigObject key2 = new BigObject(2);
 
+            var dictionary = CreateDictionary();
             dictionary.Add(key, "value");
             Assert.AreEqual("value", dictionary[key]);
 
@@ -239,6 +252,7 @@ namespace Lucene.Net.Support
             BigObject key2 = new BigObject(2);
             BigObject key3 = new BigObject(3);
 
+            var dictionary = CreateDictionary();
             dictionary.Add(key, "value");
             dictionary.Add(key2, "value2");
             Assert.AreEqual("value", dictionary[key]);
@@ -257,6 +271,8 @@ namespace Lucene.Net.Support
         {
             BigObject[] keys1 = new BigObject[20];
             BigObject[] keys2 = new BigObject[20];
+
+            var dictionary = CreateDictionary();
 
             for (int i = 0; i < keys1.Length; i++)
             {

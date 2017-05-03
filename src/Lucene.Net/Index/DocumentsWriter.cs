@@ -1003,7 +1003,7 @@ namespace Lucene.Net.Index
 		{
 			return UpdateDocument(doc, analyzer, null, state);
 		}
-		
+		        
 		internal bool UpdateDocument(Term t, Document doc, Analyzer analyzer, IState state)
 		{
 			return UpdateDocument(doc, analyzer, t, state);
@@ -1407,7 +1407,7 @@ namespace Lucene.Net.Index
 				deletesInRAM.AddBytesUsed(BYTES_PER_DEL_QUERY);
 			}
 		}
-		
+		        
 		internal bool DoBalanceRAM()
 		{
 			lock (this)
@@ -1419,7 +1419,7 @@ namespace Lucene.Net.Index
 		/// <summary>Does the synchronized work to finish/flush the
 		/// inverted document. 
 		/// </summary>
-		private void  FinishDocument(DocumentsWriterThreadState perThread, DocWriter docWriter, IState state)
+		private void FinishDocument(DocumentsWriterThreadState perThread, DocWriter docWriter, IState state)
 		{
 			
 			if (DoBalanceRAM())
