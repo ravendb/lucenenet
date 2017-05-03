@@ -145,7 +145,6 @@ namespace Lucene.Net.Util
 		
 		public static int GetNextSize(int v)
 		{
-
             /* This over-allocates proportional to the list size, making room
             * for additional growth.  The over-allocation is more aggressive, 
             * that the original Lucene version in order to avoid large rehashes

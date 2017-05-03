@@ -103,7 +103,7 @@ namespace Lucene.Net.Index
                 
         private SegmentReader[] subReaders;
         private int[] starts; // 1st docno for each segment
-        private System.Collections.Generic.IDictionary<string, byte[]> normsCache = new HashMap<string, byte[]>();
+        private HashMap<string, byte[]> normsCache = new HashMap<string, byte[]>();
         private int maxDoc = 0;
         private int numDocs = - 1;
         private bool hasDeletions = false;
@@ -253,10 +253,10 @@ namespace Lucene.Net.Index
                 // properly sync'd:
                 synced.UnionWith(infos.Files(directory, true, state));
             }
-            
+
             // we put the old SegmentReaders in a map, that allows us
             // to lookup a reader using its segment name
-            IDictionary<string, int> segmentReaders = new HashMap<string, int>();
+            var segmentReaders = new HashMap<string, int>();
             
             if (oldReaders != null)
             {

@@ -38,7 +38,7 @@ namespace Lucene.Net.Index
         protected internal IndexReader[] subReaders;
         private int[] starts; // 1st docno for each segment
         private bool[] decrefOnClose; // remember which subreaders to decRef on close
-        private System.Collections.Generic.IDictionary<string, byte[]> normsCache = new HashMap<string,byte[]>();
+        private HashMap<string, byte[]> normsCache = new HashMap<string,byte[]>();
         private int maxDoc = 0;
         private int numDocs = - 1;
         private bool hasDeletions = false;

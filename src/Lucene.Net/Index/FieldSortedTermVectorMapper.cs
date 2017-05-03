@@ -27,7 +27,7 @@ namespace Lucene.Net.Index
 	/// </summary>
 	public class FieldSortedTermVectorMapper:TermVectorMapper
 	{
-        private readonly IDictionary<string, SortedSet<TermVectorEntry>> fieldToTerms = new HashMap<string, SortedSet<TermVectorEntry>>();
+        private readonly HashMap<string, SortedSet<TermVectorEntry>> fieldToTerms = new HashMap<string, SortedSet<TermVectorEntry>>();
 		private SortedSet<TermVectorEntry> currentSet;
 		private System.String currentField;
         private readonly IComparer<TermVectorEntry> comparator;

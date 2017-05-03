@@ -28,6 +28,7 @@
 */
 
 using System;
+using System.Runtime.CompilerServices;
 using Lucene.Net.Analysis.Tokenattributes;
 using Token = Lucene.Net.Analysis.Token;
 
@@ -327,57 +328,92 @@ namespace Lucene.Net.Analysis.Standard
 			}
 			return map;
 		}
-		
-		
-		/// <summary> Refills the input buffer.
-		/// </summary>
-		/// <returns><c>false</c>, iff there was new input.
-		/// 
-		/// </returns>
-		/// <exception cref="System.IO.IOException"> if any I/O-Error occurs
-		/// </exception>
-		private bool ZzRefill()
-		{
-			
-			/* first: make room (if you can) */
-			if (zzStartRead > 0)
-			{
-				Array.Copy(zzBuffer, zzStartRead, zzBuffer, 0, zzEndRead - zzStartRead);
-				
-				/* translate stored positions */
-				zzEndRead -= zzStartRead;
-				zzCurrentPos -= zzStartRead;
-				zzMarkedPos -= zzStartRead;
-				zzPushbackPos -= zzStartRead;
-				zzStartRead = 0;
-			}
-			
-			/* is the buffer big enough? */
-			if (zzCurrentPos >= zzBuffer.Length)
-			{
-				/* if not: blow it up */
-				char[] newBuffer = new char[zzCurrentPos * 2];
-				Array.Copy(zzBuffer, 0, newBuffer, 0, zzBuffer.Length);
-				zzBuffer = newBuffer;
-			}
-			
-			/* finally: fill the buffer with new input */
-			int numRead = zzReader.Read(zzBuffer, zzEndRead, zzBuffer.Length - zzEndRead);
-			
-			if (numRead <= 0)
-			{
-				return true;
-			}
-			else
-			{
-				zzEndRead += numRead;
-				return false;
-			}
-		}
-		
-		
-		/// <summary> Closes the input stream.</summary>
-		public void  Yyclose()
+
+
+	    /// <summary> Refills the input buffer.
+	    /// </summary>
+	    /// <returns><c>false</c>, iff there was new input.
+	    /// 
+	    /// </returns>
+	    /// <exception cref="System.IO.IOException"> if any I/O-Error occurs
+	    /// </exception>
+	    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+	    private bool ZzRefill()
+	    {
+	        /* first: make room (if you can) */
+	        if (zzStartRead > 0)
+	            goto Unlikely;
+
+	        /* is the buffer big enough? */
+	        if (zzCurrentPos >= zzBuffer.Length)
+	            goto Unlikely;
+
+	        /* finally: fill the buffer with new input */
+	        int numRead = zzReader.Read(zzBuffer, zzEndRead, zzBuffer.Length - zzEndRead);
+
+            // PERF: Ensure we have a very packed code with as little return overhead as possible;
+	        bool result = true;
+	        if (numRead > 0)
+	        {
+	            zzEndRead += numRead;
+	            result = false;
+	        }
+	        return result;
+
+	        Unlikely: // PERF: This is the original code, we expect it to be unlikely. 
+	        return ZzRefillUnlikely();
+	    }
+
+	    /// <summary> Refills the input buffer.
+	    /// </summary>
+	    /// <returns><c>false</c>, iff there was new input.
+	    /// 
+	    /// </returns>
+	    /// <exception cref="System.IO.IOException"> if any I/O-Error occurs
+	    /// </exception>	    
+	    private bool ZzRefillUnlikely()
+	    {
+	        /* first: make room (if you can) */
+	        if (zzStartRead > 0)
+	        {
+	            Array.Copy(zzBuffer, zzStartRead, zzBuffer, 0, zzEndRead - zzStartRead);
+
+	            /* translate stored positions */
+	            zzEndRead -= zzStartRead;
+	            zzCurrentPos -= zzStartRead;
+	            zzMarkedPos -= zzStartRead;
+	            zzPushbackPos -= zzStartRead;
+	            zzStartRead = 0;
+	        }
+
+	        /* is the buffer big enough? */
+	        if (zzCurrentPos >= zzBuffer.Length)
+	        {
+	            /* if not: blow it up */
+	            char[] newBuffer = new char[zzCurrentPos * 2];
+	            Array.Copy(zzBuffer, 0, newBuffer, 0, zzBuffer.Length);
+	            zzBuffer = newBuffer;
+	        }
+
+	        /* finally: fill the buffer with new input */
+	        int numRead = zzReader.Read(zzBuffer, zzEndRead, zzBuffer.Length - zzEndRead);
+
+	        if (numRead <= 0)
+	        {
+	            return true;
+	        }
+	        else
+	        {
+	            zzEndRead += numRead;
+	            return false;
+	        }
+	    }
+
+
+
+
+        /// <summary> Closes the input stream.</summary>
+        public void  Yyclose()
 		{
 			zzAtEOF = true; /* indicate end of file */
 			zzEndRead = zzStartRead; /* invalidate buffer    */

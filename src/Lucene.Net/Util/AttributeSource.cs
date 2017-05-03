@@ -97,10 +97,10 @@ namespace Lucene.Net.Util
 		
 		// These two maps must always be in sync!!!
 		// So they are private, final and read-only from the outside (read-only iterators)
-		private readonly Dictionary<Type, AttributeImplItem> attributes;
-		private readonly Dictionary<Type, AttributeImplItem> attributeImpls;
+        private readonly FastDictionary<Type, AttributeImplItem, IdentityStructComparer<Type>> attributes;
+	    private readonly FastDictionary<Type, AttributeImplItem, IdentityStructComparer<Type>> attributeImpls;
 
-	    private readonly State[] currentState = null;
+        private readonly State[] currentState = null;
 	    private readonly AttributeFactory factory;
 		
 		/// <summary> An AttributeSource using the default attribute factory <see cref="AttributeSource.AttributeFactory.DEFAULT_ATTRIBUTE_FACTORY" />.</summary>
@@ -124,8 +124,8 @@ namespace Lucene.Net.Util
 		/// <summary> An AttributeSource using the supplied <see cref="AttributeFactory" /> for creating new <see cref="IAttribute" /> instances.</summary>
 		public AttributeSource(AttributeFactory factory)
 		{
-		    this.attributes = new Dictionary<Type, AttributeImplItem>(); //att => att.Key);
-		    this.attributeImpls = new Dictionary<Type, AttributeImplItem>(); // att => att.Key);
+		    this.attributes = new FastDictionary<Type, AttributeImplItem, IdentityStructComparer<Type>>(IdentityStructComparer<Type>.Default); //att => att.Key);
+            this.attributeImpls = new FastDictionary<Type, AttributeImplItem, IdentityStructComparer<Type>>(IdentityStructComparer<Type>.Default); // att => att.Key);
             this.currentState = new State[1];
             this.factory = factory;
 		}
@@ -234,75 +234,83 @@ namespace Lucene.Net.Util
 				}
 			}
 		}
-		
-		/// <summary> The caller must pass in a Class&lt;? extends Attribute&gt; value.
-		/// This method first checks if an instance of that class is 
-		/// already in this AttributeSource and returns it. Otherwise a
-		/// new instance is created, added to this AttributeSource and returned. 
-		/// </summary>
-		// NOTE: Java has Class<T>, .NET has no Type<T>, this is not a perfect port
+
+        /// <summary> The caller must pass in a Class&lt;? extends Attribute&gt; value.
+        /// This method first checks if an instance of that class is 
+        /// already in this AttributeSource and returns it. Otherwise a
+        /// new instance is created, added to this AttributeSource and returned. 
+        /// </summary>
+        // NOTE: Java has Class<T>, .NET has no Type<T>, this is not a perfect port
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public T AddAttribute<T>() where T : IAttribute
 		{
 		    var attClass = typeof (T);
 
-		    if (!attributes.TryGetValue(attClass, out var value))
-		    {
-		        if (!(attClass.IsInterface() && typeof(IAttribute).IsAssignableFrom(attClass)))
-		        {
-		            throw new ArgumentException(
-		                "AddAttribute() only accepts an interface that extends Attribute, but " +
-		                attClass.FullName + " does not fulfil this contract."
-		            );
-		        }
+		    if (attributes.TryGetValue(attClass, out var value))
+		        return (T) (IAttribute) value.Value;
 
-		        AddAttributeImpl(this.factory.CreateAttributeInstance<T>());
-		        return (T)(IAttribute)attributes[attClass].Value;
-            }
-
-		    return (T) (IAttribute) value.Value;
+		    return AddAttributeUnlikely<T>(attClass);
 		}
+
+	    private T AddAttributeUnlikely<T>(Type attClass) where T : IAttribute
+	    {
+	        if (!(attClass.IsInterface() && typeof(IAttribute).IsAssignableFrom(attClass)))
+	        {
+	            throw new ArgumentException(
+	                "AddAttribute() only accepts an interface that extends Attribute, but " +
+	                attClass.FullName + " does not fulfil this contract."
+	            );
+	        }
+
+	        AddAttributeImpl(this.factory.CreateAttributeInstance<T>());
+	        return (T) (IAttribute) attributes[attClass].Value;
+	    }
 
 	    /// <summary>Returns true, iff this AttributeSource has any attributes </summary>
 	    public bool HasAttributes
 	    {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
 	        get { return this.attributes.Count != 0; }
 	    }
 
 	    /// <summary> The caller must pass in a Class&lt;? extends Attribute&gt; value. 
 		/// Returns true, iff this AttributeSource contains the passed-in Attribute.
-        /// </summary>\
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public bool HasAttribute<T>() where T : IAttribute
 		{            
 			return this.attributes.TryGetValue(typeof(T), out var _);
 		}
-		
-		/// <summary>
-		/// The caller must pass in a Class&lt;? extends Attribute&gt; value. 
-		/// Returns the instance of the passed in Attribute contained in this AttributeSource
-		/// </summary>
-		/// <throws>
-		/// IllegalArgumentException if this AttributeSource does not contain the Attribute. 
-		/// It is recommended to always use <see cref="AddAttribute{T}" /> even in consumers
-		/// of TokenStreams, because you cannot know if a specific TokenStream really uses
+
+        /// <summary>
+        /// The caller must pass in a Class&lt;? extends Attribute&gt; value. 
+        /// Returns the instance of the passed in Attribute contained in this AttributeSource
+        /// </summary>
+        /// <throws>
+        /// IllegalArgumentException if this AttributeSource does not contain the Attribute. 
+        /// It is recommended to always use <see cref="AddAttribute{T}" /> even in consumers
+        /// of TokenStreams, because you cannot know if a specific TokenStream really uses
         /// a specific Attribute. <see cref="AddAttribute{T}" /> will automatically make the attribute
-		/// available. If you want to only use the attribute, if it is available (to optimize
+        /// available. If you want to only use the attribute, if it is available (to optimize
         /// consuming), use <see cref="HasAttribute" />.
         /// </throws>
         // NOTE: Java has Class<T>, .NET has no Type<T>, this is not a perfect port
-		public T GetAttribute<T>() where T : IAttribute
-		{
-		    var attClass = typeof (T);
-            if (!this.attributes.ContainsKey(attClass))
-            {
-                throw new ArgumentException("This AttributeSource does not have the attribute '" + attClass.FullName + "'.");
-            }
-            else
-            {
-                return (T)(IAttribute)this.attributes[attClass].Value;
-            }
-		}
-		
-		/// <summary> This class holds the state of an AttributeSource.</summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public T GetAttribute<T>() where T : IAttribute
+        {
+            var attClass = typeof (T);
+            if (this.attributes.ContainsKey(attClass))
+                return (T) (IAttribute) this.attributes[attClass].Value;
+
+            return ThrowArgumentException<T>(attClass);
+        }
+
+	    private static T ThrowArgumentException<T>(Type attClass) where T : IAttribute
+	    {
+	        throw new ArgumentException("This AttributeSource does not have the attribute '" + attClass.FullName + "'.");
+	    }
+
+	    /// <summary> This class holds the state of an AttributeSource.</summary>
 		/// <seealso cref="CaptureState">
 		/// </seealso>
 		/// <seealso cref="RestoreState">

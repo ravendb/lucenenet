@@ -50,7 +50,7 @@ namespace Lucene.Net.Index
         private List<bool> decrefOnClose = new List<bool>(); // remember which subreaders to decRef on close
 		internal bool incRefReaders = false;
 		private SortedDictionary<string, IndexReader> fieldToReader = new SortedDictionary<string, IndexReader>();
-		private IDictionary<IndexReader, ICollection<string>> readerToFields = new HashMap<IndexReader, ICollection<string>>();
+		private HashMap<IndexReader, ICollection<string>> readerToFields = new HashMap<IndexReader, ICollection<string>>();
         private List<IndexReader> storedFieldReaders = new List<IndexReader>();
 		
 		private int maxDoc;

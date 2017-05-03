@@ -193,7 +193,7 @@ namespace Lucene.Net.Search
             
             internal FieldCache wrapper;
 
-            internal IDictionary<object, IDictionary<Entry, object>> readerCache = new WeakDictionary<object, IDictionary<Entry, object>>();
+            internal WeakDictionary<object, IDictionary<Entry, object>> readerCache = new WeakDictionary<object, IDictionary<Entry, object>>();
             
             protected internal abstract System.Object CreateValue(IndexReader reader, Entry key, IState state);
 

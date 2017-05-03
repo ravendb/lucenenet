@@ -16,7 +16,7 @@
  */
 
 using System;
-
+using System.Collections.Generic;
 using NUnit.Framework;
 
 using Token = Lucene.Net.Analysis.Token;
@@ -90,13 +90,17 @@ namespace Lucene.Net.Util
             termAtt.SetTermBuffer("TestTerm");
             typeAtt.Type = "TestType";
 
+            var types = new List<Type>();
             AttributeSource clone = src.CloneAttributes();
-            System.Collections.Generic.IEnumerator<Type> it = clone.GetAttributeTypesIterator().GetEnumerator();
+            IEnumerator<Type> it = clone.GetAttributeTypesIterator().GetEnumerator();
             Assert.IsTrue(it.MoveNext());
-            Assert.AreEqual(typeof(ITermAttribute), it.Current, "TermAttribute must be the first attribute");
+            types.Add(it.Current);            
             Assert.IsTrue(it.MoveNext());
-            Assert.AreEqual(typeof(ITypeAttribute), it.Current, "TypeAttribute must be the second attribute");
+            types.Add(it.Current);            
             Assert.IsFalse(it.MoveNext(), "No more attributes");
+
+            Assert.Contains(typeof(ITypeAttribute), types, "TypeAttribute must be present in attributes");
+            Assert.Contains(typeof(ITermAttribute), types, "TermAttribute must be present in attributes");
 
             ITermAttribute termAtt2 = clone.GetAttribute<ITermAttribute>();
             ITypeAttribute typeAtt2 = clone.GetAttribute<ITypeAttribute>();
@@ -114,12 +118,12 @@ namespace Lucene.Net.Util
             ITypeAttribute typeAtt = src.AddAttribute<ITypeAttribute>();
             termAtt.SetTermBuffer("TestTerm");
             typeAtt.Type = "TestType";
-            Assert.AreEqual("(" + termAtt.ToString() + "," + typeAtt.ToString() + ")", src.ToString(), "Attributes should appear in original order");
+            Assert.AreEqual("(" + typeAtt.ToString() + "," + termAtt.ToString() + ")", src.ToString(), "Attributes should appear in original order");
             System.Collections.Generic.IEnumerator<Attribute> it = src.GetAttributeImplsIterator().GetEnumerator();
             Assert.IsTrue(it.MoveNext(), "Iterator should have 2 attributes left");
-            Assert.AreSame(termAtt, it.Current, "First AttributeImpl from iterator should be termAtt");
+            Assert.AreSame(typeAtt, it.Current, "First AttributeImpl from iterator should be typeAtt");            
             Assert.IsTrue(it.MoveNext(), "Iterator should have 1 attributes left");
-            Assert.AreSame(typeAtt, it.Current, "Second AttributeImpl from iterator should be typeAtt");
+            Assert.AreSame(termAtt, it.Current, "Second AttributeImpl from iterator should be termAtt");
             Assert.IsFalse(it.MoveNext(), "Iterator should have 0 attributes left");
 
             src = new AttributeSource();

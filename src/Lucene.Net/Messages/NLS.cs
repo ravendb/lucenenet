@@ -69,7 +69,7 @@ namespace Lucene.Net.Messages
 			}
 		}
 		
-		private static IDictionary<string, Type> bundles = new HashMap<string, Type>(0);
+		private static HashMap<string, Type> bundles = new HashMap<string, Type>(0);
 		
 		protected internal NLS()
 		{

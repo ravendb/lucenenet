@@ -72,7 +72,7 @@ namespace Lucene.Net.Index
 		//// Reference count for all files in the index.  
 		/// Counts how many existing commits reference a file.
 		/// Maps String to RefCount (class below) instances: ////
-		private IDictionary<string, RefCount> refCounts = new HashMap<string, RefCount>();
+		private HashMap<string, RefCount> refCounts = new HashMap<string, RefCount>();
 		
 		//// Holds all commits (segments_N) currently in the index.
 		/// This will have just 1 commit if you are using the

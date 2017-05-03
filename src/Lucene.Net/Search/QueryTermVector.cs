@@ -85,10 +85,12 @@ namespace Lucene.Net.Search
 			if (queryTerms != null)
 			{
 				System.Array.Sort(queryTerms);
-				IDictionary<string, int> tmpSet = new HashMap<string, int>(queryTerms.Length);
+
+			    var tmpSet = new HashMap<string, int>(queryTerms.Length);
+
 				//filter out duplicates
-				IList<string> tmpList = new List<string>(queryTerms.Length);
-				IList<int> tmpFreqs = new List<int>(queryTerms.Length);
+				var tmpList = new List<string>(queryTerms.Length);
+				var tmpFreqs = new List<int>(queryTerms.Length);
 				int j = 0;
 				for (int i = 0; i < queryTerms.Length; i++)
 				{

@@ -61,8 +61,7 @@ namespace Lucene.Net.Index
 		/// </summary>
         public override void Flush(IDictionary<InvertedDocEndConsumerPerThread,ICollection<InvertedDocEndConsumerPerField>> threadsAndFields, SegmentWriteState state, IState s)
 		{
-
-            IDictionary<FieldInfo, IList<NormsWriterPerField>> byField = new HashMap<FieldInfo, IList<NormsWriterPerField>>();
+            var byField = new HashMap<FieldInfo, IList<NormsWriterPerField>>();
 			
 			// Typically, each thread will have encountered the same
 			// field.  So first we collate by field, ie, all
@@ -70,8 +69,8 @@ namespace Lucene.Net.Index
 			// same FieldInfo
 			foreach(var entry in threadsAndFields)
 			{
-				ICollection<InvertedDocEndConsumerPerField> fields = entry.Value;
-				IEnumerator<InvertedDocEndConsumerPerField> fieldsIt = fields.GetEnumerator();
+				var fields = entry.Value;
+				var fieldsIt = fields.GetEnumerator();
 			    var fieldsToRemove = new HashSet<NormsWriterPerField>();
 				while (fieldsIt.MoveNext())
 				{
@@ -80,7 +79,7 @@ namespace Lucene.Net.Index
 					if (perField.upto > 0)
 					{
 						// It has some norms
-						IList<NormsWriterPerField> l = byField[perField.fieldInfo];
+						var l = byField[perField.fieldInfo];
 						if (l == null)
 						{
 							l = new List<NormsWriterPerField>();

@@ -16,6 +16,7 @@
  */
 
 using System;
+using System.Collections.Generic;
 using Lucene.Net.Support;
 using Lucene.Net.Util;
 
@@ -272,7 +273,7 @@ namespace Lucene.Net.Store
 		}
 		
 		// returns Map<String, String>
-		public virtual System.Collections.Generic.IDictionary<string,string> ReadStringStringMap(IState state)
+		public virtual IDictionary<string,string> ReadStringStringMap(IState state)
 		{
             var map = new HashMap<string, string>();
 			int count = ReadInt(state);

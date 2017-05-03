@@ -47,7 +47,7 @@ namespace Lucene.Net.Support
 
             Assert.AreEqual(weakDictionary.Count, realHashTable.Count);
 
-            ICollection keys = (ICollection)realHashTable.Keys;
+            var keys = realHashTable.Keys;
 
             foreach (SmallObject key in keys)
             {
@@ -58,8 +58,8 @@ namespace Lucene.Net.Support
             }
 
 
-            ICollection values1 = (ICollection)weakDictionary.Values;
-            ICollection values2 = (ICollection)realHashTable.Values;
+            var values1 = weakDictionary.Values;
+            var values2 = realHashTable.Values;
             Assert.AreEqual(values1.Count, values2.Count);
 
             realHashTable.Remove(new SmallObject(10000));
@@ -76,7 +76,7 @@ namespace Lucene.Net.Support
             }
 
             //After removals, compare the collections again.
-            ICollection keys2 = (ICollection)realHashTable.Keys;
+            var keys2 = realHashTable.Keys;
             foreach (SmallObject o in keys2)
             {
                 Assert.AreEqual(((SmallObject)realHashTable[o]).i,
