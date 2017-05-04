@@ -1311,12 +1311,12 @@ namespace Lucene.Net.Index
 				{
 					foreach(var entry in deletesFlushed.terms)
 					{
-						Term term = entry.Key;
+						Term term = entry.Term;
 						// LUCENE-2086: we should be iterating a TreeMap,
                         // here, so terms better be in order:
                         System.Diagnostics.Debug.Assert(CheckDeleteTerm(term));
 						docs.Seek(term, state);
-						int limit = entry.Value.GetNum();
+						int limit = entry.Number.GetNum();
 						while (docs.Next(state))
 						{
 							int docID = docs.Doc;

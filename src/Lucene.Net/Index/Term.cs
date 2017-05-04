@@ -16,7 +16,7 @@
  */
 
 using System;
-
+using System.Runtime.CompilerServices;
 using StringHelper = Lucene.Net.Util.StringHelper;
 
 namespace Lucene.Net.Index
@@ -128,19 +128,19 @@ namespace Lucene.Net.Index
 		    result = prime*result + ((text == null) ? 0 : text.GetHashCode());
 			return result;
 		}
-		
-		/// <summary>Compares two terms, returning a negative integer if this
-		/// term belongs before the argument, zero if this term is equal to the
-		/// argument, and a positive integer if this term belongs after the argument.
-		/// The ordering of terms is first by field, then by text.
-		/// </summary>
-		public int CompareTo(Term other)
+
+        /// <summary>Compares two terms, returning a negative integer if this
+        /// term belongs before the argument, zero if this term is equal to the
+        /// argument, and a positive integer if this term belongs after the argument.
+        /// The ordering of terms is first by field, then by text.
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public int CompareTo(Term other)
 		{
-			if ((System.Object) field == (System.Object) other.field)
-			// fields are interned
-				return String.CompareOrdinal(text, other.text);
-			else
-				return String.CompareOrdinal(field, other.field);
+			if (ReferenceEquals(field, other.field))
+				return String.CompareOrdinal(text, other.text); // fields are interned
+            
+            return String.CompareOrdinal(field, other.field);
 		}
 		
         ///// <summary>Resets the field and text of a Term. </summary>
