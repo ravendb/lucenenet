@@ -15,7 +15,9 @@
  * limitations under the License.
  */
 
+using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using Lucene.Net.Search;
 using Lucene.Net.Support;
 
@@ -59,8 +61,27 @@ namespace Lucene.Net.Index
     /// </summary>
     class SortedBufferedDeletes
     {
+        internal struct DeleteTerm : IComparable<DeleteTerm>
+        {
+            internal Term Term;
+            internal DeleteTermNum Number;
+
+            public DeleteTerm(Term term, DeleteTermNum number)
+            {
+                this.Term = term;
+                this.Number = number;
+            }
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public int CompareTo(DeleteTerm other)
+            {
+                return Term.CompareTo(other.Term);
+            }
+        }
+
         internal int numTerms;
-        internal SortedDictionary<Term, DeleteTermNum> terms;
+        
+        internal List<DeleteTerm> terms;
         internal HashMap<Query, int> queries = new HashMap<Query, int>();
         internal List<int> docIDs = new List<int>();
         internal long bytesUsed;
@@ -68,8 +89,7 @@ namespace Lucene.Net.Index
 
         public SortedBufferedDeletes()
         {
-            //TODO: Used in place of TreeMap
-            terms = new SortedDictionary<Term, DeleteTermNum>();
+            terms = new List<DeleteTerm>();
         }
 
         internal virtual int Size()
@@ -85,10 +105,10 @@ namespace Lucene.Net.Index
         {
             numTerms += @in.numTerms;
             bytesUsed += @in.bytesUsed;
-            foreach (var term in @in.terms)
-            {
-                terms[term.Key] = term.Value;
-            }
+
+            terms.AddRange(@in.terms);
+            terms.Sort();
+
             foreach (var term in @in.queries)
             {
                 queries[term.Key] = term.Value;
@@ -102,10 +122,19 @@ namespace Lucene.Net.Index
         {
             numTerms += @in.numTerms;
             bytesUsed += @in.bytesUsed;
-            foreach (var term in @in.terms)
+
+            if (numTerms != 0)
             {
-                terms[term.Key] = term.Value;
+                // Grow the list if necessary. 
+                if( terms.Capacity < numTerms)
+                    terms.Capacity = numTerms;
+
+                foreach (var term in @in.terms)
+                    terms.Add(new DeleteTerm(term.Key, term.Value));
+
+                terms.Sort();
             }
+
             foreach (var term in @in.queries)
             {
                 queries[term.Key] = term.Value;
@@ -140,16 +169,17 @@ namespace Lucene.Net.Index
         {
             lock (this)
             {
-                SortedDictionary<Term, DeleteTermNum> newDeleteTerms;
+                List<DeleteTerm> newDeleteTerms;
 
                 // Remap delete-by-term
                 if (terms.Count > 0)
                 {
-                    newDeleteTerms = new SortedDictionary<Term, DeleteTermNum>();
+                    newDeleteTerms = new List<DeleteTerm>(terms.Count);
                     foreach (var entry in terms)
                     {
-                        DeleteTermNum num = entry.Value;
-                        newDeleteTerms[entry.Key] = new DeleteTermNum(mapper.Remap(num.GetNum()));
+                        DeleteTermNum num = entry.Number;
+                        // Adding because it is already sorted.
+                        newDeleteTerms.Add(new DeleteTerm(entry.Term, new DeleteTermNum(mapper.Remap(num.GetNum()))));
                     }
                 }
                 else
