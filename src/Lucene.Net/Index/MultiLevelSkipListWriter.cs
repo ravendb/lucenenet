@@ -16,7 +16,7 @@
  */
 
 using System;
-
+using System.Runtime.CompilerServices;
 using IndexOutput = Lucene.Net.Store.IndexOutput;
 using RAMOutputStream = Lucene.Net.Store.RAMOutputStream;
 
@@ -80,21 +80,28 @@ namespace Lucene.Net.Index
 			}
 		}
 		
-		protected internal virtual void  ResetSkip()
+		protected internal virtual void ResetSkip()
 		{
-			// creates new buffers or empties the existing ones
-			if (skipBuffer == null)
-			{
-				Init();
-			}
-			else
-			{
-				for (int i = 0; i < skipBuffer.Length; i++)
-				{
-					skipBuffer[i].Reset();
-				}
-			}
+		    ResetSkipInternal();
 		}
+
+        // PERF: Avoid the derived classes to call a virtual method and allows to inline. 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+	    protected void ResetSkipInternal()
+        {
+	        // creates new buffers or empties the existing ones
+	        if (skipBuffer == null)
+	        {
+	            Init();
+	        }
+	        else
+	        {
+	            for (int i = 0; i<skipBuffer.Length; i++)
+	            {
+	                skipBuffer[i].Reset();
+	            }
+	        } 
+	    }
 		
 		/// <summary> Subclasses must implement the actual skip data encoding in this method.
 		/// 
