@@ -21,13 +21,14 @@ using IndexOutput = Lucene.Net.Store.IndexOutput;
 
 namespace Lucene.Net.Index
 {
-	
-	
-	/// <summary> Implements the skip list writer for the default posting list format
-	/// that stores positions and payloads.
-	/// 
-	/// </summary>
-	class DefaultSkipListWriter:MultiLevelSkipListWriter
+
+
+    /// <summary> Implements the skip list writer for the default posting list format
+    /// that stores positions and payloads.
+    /// 
+    /// </summary>
+    // PERF: Internal and noone is extending from it. On CoreCLR 2.0 we can achieve some devirtualization for it. 
+    sealed class DefaultSkipListWriter : MultiLevelSkipListWriter
 	{
 		private int[] lastSkipDoc;
 		private int[] lastSkipPayloadLength;
@@ -54,18 +55,18 @@ namespace Lucene.Net.Index
 			lastSkipProxPointer = new long[numberOfSkipLevels];
 		}
 		
-		internal virtual void  SetFreqOutput(IndexOutput freqOutput)
+		internal void SetFreqOutput(IndexOutput freqOutput)
 		{
 			this.freqOutput = freqOutput;
 		}
 		
-		internal virtual void  SetProxOutput(IndexOutput proxOutput)
+		internal void SetProxOutput(IndexOutput proxOutput)
 		{
 			this.proxOutput = proxOutput;
 		}
 		
 		/// <summary> Sets the values for the current skip data. </summary>
-		internal virtual void  SetSkipData(int doc, bool storePayloads, int payloadLength)
+		internal void SetSkipData(int doc, bool storePayloads, int payloadLength)
 		{
 			this.curDoc = doc;
 			this.curStorePayloads = storePayloads;
@@ -75,10 +76,11 @@ namespace Lucene.Net.Index
 				this.curProxPointer = proxOutput.FilePointer;
 		}
 		
-		protected internal override void  ResetSkip()
+		protected internal override void ResetSkip()
 		{
-			base.ResetSkip();
-			for (int i = 0; i < lastSkipDoc.Length; i++) lastSkipDoc[i] = 0;
+		    ResetSkipInternal();		    
+
+            for (int i = 0; i < lastSkipDoc.Length; i++) lastSkipDoc[i] = 0;
 			for (int i = 0; i < lastSkipPayloadLength.Length; i++) lastSkipPayloadLength[i] = -1; // we don't have to write the first length in the skip list
 			for (int i = 0; i < lastSkipFreqPointer.Length; i++) lastSkipFreqPointer[i] = freqOutput.FilePointer;
 			if (proxOutput != null)

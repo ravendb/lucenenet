@@ -21,12 +21,13 @@ using IndexInput = Lucene.Net.Store.IndexInput;
 
 namespace Lucene.Net.Index
 {
-	
-	/// <summary> Implements the skip list reader for the default posting list format
-	/// that stores positions and payloads.
-	/// 
-	/// </summary>
-	class DefaultSkipListReader:MultiLevelSkipListReader
+
+    /// <summary> Implements the skip list reader for the default posting list format
+    /// that stores positions and payloads.
+    /// 
+    /// </summary>
+    // PERF: Internal and noone is extending from it. On CoreCLR 2.0 we can achieve some devirtualization for it. 
+    sealed class DefaultSkipListReader : MultiLevelSkipListReader
 	{
 		private bool currentFieldStoresPayloads;
 		private readonly long[] freqPointer;
@@ -45,7 +46,7 @@ namespace Lucene.Net.Index
 			payloadLength = new int[maxSkipLevels];
 		}
 		
-		internal virtual void  Init(long skipPointer, long freqBasePointer, long proxBasePointer, int df, bool storesPayloads)
+		internal void Init(long skipPointer, long freqBasePointer, long proxBasePointer, int df, bool storesPayloads)
 		{
 			base.Init(skipPointer, df);
 			this.currentFieldStoresPayloads = storesPayloads;
@@ -60,7 +61,7 @@ namespace Lucene.Net.Index
 		/// <summary>Returns the freq pointer of the doc to which the last call of 
 		/// <see cref="MultiLevelSkipListReader.SkipTo(int)" /> has skipped.  
 		/// </summary>
-		internal virtual long GetFreqPointer()
+		internal long GetFreqPointer()
 		{
 			return lastFreqPointer;
 		}
@@ -68,7 +69,7 @@ namespace Lucene.Net.Index
 		/// <summary>Returns the prox pointer of the doc to which the last call of 
 		/// <see cref="MultiLevelSkipListReader.SkipTo(int)" /> has skipped.  
 		/// </summary>
-		internal virtual long GetProxPointer()
+		internal long GetProxPointer()
 		{
 			return lastProxPointer;
 		}
@@ -77,7 +78,7 @@ namespace Lucene.Net.Index
 		/// the doc to which the last call of <see cref="MultiLevelSkipListReader.SkipTo(int)" /> 
 		/// has skipped.  
 		/// </summary>
-		internal virtual int GetPayloadLength()
+		internal int GetPayloadLength()
 		{
 			return lastPayloadLength;
 		}
