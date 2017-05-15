@@ -20,6 +20,7 @@ using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using Lucene.Net.Search;
 using Lucene.Net.Support;
+using Lucene.Net.Util;
 
 namespace Lucene.Net.Index
 {
@@ -79,17 +80,27 @@ namespace Lucene.Net.Index
             }
         }
 
+        internal struct DeleteComparer : IComparer<DeleteTerm>
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public int Compare(DeleteTerm x, DeleteTerm y)
+            {
+                return x.Term.CompareTo(y.Term);
+            }
+        }
+
         internal int numTerms;
         
-        internal List<DeleteTerm> terms;
+        internal FastList<DeleteTerm> terms;
         internal HashMap<Query, int> queries = new HashMap<Query, int>();
         internal List<int> docIDs = new List<int>();
         internal long bytesUsed;
         internal const bool doTermSort = true;
+        private static Sorter<DeleteTerm, DeleteComparer> sorter = default(Sorter<DeleteTerm, DeleteComparer>);
 
         public SortedBufferedDeletes()
         {
-            terms = new List<DeleteTerm>();
+            terms = new FastList<DeleteTerm>();
         }
 
         internal virtual int Size()
@@ -107,7 +118,7 @@ namespace Lucene.Net.Index
             bytesUsed += @in.bytesUsed;
 
             terms.AddRange(@in.terms);
-            terms.Sort();
+            terms.Sort(ref sorter);
 
             foreach (var term in @in.queries)
             {
@@ -132,7 +143,7 @@ namespace Lucene.Net.Index
                 foreach (var term in @in.terms)
                     terms.Add(new DeleteTerm(term.Key, term.Value));
 
-                terms.Sort();
+                terms.Sort(ref sorter);
             }
 
             foreach (var term in @in.queries)
@@ -169,12 +180,12 @@ namespace Lucene.Net.Index
         {
             lock (this)
             {
-                List<DeleteTerm> newDeleteTerms;
+                FastList<DeleteTerm> newDeleteTerms;
 
                 // Remap delete-by-term
                 if (terms.Count > 0)
                 {
-                    newDeleteTerms = new List<DeleteTerm>(terms.Count);
+                    newDeleteTerms = new FastList<DeleteTerm>(terms.Count);
                     foreach (var entry in terms)
                     {
                         DeleteTermNum num = entry.Number;
