@@ -16,10 +16,13 @@
  */
 
 using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using Lucene.Net.Analysis.Tokenattributes;
 using Lucene.Net.Documents;
 using Lucene.Net.Support;
+using Lucene.Net.Util;
 using UnicodeUtil = Lucene.Net.Util.UnicodeUtil;
 
 namespace Lucene.Net.Index
@@ -57,24 +60,34 @@ namespace Lucene.Net.Index
 		private int postingsHashMask;
 		private RawPostingList[] postingsHash;
 		private RawPostingList p;
+
+	    private readonly Sorter<RawPostingList, PostingComparer> _sorter;
 		
 		public TermsHashPerField(DocInverterPerField docInverterPerField, TermsHashPerThread perThread, TermsHashPerThread nextPerThread, FieldInfo fieldInfo)
 		{
-			InitBlock();
+            InitBlock();
 			this.perThread = perThread;
-			intPool = perThread.intPool;
+
+            intPool = perThread.intPool;
 			charPool = perThread.charPool;
 			bytePool = perThread.bytePool;
 			docState = perThread.docState;
 			fieldState = docInverterPerField.fieldState;
-			this.consumer = perThread.consumer.AddField(this, fieldInfo);
+            
+            // Sorter requires the char pool.
+		    _sorter = new Sorter<RawPostingList, PostingComparer>(new PostingComparer(this));
+
+            this.consumer = perThread.consumer.AddField(this, fieldInfo);
 			streamCount = consumer.GetStreamCount();
 			numPostingInt = 2 * streamCount;
-			this.fieldInfo = fieldInfo;
-			if (nextPerThread != null)
+			this.fieldInfo = fieldInfo;		    
+
+            if (nextPerThread != null)
 				nextPerField = (TermsHashPerField) nextPerThread.AddField(docInverterPerField, fieldInfo);
 			else
 				nextPerField = null;
+
+
 		}
 		
 		internal void ShrinkHash(int targetSize)
@@ -155,122 +168,64 @@ namespace Lucene.Net.Index
 		public RawPostingList[] SortPostings()
 		{
 			CompactPostings();
-			QuickSort(postingsHash, 0, numPostings - 1);
+            _sorter.Sort(postingsHash, 0, numPostings);
 			return postingsHash;
 		}
-		
-		internal void QuickSort(RawPostingList[] postings, int lo, int hi)
-		{
-			if (lo >= hi)
-				return ;
-			else if (hi == 1 + lo)
-			{
-				if (ComparePostings(postings[lo], postings[hi]) > 0)
-				{
-					RawPostingList tmp = postings[lo];
-					postings[lo] = postings[hi];
-					postings[hi] = tmp;
-				}
-				return ;
-			}
-			
-			int mid = Number.URShift((lo + hi), 1);
-			
-			if (ComparePostings(postings[lo], postings[mid]) > 0)
-			{
-				RawPostingList tmp = postings[lo];
-				postings[lo] = postings[mid];
-				postings[mid] = tmp;
-			}
-			
-			if (ComparePostings(postings[mid], postings[hi]) > 0)
-			{
-				RawPostingList tmp = postings[mid];
-				postings[mid] = postings[hi];
-				postings[hi] = tmp;
-				
-				if (ComparePostings(postings[lo], postings[mid]) > 0)
-				{
-					RawPostingList tmp2 = postings[lo];
-					postings[lo] = postings[mid];
-					postings[mid] = tmp2;
-				}
-			}
-			
-			int left = lo + 1;
-			int right = hi - 1;
-			
-			if (left >= right)
-				return ;
-			
-			RawPostingList partition = postings[mid];
-			
-			for (; ; )
-			{
-				while (ComparePostings(postings[right], partition) > 0)
-					--right;
-				
-				while (left < right && ComparePostings(postings[left], partition) <= 0)
-					++left;
-				
-				if (left < right)
-				{
-					RawPostingList tmp = postings[left];
-					postings[left] = postings[right];
-					postings[right] = tmp;
-					--right;
-				}
-				else
-				{
-					break;
-				}
-			}
-			
-			QuickSort(postings, lo, left);
-			QuickSort(postings, left + 1, hi);
-		}
 
-        /// <summary>Compares term text for two Posting instance and
-        /// returns -1 if p1 &lt; p2; 1 if p1 &gt; p2; else 0. 
-        /// </summary>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal int ComparePostings(RawPostingList p1, RawPostingList p2)
-		{			
-			if (p1 == p2)
-				goto ReturnEquals;
-			
-			char[] text1 = charPool.buffers[p1.textStart >> DocumentsWriter.CHAR_BLOCK_SHIFT];
-			int pos1 = p1.textStart & DocumentsWriter.CHAR_BLOCK_MASK;
-			char[] text2 = charPool.buffers[p2.textStart >> DocumentsWriter.CHAR_BLOCK_SHIFT];
-			int pos2 = p2.textStart & DocumentsWriter.CHAR_BLOCK_MASK;
-			
-			System.Diagnostics.Debug.Assert(text1 != text2 || pos1 != pos2);
+	    private struct PostingComparer : IComparer<RawPostingList>
+	    {
+	        private readonly TermsHashPerField _parent;
 
-		    char c1;
-		    char c2;
-			while (true)
-			{
-				c1 = text1[pos1++];
-				c2 = text2[pos2++];
-				if (c1 != c2)
-				    goto ReturnCompare;
+	        public PostingComparer(TermsHashPerField parent)
+	        {
+	            this._parent = parent;
+	        }
 
-				// This method should never compare equal postings
-				// unless p1==p2
-				System.Diagnostics.Debug.Assert(c1 != 0xffff);
-			}
+	        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+	        public int Compare(RawPostingList p1, RawPostingList p2)
+	        {
+	            int result = 0;
+	            if (p1 == p2)
+	                goto Return;
 
-		    ReturnEquals:
-		    return 0;
+	            var buffers = this._parent.charPool.buffers;
 
-            ReturnCompare:
-		    if (0xffff == c2)
-		        return 1;
-		    if (0xffff == c1)
-		        return -1;
-		    
-            return c1 - c2;
-        }
+	            int p1TextStart = p1.textStart;
+	            int p2TextStart = p2.textStart;
+
+	            char[] text1 = buffers[p1TextStart >> DocumentsWriter.CHAR_BLOCK_SHIFT];
+	            char[] text2 = buffers[p2TextStart >> DocumentsWriter.CHAR_BLOCK_SHIFT];
+
+	            int pos1 = p1TextStart & DocumentsWriter.CHAR_BLOCK_MASK;
+	            int pos2 = p2TextStart & DocumentsWriter.CHAR_BLOCK_MASK;
+
+	            System.Diagnostics.Debug.Assert(text1 != text2 || pos1 != pos2);
+
+	            char c1;
+	            char c2;
+	            while (true)
+	            {
+	                c1 = text1[pos1++];
+	                c2 = text2[pos2++];
+	                if (c1 != c2)
+	                    break;
+
+	                // This method should never compare equal postings
+	                // unless p1==p2
+	                System.Diagnostics.Debug.Assert(c1 != 0xffff);
+	            }
+
+                if (0xffff == c2)
+                    result = 1;
+                else if (0xffff == c1)
+                    result = -1;
+                else
+                    result = c1 - c2;
+
+	            Return:
+                return result;
+	        }
+	    }
 
         /// <summary>Test whether the text for current RawPostingList currentP equals
         /// current tokenText. 
@@ -302,10 +257,7 @@ namespace Lucene.Net.Index
 		{
 			termAtt = fieldState.attributeSource.AddAttribute<ITermAttribute>();
 			consumer.Start(f);
-			if (nextPerField != null)
-			{
-				nextPerField.Start(f);
-			}
+		    nextPerField?.Start(f);
 		}
 		
 		internal override bool Start(IFieldable[] fields, int count)

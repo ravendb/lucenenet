@@ -16,11 +16,14 @@
  */
 
 using System;
+using System.Collections.Generic;
 using Lucene.Net.Documents;
 using Lucene.Net.Store;
 using Lucene.Net.Support;
 using Document = Lucene.Net.Documents.Document;
 using ArrayUtil = Lucene.Net.Util.ArrayUtil;
+using System.Runtime.CompilerServices;
+using Lucene.Net.Util;
 
 namespace Lucene.Net.Index
 {
@@ -33,7 +36,7 @@ namespace Lucene.Net.Index
 	/// sequentially, for processing.
 	/// </summary>
 	
-	sealed class DocFieldProcessorPerThread:DocConsumerPerThread
+	sealed class DocFieldProcessorPerThread : DocConsumerPerThread
 	{
 		private void  InitBlock()
 		{
@@ -58,8 +61,10 @@ namespace Lucene.Net.Index
 		internal StoredFieldsWriterPerThread fieldsWriter;
 		
 		internal DocumentsWriter.DocState docState;
-		
-		public DocFieldProcessorPerThread(DocumentsWriterThreadState threadState, DocFieldProcessor docFieldProcessor)
+
+	    private readonly Sorter<DocFieldProcessorPerField, DocFieldProcessorPerFieldComparer> _sorter = default(Sorter<DocFieldProcessorPerField, DocFieldProcessorPerFieldComparer>);
+
+        public DocFieldProcessorPerThread(DocumentsWriterThreadState threadState, DocFieldProcessor docFieldProcessor)
 		{
 			InitBlock();
 			this.docState = threadState.docState;
@@ -263,14 +268,16 @@ namespace Lucene.Net.Index
 					fieldsWriter.AddField(field, fp.fieldInfo, state);
 				}
 			}
-			
-			// If we are writing vectors then we must visit
-			// fields in sorted order so they are written in
-			// sorted order.  TODO: we actually only need to
-			// sort the subset of fields that have vectors
-			// enabled; we could save [small amount of] CPU
-			// here.
-			QuickSort(fields, 0, fieldCount - 1);
+
+            // If we are writing vectors then we must visit
+            // fields in sorted order so they are written in
+            // sorted order.  TODO: we actually only need to
+            // sort the subset of fields that have vectors
+            // enabled; we could save [small amount of] CPU
+            // here.
+
+		    _sorter.Sort(fields, 0, fieldCount);
+            // QuickSort(fields, 0, fieldCount - 1);
 			
 			for (int i = 0; i < fieldCount; i++)
 				fields[i].consumer.ProcessFields(fields[i].fields, fields[i].fieldCount, state);
@@ -302,77 +309,15 @@ namespace Lucene.Net.Index
 				return both;
 			}
 		}
-		
-		internal void  QuickSort(DocFieldProcessorPerField[] array, int lo, int hi)
-		{
-			if (lo >= hi)
-				return ;
-			else if (hi == 1 + lo)
-			{
-				if (String.CompareOrdinal(array[lo].fieldInfo.name, array[hi].fieldInfo.name) > 0)
-				{
-					DocFieldProcessorPerField tmp = array[lo];
-					array[lo] = array[hi];
-					array[hi] = tmp;
-				}
-				return ;
-			}
-			
-			int mid = Number.URShift((lo + hi), 1);
-			
-			if (String.CompareOrdinal(array[lo].fieldInfo.name, array[mid].fieldInfo.name) > 0)
-			{
-				DocFieldProcessorPerField tmp = array[lo];
-				array[lo] = array[mid];
-				array[mid] = tmp;
-			}
-			
-			if (String.CompareOrdinal(array[mid].fieldInfo.name, array[hi].fieldInfo.name) > 0)
-			{
-				DocFieldProcessorPerField tmp = array[mid];
-				array[mid] = array[hi];
-				array[hi] = tmp;
-				
-				if (String.CompareOrdinal(array[lo].fieldInfo.name, array[mid].fieldInfo.name) > 0)
-				{
-					DocFieldProcessorPerField tmp2 = array[lo];
-					array[lo] = array[mid];
-					array[mid] = tmp2;
-				}
-			}
-			
-			int left = lo + 1;
-			int right = hi - 1;
-			
-			if (left >= right)
-				return ;
-			
-			DocFieldProcessorPerField partition = array[mid];
-			
-			for (; ; )
-			{
-				while (String.CompareOrdinal(array[right].fieldInfo.name, partition.fieldInfo.name) > 0)
-					--right;
-				
-				while (left < right && String.CompareOrdinal(array[left].fieldInfo.name, partition.fieldInfo.name) <= 0)
-					++left;
-				
-				if (left < right)
-				{
-					DocFieldProcessorPerField tmp = array[left];
-					array[left] = array[right];
-					array[right] = tmp;
-					--right;
-				}
-				else
-				{
-					break;
-				}
-			}
-			
-			QuickSort(array, lo, left);
-			QuickSort(array, left + 1, hi);
-		}
+
+	    private struct DocFieldProcessorPerFieldComparer : IComparer<DocFieldProcessorPerField>
+	    {
+	        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+	        public int Compare(DocFieldProcessorPerField x, DocFieldProcessorPerField y)
+	        {
+	            return String.CompareOrdinal(x.fieldInfo.name, y.fieldInfo.name);
+	        }
+	    } 
 		
 		internal PerDoc[] docFreeList;
 		internal int freeCount;
