@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <AssemblyTitle>Lucene.Net</AssemblyTitle>
-    <VersionPrefix>3.0.7</VersionPrefix>
+    <VersionPrefix>3.0.8</VersionPrefix>
     <TargetFrameworks>netstandard1.6;net461</TargetFrameworks>
     <AssemblyName>Lucene.Net</AssemblyName>
     <AssemblyOriginatorKeyFile>Lucene.Net.snk</AssemblyOriginatorKeyFile>
