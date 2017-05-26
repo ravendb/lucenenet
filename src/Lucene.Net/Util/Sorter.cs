@@ -11,7 +11,7 @@ namespace Lucene.Net.Util
     {
         private readonly TSorter _sorter;
 
-        private const int SizeThreshold = 16;
+        private const int SizeThreshold = 7;
 
         public Sorter(TSorter sorter)
         {
