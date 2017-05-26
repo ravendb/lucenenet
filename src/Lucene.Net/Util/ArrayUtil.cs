@@ -141,16 +141,21 @@ namespace Lucene.Net.Util
 		
 		END APACHE HARMONY CODE
 		*/
-		
-		
+
+	    private const int MaxShiftSize = 19;
+
 		public static int GetNextSize(int v)
 		{
             /* This over-allocates proportional to the list size, making room
-            * for additional growth.  The over-allocation is more aggressive, 
-            * that the original Lucene version in order to avoid large rehashes
+            * for additional growth.  The over-allocation is more aggressive until 
+            * the size is higher than 2^MaxShiftSize. For smaller size the allocations is
+            * bigger than the original Lucene version in order to avoid large rehashes
             * in the usual batched workflows we use at RavenDB.
             * The growth pattern is:  0, 4, 8, 16, 32, 64, 128, 256 ...
             */
+
+		    if (v >> MaxShiftSize > 0)
+		        goto SlowDownAllocation;
 
 		    v |= v >> 1;
 		    v |= v >> 2;
@@ -160,7 +165,9 @@ namespace Lucene.Net.Util
 		    v++;
 
 		    return v;
-		}
+
+		    SlowDownAllocation: return (v >> 3) + (v < 9 ? 3 : 6) + v;
+        }
 		
 		public static int GetShrinkSize(int currentSize, int targetSize)
 		{
