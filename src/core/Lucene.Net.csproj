@@ -889,6 +889,7 @@
     <Compile Include="Support\HashMap.cs" />
     <Compile Include="Support\Inflater.cs" />
     <Compile Include="Support\IThreadRunnable.cs" />
+    <Compile Include="Support\Lucene4x\AtomicInteger.cs" />
     <Compile Include="Support\Number.cs" />
     <Compile Include="Support\OS.cs" />
     <Compile Include="Support\SharpZipLib.cs" />
@@ -917,6 +918,8 @@
     <Compile Include="Util\FieldCacheSanityChecker.cs" />
     <Compile Include="Util\IdentityDictionary.cs" />
     <Compile Include="Util\IndexableBinaryStringTools.cs" />
+    <Compile Include="Util\Lucene4x\DisposableThreadLocal.cs" />
+    <Compile Include="Util\Lucene4x\DoubleBarrelLRUCache.cs" />
     <Compile Include="Util\MapOfSets.cs" />
     <Compile Include="Util\MemoryModel.cs" />
     <Compile Include="Util\NumericUtils.cs" />
