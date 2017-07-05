@@ -18,8 +18,7 @@
 using System;
 using Lucene.Net.Store;
 using Lucene.Net.Support;
-using Lucene.Net.Util;
-using Lucene.Net.Util.Cache;
+using Lucene.Net.Util.Lucene4x;
 using Directory = Lucene.Net.Store.Directory;
 
 namespace Lucene.Net.Index
@@ -38,7 +37,7 @@ namespace Lucene.Net.Index
 
         private bool isDisposed;
 
-		private readonly CloseableThreadLocal<ThreadResources> threadResources = new CloseableThreadLocal<ThreadResources>();
+		private readonly Lucene.Net.Util.Lucene4x.DisposableThreadLocal<ThreadResources> threadResources = new Lucene.Net.Util.Lucene4x.DisposableThreadLocal<ThreadResources>();
 		private readonly SegmentTermEnum origEnum;
 		private readonly long size;
 		
@@ -50,13 +49,38 @@ namespace Lucene.Net.Index
 		
 		private const int DEFAULT_CACHE_SIZE = 1024;
 		
+	    private class CloneableTerm : DoubleBarrelLRUCache.CloneableKey
+	    {
+	        internal Term term;
+
+	        public CloneableTerm(Term t)
+	        {
+	            this.term = t;
+	        }
+
+	        public override bool Equals(object other)
+	        {
+	            CloneableTerm t = (CloneableTerm)other;
+	            return this.term.Equals(t.term);
+	        }
+
+	        public override int GetHashCode()
+	        {
+	            return term.GetHashCode();
+	        }
+
+	        public override object Clone()
+	        {
+	            return new CloneableTerm(term);
+	        }
+	    }
+
+        private readonly DoubleBarrelLRUCache<CloneableTerm, TermInfo> termInfoCache = new DoubleBarrelLRUCache<CloneableTerm, TermInfo>(DEFAULT_CACHE_SIZE);
+
 		/// <summary> Per-thread resources managed by ThreadLocal</summary>
 		private sealed class ThreadResources
 		{
 			internal SegmentTermEnum termEnum;
-			
-			// Used for caching the least recently looked-up Terms
-			internal Cache<Term, TermInfo> termInfoCache;
 		}
 		
 		internal TermInfosReader(Directory dir, System.String seg, FieldInfos fis, int readBufferSize, int indexDivisor, IState state)
@@ -162,17 +186,15 @@ namespace Lucene.Net.Index
 		
 		private ThreadResources GetThreadResources(IState state)
 		{
-			ThreadResources resources = threadResources.Get(state);
+			ThreadResources resources = threadResources.Get();
 			if (resources == null)
 			{
-				resources = new ThreadResources
-				            	{termEnum = Terms(state), termInfoCache = new SimpleLRUCache<Term, TermInfo>(DEFAULT_CACHE_SIZE)};
+				resources = new ThreadResources { termEnum = Terms(state) };
 				// Cache does not have to be thread-safe, it is only used by one thread at the same time
 				threadResources.Set(resources);
 			}
 			return resources;
 		}
-		
 		
 		/// <summary>Returns the offset of the greatest index entry which is less than or equal to term.</summary>
 		private int GetIndexOffset(Term term)
@@ -194,7 +216,14 @@ namespace Lucene.Net.Index
 			return hi;
 		}
 		
-		private void SeekEnum(SegmentTermEnum enumerator, int indexOffset, IState state)
+	    internal static Term DeepCopyOf(Term other)
+	    {
+	        var deepCopyOfTerm = new Term(other.Field, other.Text);
+            
+            return deepCopyOfTerm;
+	    }
+
+        private void SeekEnum(SegmentTermEnum enumerator, int indexOffset, IState state)
 		{
 			enumerator.Seek(indexPointers[indexOffset], ((long)indexOffset * totalIndexInterval) - 1, indexTerms[indexOffset], indexInfos[indexOffset], state);
 		}
@@ -215,13 +244,13 @@ namespace Lucene.Net.Index
 			
 			TermInfo ti;
 			ThreadResources resources = GetThreadResources(state);
-			Cache<Term, TermInfo> cache = null;
+		    DoubleBarrelLRUCache<CloneableTerm, TermInfo> cache = null;
 			
 			if (useCache)
 			{
-				cache = resources.termInfoCache;
+				cache = termInfoCache;
 				// check the cache first if the term was recently looked up
-				ti = cache.Get(term);
+				ti = cache.Get(new CloneableTerm(DeepCopyOf(term)));
 				if (ti != null)
 				{
 					return ti;
@@ -248,7 +277,7 @@ namespace Lucene.Net.Index
 							// This prevents RangeQueries or WildcardQueries to 
 							// wipe out the cache when they iterate over a large numbers
 							// of terms in order
-							cache.Put(term, ti);
+							cache.Put(new CloneableTerm(DeepCopyOf(term)), ti);
 						}
 					}
 					else
@@ -268,7 +297,7 @@ namespace Lucene.Net.Index
 				ti = enumerator.TermInfo();
 				if (cache != null)
 				{
-					cache.Put(term, ti);
+					cache.Put(new CloneableTerm(DeepCopyOf(term)), ti);
 				}
 			}
 			else
