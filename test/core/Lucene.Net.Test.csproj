@@ -537,6 +537,8 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Util\LocalizedTestCase.cs" />
+    <Compile Include="Util\Lucene4x\TestCloseableThreadLocal.cs" />
+    <Compile Include="Util\Lucene4x\TestDoubleBarrelLRUCache.cs" />
     <Compile Include="Util\LuceneTestCase.cs" />
     <Compile Include="Util\Paths.cs" />
     <Compile Include="Util\TestAttributeSource.cs" />
