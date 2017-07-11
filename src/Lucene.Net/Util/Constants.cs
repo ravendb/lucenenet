@@ -63,7 +63,7 @@ namespace Lucene.Net.Util
             return s.ToString();
         }
 
-		public static readonly System.String LUCENE_MAIN_VERSION = Ident("3.0.8.0");
+		public static readonly System.String LUCENE_MAIN_VERSION = Ident("3.0.9.0");
 		
 		public static System.String LUCENE_VERSION="8.8.8.8";
 		static Constants()
