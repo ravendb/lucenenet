@@ -20,9 +20,8 @@ using System;
 namespace Lucene.Net.Store
 {
 
-#if !DNXCORE50
+
         [Serializable]
-#endif
     public class RAMFile
 	{
 		

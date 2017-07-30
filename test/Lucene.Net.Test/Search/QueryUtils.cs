@@ -431,10 +431,7 @@ namespace Lucene.Net.Search
 		/// <throws>  IOException if serialization check fail.  </throws>
 		private static void  CheckSerialization(Query q, Searcher s)
 		{
-#if DNXCORE50
-            return; // TODO [ppekrol]
-#else
-			Weight w = q.Weight(s);
+			Weight w = q.Weight(s, null);
 			try
 			{
 				System.IO.MemoryStream bos = new System.IO.MemoryStream();
@@ -455,7 +452,6 @@ namespace Lucene.Net.Search
 				System.IO.IOException e2 = new System.IO.IOException("Serialization failed for " + w, e);
 				throw e2;
 			}
-#endif
 		}
 		
 		

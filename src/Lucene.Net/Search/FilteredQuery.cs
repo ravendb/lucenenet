@@ -36,14 +36,12 @@ namespace Lucene.Net.Search
     /// </summary>
     /// <since>1.4</since>
     /// <seealso cref="CachingWrapperFilter"/>
-#if !DNXCORE50
+
         [Serializable]
-#endif
     public class FilteredQuery:Query
 	{
-#if !DNXCORE50
+
         [Serializable]
-#endif
         private class AnonymousClassWeight:Weight
 		{
 			public AnonymousClassWeight(Lucene.Net.Search.Weight weight, Lucene.Net.Search.Similarity similarity, FilteredQuery enclosingInstance)

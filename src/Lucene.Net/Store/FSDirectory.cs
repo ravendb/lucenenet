@@ -408,11 +408,7 @@ namespace Lucene.Net.Store
 					{
 					    if (file != null)
 					    {
-#if !DNXCORE50
                             file.Close();
-#else
-                            file.Dispose();
-#endif
                         }
 					}
 				}

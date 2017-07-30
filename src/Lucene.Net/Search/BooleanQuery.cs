@@ -31,14 +31,10 @@ namespace Lucene.Net.Search
     /// queries, e.g. <see cref="TermQuery" />s, <see cref="PhraseQuery" />s or other
     /// BooleanQuerys.
     /// </summary>
-#if !DNXCORE50
-        [Serializable]
-#endif
+    [Serializable]
     public class BooleanQuery : Query, System.Collections.Generic.IEnumerable<BooleanClause>, System.ICloneable
 	{
-#if !DNXCORE50
         [Serializable]
-#endif
         private class AnonymousClassSimilarityDelegator:SimilarityDelegator
 		{
 			private void  InitBlock(BooleanQuery enclosingInstance)
@@ -71,9 +67,7 @@ namespace Lucene.Net.Search
         /// a PrefixQuery, FuzzyQuery, WildcardQuery, or TermRangeQuery 
         /// is expanded to many terms during search. 
         /// </summary>
-#if !DNXCORE50
         [Serializable]
-#endif
         public class TooManyClauses:System.SystemException
 		{
 			public override System.String Message
@@ -218,9 +212,7 @@ namespace Lucene.Net.Search
         /// <p/>NOTE: this API and implementation is subject to
         /// change suddenly in the next release.<p/>
         /// </summary>
-#if !DNXCORE50
         [Serializable]
-#endif
         protected internal class BooleanWeight:Weight
 		{
 			private void  InitBlock(BooleanQuery enclosingInstance)

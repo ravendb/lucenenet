@@ -21,9 +21,7 @@ namespace Lucene.Net.Search
 {
 
     /// <summary>A clause in a BooleanQuery. </summary>
-#if !DNXCORE50
-        [Serializable]
-#endif
+    [Serializable]
     public class BooleanClause
     {
 	    private Occur occur;

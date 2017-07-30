@@ -136,9 +136,6 @@ namespace Lucene.Net.Messages
 		
 		private static System.Object GetResourceBundleObject(System.String messageKey, System.Globalization.CultureInfo locale)
 		{
-#if DNXCORE50
-            throw new NotSupportedException("DNX does not have ResourceManager.CreateFileBasedResourceManager");
-#else
             // slow resource checking
             // need to loop thru all registered resource bundles
             for (var it = bundles.Keys.GetEnumerator(); it.MoveNext();)
@@ -164,7 +161,6 @@ namespace Lucene.Net.Messages
             }
             // if resource is not found
             return null;
-#endif
         }
 		
 		private static void  Load<T>()
@@ -172,7 +168,7 @@ namespace Lucene.Net.Messages
             var clazz = typeof (T);
             System.Reflection.FieldInfo[] fieldArray = clazz.GetFields(System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.DeclaredOnly | System.Reflection.BindingFlags.Static);
 			
-			bool isFieldAccessible = clazz.IsPublic();
+			bool isFieldAccessible = clazz.IsPublic;
 			
 			// build a map of field names to Field objects
 			int len = fieldArray.Length;
@@ -224,24 +220,12 @@ namespace Lucene.Net.Messages
 		    var clazz = typeof (T);
 			try
 			{
-#if !DNXCORE50
 			    Thread.CurrentThread.CurrentUICulture = Thread.CurrentThread.CurrentCulture;
-#else
-                CultureInfo.CurrentUICulture = CultureInfo.CurrentCulture;
-#endif
 
-#if !DNXCORE50
                 System.Resources.ResourceManager resourceBundle = System.Resources.ResourceManager.CreateFileBasedResourceManager(clazz.FullName, "", null); //{{Lucene.Net-2.9.1}} Can we make resourceDir "Messages" more general?
-#else
-                System.Resources.ResourceManager resourceBundle = new ResourceManager(clazz.Name, clazz.Assembly());
-#endif
 				if (resourceBundle != null)
 				{
-#if !DNXCORE50
                     var obj = resourceBundle.GetObject(key);
-#else
-                    var obj = resourceBundle.GetString(key);
-#endif
 					if (obj == null)
 					{
 						System.Console.Error.WriteLine("WARN: Message with key:" + key + " and locale: " + CultureInfo.CurrentCulture + " not found.");
@@ -266,7 +250,7 @@ namespace Lucene.Net.Messages
 		//@SuppressWarnings("unchecked")
 		private static void  MakeAccessible(System.Reflection.FieldInfo field)
 		{
-#if !DNXCORE50
+#if !NETSTANDARD2_0
             if (System.Security.SecurityManager.SecurityEnabled)
 			{
 				//field.setAccessible(true);   // {{Aroush-2.9}} java.lang.reflect.AccessibleObject.setAccessible

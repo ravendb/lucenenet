@@ -55,14 +55,12 @@ namespace Lucene.Net.Search
     /// MultiTermQueries using <see cref="CONSTANT_SCORE_AUTO_REWRITE_DEFAULT" />
     /// by default.
     /// </summary>
-#if !DNXCORE50
+
         [Serializable]
-#endif
     public abstract class MultiTermQuery:Query
 	{
-#if !DNXCORE50
+
         [Serializable]
-#endif
         public class AnonymousClassConstantScoreAutoRewrite:ConstantScoreAutoRewrite
 		{
 		    public override int TermCountCutoff
@@ -85,9 +83,8 @@ namespace Lucene.Net.Search
 		[NonSerialized]
 		internal int numberOfTerms = 0;
 
-#if !DNXCORE50
+
         [Serializable]
-#endif
         private sealed class ConstantScoreFilterRewrite:RewriteMethod
 		{
 			public override Query Rewrite(IndexReader reader, MultiTermQuery query, IState state)
@@ -120,9 +117,8 @@ namespace Lucene.Net.Search
 		/// </seealso>
 		public static readonly RewriteMethod CONSTANT_SCORE_FILTER_REWRITE = new ConstantScoreFilterRewrite();
 
-#if !DNXCORE50
+
         [Serializable]
-#endif
         private class ScoringBooleanQueryRewrite:RewriteMethod
 		{
 			public override Query Rewrite(IndexReader reader, MultiTermQuery query, IState state)
@@ -178,9 +174,8 @@ namespace Lucene.Net.Search
 		/// </seealso>
 		public static readonly RewriteMethod SCORING_BOOLEAN_QUERY_REWRITE = new ScoringBooleanQueryRewrite();
 
-#if !DNXCORE50
+
         [Serializable]
-#endif
         private class ConstantScoreBooleanQueryRewrite:ScoringBooleanQueryRewrite
 		{
 			public override Query Rewrite(IndexReader reader, MultiTermQuery query, IState state)
@@ -221,9 +216,8 @@ namespace Lucene.Net.Search
         /// Otherwise, <see cref="CONSTANT_SCORE_FILTER_REWRITE" /> is
         /// used.
         /// </summary>
-#if !DNXCORE50
+
         [Serializable]
-#endif
         public class ConstantScoreAutoRewrite:RewriteMethod
 		{
 			public ConstantScoreAutoRewrite()
@@ -470,9 +464,8 @@ namespace Lucene.Net.Search
 	}
 
     /// <summary>Abstract class that defines how the query is rewritten. </summary>
-#if !DNXCORE50
+
         [Serializable]
-#endif
     public abstract class RewriteMethod
     {
         public abstract Query Rewrite(IndexReader reader, MultiTermQuery query, IState state);

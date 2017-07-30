@@ -45,22 +45,6 @@ namespace Lucene.Net.Support
         {
             Type type = deflaterInstance.GetType();
 
-#if DNXCORE50
-            setLevelMethod = (SetLevelDelegate)type.GetMethod("SetLevel", new Type[] { typeof(int) })
-                .CreateDelegate(typeof(SetLevelDelegate), deflaterInstance);
-
-            setInputMethod = (SetInputDelegate)type.GetMethod("SetInput", new Type[] { typeof(byte[]), typeof(int), typeof(int) })
-                .CreateDelegate(typeof(SetInputDelegate), deflaterInstance);
-
-            finishMethod = (FinishDelegate)type.GetMethod("Finish", Type.EmptyTypes)
-                .CreateDelegate(typeof(FinishDelegate), deflaterInstance);
-
-            getIsFinishedMethod = (GetIsFinishedDelegate)type.GetMethod("get_IsFinished", Type.EmptyTypes)
-                .CreateDelegate(typeof(GetIsFinishedDelegate), deflaterInstance);
-
-            deflateMethod = (DeflateDelegate)type.GetMethod("Deflate", new Type[] { typeof(byte[]) })
-                .CreateDelegate(typeof(DeflateDelegate), deflaterInstance);
-#else
             setLevelMethod = (SetLevelDelegate)Delegate.CreateDelegate(
                 typeof(SetLevelDelegate),
                 deflaterInstance,
@@ -85,7 +69,6 @@ namespace Lucene.Net.Support
                 typeof(DeflateDelegate),
                 deflaterInstance,
                 type.GetMethod("Deflate", new Type[] { typeof(byte[]) }));
-#endif
         }
 
         public void SetLevel(int level)

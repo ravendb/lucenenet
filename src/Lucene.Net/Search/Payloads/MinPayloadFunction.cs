@@ -24,9 +24,7 @@ namespace Lucene.Net.Search.Payloads
     /// 
     /// 
     /// </summary>
-#if !DNXCORE50
-        [Serializable]
-#endif
+    [Serializable]
     public class MinPayloadFunction:PayloadFunction
 	{
 		

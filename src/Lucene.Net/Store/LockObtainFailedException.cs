@@ -28,9 +28,8 @@ namespace Lucene.Net.Store
     /// </summary>
     /// <seealso cref="Lock.Obtain(long)">
     /// </seealso>
-#if !DNXCORE50
+
         [Serializable]
-#endif
     public class LockObtainFailedException:System.IO.IOException
 	{
         public LockObtainFailedException()
@@ -45,11 +44,10 @@ namespace Lucene.Net.Store
         {
         }
 
-#if !DNXCORE50
+
         public LockObtainFailedException(SerializationInfo info, StreamingContext context) 
             : base(info, context)
         {
         }
-#endif
     }
 }

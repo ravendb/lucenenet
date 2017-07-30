@@ -24,9 +24,8 @@ namespace Lucene.Net.Search
 {
 
     /// <summary>Abstract base class for restricting which documents may be returned during searching.</summary>
-#if !DNXCORE50
+
         [Serializable]
-#endif
     public abstract class Filter
 	{
 	    ///<summary>

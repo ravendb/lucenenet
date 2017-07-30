@@ -24,4 +24,4 @@ IF [%1] NEQ [] SET TARGETS=%1
 IF [%2] NEQ [] SET AREA=%2
 IF [%3] NEQ [] SET CONFIGURATION=%3
 
-%windir%\Microsoft.NET\Framework\v4.0.30319\MSBuild.exe build/scripts/build.targets /t:%TARGETS% /p:BuildArea=%AREA% /p:Configuration=%Configuration% /nologo 
+"C:\Program Files (x86)\MSBuild\14.0\Bin\MSBuild.exe" build/scripts/build.targets /t:%TARGETS% /p:BuildArea=%AREA% /p:Configuration=%Configuration% /nologo 

@@ -32,9 +32,7 @@ namespace Lucene.Net.QueryParsers
     /// You can modify this class to customize your error reporting
     /// mechanisms so long as you retain the public fields.
     /// </summary>
-#if !DNXCORE50
-        [Serializable]
-#endif
+    [Serializable]
     public class ParseException:System.Exception
 	{
 		/// <summary> This method has the standard behavior when this object has been

@@ -36,9 +36,7 @@ namespace Lucene.Net.Index
     /// <p/><b>NOTE:</b> This API is new and still experimental
     /// (subject to change suddenly in the next release)<p/>
     /// </summary>
-#if !DNXCORE50
-        [Serializable]
-#endif
+    [Serializable]
     public sealed class SegmentInfos : List<SegmentInfo>, ICloneable
 	{
 		private class AnonymousClassFindSegmentsFile:FindSegmentsFile

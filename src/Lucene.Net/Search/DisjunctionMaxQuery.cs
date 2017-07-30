@@ -37,9 +37,7 @@ namespace Lucene.Net.Search
     /// include this term in only the best of those multiple fields, without confusing this with the better case of two different terms
     /// in the multiple fields.
     /// </summary>
-#if !DNXCORE50
-        [Serializable]
-#endif
+    [Serializable]
     public class DisjunctionMaxQuery : Query, System.Collections.Generic.IEnumerable<Query>, System.ICloneable
 	{
 		
@@ -104,9 +102,7 @@ namespace Lucene.Net.Search
         /// <p/>NOTE: this API and implementation is subject to
         /// change suddenly in the next release.<p/>
         /// </summary>
-#if !DNXCORE50
         [Serializable]
-#endif
         protected internal class DisjunctionMaxWeight:Weight
 		{
 			private void  InitBlock(DisjunctionMaxQuery enclosingInstance)

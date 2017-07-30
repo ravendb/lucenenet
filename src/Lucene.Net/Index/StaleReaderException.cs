@@ -30,9 +30,7 @@ namespace Lucene.Net.Index
     /// you must open a new reader on the current index to make
     /// the changes.
     /// </summary>
-#if !DNXCORE50
-        [Serializable]
-#endif
+    [Serializable]
     public class StaleReaderException:System.IO.IOException
 	{
         public StaleReaderException()
@@ -48,11 +46,9 @@ namespace Lucene.Net.Index
         {
         }
 
-#if !DNXCORE50
         public StaleReaderException(SerializationInfo info, StreamingContext context) 
             : base(info, context)
         {
         }
-#endif
     }
 }

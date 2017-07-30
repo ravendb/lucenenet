@@ -44,9 +44,8 @@ namespace Lucene.Net.Search
     /// synchronize on the <c>IndexSearcher</c> instance;
     /// use your own (non-Lucene) objects instead.<p/>
     /// </summary>
-#if !DNXCORE50
+
         [Serializable]
-#endif
     public class IndexSearcher : Searcher
 	{
 		internal IndexReader reader;

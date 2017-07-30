@@ -34,9 +34,8 @@ namespace Lucene.Net.Search
     /// </summary>
     /// <version>  $Id:$
     /// </version>
-#if !DNXCORE50
+
         [Serializable]
-#endif
     public class QueryWrapperFilter:Filter
 	{
 		private class AnonymousClassDocIdSet:DocIdSet

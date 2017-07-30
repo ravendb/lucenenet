@@ -1,4 +1,3 @@
-#if !DNXCORE50
 /* 
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -66,4 +65,3 @@ namespace Lucene.Net.Demo.Html
 		public static System.String[] tokenImage = new System.String[]{"<EOF>", "\"<script\"", "<TagName>", "<DeclName>", "\"<!--\"", "\"<!\"", "<Word>", "<LET>", "<NUM>", "<HEX>", "<Entity>", "<Space>", "<SP>", "<Punct>", "<ScriptText>", "<ScriptEnd>", "<ArgName>", "\"=\"", "<TagEnd>", "<ArgValue>", "\"\\\'\"", "\"\\\"\"", "<token of kind 22>", "<Quote1Text>", "<CloseQuote1>", "<Quote2Text>", "<CloseQuote2>", "<CommentText1>", "\"-->\"", "<CommentText2>", "\">\""};
 	}
 }
-#endif

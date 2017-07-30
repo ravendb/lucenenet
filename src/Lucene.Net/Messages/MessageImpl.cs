@@ -25,9 +25,7 @@ namespace Lucene.Net.Messages
     /// <summary> Default implementation of Message interface.
     /// For Native Language Support (NLS), system of software internationalization.
     /// </summary>
-#if !DNXCORE50
-        [Serializable]
-#endif
+    [Serializable]
     public class MessageImpl : Message
 	{
 		

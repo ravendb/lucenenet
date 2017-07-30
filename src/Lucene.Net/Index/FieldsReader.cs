@@ -431,9 +431,7 @@ namespace Lucene.Net.Index
         /// <summary> A Lazy implementation of Fieldable that differs loading of fields until asked for, instead of when the Document is
         /// loaded.
         /// </summary>
-#if !DNXCORE50
         [Serializable]
-#endif
         private sealed class LazyField : AbstractField
 		{
 			private void  InitBlock(FieldsReader enclosingInstance)

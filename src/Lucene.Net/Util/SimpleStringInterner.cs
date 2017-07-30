@@ -82,7 +82,7 @@ namespace Lucene.Net.Util
 			}
 
             // insertion-order cache: add new entry at head
-		    s = s.Intern();  
+		    s = string.Intern(s); 
 			this.cache[slot] = new Entry(s, h, first);
 			if (chainLength >= maxChainLength)
 			{

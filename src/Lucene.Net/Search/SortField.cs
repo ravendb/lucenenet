@@ -34,9 +34,8 @@ namespace Lucene.Net.Search
     /// <p/>Created: Feb 11, 2004 1:25:29 PM
     /// </summary>
     /// <seealso cref="Sort"></seealso>
-#if !DNXCORE50
+
         [Serializable]
-#endif
     public class SortField
 	{
 		/// <summary>Sort by document score (relevancy).  Sort values are Float and higher

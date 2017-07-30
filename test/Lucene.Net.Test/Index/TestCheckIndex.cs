@@ -19,10 +19,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 
-#if DNXCORE50
-using Microsoft.Extensions.PlatformAbstractions;
-#endif
-
 using NUnit.Framework;
 
 using WhitespaceAnalyzer = Lucene.Net.Analysis.WhitespaceAnalyzer;
@@ -110,9 +106,6 @@ namespace Lucene.Net.Index
 		{
 			string version = null;
 
-#if DNXCORE50
-		    version = PlatformServices.Default.Application.ApplicationVersion;
-#else
             AppDomain MyDomain = AppDomain.CurrentDomain;
             System.Reflection.Assembly[] AssembliesLoaded = MyDomain.GetAssemblies();
 
@@ -124,7 +117,6 @@ namespace Lucene.Net.Index
                     break;
                 }
             }
-#endif
 
             Assert.IsNotNull(version);
             Assert.IsTrue(version.Equals(Constants.LUCENE_MAIN_VERSION + "-dev") || version.Equals(Constants.LUCENE_MAIN_VERSION));

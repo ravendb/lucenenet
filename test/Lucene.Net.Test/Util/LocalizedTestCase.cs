@@ -76,12 +76,8 @@ namespace Lucene.Net.Util
         [Test]
         public void RunLocalizedTests()
         {
-//#if DNXCORE50
-//            throw new NotImplementedException();
-//#else
             // No need to test with default locale.  Already done when actualy test was called by NUnit
             var currentMethodName = TestMethodHelper.CallerName();
-
 
             // Get all the methods, and if there is a list of specific methods
             // to test, only use those.
@@ -97,11 +93,7 @@ namespace Lucene.Net.Util
                                         .ToList();
 
             // Get a list of all locales to run the test against
-#if !DNXCORE50
             var systemLocales = CultureInfo.GetCultures(CultureTypes.InstalledWin32Cultures);
-#else
-            var systemLocales = CultureHelper.GetCultures(CultureHelper.CultureTypes.AllCultures);
-#endif
             // Store the original cultures used, so they can be restored
             var originalCulture = CultureInfo.CurrentCulture;
             var originalUICulture = CultureInfo.CurrentUICulture;
@@ -111,13 +103,8 @@ namespace Lucene.Net.Util
                 foreach (CultureInfo t in systemLocales)
                 {
                     // Set the new test culture
-#if !DNXCORE50
                     System.Threading.Thread.CurrentThread.CurrentCulture = t;
                     System.Threading.Thread.CurrentThread.CurrentUICulture = t;
-#else
-                    CultureInfo.CurrentCulture = t;
-                    CultureInfo.CurrentUICulture = t;
-#endif
 
                     foreach (var test in methodsToTest)
                     {
@@ -136,13 +123,8 @@ namespace Lucene.Net.Util
             finally
             {
                 // Restore the cultures
-#if !DNXCORE50
                 System.Threading.Thread.CurrentThread.CurrentCulture = originalCulture;
                 System.Threading.Thread.CurrentThread.CurrentUICulture = originalUICulture;
-#else
-                CultureInfo.CurrentCulture = originalCulture;
-                CultureInfo.CurrentUICulture = originalUICulture;
-#endif
             }
         }
     }

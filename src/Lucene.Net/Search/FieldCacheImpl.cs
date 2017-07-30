@@ -171,9 +171,9 @@ namespace Lucene.Net.Search
         /// processing terms and returns the current FieldCache
         /// array.
         /// </summary>
-#if !DNXCORE50
+
         [Serializable]
-#endif
+
         internal sealed class StopFillCacheException:System.SystemException
         {
         }

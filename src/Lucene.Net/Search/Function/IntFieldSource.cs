@@ -44,9 +44,7 @@ namespace Lucene.Net.Search.Function
     /// best to switch your application to pass only atomic
     /// (single segment) readers to this API.<p/>
     /// </seealso>
-#if !DNXCORE50
-        [Serializable]
-#endif
+    [Serializable]
     public class IntFieldSource:FieldCacheSource
 	{
 		private class AnonymousClassDocValues:DocValues

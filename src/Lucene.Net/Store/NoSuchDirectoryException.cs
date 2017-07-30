@@ -25,9 +25,7 @@ namespace Lucene.Net.Store
     /// non-existent directory.
     /// </summary>
 
-#if !DNXCORE50
         [Serializable]
-#endif
     public class NoSuchDirectoryException:System.IO.FileNotFoundException
 	{
         public NoSuchDirectoryException()
@@ -43,11 +41,9 @@ namespace Lucene.Net.Store
         {
         }
 
-#if !DNXCORE50
         public NoSuchDirectoryException(SerializationInfo info, StreamingContext context) 
             : base(info, context)
         {
         }
-#endif
     }
 }

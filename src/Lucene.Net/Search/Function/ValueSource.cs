@@ -36,9 +36,7 @@ namespace Lucene.Net.Search.Function
     /// 
     /// 
     /// </summary>
-#if !DNXCORE50
-        [Serializable]
-#endif
+    [Serializable]
     public abstract class ValueSource
 	{
 		

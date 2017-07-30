@@ -30,9 +30,7 @@ namespace Lucene.Net.Search
     /// <summary> Wraps another filter's result and caches it.  The purpose is to allow
     /// filters to simply filter, and then wrap with this class to add caching.
     /// </summary>
-#if !DNXCORE50
-        [Serializable]
-#endif
+    [Serializable]
     public class CachingWrapperFilter:Filter
 	{
 		protected internal Filter filter;
@@ -62,9 +60,7 @@ namespace Lucene.Net.Search
 
 		internal FilterCache<DocIdSet> cache;
 
-#if !DNXCORE50
         [Serializable]
-#endif
         abstract internal class FilterCache<T> where T : class
         {
             /*

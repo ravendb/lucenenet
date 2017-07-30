@@ -32,7 +32,7 @@ namespace Lucene.Net.Support
         {
             try
             {
-#if !DNXCORE50
+#if !NETSTANDARD2_0
                 asm = Assembly.Load(new AssemblyName("ICSharpCode.SharpZipLib"));
 #else
                 asm = Assembly.Load(new AssemblyName("ICSharpCode.SharpZipLib.Portable"));
@@ -45,7 +45,7 @@ namespace Lucene.Net.Support
         {
             if (asm == null) throw new System.IO.FileNotFoundException("Can not load ICSharpCode.SharpZipLib.dll");
 
-#if !DNXCORE50
+#if !NETSTANDARD2_0
             return new Deflater(asm.CreateInstance("ICSharpCode.SharpZipLib.Zip.Compression.Deflater"));
 #else
             var type = asm.GetType("ICSharpCode.SharpZipLib.Zip.Compression.Deflater");
@@ -57,7 +57,7 @@ namespace Lucene.Net.Support
         {
             if (asm == null) throw new System.IO.FileNotFoundException("Can not load ICSharpCode.SharpZipLib.dll");
 
-#if !DNXCORE50
+#if !NETSTANDARD2_0
             return new Inflater(asm.CreateInstance("ICSharpCode.SharpZipLib.Zip.Compression.Inflater"));
 #else
             var type = asm.GetType("ICSharpCode.SharpZipLib.Zip.Compression.Inflater");

@@ -115,9 +115,7 @@ namespace Lucene.Net
 			protected internal override MergeThread GetMergeThread(IndexWriter writer, MergePolicy.OneMerge merge, IState state)
 			{
 				MergeThread thread = new MyMergeThread(this, writer, merge);
-#if !DNXCORE50
                 thread.SetThreadPriority(GetMergeThreadPriority());
-#endif
 				thread.IsBackground = true;
 				thread.Name = "MyMergeThread";
 				return thread;

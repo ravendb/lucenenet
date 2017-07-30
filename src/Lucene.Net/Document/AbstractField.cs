@@ -29,9 +29,7 @@ namespace Lucene.Net.Documents
     /// 
     /// 
     /// </summary>
-#if !DNXCORE50
-        [Serializable]
-#endif
+    [Serializable]
     public abstract class AbstractField : IFieldable
 	{
 		

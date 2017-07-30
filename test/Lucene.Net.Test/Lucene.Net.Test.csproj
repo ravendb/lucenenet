@@ -1,20 +1,14 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup Label="Configuration" Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-    <OutputType>exe</OutputType>
-  </PropertyGroup>
-
   <PropertyGroup>
     <AssemblyTitle>Lucene.Net.Test</AssemblyTitle>
     <VersionPrefix>3.0.5</VersionPrefix>
-    <TargetFramework>netcoreapp1.1</TargetFramework>
+    <TargetFramework>netcoreapp2.0</TargetFramework>
     <AssemblyName>Lucene.Net.Test</AssemblyName>
     <AssemblyOriginatorKeyFile>Lucene.Net.snk</AssemblyOriginatorKeyFile>
     <SignAssembly>true</SignAssembly>
     <PublicSign Condition=" '$(OS)' != 'Windows_NT' ">true</PublicSign>
     <PackageId>Lucene.Net.Test</PackageId>
-    <DefineConstants>$(DefineConstants);DNXCORE50</DefineConstants>
-    <PackageTargetFallback>$(PackageTargetFallback);dotnet;dnxcore50</PackageTargetFallback>
     <GenerateAssemblyTitleAttribute>false</GenerateAssemblyTitleAttribute>
     <GenerateAssemblyDescriptionAttribute>false</GenerateAssemblyDescriptionAttribute>
     <GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>
@@ -26,7 +20,8 @@
     <GenerateProgramFile>false</GenerateProgramFile>
     <ApplicationIcon />
     <OutputTypeEx>exe</OutputTypeEx>
-    <StartupObject />
+    <StartupObject>Lucene.Net.Test.Program</StartupObject>
+    <FileVersion>3.0.10.0</FileVersion>
   </PropertyGroup>
 
   <ItemGroup>
@@ -39,18 +34,19 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.Extensions.PlatformAbstractions" Version="1.1.0" />
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.0.0" />
-    <PackageReference Include="NUnit" Version="3.6.1" />
-    <PackageReference Include="NUnitLite" Version="3.6.1" />
-    <PackageReference Include="System.Diagnostics.Process" Version="4.3.0" />
-    <PackageReference Include="System.Diagnostics.StackTrace" Version="4.3.0" />
-    <PackageReference Include="System.Threading" Version="4.3.0" />
-    <PackageReference Include="System.Threading.Tasks" Version="4.3.0" />
-    <PackageReference Include="System.Threading.Tasks.Parallel" Version="4.3.0" />
-    <PackageReference Include="System.Threading.ThreadPool" Version="4.3.0" />
-    <PackageReference Include="Microsoft.CSharp" Version="4.3.0" />
-    <PackageReference Include="System.Collections.NonGeneric" Version="4.3.0" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.5.0-preview-20170727-01" />
+    <PackageReference Include="NUnit" Version="3.7.1" />
+    <PackageReference Include="NUnitLite" Version="3.7.2" />
+    <PackageReference Include="Microsoft.CSharp" Version="4.4.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="Messages\MessagesTestBundle.ja.resources">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Messages\MessagesTestBundle.resources">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>

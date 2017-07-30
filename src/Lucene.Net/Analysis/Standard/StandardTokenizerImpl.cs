@@ -420,11 +420,7 @@ namespace Lucene.Net.Analysis.Standard
 
 		    if (zzReader != null)
 		    {
-#if !DNXCORE50
                 zzReader.Close();
-#else
-                zzReader.Dispose();
-#endif
             }
         }
 		

@@ -198,11 +198,7 @@ namespace Lucene.Net.Store
                     // only close the file if this is not a clone
                     if (!isClone && file != null)
                     {
-#if !DNXCORE50
                         file.Close();
-#else
-                        file.Dispose();
-#endif
                         file = null;
                     }
                 }

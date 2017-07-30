@@ -24,9 +24,7 @@ namespace Lucene.Net.Documents
     /// 
     /// 
     /// </summary>
-#if !DNXCORE50
-        [Serializable]
-#endif
+    [Serializable]
     public class SetBasedFieldSelector : FieldSelector
 	{
 		private ISet<string> fieldsToLoad;

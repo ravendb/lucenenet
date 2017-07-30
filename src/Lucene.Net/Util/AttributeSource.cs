@@ -81,7 +81,7 @@ namespace Lucene.Net.Util
 						{
 							try
 							{
-                                string name = attClass.FullName.Replace(attClass.Name, attClass.Name.Substring(1)) + ", " + attClass.Assembly().FullName;
+                                string name = attClass.FullName.Replace(attClass.Name, attClass.Name.Substring(1)) + ", " + attClass.Assembly.FullName;
 								attClassImplMap.Add(attClass, new WeakReference( clazz = System.Type.GetType(name, true))); //OK
 							}
                             catch (TypeLoadException) // was System.Exception
@@ -208,7 +208,7 @@ namespace Lucene.Net.Util
 								foundInterfaces.AddLast(new WeakReference(curInterface));
 							}
 						}
-						actClazz = actClazz.BaseType();
+						actClazz = actClazz.BaseType;
 					}
 					while (actClazz != null);
 				}
@@ -254,7 +254,7 @@ namespace Lucene.Net.Util
 
 	    private T AddAttributeUnlikely<T>(Type attClass) where T : IAttribute
 	    {
-	        if (!(attClass.IsInterface() && typeof(IAttribute).IsAssignableFrom(attClass)))
+	        if (!(attClass.IsInterface && typeof(IAttribute).IsAssignableFrom(attClass)))
 	        {
 	            throw new ArgumentException(
 	                "AddAttribute() only accepts an interface that extends Attribute, but " +

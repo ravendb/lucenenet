@@ -100,7 +100,7 @@ namespace Lucene.Net.Util
 				return 0;
 			}
 			// interned not part of this object
-			if (checkInterned && obj is System.String && obj == (System.Object) ((System.String) obj).Intern())
+			if (checkInterned && obj is System.String && obj == (System.Object) string.Intern((System.String) obj))
 			{
 				// interned string will be eligible
 				// for GC on
@@ -136,7 +136,7 @@ namespace Lucene.Net.Util
 						continue;
 					}
 					
-					if (fields[i].FieldType.IsPrimitive())
+					if (fields[i].FieldType.IsPrimitive)
 					{
 						size += memoryModel.GetPrimitiveSize(fields[i].FieldType);
 					}
@@ -158,7 +158,7 @@ namespace Lucene.Net.Util
 						}
 					}
 				}
-				clazz = clazz.BaseType();
+				clazz = clazz.BaseType;
 			}
 			size += classSize;
 			return size;
@@ -173,7 +173,7 @@ namespace Lucene.Net.Util
 			}
 			long size = arraySize;
 			System.Type arrayElementClazz = obj.GetType().GetElementType();
-			if (arrayElementClazz.IsPrimitive())
+			if (arrayElementClazz.IsPrimitive)
 			{
 				size += len * memoryModel.GetPrimitiveSize(arrayElementClazz);
 			}

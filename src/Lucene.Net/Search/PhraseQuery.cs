@@ -32,9 +32,8 @@ namespace Lucene.Net.Search
     /// 
     /// <p/>This query may be combined with other terms or queries with a <see cref="BooleanQuery" />.
     /// </summary>
-#if !DNXCORE50
+
         [Serializable]
-#endif
     public class PhraseQuery:Query
 	{
 		private System.String field;
@@ -118,9 +117,8 @@ namespace Lucene.Net.Search
 			return result;
 		}
 
-#if !DNXCORE50
+
         [Serializable]
-#endif
         private class PhraseWeight:Weight
 		{
 			private void  InitBlock(PhraseQuery enclosingInstance)

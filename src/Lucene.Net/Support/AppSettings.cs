@@ -21,6 +21,7 @@
 
 using System;
 using System.Collections.Specialized;
+using Lucene.Net.Util;
 
 namespace Lucene.Net.Support
 {

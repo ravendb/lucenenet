@@ -290,18 +290,16 @@ namespace Lucene.Net.Search
     /// </seealso>
     /// <seealso cref="Searcher.Similarity">
     /// </seealso>
-#if !DNXCORE50
+
         [Serializable]
-#endif
     public abstract class Similarity
 	{
 	    protected Similarity()
 		{
 			InitBlock();
 		}
-#if !DNXCORE50
+
         [Serializable]
-#endif
         private class AnonymousClassIDFExplanation1:IDFExplanation
 		{
 			public AnonymousClassIDFExplanation1(int df, int max, float idf, Similarity enclosingInstance)
@@ -339,9 +337,8 @@ namespace Lucene.Net.Search
 		        get { return idf; }
 		    }
 		}
-#if !DNXCORE50
+
         [Serializable]
-#endif
         private class AnonymousClassIDFExplanation3:IDFExplanation
 		{
 			public AnonymousClassIDFExplanation3(float fIdf, System.Text.StringBuilder exp, Similarity enclosingInstance)

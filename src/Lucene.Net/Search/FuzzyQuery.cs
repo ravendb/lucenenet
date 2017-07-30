@@ -38,9 +38,8 @@ namespace Lucene.Net.Search
     /// cause an edit score calculation.
     /// 
     /// </summary>
-#if !DNXCORE50
+
         [Serializable]
-#endif
     public class FuzzyQuery : MultiTermQuery
 	{
 		

@@ -26,9 +26,9 @@ namespace Lucene.Net.Search
     /// incompatible ways in the next release.
     /// 
     /// </summary>
-#if !DNXCORE50
+
         [Serializable]
-#endif
+
     public abstract class FieldComparatorSource
 	{
 		

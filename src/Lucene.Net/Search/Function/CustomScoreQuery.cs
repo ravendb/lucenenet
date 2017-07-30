@@ -46,9 +46,7 @@ namespace Lucene.Net.Search.Function
     /// The APIs introduced here might change in the future and will not be 
     /// supported anymore in such a case.</font>
     /// </summary>
-#if !DNXCORE50
-        [Serializable]
-#endif
+    [Serializable]
     public class CustomScoreQuery:Query, System.ICloneable
 	{
 		
@@ -325,9 +323,7 @@ namespace Lucene.Net.Search.Function
 
         //=========================== W E I G H T ============================
 
-#if !DNXCORE50
         [Serializable]
-#endif
         private class CustomWeight:Weight
 		{
 			private void  InitBlock(CustomScoreQuery enclosingInstance)

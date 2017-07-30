@@ -204,9 +204,7 @@ namespace Lucene.Net.Index
         /// <summary>Exception thrown if there are any problems while
         /// executing a merge. 
         /// </summary>
-#if !DNXCORE50
         [Serializable]
-#endif
         public class MergeException:System.SystemException
 		{
 			private readonly Directory dir;
@@ -230,9 +228,7 @@ namespace Lucene.Net.Index
 		    }
 		}
 
-#if !DNXCORE50
         [Serializable]
-#endif
         public class MergeAbortedException:System.IO.IOException
 		{
 			public MergeAbortedException():base("merge is aborted")

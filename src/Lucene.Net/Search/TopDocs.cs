@@ -23,9 +23,8 @@ namespace Lucene.Net.Search
     /// <summary> Represents hits returned by <see cref="Searcher.Search(Query,Filter,int)" />
     /// and <see cref="Searcher.Search(Query,int)" />
     /// </summary>
-#if !DNXCORE50
+
         [Serializable]
-#endif
     public class TopDocs
 	{
 		private int _totalHits;

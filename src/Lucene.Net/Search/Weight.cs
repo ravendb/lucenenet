@@ -46,9 +46,8 @@ namespace Lucene.Net.Search
     /// </summary>
     /// <since> 2.9
     /// </since>
-#if !DNXCORE50
+
         [Serializable]
-#endif
     public abstract class Weight
 	{
 		

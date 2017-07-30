@@ -30,7 +30,7 @@ namespace Lucene.Net.Support
         [Test]
         public void Count()
         {
-            System.Reflection.Assembly asm = typeof(_SupportClassTestCases).Assembly();
+            System.Reflection.Assembly asm = typeof(_SupportClassTestCases).Assembly;
             Type[] types = asm.GetTypes();
 
             int countSupport = 0;

@@ -36,7 +36,7 @@ namespace Lucene.Net.Index
 	[TestFixture]
 	public class TestDoc:LuceneTestCase
 	{
-#if !DNXCORE50
+#if !NETCOREAPP2_0
         /// <summary>Main for running test case by itself. </summary>
         [STAThread]
 		public static void  Main(System.String[] args)
@@ -104,12 +104,7 @@ namespace Lucene.Net.Index
 						tmpBool2 = false;
 					bool generatedAux = tmpBool2;
 				}
-#if !DNXCORE50
                 fw = new System.IO.StreamWriter(f.FullName, false, System.Text.Encoding.UTF8);
-#else
-			    fs = File.Open(f.FullName, FileMode.OpenOrCreate);
-                fw = new System.IO.StreamWriter(fs, Encoding.UTF8);
-#endif
                 pw = new System.IO.StreamWriter(fw.BaseStream, fw.Encoding);
 				pw.WriteLine(text);
 				return f;
@@ -118,19 +113,8 @@ namespace Lucene.Net.Index
 			{
 				if (pw != null)
 				{
-#if !DNXCORE50
                     pw.Close();
-#else
-                    pw.Dispose();
-#endif
                 }
-
-#if DNXCORE50
-			    if (fs != null)
-			    {
-			        fs.Dispose();
-			    }
-#endif
             }
 		}
 		
@@ -169,13 +153,8 @@ namespace Lucene.Net.Index
 			PrintSegment(out_Renamed, siMerge3);
 			
 			directory.Close();
-#if !DNXCORE50
             out_Renamed.Close();
 			sw.Close();
-#else
-            out_Renamed.Dispose();
-            sw.Dispose();
-#endif
             System.String multiFileOutput = System.Text.ASCIIEncoding.ASCII.GetString(sw.ToArray());
 			//System.out.println(multiFileOutput);
 			
@@ -202,13 +181,8 @@ namespace Lucene.Net.Index
 			PrintSegment(out_Renamed, siMerge3);
 			
 			directory.Close();
-#if !DNXCORE50
             out_Renamed.Close();
 			sw.Close();
-#else
-            out_Renamed.Dispose();
-            sw.Dispose();
-#endif
             System.String singleFileOutput = System.Text.ASCIIEncoding.ASCII.GetString(sw.ToArray());
 			
 			Assert.AreEqual(multiFileOutput, singleFileOutput);

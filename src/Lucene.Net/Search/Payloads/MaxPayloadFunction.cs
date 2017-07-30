@@ -27,9 +27,7 @@ namespace Lucene.Net.Search.Payloads
     /// 
     /// 
     /// </summary>
-#if !DNXCORE50
-        [Serializable]
-#endif
+    [Serializable]
     public class MaxPayloadFunction:PayloadFunction
 	{
 		public override float CurrentScore(int docId, System.String field, int start, int end, int numPayloadsSeen, float currentScore, float currentPayloadScore)

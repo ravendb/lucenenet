@@ -37,9 +37,8 @@ namespace Lucene.Net.Search
     /// </summary>
     /// <version>  1.0
     /// </version>
-#if !DNXCORE50
+
         [Serializable]
-#endif
     public class MultiPhraseQuery:Query
 	{
 		private System.String field;
@@ -134,9 +133,8 @@ namespace Lucene.Net.Search
 		}
 
 
-#if !DNXCORE50
+
         [Serializable]
-#endif
         private class MultiPhraseWeight:Weight
 		{
 			private void  InitBlock(MultiPhraseQuery enclosingInstance)

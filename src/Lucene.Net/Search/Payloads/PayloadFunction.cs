@@ -32,9 +32,7 @@ namespace Lucene.Net.Search.Payloads
     /// 
     /// 
     /// </seealso>
-#if !DNXCORE50
-        [Serializable]
-#endif
+    [Serializable]
     public abstract class PayloadFunction
 	{
 		

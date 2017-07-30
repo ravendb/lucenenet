@@ -179,9 +179,6 @@ namespace Lucene.Net.Store
         [Test]
 		public virtual void  TestSerializable()
 		{
-#if DNXCORE50
-            Assert.Ignore("In DNX binary serialization isn't available");
-#else
             Directory dir = new RAMDirectory();
 			System.IO.MemoryStream bos = new System.IO.MemoryStream(1024);
 			Assert.AreEqual(0, bos.Length, "initially empty");
@@ -192,7 +189,6 @@ namespace Lucene.Net.Store
 			out_Renamed.Flush();  // In Java, this is Close(), but we can't do this in .NET, and the Close() is moved to after the validation check
 			Assert.IsTrue(headerSize < bos.Length, "contains more then just header");
             out_Renamed.Close();
-#endif
 		}
 		
 		[TearDown]

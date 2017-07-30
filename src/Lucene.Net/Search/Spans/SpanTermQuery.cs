@@ -25,9 +25,7 @@ namespace Lucene.Net.Search.Spans
 {
 
     /// <summary>Matches spans containing a term. </summary>
-#if !DNXCORE50
-        [Serializable]
-#endif
+    [Serializable]
     public class SpanTermQuery:SpanQuery
 	{
 		protected internal Term internalTerm;

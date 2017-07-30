@@ -39,16 +39,6 @@ namespace Lucene.Net.Support
         {
             Type type = inflaterInstance.GetType();
 
-#if DNXCORE50
-            setInputMethod = (SetInputDelegate)type.GetMethod("SetInput", new Type[] { typeof(byte[]) })
-                .CreateDelegate(typeof(SetInputDelegate), inflaterInstance);
-
-            getIsFinishedMethod = (GetIsFinishedDelegate)type.GetMethod("get_IsFinished", Type.EmptyTypes)
-                .CreateDelegate(typeof(GetIsFinishedDelegate), inflaterInstance);
-
-            inflateMethod = (InflateDelegate)type.GetMethod("Inflate", new Type[] { typeof(byte[]) })
-                .CreateDelegate(typeof(InflateDelegate), inflaterInstance);
-#else
             setInputMethod = (SetInputDelegate)Delegate.CreateDelegate(
                 typeof(SetInputDelegate),
                 inflaterInstance,
@@ -63,7 +53,6 @@ namespace Lucene.Net.Support
                 typeof(InflateDelegate),
                 inflaterInstance,
                 type.GetMethod("Inflate", new Type[] { typeof(byte[]) }));
-#endif
         }
 
         public void SetInput(byte[] buffer)

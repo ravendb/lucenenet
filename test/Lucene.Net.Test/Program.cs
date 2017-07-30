@@ -1,11 +1,4 @@
-﻿using System;
-using System.IO;
-using System.Reflection;
-using Lucene.Net.Analysis;
-using Lucene.Net.Analysis.Tokenattributes;
-using Lucene.Net.Index;
-using Lucene.Net.Support;
-using Lucene.Net.Util;
+﻿using System.IO;
 using NUnit.Common;
 using NUnitLite;
 
@@ -15,10 +8,10 @@ namespace Lucene.Net.Test
     {
         public static void Main(string[] args)
         {
-#if !DNXCORE50
+#if !NETCOREAPP2_0
             new AutoRun().Execute(args);
 #else
-            new AutoRun(typeof(Program).GetTypeInfo().Assembly).Execute(args, new ColorConsoleWriter(colorEnabled: true), TextReader.Null);
+            new AutoRun(typeof(Program).Assembly).Execute(args, new ColorConsoleWriter(colorEnabled: true), TextReader.Null);
 #endif          
         }
     }

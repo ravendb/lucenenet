@@ -124,17 +124,9 @@ namespace Lucene.Net.Analysis
             var result = new Dictionary<string, string>();
 			System.IO.StreamReader br = null;
 			System.IO.StreamReader fr = null;
-#if DNXCORE50
-            FileStream fs = null;
-#endif
             try
             {
-#if DNXCORE50
-                fs = File.OpenRead(wordstemfile.FullName);
-				fr = new System.IO.StreamReader(fs, System.Text.Encoding.UTF8);
-#else
                 fr = new System.IO.StreamReader(wordstemfile.FullName, System.Text.Encoding.UTF8);
-#endif
                 br = new System.IO.StreamReader(fr.BaseStream, fr.CurrentEncoding);
 				System.String line;
                 char[] tab = {'\t'};
@@ -148,26 +140,13 @@ namespace Lucene.Net.Analysis
 			{
 			    if (fr != null)
 			    {
-#if !DNXCORE50
                     fr.Close();
-#else
-                    fr.Dispose();
-#endif   
                 }
 
 			    if (br != null)
 			    {
-#if !DNXCORE50
                     br.Close();
-#else
-                    br.Dispose();
-#endif
                 }
-
-#if DNXCORE50
-                if (fs != null)
-                    fs.Dispose();
-#endif
 			}
 			return result;
 		}

@@ -36,7 +36,7 @@ namespace Lucene.Net
     public class TestSearchForDuplicates : LuceneTestCase
 	{
 
-#if !DNXCORE50
+#if !NETCOREAPP2_0
         /// <summary>Main for running test case by itself. </summary>
         [STAThread]
 		public static void  Main(System.String[] args)
@@ -67,26 +67,16 @@ namespace Lucene.Net
 			System.IO.MemoryStream sw = new System.IO.MemoryStream();
 			System.IO.StreamWriter pw = new System.IO.StreamWriter(sw);
 			DoTest(pw, false);
-#if !DNXCORE50
             pw.Close();
 			sw.Close();
-#else
-            pw.Dispose();
-            sw.Dispose();
-#endif
             System.String multiFileOutput = System.Text.ASCIIEncoding.ASCII.GetString(sw.ToArray());
 			//System.out.println(multiFileOutput);
 			
 			sw = new System.IO.MemoryStream();
 			pw = new System.IO.StreamWriter(sw);
 			DoTest(pw, true);
-#if !DNXCORE50
             pw.Close();
 			sw.Close();
-#else
-            pw.Dispose();
-            sw.Dispose();
-#endif
             System.String singleFileOutput = System.Text.ASCIIEncoding.ASCII.GetString(sw.ToArray());
 			
 			Assert.AreEqual(multiFileOutput, singleFileOutput);

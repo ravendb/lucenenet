@@ -878,7 +878,7 @@ namespace Lucene.Net.Index
 			return assertsOn;
 		}
 
-#if !DNXCORE50
+#if !NETSTANDARD2_0
         /// <summary>Command-line interface to check and fix an index.
         /// <p/>
         /// Run it like this:

@@ -93,9 +93,9 @@ namespace Lucene.Net.Search
     /// Which filter is best is very application dependent.
     /// </summary>
 
-#if !DNXCORE50
+
         [Serializable]
-#endif
+
     public class FieldCacheTermsFilter:Filter
 	{
 		private readonly string field;

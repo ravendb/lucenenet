@@ -23,9 +23,7 @@ namespace Lucene.Net.Documents
     /// <p/>
     /// See <see cref="FieldSelectorResult.LOAD_AND_BREAK" />
     /// </summary>
-#if !DNXCORE50
-        [Serializable]
-#endif
+    [Serializable]
     public class LoadFirstFieldSelector : FieldSelector
 	{
 		

@@ -23,9 +23,7 @@ namespace Lucene.Net.Search
     /// <summary>Expert: Describes the score computation for document and query, and
     /// can distinguish a match independent of a positive value. 
     /// </summary>
-#if !DNXCORE50
-        [Serializable]
-#endif
+    [Serializable]
     public class ComplexExplanation:Explanation
 	{
 		private System.Boolean? match;

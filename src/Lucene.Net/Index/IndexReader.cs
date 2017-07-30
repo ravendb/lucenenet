@@ -1177,7 +1177,7 @@ namespace Lucene.Net.Index
 	        throw new NotSupportedException("This reader does not support this method.");
 	    }
 
-#if !DNXCORE50
+#if !NETSTANDARD2_0
         /// <summary> Prints the filename and size of each file within a given compound file.
         /// Add the -extract flag to extract files to the current working directory.
         /// In order to make the extracted version of the index work, you have to copy
@@ -1245,11 +1245,7 @@ namespace Lucene.Net.Index
 							len -= bufLen;
 						}
 
-#if !DNXCORE50
                         f.Close();
-#else
-                        f.Dispose();
-#endif
                         ii.Close();
 					}
 					else

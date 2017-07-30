@@ -25,9 +25,7 @@ namespace Lucene.Net.Analysis.Tokenattributes
 {
 
     /// <summary> The term text of a Token.</summary>
-#if !DNXCORE50
-        [Serializable]
-#endif
+    [Serializable]
     public sealed class TermAttribute:Attribute, ITermAttribute, System.ICloneable
 	{
 		private static int MIN_BUFFER_SIZE = 10;

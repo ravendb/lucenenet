@@ -1190,7 +1190,7 @@ namespace Lucene.Net.QueryParsers
             return sb.ToString();
         }
 
-#if !DNXCORE50
+#if !NETSTANDARD2_0
         /// <summary> Command line tool to test QueryParser, using {@link Lucene.Net.Analysis.SimpleAnalyzer}.
         /// Usage:<br/>
         /// <c>java Lucene.Net.QueryParsers.QueryParser &lt;input&gt;</c>
@@ -1864,9 +1864,7 @@ namespace Lucene.Net.QueryParsers
             throw GenerateParseException();
         }
 
-#if !DNXCORE50
         [Serializable]
-#endif
         private sealed class LookaheadSuccess : System.Exception
         {
         }

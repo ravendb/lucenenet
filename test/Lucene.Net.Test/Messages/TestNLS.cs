@@ -30,9 +30,6 @@ namespace Lucene.Net.Messages
 		[Test]
 		public virtual void  TestMessageLoading()
 		{
-#if DNXCORE50
-            Assert.Ignore("We know that ResourceManager.CreateFileBasedResourceManager is missing, however localized messages are used in tests only");
-#endif
             Message invalidSyntax = new MessageImpl(MessagesTestBundle.Q0001E_INVALID_SYNTAX, "XXX");
             Assert.AreEqual("Syntax Error: XXX", invalidSyntax.GetLocalizedMessage());
 		}
@@ -40,9 +37,6 @@ namespace Lucene.Net.Messages
 		[Test]
 		public virtual void  TestMessageLoading_ja()
 		{
-#if DNXCORE50
-            Assert.Ignore("We know that ResourceManager.CreateFileBasedResourceManager is missing, however localized messages are used in tests only");
-#endif
             Message invalidSyntax = new MessageImpl(MessagesTestBundle.Q0001E_INVALID_SYNTAX, "XXX");
 			Assert.AreEqual("構文エラー: XXX", invalidSyntax.GetLocalizedMessage(new System.Globalization.CultureInfo("ja")));
 		}
@@ -50,9 +44,6 @@ namespace Lucene.Net.Messages
 		[Test]
 		public virtual void  TestNLSLoading()
 		{
-#if DNXCORE50
-            Assert.Ignore("We know that ResourceManager.CreateFileBasedResourceManager is missing, however localized messages are used in tests only");
-#endif
             System.String message = NLS.GetLocalizedMessage(MessagesTestBundle.Q0004E_INVALID_SYNTAX_ESCAPE_UNICODE_TRUNCATION);
 			Assert.AreEqual("Truncated unicode escape sequence.", message);
 			
@@ -63,9 +54,6 @@ namespace Lucene.Net.Messages
 		[Test]
 		public virtual void  TestNLSLoading_ja()
 		{
-#if DNXCORE50
-            Assert.Ignore("We know that ResourceManager.CreateFileBasedResourceManager is missing, however localized messages are used in tests only");
-#endif
             System.String message = NLS.GetLocalizedMessage(MessagesTestBundle.Q0004E_INVALID_SYNTAX_ESCAPE_UNICODE_TRUNCATION, new System.Globalization.CultureInfo("ja"));
 			Assert.AreEqual("切り捨てられたユニコード・エスケープ・シーケンス。", message);
 			
@@ -76,9 +64,6 @@ namespace Lucene.Net.Messages
 		[Test]
 		public virtual void  TestNLSLoading_xx_XX()
 		{
-#if DNXCORE50
-            Assert.Ignore("We know that ResourceManager.CreateFileBasedResourceManager is missing, however localized messages are used in tests only");
-#endif
             System.Globalization.CultureInfo locale;
             try
             {
@@ -98,9 +83,6 @@ namespace Lucene.Net.Messages
 		[Test]
 		public virtual void  TestMissingMessage()
 		{
-#if DNXCORE50
-            Assert.Ignore("We know that ResourceManager.CreateFileBasedResourceManager is missing, however localized messages are used in tests only");
-#endif
             System.Globalization.CultureInfo locale = new System.Globalization.CultureInfo("en");
 			System.String message = NLS.GetLocalizedMessage(MessagesTestBundle.Q0005E_MESSAGE_NOT_IN_BUNDLE, locale);
 			

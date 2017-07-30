@@ -31,7 +31,7 @@ namespace Lucene.Net.Util
 		/// <summary>Returns a single object instance for each equal string. </summary>
 		public virtual System.String Intern(System.String s)
 		{
-		    return s.Intern();
+		    return string.Intern(s);
 		}
 		
 		/// <summary>Returns a single object instance for each equal string. </summary>

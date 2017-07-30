@@ -25,9 +25,7 @@ namespace Lucene.Net.Index
     /// 
     /// 
     /// </summary>
-#if !DNXCORE50
-        [Serializable]
-#endif
+    [Serializable]
     public class FieldReaderException:System.SystemException
 	{
 		/// <summary> Constructs a new runtime exception with <c>null</c> as its
@@ -90,11 +88,9 @@ namespace Lucene.Net.Index
 		{
 		}
 
-#if !DNXCORE50
         public FieldReaderException(SerializationInfo info, StreamingContext context) 
             : base(info, context)
         {
         }
-#endif
     }
 }

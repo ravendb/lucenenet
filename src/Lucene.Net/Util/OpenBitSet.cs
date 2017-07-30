@@ -78,9 +78,8 @@ namespace Lucene.Net.Util
     /// <version>  $Id$
     /// </version>
 
-#if !DNXCORE50
+
         [Serializable]
-#endif
     public class OpenBitSet:DocIdSet, System.ICloneable
 	{
 		protected internal long[] internalbits;

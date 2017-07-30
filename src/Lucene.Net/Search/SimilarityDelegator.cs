@@ -25,9 +25,8 @@ namespace Lucene.Net.Search
     /// implementations, to override only certain
     /// methods of a Searcher's Similiarty implementation.. 
     /// </summary>
-#if !DNXCORE50
+
         [Serializable]
-#endif
     public class SimilarityDelegator:Similarity
 	{
 		private Similarity delegee;

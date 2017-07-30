@@ -71,26 +71,15 @@ namespace Lucene.Net.Store
 			{
 				try
 				{
-#if !DNXCORE50
                     System.Net.Sockets.TcpClient s = new System.Net.Sockets.TcpClient(Enclosing_Instance.host, Enclosing_Instance.port);
-#else
-				    System.Net.Sockets.TcpClient s = new System.Net.Sockets.TcpClient(AddressFamily.InterNetwork);
-				    AsyncHelpers.RunSync(() => s.ConnectAsync(Enclosing_Instance.host, Enclosing_Instance.port));
-#endif
                     System.IO.Stream out_Renamed = s.GetStream();
 					out_Renamed.WriteByte((byte) Enclosing_Instance.id);
 					out_Renamed.WriteByte((byte) message);
 					System.IO.Stream in_Renamed = s.GetStream();
 					int result = in_Renamed.ReadByte();
-#if !DNXCORE50
                     in_Renamed.Close();
 					out_Renamed.Close();
 					s.Close();
-#else
-                    in_Renamed.Dispose();
-                    out_Renamed.Dispose();
-                    s.Dispose();
-#endif
                     if (result != 0)
 						throw new System.SystemException("lock was double acquired");
 				}

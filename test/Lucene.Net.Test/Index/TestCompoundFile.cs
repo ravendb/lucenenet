@@ -32,7 +32,7 @@ namespace Lucene.Net.Index
 	[TestFixture]
 	public class TestCompoundFile:LuceneTestCase
 	{
-#if !DNXCORE50
+#if !NETCOREAPP2_0
         /// <summary>Main for running test case by itself. </summary>
         [STAThread]
 		public static void  Main(System.String[] args)

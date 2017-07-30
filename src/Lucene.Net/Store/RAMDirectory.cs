@@ -26,9 +26,8 @@ namespace Lucene.Net.Store
     /// implementation is by default the <see cref="SingleInstanceLockFactory"/>
     /// but can be changed with <see cref="Directory.SetLockFactory"/>.
     /// </summary>
-#if !DNXCORE50
+
         [Serializable]
-#endif
     public class RAMDirectory:Directory
 	{
 		
@@ -153,11 +152,9 @@ namespace Lucene.Net.Store
 				}
 				catch (System.Threading.ThreadInterruptedException ie)
 				{
-#if !DNXCORE50
                     // In 3.0 we will change this to throw
                     // InterruptedException instead
                     ThreadClass.Current().Interrupt();
-#endif
                     throw new System.SystemException(ie.Message, ie);
 				}
                 ts2 = System.DateTime.UtcNow.Ticks / TimeSpan.TicksPerMillisecond;

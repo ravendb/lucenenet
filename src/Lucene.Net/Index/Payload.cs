@@ -34,9 +34,7 @@ namespace Lucene.Net.Index
     /// to retrieve the payloads from the index.<br/>
     /// 
     /// </summary>
-#if !DNXCORE50
-        [Serializable]
-#endif
+    [Serializable]
     public class Payload : System.ICloneable
 	{
 		/// <summary>the byte array containing the payload data </summary>

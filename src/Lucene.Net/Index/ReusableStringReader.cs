@@ -67,13 +67,11 @@ namespace Lucene.Net.Index
             }
         }
 
-#if !DNXCORE50
         //[Obsolete("Use Dispose() instead")]
         public override void Close()
         {
             Dispose();
         }
-#endif
 
         public override int Read()
         {

@@ -31,10 +31,7 @@ namespace Lucene.Net.Documents
     /// be used to represent dates, urls, etc.  Fields are optionally stored in the
     /// index, so that they may be returned with hits on the document.
     /// </summary>
-
-#if !DNXCORE50
-        [Serializable]
-#endif
+    [Serializable]
     public sealed class Field:AbstractField, IFieldable
     {
         /// <summary>Specifies whether and how a field should be stored. </summary>

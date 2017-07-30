@@ -24,9 +24,7 @@ namespace Lucene.Net.Index
     /// <summary> This exception is thrown when Lucene detects
     /// an inconsistency in the index.
     /// </summary>
-#if !DNXCORE50
-        [Serializable]
-#endif
+    [Serializable]
     public class CorruptIndexException:System.IO.IOException
 	{
         public CorruptIndexException()
@@ -40,11 +38,9 @@ namespace Lucene.Net.Index
 		{
 		}
 
-#if !DNXCORE50
         public CorruptIndexException(SerializationInfo info, StreamingContext context) 
             : base(info, context)
         {
         }
-#endif
     }
 }

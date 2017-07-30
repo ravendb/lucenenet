@@ -28,9 +28,7 @@ namespace Lucene.Net.Index
     /// Note that terms may represent more than words from text fields, but also
     /// things like dates, email addresses, urls, etc.  
     /// </summary>
-#if !DNXCORE50
-        [Serializable]
-#endif
+    [Serializable]
     public sealed class Term : System.IComparable<Term>
 	{
 		internal System.String field;

@@ -38,10 +38,7 @@ namespace Lucene.Net.Documents
     /// <i>not</i> available in documents retrieved from the index, e.g. with <see cref="ScoreDoc.Doc" />,
     /// <see cref="Searcher.Doc(int)" /> or <see cref="IndexReader.Document(int)" />.
     /// </summary>
-
-#if !DNXCORE50
-        [Serializable]
-#endif
+    [Serializable]
     public sealed class Document
 	{
 		private class AnonymousClassEnumeration : System.Collections.IEnumerator

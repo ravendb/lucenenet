@@ -28,9 +28,8 @@ namespace Lucene.Net.Search
     /// <summary> A query that matches all documents.
     /// 
     /// </summary>
-#if !DNXCORE50
+
         [Serializable]
-#endif
     public class MatchAllDocsQuery:Query
 	{
 		
@@ -96,9 +95,8 @@ namespace Lucene.Net.Search
 			}
 		}
 
-#if !DNXCORE50
+
         [Serializable]
-#endif
         private class MatchAllDocsWeight:Weight
 		{
 			private void  InitBlock(MatchAllDocsQuery enclosingInstance)

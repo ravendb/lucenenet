@@ -74,9 +74,6 @@ namespace Lucene.Net.Support
         [Description("LUCENENET-338  (also see LUCENENET-170)")]
         public void TestBooleanQuerySerialization()
         {
-#if DNXCORE50
-            Assert.Ignore("In DNX we don't support serialization of Lucene.NET objects. It doesn't really make any sense for us to support that since we never use it.");
-#else
             Lucene.Net.Search.BooleanQuery lucQuery = new Lucene.Net.Search.BooleanQuery();
 
             lucQuery.Add(new Lucene.Net.Search.TermQuery(new Lucene.Net.Index.Term("field", "x")), Occur.MUST);
@@ -90,17 +87,16 @@ namespace Lucene.Net.Support
 
             Assert.AreEqual(lucQuery, lucQuery2, "Error in serialization");
 
-            Lucene.Net.Search.IndexSearcher searcher = new Lucene.Net.Search.IndexSearcher(dir, true);
+            Lucene.Net.Search.IndexSearcher searcher = new Lucene.Net.Search.IndexSearcher(dir, true, null);
 
-            int hitCount = searcher.Search(lucQuery, 20).TotalHits;
+            int hitCount = searcher.Search(lucQuery, 20, null).TotalHits;
             
             searcher.Close();
-            searcher = new Lucene.Net.Search.IndexSearcher(dir, true);
+            searcher = new Lucene.Net.Search.IndexSearcher(dir, true, null);
             
-            int hitCount2 = searcher.Search(lucQuery2, 20).TotalHits;
+            int hitCount2 = searcher.Search(lucQuery2, 20, null).TotalHits;
 
             Assert.AreEqual(hitCount, hitCount2, "Error in serialization - different hit counts");
-#endif
         }
     }
 }

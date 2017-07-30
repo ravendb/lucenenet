@@ -33,9 +33,7 @@ namespace Lucene.Net.Search
 	/// closed, otherwise an IOException will be thrown.
 	/// </summary>
 	public abstract class Searcher :
-#if !DNXCORE50
         System.MarshalByRefObject, 
-#endif
         Searchable, System.IDisposable
 	{
 	    protected Searcher()

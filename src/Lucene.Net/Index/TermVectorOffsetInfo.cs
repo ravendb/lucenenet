@@ -26,9 +26,7 @@ namespace Lucene.Net.Index
     /// offset information.  This offset information is the character offset as set during the Analysis phase (and thus may not be the actual offset in the
     /// original content).
     /// </summary>
-#if !DNXCORE50
-        [Serializable]
-#endif
+    [Serializable]
     public struct TermVectorOffsetInfo : IEquatable<TermVectorOffsetInfo>
 	{
 		/// <summary> Convenience declaration when creating a <see cref="Lucene.Net.Index.TermPositionVector" /> that stores only position information.</summary>

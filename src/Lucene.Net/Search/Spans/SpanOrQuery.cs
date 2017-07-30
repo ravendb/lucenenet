@@ -29,9 +29,7 @@ namespace Lucene.Net.Search.Spans
 {
 
     /// <summary>Matches the union of its clauses.</summary>
-#if !DNXCORE50
-        [Serializable]
-#endif
+    [Serializable]
     public class SpanOrQuery : SpanQuery, System.ICloneable
 	{
 		private class AnonymousClassSpans : Spans

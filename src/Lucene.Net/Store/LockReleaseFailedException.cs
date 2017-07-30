@@ -26,9 +26,8 @@ namespace Lucene.Net.Store
     /// </summary>
     /// <seealso cref="Lock.Release()">
     /// </seealso>
-#if !DNXCORE50
+
         [Serializable]
-#endif
     public class LockReleaseFailedException:System.IO.IOException
 	{
         public LockReleaseFailedException()
@@ -44,11 +43,10 @@ namespace Lucene.Net.Store
         {
         }
 
-#if !DNXCORE50
+
         public LockReleaseFailedException(SerializationInfo info, StreamingContext context) 
             : base(info, context)
         {
         }
-#endif
     }
 }

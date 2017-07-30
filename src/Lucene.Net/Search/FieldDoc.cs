@@ -37,9 +37,9 @@ namespace Lucene.Net.Search
     /// </summary>
     /// <seealso cref="ScoreDoc"></seealso>
     /// <seealso cref="TopFieldDocs"></seealso>
-#if !DNXCORE50
+
         [Serializable]
-#endif
+
     public class FieldDoc:ScoreDoc
 	{
 		

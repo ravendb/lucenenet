@@ -96,9 +96,8 @@ namespace Lucene.Net.Search
     /// <p/>Created: Feb 12, 2004 10:53:57 AM
     /// 
     /// </summary>
-#if !DNXCORE50
+
         [Serializable]
-#endif
     public class Sort
 	{
 		

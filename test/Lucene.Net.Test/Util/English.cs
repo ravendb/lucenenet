@@ -145,7 +145,7 @@ namespace Lucene.Net.Util
 				}
 		}
 
-#if !DNXCORE50
+#if !NETCOREAPP2_0
         [STAThread]
 		public static void  Main(System.String[] args)
 		{

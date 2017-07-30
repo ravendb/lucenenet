@@ -142,9 +142,7 @@ namespace Lucene.Net.Documents
     /// </summary>
     /// <since> 2.9
     /// </since>
-#if !DNXCORE50
-        [Serializable]
-#endif
+    [Serializable]
     public sealed class NumericField:AbstractField
 	{
 		

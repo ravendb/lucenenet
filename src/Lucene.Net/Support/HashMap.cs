@@ -27,7 +27,7 @@ using Lucene.Net.Util;
 
 namespace Lucene.Net.Support
 {
-
+    [Serializable]
     public class HashMap<TKey, TValue> : HashMap<TKey, TValue, IEqualityComparer<TKey>>
     {
         public HashMap() : base (DictionaryHelper.KMinBuckets, EqualityComparer<TKey>.Default)
@@ -71,9 +71,8 @@ namespace Lucene.Net.Support
     /// </summary>
     /// <typeparam name="TKey">The type of keys in the dictionary</typeparam>
     /// <typeparam name="TValue">The type of values in the dictionary</typeparam>
-#if !DNXCORE50
+
     [Serializable]
-#endif
     public class HashMap<TKey, TValue, TComparer> : IDictionary<TKey, TValue> where TComparer : IEqualityComparer<TKey>
     {
         internal readonly TComparer _comparer;
@@ -97,7 +96,7 @@ namespace Lucene.Net.Support
             _dict = new FastDictionary<TKey, TValue, TComparer>(initialCapacity, _comparer);
             _hasNullValue = false;
 
-            if (typeof(TKey).IsValueType())
+            if (typeof(TKey).IsValueType)
             {
                 _isValueType = Nullable.GetUnderlyingType(typeof(TKey)) == null;
             }

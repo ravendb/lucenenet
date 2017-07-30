@@ -2187,28 +2187,24 @@ namespace Lucene.Net.Index
         [Test]
         public virtual void TestMaxThreadPriority()
         {
-#if DNXCORE50
-            Assert.Ignore("In DNX code we don't have ThreadClass.Priority since Thread.Priority isn't available");
-#else
             int pri = (System.Int32)ThreadClass.Current().Priority;
             try
             {
                 MockRAMDirectory dir = new MockRAMDirectory();
-                IndexWriter iw = new IndexWriter(dir, new StandardAnalyzer(Util.Version.LUCENE_CURRENT), true, IndexWriter.MaxFieldLength.LIMITED);
+                IndexWriter iw = new IndexWriter(dir, new StandardAnalyzer(Util.Version.LUCENE_CURRENT), true, IndexWriter.MaxFieldLength.LIMITED, null);
                 Document document = new Document();
                 document.Add(new Field("tvtest", "a b c", Field.Store.NO, Field.Index.ANALYZED, Field.TermVector.YES));
                 iw.SetMaxBufferedDocs(2);
                 iw.MergeFactor = 2;
                 ThreadClass.Current().Priority = (System.Threading.ThreadPriority)System.Threading.ThreadPriority.Highest;
                 for (int i = 0; i < 4; i++)
-                    iw.AddDocument(document);
+                    iw.AddDocument(document, null);
                 iw.Close();
             }
             finally
             {
                 ThreadClass.Current().Priority = (System.Threading.ThreadPriority)pri;
             }
-#endif
         }
 
         // Just intercepts all merges & verifies that we are never
@@ -5370,9 +5366,6 @@ namespace Lucene.Net.Index
         [Test]
         public virtual void TestThreadInterruptDeadlock()
         {
-#if DNXCORE50
-            Assert.Ignore("In DNX code we don't have ThreadClass.Interrupt because Thread.Interrupt isn't available");
-#else
             IndexerThreadInterrupt t = new IndexerThreadInterrupt(this);
             t.IsBackground = true;
             t.Start();
@@ -5396,7 +5389,6 @@ namespace Lucene.Net.Index
             t.Interrupt();
             t.Join();
             Assert.IsFalse(t.failed);
-#endif
         }
 
 

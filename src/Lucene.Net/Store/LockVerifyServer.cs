@@ -39,7 +39,7 @@ namespace Lucene.Net.Store
 			return "[" + (((DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond) - startTime) / 1000) + "s] ";
 		}
 
-#if !DNXCORE50
+#if !NETSTANDARD2_0
         [STAThread]
 		public static int Main(System.String[] args)
 		{
@@ -53,11 +53,7 @@ namespace Lucene.Net.Store
 			int port = System.Int32.Parse(args[0]);
 			
 			System.Net.Sockets.TcpListener temp_tcpListener;
-#if !DNXCORE50
             var address = System.Net.Dns.GetHostEntry(System.Net.Dns.GetHostName()).AddressList[0];
-#else
-            var address = AsyncHelpers.RunSync(() => System.Net.Dns.GetHostEntryAsync(System.Net.Dns.GetHostName())).AddressList[0];
-#endif
 
             temp_tcpListener = new System.Net.Sockets.TcpListener(address, port);
 			temp_tcpListener.Server.SetSocketOption(System.Net.Sockets.SocketOptionLevel.Socket, System.Net.Sockets.SocketOptionName.ReuseAddress, 1);
@@ -70,11 +66,7 @@ namespace Lucene.Net.Store
 			
 			while (true)
 			{
-#if !DNXCORE50
                 System.Net.Sockets.TcpClient cs = s.AcceptTcpClient();
-#else
-                System.Net.Sockets.TcpClient cs = AsyncHelpers.RunSync(() => s.AcceptTcpClientAsync());
-#endif
                 System.IO.Stream out_Renamed = cs.GetStream();
 				System.IO.Stream in_Renamed = cs.GetStream();
 				
@@ -112,15 +104,9 @@ namespace Lucene.Net.Store
 				else
 					out_Renamed.WriteByte((System.Byte) 0);
 
-#if !DNXCORE50
                 out_Renamed.Close();
 				in_Renamed.Close();
 				cs.Close();
-#else
-                out_Renamed.Dispose();
-                in_Renamed.Dispose();
-                cs.Dispose();
-#endif
             }
 		}
 #endif

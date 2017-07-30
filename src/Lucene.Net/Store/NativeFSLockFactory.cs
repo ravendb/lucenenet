@@ -17,9 +17,6 @@
 
 using System;
 using System.Collections.Generic;
-#if DNXCORE50
-using Lucene.Net.DNX;
-#endif
 
 namespace Lucene.Net.Store
 {
@@ -306,11 +303,7 @@ namespace Lucene.Net.Store
                                 {
                                     try
                                     {
-#if !DNXCORE50
                                         channel.Close();
-#else
-                                        channel.Dispose();
-#endif
                                     }
                                     finally
                                     {
@@ -325,11 +318,7 @@ namespace Lucene.Net.Store
                             {
                                 try
                                 {
-#if !DNXCORE50
                                     f.Close();
-#else
-                                    f.Dispose();
-#endif
                                 }
                                 finally
                                 {
@@ -371,22 +360,14 @@ namespace Lucene.Net.Store
                         lock_Renamed = false;
                         try
                         {
-#if !DNXCORE50
                             channel.Close();
-#else
-                            channel.Dispose();
-#endif
                         }
                         finally
                         {
                             channel = null;
                             try
                             {
-#if !DNXCORE50
                                 f.Close();
-#else
-                                f.Dispose();
-#endif
                             }
                             finally
                             {

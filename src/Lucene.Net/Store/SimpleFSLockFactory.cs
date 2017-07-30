@@ -185,11 +185,7 @@ namespace Lucene.Net.Store
 			else
 			{
 				System.IO.FileStream createdFile = lockFile.Create();
-#if !DNXCORE50
                 createdFile.Close();
-#else
-                createdFile.Dispose();
-#endif
                 return true;
 			}
 		}

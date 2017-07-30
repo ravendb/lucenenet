@@ -58,11 +58,7 @@ namespace Lucene.Net.Store
 			{
 				if (stream != null)
 				{
-#if !DNXCORE50
                     stream.Close();
-#else
-                    stream.Dispose();
-#endif
                 }
 			}
 		}

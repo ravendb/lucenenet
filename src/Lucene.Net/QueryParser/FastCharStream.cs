@@ -118,11 +118,7 @@ namespace Lucene.Net.QueryParsers
 		{
 			try
 			{
-#if !DNXCORE50
                 input.Close();
-#else
-                input.Dispose();
-#endif
             }
 			catch (System.IO.IOException e)
 			{

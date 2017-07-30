@@ -48,9 +48,7 @@ namespace Lucene.Net.Search.Payloads
     /// </summary>
     /// <seealso cref="Lucene.Net.Search.Similarity.ScorePayload">
     /// </seealso>
-#if !DNXCORE50
-        [Serializable]
-#endif
+    [Serializable]
     public class PayloadNearQuery:SpanNearQuery, System.ICloneable
 	{
 		protected internal System.String fieldName;
@@ -145,9 +143,7 @@ namespace Lucene.Net.Search.Payloads
 			return true;
 		}
 
-#if !DNXCORE50
         [Serializable]
-#endif
         public class PayloadNearSpanWeight:SpanWeight
 		{
 			private void  InitBlock(PayloadNearQuery enclosingInstance)
