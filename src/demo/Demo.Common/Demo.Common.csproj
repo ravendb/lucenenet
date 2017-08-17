@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <AssemblyTitle>Demo Common</AssemblyTitle>
-    <VersionPrefix>3.0.5</VersionPrefix>
+    <VersionPrefix>3.0.11</VersionPrefix>
     <TargetFramework>netstandard2.0</TargetFramework>
     <AssemblyName>Demo.Common</AssemblyName>
     <AssemblyOriginatorKeyFile>Lucene.Net.snk</AssemblyOriginatorKeyFile>

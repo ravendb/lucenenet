@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <AssemblyTitle>Lucene.Net Contrib Spatial Tests</AssemblyTitle>
-    <VersionPrefix>3.0.10</VersionPrefix>
+    <VersionPrefix>3.0.11</VersionPrefix>
     <TargetFramework>netcoreapp2.0</TargetFramework>
     <AssemblyName>Lucene.Net.Contrib.Spatial.Tests</AssemblyName>
     <AssemblyOriginatorKeyFile>..\..\Lucene.Net.Test\Lucene.Net.snk</AssemblyOriginatorKeyFile>
@@ -21,7 +21,7 @@
     <ApplicationIcon />
     <OutputTypeEx>exe</OutputTypeEx>
     <StartupObject>Lucene.Net.Contrib.Spatial.Tests.Program</StartupObject>
-    <FileVersion>3.0.10.0</FileVersion>
+    <FileVersion>3.0.11.0</FileVersion>
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
   </PropertyGroup>
 
