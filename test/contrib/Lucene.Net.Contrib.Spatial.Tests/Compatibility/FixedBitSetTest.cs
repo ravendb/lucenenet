@@ -102,7 +102,7 @@ namespace Lucene.Net.Contrib.Spatial.Test.Compatibility
                                    {_spatialStrategy.MakeQuery(args), Occur.MUST}
                                };
 
-            TopDocs topDocs = indexSearcher.Search(booleanQuery, 10);
+            TopDocs topDocs = indexSearcher.Search(booleanQuery, 10, null);
 
             Assert.GreaterOrEqual(topDocs.ScoreDocs.Length, 1); //Search area is centered on a doc so at least one doc should be returned
         }
@@ -115,13 +115,13 @@ namespace Lucene.Net.Contrib.Spatial.Test.Compatibility
             //we may land at a document that has no spatial field. In which case we keep increasing the index until we find one that does have a spatial field.
             do
             {
-                doc = base.indexSearcher.IndexReader.Document(index % indexSearcher.MaxDoc);
+                doc = base.indexSearcher.IndexReader.Document(index % indexSearcher.MaxDoc, null);
                 index++;
             } while (doc.GetField(StrategyPrefix) == null);
 
             SpatialContext ctx = _spatialStrategy.GetSpatialContext();
 
-            string[] parts = doc.Get(StrategyPrefix)
+            string[] parts = doc.Get(StrategyPrefix, null)
                 .Split(' ');
 
             Point pt = ctx.MakePoint(double.Parse(parts[0]),

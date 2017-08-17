@@ -20,6 +20,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using Lucene.Net.Index;
 using Lucene.Net.Search;
+using Lucene.Net.Store;
 
 namespace Lucene.Net.Spatial.Util
 {
@@ -43,7 +44,7 @@ namespace Lucene.Net.Spatial.Util
 			terms.Add(term);
 		}
 
-		public override DocIdSet GetDocIdSet(IndexReader reader)
+		public override DocIdSet GetDocIdSet(IndexReader reader, IState state)
 		{
 			var result = new FixedBitSet(reader.MaxDoc);
 			var fields = reader.GetFieldNames(IndexReader.FieldOption.ALL);
@@ -59,7 +60,7 @@ namespace Lucene.Net.Spatial.Util
 			{
 				if (!term.Field.Equals(lastField))
 				{
-					var termsC = new TermsEnumCompatibility(reader, term.Field);
+					var termsC = new TermsEnumCompatibility(reader, term.Field, state);
 					if (termsC.Term() == null)
 					{
 						return result;
@@ -72,9 +73,9 @@ namespace Lucene.Net.Spatial.Util
 				{
 					// TODO this check doesn't make sense, decide which variable its supposed to be for
 					Debug.Assert(termsEnum != null);
-					if (termsEnum.SeekCeil(term.Text) == TermsEnumCompatibility.SeekStatus.FOUND)
+					if (termsEnum.SeekCeil(term.Text, state) == TermsEnumCompatibility.SeekStatus.FOUND)
 					{
-						termsEnum.Docs(result);
+						termsEnum.Docs(result, state);
 					}
 				}
 			}

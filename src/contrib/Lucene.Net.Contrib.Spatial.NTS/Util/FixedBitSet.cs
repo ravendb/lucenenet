@@ -18,6 +18,7 @@
 using System;
 using System.Collections;
 using Lucene.Net.Search;
+using Lucene.Net.Store;
 using Lucene.Net.Util;
 
 namespace Lucene.Net.Spatial.Util
@@ -429,7 +430,7 @@ namespace Lucene.Net.Spatial.Util
 			return hash;
 		}
 
-		public override DocIdSetIterator Iterator()
+		public override DocIdSetIterator Iterator(IState state)
 		{
 			return new FixedBitSetIterator(this);
 		}
@@ -452,7 +453,7 @@ namespace Lucene.Net.Spatial.Util
 				return curDocId;
 			}
 
-			public override int NextDoc()
+			public override int NextDoc(IState state)
 			{
 				while (enumerator.MoveNext())
 				{
@@ -462,10 +463,10 @@ namespace Lucene.Net.Spatial.Util
 				return curDocId = NO_MORE_DOCS;
 			}
 
-			public override int Advance(int target)
+			public override int Advance(int target, IState state)
 			{
 				int doc;
-				while ((doc = NextDoc()) < target)
+				while ((doc = NextDoc(state)) < target)
 				{
 				}
 				return doc;

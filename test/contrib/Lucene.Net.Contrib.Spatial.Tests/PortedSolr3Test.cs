@@ -182,7 +182,7 @@ namespace Lucene.Net.Contrib.Spatial.Test
                 var resultIds = new HashSet<int>();
                 foreach (var result in results.results)
                 {
-                    resultIds.Add(int.Parse(result.document.Get("id")));
+                    resultIds.Add(int.Parse(result.document.Get("id", null)));
                 }
                 foreach (int assertId in assertIds)
                 {

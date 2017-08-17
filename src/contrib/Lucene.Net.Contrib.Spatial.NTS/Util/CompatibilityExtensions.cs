@@ -26,6 +26,7 @@ using System.Diagnostics;
 using Lucene.Net.Analysis.Tokenattributes;
 using Lucene.Net.Index;
 using Lucene.Net.Search;
+using Lucene.Net.Store;
 
 namespace Lucene.Net.Spatial.Util
 {
@@ -48,9 +49,9 @@ namespace Lucene.Net.Spatial.Util
         //adding the reader to the cache key fixes this issue, though I am not experienced enough with the inner workings of Lucene.net
         //to know if this is a bad idea for other reasons e.g transient readers or such like
 
-        internal static IBits GetDocsWithField(this FieldCache fc, IndexReader reader, String field)
+        internal static IBits GetDocsWithField(this FieldCache fc, IndexReader reader, String field, IState state)
 		{
-			return _docsWithFieldCache.GetOrAdd(new Key<string,IndexReader>(field, reader), key => DocsWithFieldCacheEntry_CreateValue(key.Item2, new Entry(key.Item1, null), false));
+			return _docsWithFieldCache.GetOrAdd(new Key<string,IndexReader>(field, reader), key => DocsWithFieldCacheEntry_CreateValue(key.Item2, new Entry(key.Item1, null), false, state));
 		}
 
         /// <summary> <p/>
@@ -73,14 +74,14 @@ namespace Lucene.Net.Spatial.Util
             _docsWithFieldCache.Clear();
         }
 
-		private static IBits DocsWithFieldCacheEntry_CreateValue(IndexReader reader, Entry entryKey, bool setDocsWithField /* ignored */)
+		private static IBits DocsWithFieldCacheEntry_CreateValue(IndexReader reader, Entry entryKey, bool setDocsWithField /* ignored */, IState state)
 		{
 			var field = entryKey.field;
 			FixedBitSet res = null;
-			var terms = new TermsEnumCompatibility(reader, field);
+			var terms = new TermsEnumCompatibility(reader, field, state);
 			var maxDoc = reader.MaxDoc;
 
-			var term = terms.Next();
+			var term = terms.Next(state);
 			if (term != null)
 			{
 				int termsDocCount = terms.GetDocCount();
@@ -99,13 +100,13 @@ namespace Lucene.Net.Spatial.Util
 						res = new FixedBitSet(maxDoc);
 					}
 
-					var termDocs = reader.TermDocs(term);
-					while (termDocs.Next())
+					var termDocs = reader.TermDocs(term, state);
+					while (termDocs.Next(state))
 					{
 						res.Set(termDocs.Doc);
 					}
 		
-					term = terms.Next();
+					term = terms.Next(state);
 					if (term == null)
 					{
 						break;

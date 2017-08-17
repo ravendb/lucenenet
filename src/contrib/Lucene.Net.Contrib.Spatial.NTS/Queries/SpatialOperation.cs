@@ -58,11 +58,7 @@ namespace Lucene.Net.Spatial.Queries
 			this.scoreIsMeaningful = scoreIsMeaningful;
 			this.sourceNeedsArea = sourceNeedsArea;
 			this.targetNeedsArea = targetNeedsArea;
-#if !DNXCORE50
 			var upperName = name.ToUpper(CultureInfo.CreateSpecificCulture("en-US"));
-#else
-			var upperName = name.ToUpper();
-#endif
 			registry[name] = this;
 			registry[upperName] = this;
 			list.Add(this);
@@ -73,11 +69,7 @@ namespace Lucene.Net.Spatial.Queries
 			SpatialOperation op;
 			if (!registry.TryGetValue(v, out op) || op == null)
 			{
-#if !DNXCORE50
 				var upperV = v.ToUpper(CultureInfo.CreateSpecificCulture("en-US"));
-#else
-				var upperV = v.ToUpper();
-#endif
 				if (!registry.TryGetValue(upperV, out op) || op == null)
 					throw new ArgumentException("Unknown Operation: " + v, "v");
 			}

@@ -20,6 +20,7 @@ using Lucene.Net.Index;
 using Lucene.Net.Search;
 using Lucene.Net.Search.Function;
 using Lucene.Net.Spatial.Util;
+using Lucene.Net.Store;
 using Spatial4n.Core.Distance;
 using Spatial4n.Core.Shapes;
 using Spatial4n.Core.Shapes.Impl;
@@ -51,14 +52,14 @@ namespace Lucene.Net.Spatial.Vector
             private readonly DistanceCalculator calculator;
             private readonly double nullValue;
 
-			public DistanceDocValues(DistanceValueSource enclosingInstance, IndexReader reader)
+			public DistanceDocValues(DistanceValueSource enclosingInstance, IndexReader reader, IState state)
 			{
 				this.enclosingInstance = enclosingInstance;
 
-				ptX = FieldCache_Fields.DEFAULT.GetDoubles(reader, enclosingInstance.strategy.GetFieldNameX()/*, true*/);
-				ptY = FieldCache_Fields.DEFAULT.GetDoubles(reader, enclosingInstance.strategy.GetFieldNameY()/*, true*/);
-				validX = FieldCache_Fields.DEFAULT.GetDocsWithField(reader, enclosingInstance.strategy.GetFieldNameX());
-				validY = FieldCache_Fields.DEFAULT.GetDocsWithField(reader, enclosingInstance.strategy.GetFieldNameY());
+				ptX = FieldCache_Fields.DEFAULT.GetDoubles(reader, enclosingInstance.strategy.GetFieldNameX()/*, true*/, state);
+				ptY = FieldCache_Fields.DEFAULT.GetDoubles(reader, enclosingInstance.strategy.GetFieldNameY()/*, true*/, state);
+				validX = FieldCache_Fields.DEFAULT.GetDocsWithField(reader, enclosingInstance.strategy.GetFieldNameX(), state);
+				validY = FieldCache_Fields.DEFAULT.GetDocsWithField(reader, enclosingInstance.strategy.GetFieldNameY(), state);
 
                 from = enclosingInstance.from;
                 calculator = enclosingInstance.strategy.GetSpatialContext().GetDistCalc();
@@ -87,9 +88,9 @@ namespace Lucene.Net.Spatial.Vector
 			}
 		}
 
-		public override DocValues GetValues(IndexReader reader)
+		public override DocValues GetValues(IndexReader reader, IState state)
 		{
-			return new DistanceDocValues(this, reader);
+			return new DistanceDocValues(this, reader, state);
 		}
 
 		public override string Description()

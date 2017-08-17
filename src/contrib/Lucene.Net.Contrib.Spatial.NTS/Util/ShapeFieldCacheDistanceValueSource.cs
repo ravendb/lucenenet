@@ -18,6 +18,7 @@
 using System;
 using Lucene.Net.Index;
 using Lucene.Net.Search.Function;
+using Lucene.Net.Store;
 using Spatial4n.Core.Context;
 using Spatial4n.Core.Distance;
 using Spatial4n.Core.Shapes;
@@ -48,9 +49,9 @@ namespace Lucene.Net.Spatial.Util
 		    private readonly DistanceCalculator calculator;
 		    private readonly double nullValue;
 
-			public CachedDistanceDocValues(IndexReader reader, ShapeFieldCacheDistanceValueSource enclosingInstance)
+			public CachedDistanceDocValues(IndexReader reader, ShapeFieldCacheDistanceValueSource enclosingInstance, IState state)
 			{
-                cache = enclosingInstance.provider.GetCache(reader);
+                cache = enclosingInstance.provider.GetCache(reader, state);
 				this.enclosingInstance = enclosingInstance;
 				
                 from = enclosingInstance.from;
@@ -85,9 +86,9 @@ namespace Lucene.Net.Spatial.Util
 			}
 		}
 
-		public override DocValues GetValues(IndexReader reader)
+		public override DocValues GetValues(IndexReader reader, IState state)
 		{
-			return new CachedDistanceDocValues(reader, this);
+			return new CachedDistanceDocValues(reader, this, state);
 		}
 
 		public override string Description()

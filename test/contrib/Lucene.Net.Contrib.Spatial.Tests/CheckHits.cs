@@ -22,6 +22,7 @@ using System.Linq;
 using System.Text;
 using Lucene.Net.Index;
 using Lucene.Net.Search;
+using Lucene.Net.Store;
 using Lucene.Net.Util;
 
 namespace Lucene.Net.Contrib.Spatial.Test
@@ -52,7 +53,7 @@ namespace Lucene.Net.Contrib.Spatial.Test
 
             searcher.Search(query,
                             new ExplanationAsserter
-                                (query, defaultFieldName, searcher, deep));
+                                (query, defaultFieldName, searcher, deep), null);
 
         }
 
@@ -101,13 +102,13 @@ namespace Lucene.Net.Contrib.Spatial.Test
                 this.scorer = scorer;
             }
 
-            public override void Collect(int doc)
+            public override void Collect(int doc, IState state)
             {
                 Explanation exp = null;
                 doc = doc + @base;
                 try
                 {
-                    exp = s.Explain(q, doc);
+                    exp = s.Explain(q, doc, state);
                 }
                 catch (IOException e)
                 {
@@ -116,12 +117,12 @@ namespace Lucene.Net.Contrib.Spatial.Test
                 }
 
                 assertNotNull("Explanation of [[" + d + "]] for #" + doc + " is null", exp);
-                verifyExplanation(d, doc, scorer.Score(), deep, exp);
+                verifyExplanation(d, doc, scorer.Score(state), deep, exp);
                 assertTrue("Explanation of [[" + d + "]] for #" + doc +
                                            " does not indicate match: " + exp.ToString(), exp.IsMatch);
             }
 
-            public override void SetNextReader(IndexReader reader, int docBase)
+            public override void SetNextReader(IndexReader reader, int docBase, IState state)
             {
                 @base = docBase;
             }

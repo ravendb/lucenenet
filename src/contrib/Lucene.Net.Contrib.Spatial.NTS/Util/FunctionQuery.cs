@@ -20,6 +20,7 @@ using System;
 using Lucene.Net.Index;
 using Lucene.Net.Search;
 using Lucene.Net.Search.Function;
+using Lucene.Net.Store;
 
 namespace Lucene.Net.Spatial.Util
 {
@@ -49,7 +50,7 @@ namespace Lucene.Net.Spatial.Util
 			return func;
 		}
 
-		public override Query Rewrite(Index.IndexReader reader)
+		public override Query Rewrite(Index.IndexReader reader, IState state)
 		{
 			return this;
 		}
@@ -100,14 +101,14 @@ namespace Lucene.Net.Spatial.Util
 				queryWeight *= this.queryNorm;
 			}
 
-			public override Scorer Scorer(IndexReader reader, bool scoreDocsInOrder, bool topScorer)
+			public override Scorer Scorer(IndexReader reader, bool scoreDocsInOrder, bool topScorer, IState state)
 			{
-				return new AllScorer(enclosingInstance.GetSimilarity(searcher), reader, this);
+				return new AllScorer(enclosingInstance.GetSimilarity(searcher), reader, this, state);
 			}
 
-			public override Explanation Explain(IndexReader reader, int doc)
+			public override Explanation Explain(IndexReader reader, int doc, IState state)
 			{
-				return ((AllScorer)Scorer(reader, true, true)).Explain(doc);
+				return ((AllScorer)Scorer(reader, true, true, state)).Explain(doc);
 			}
 		}
 
@@ -121,7 +122,7 @@ namespace Lucene.Net.Spatial.Util
 			readonly DocValues vals;
 			readonly bool hasDeletions;
 
-			public AllScorer(Similarity similarity, IndexReader reader, FunctionWeight w)
+			public AllScorer(Similarity similarity, IndexReader reader, FunctionWeight w, IState state)
 				: base(similarity)
 			{
 				this.weight = w;
@@ -129,7 +130,7 @@ namespace Lucene.Net.Spatial.Util
 				this.reader = reader;
 				this.maxDoc = reader.MaxDoc;
 				this.hasDeletions = reader.HasDeletions;
-				vals = ((FunctionQuery)w.Query).func.GetValues(reader);
+				vals = ((FunctionQuery)w.Query).func.GetValues(reader, state);
 			}
 
 			public override int DocID()
@@ -141,7 +142,7 @@ namespace Lucene.Net.Spatial.Util
 			// the score could either ignore the subscore, or boost it.
 			// Containment:  floatline(foo:myTerm, "myFloatField", 1.0, 0.0f)
 			// Boost:        foo:myTerm^floatline("myFloatField",1.0,0.0f)
-			public override int NextDoc()
+			public override int NextDoc(IState state)
 			{
 				for (; ; )
 				{
@@ -155,14 +156,14 @@ namespace Lucene.Net.Spatial.Util
 				}
 			}
 
-			public override int Advance(int target)
+			public override int Advance(int target, IState state)
 			{
 				// this will work even if target==NO_MORE_DOCS
 				doc = target - 1;
-				return NextDoc();
+				return NextDoc(state);
 			}
 
-			public override float Score()
+			public override float Score(IState state)
 			{
 				float score = qWeight * vals.FloatVal(doc);
 
@@ -186,7 +187,7 @@ namespace Lucene.Net.Spatial.Util
 			}
 		}
 
-		public override Weight CreateWeight(Searcher searcher)
+		public override Weight CreateWeight(Searcher searcher, IState state)
 		{
 			return new FunctionQuery.FunctionWeight(searcher, this);
 		}

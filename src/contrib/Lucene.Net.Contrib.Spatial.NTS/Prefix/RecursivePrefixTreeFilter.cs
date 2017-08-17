@@ -21,6 +21,7 @@ using System.Diagnostics;
 using Lucene.Net.Search;
 using Lucene.Net.Spatial.Prefix.Tree;
 using Lucene.Net.Spatial.Util;
+using Lucene.Net.Store;
 using Lucene.Net.Util;
 using Spatial4n.Core.Shapes;
 
@@ -71,11 +72,11 @@ if (!scan) {
 			Debug.Assert(detailLevel <= grid.GetMaxLevels());
 		}
 
-		public override DocIdSet GetDocIdSet(Index.IndexReader reader /*, Bits acceptDocs*/)
+		public override DocIdSet GetDocIdSet(Index.IndexReader reader /*, Bits acceptDocs*/, IState state)
 		{
 			var bits = new OpenBitSet(reader.MaxDoc);
-			var terms = new TermsEnumCompatibility(reader, fieldName);
-			var term = terms.Next();
+			var terms = new TermsEnumCompatibility(reader, fieldName, state);
+			var term = terms.Next(state);
 			if (term == null)
 				return null;
 			Node scanCell = null;
@@ -97,25 +98,25 @@ if (!scan) {
 			{
 				Node cell = cells.First.Value; cells.RemoveFirst();
 				var cellTerm = cell.GetTokenString();
-				var seekStat = terms.Seek(cellTerm);
+				var seekStat = terms.Seek(cellTerm, state);
 				if (seekStat == TermsEnumCompatibility.SeekStatus.END)
 					break;
 				if (seekStat == TermsEnumCompatibility.SeekStatus.NOT_FOUND)
 					continue;
 				if (cell.GetLevel() == detailLevel || cell.IsLeaf())
 				{
-					terms.Docs(bits);
+					terms.Docs(bits, state);
 				}
 				else
 				{//any other intersection
 					//If the next indexed term is the leaf marker, then add all of them
-					var nextCellTerm = terms.Next();
+					var nextCellTerm = terms.Next(state);
 					Debug.Assert(nextCellTerm.Text.StartsWith(cellTerm));
 					scanCell = grid.GetNode(nextCellTerm.Text, scanCell);
 					if (scanCell.IsLeaf())
 					{
-						terms.Docs(bits);
-						term = terms.Next();//move pointer to avoid potential redundant addDocs() below
+						terms.Docs(bits, state);
+						term = terms.Next(state);//move pointer to avoid potential redundant addDocs() below
 					}
 
 					//Decide whether to continue to divide & conquer, or whether it's time to scan through terms beneath this cell.
@@ -134,7 +135,7 @@ if (!scan) {
 					else
 					{
 						//Scan through all terms within this cell to see if they are within the queryShape. No seek()s.
-						for (var t = terms.Term(); t != null && t.Text.StartsWith(cellTerm); t = terms.Next())
+						for (var t = terms.Term(); t != null && t.Text.StartsWith(cellTerm); t = terms.Next(state))
 						{
 							scanCell = grid.GetNode(t.Text, scanCell);
 							int termLevel = scanCell.GetLevel();
@@ -151,7 +152,7 @@ if (!scan) {
                                 if (queryShape.Relate(cShape) == SpatialRelation.DISJOINT)
 									continue;
 
-								terms.Docs(bits);
+								terms.Docs(bits, state);
 							}
 						}//term loop
 					}

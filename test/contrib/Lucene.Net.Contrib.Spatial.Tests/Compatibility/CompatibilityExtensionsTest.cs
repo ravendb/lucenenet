@@ -88,18 +88,18 @@ namespace Lucene.Net.Contrib.Spatial.Test.Compatibility
 
 
 
-            TopDocs topDocs = indexSearcher.Search(booleanQuery, 10);
+            TopDocs topDocs = indexSearcher.Search(booleanQuery, 10, null);
 
             Assert.GreaterOrEqual(topDocs.ScoreDocs.Length, 1); //Search area is centered on a doc so at least one doc should be returned
         }
 
         private SpatialArgs GetArgs(int docId, int distanceInKms)
         {
-            Document doc = base.indexSearcher.IndexReader.Document(docId);
+            Document doc = base.indexSearcher.IndexReader.Document(docId, null);
 
             SpatialContext ctx = _spatialStrategy.GetSpatialContext();
 
-            string[] parts = doc.Get(StrategyPrefix)
+            string[] parts = doc.Get(StrategyPrefix, null)
                 .Split(' ');
 
             Point pt = ctx.MakePoint(double.Parse(parts[0]),

@@ -18,6 +18,7 @@
 using System;
 using Lucene.Net.Search;
 using Lucene.Net.Search.Function;
+using Lucene.Net.Store;
 
 namespace Lucene.Net.Spatial.Util
 {
@@ -44,10 +45,10 @@ namespace Lucene.Net.Spatial.Util
 			this.max = max;
 		}
 
-		public override DocIdSet GetDocIdSet(Index.IndexReader reader)
+		public override DocIdSet GetDocIdSet(Index.IndexReader reader, IState state)
 		{
-			var values = source.GetValues(reader);
-			return new ValueSourceFilteredDocIdSet(startingFilter.GetDocIdSet(reader), values, this);
+			var values = source.GetValues(reader, state);
+			return new ValueSourceFilteredDocIdSet(startingFilter.GetDocIdSet(reader, state), values, this);
 		}
 
         public class ValueSourceFilteredDocIdSet : FilteredDocIdSet

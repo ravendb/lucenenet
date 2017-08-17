@@ -18,6 +18,7 @@
 using System.Collections.Generic;
 using Lucene.Net.Index;
 using Lucene.Net.Search.Function;
+using Lucene.Net.Store;
 
 namespace Lucene.Net.Spatial.Util
 {
@@ -68,10 +69,10 @@ namespace Lucene.Net.Spatial.Util
 			}
 		}
 
-		public override DocValues GetValues(IndexReader reader)
+		public override DocValues GetValues(IndexReader reader, IState state)
 		{
 			var @base = 0; //reader.DocBase;
-			var vals = source.GetValues(reader);
+			var vals = source.GetValues(reader, state);
 			return new CachingDoubleDocValue(@base, vals, cache);
 
 		}

@@ -2,15 +2,13 @@
 
   <PropertyGroup>
     <AssemblyTitle>Lucene.Net Contrib Spatial NTS</AssemblyTitle>
-    <VersionPrefix>3.0.5</VersionPrefix>
-    <TargetFramework>netstandard1.6</TargetFramework>
+    <VersionPrefix>3.0.10</VersionPrefix>
+    <TargetFramework>netstandard2.0</TargetFramework>
     <AssemblyName>Lucene.Net.Contrib.Spatial.NTS</AssemblyName>
     <AssemblyOriginatorKeyFile>Lucene.Net.snk</AssemblyOriginatorKeyFile>
     <SignAssembly>true</SignAssembly>
     <PublicSign Condition=" '$(OS)' != 'Windows_NT' ">true</PublicSign>
     <PackageId>Lucene.Net.Contrib.Spatial.NTS</PackageId>
-    <PackageTargetFallback>$(PackageTargetFallback);dnxcore50</PackageTargetFallback>
-    <NetStandardImplicitPackageVersion>1.6.0</NetStandardImplicitPackageVersion>
     <GenerateAssemblyTitleAttribute>false</GenerateAssemblyTitleAttribute>
     <GenerateAssemblyDescriptionAttribute>false</GenerateAssemblyDescriptionAttribute>
     <GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>
@@ -20,19 +18,31 @@
     <GenerateAssemblyInformationalVersionAttribute>false</GenerateAssemblyInformationalVersionAttribute>
     <GenerateAssemblyVersionAttribute>false</GenerateAssemblyVersionAttribute>
     <GenerateAssemblyFileVersionAttribute>false</GenerateAssemblyFileVersionAttribute>
+    <FileVersion>3.0.10.0</FileVersion>
   </PropertyGroup>
 
   <ItemGroup>
+    <Content Include="..\..\..\..\Spatial4n\Spatial4n.Core\bin\Release\netstandard2.0\Spatial4n.Core.NTS.dll">
+      <PackagePath>lib/netstandard2.0/</PackagePath>
+      <Pack>true</Pack>
+    </Content>
+    <Content Include="..\..\..\..\Spatial4n\Spatial4n.Core\bin\Release\netstandard2.0\GeoAPI.dll">
+      <PackagePath>lib/netstandard2.0/</PackagePath>
+      <Pack>true</Pack>
+    </Content>
+    <Content Include="..\..\..\..\Spatial4n\Spatial4n.Core\bin\Release\netstandard2.0\NetTopologySuite.dll">
+      <PackagePath>lib/netstandard2.0/</PackagePath>
+      <Pack>true</Pack>
+    </Content>
+  </ItemGroup>
+  
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\..\Spatial4n\Spatial4n.Core\Spatial4n.Core.NTS.csproj" PrivateAssets="All" />
     <ProjectReference Include="..\..\Lucene.Net\Lucene.Net.csproj" />
   </ItemGroup>
 
-  <PropertyGroup Condition=" '$(TargetFramework)' == 'netstandard1.6' ">
-    <DefineConstants>$(DefineConstants);DNXCORE50</DefineConstants>
-  </PropertyGroup>
-
-  <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard1.6' ">
-    <PackageReference Include="Microsoft.CSharp" Version="4.0.1" />
-    <PackageReference Include="Spatial4n.Core" Version="0.3.1" />
+  <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard2.0' ">
+    <PackageReference Include="Microsoft.CSharp" Version="4.4.0" />
   </ItemGroup>
 
 </Project>

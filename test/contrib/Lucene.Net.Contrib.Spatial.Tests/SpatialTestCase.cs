@@ -45,7 +45,7 @@ namespace Lucene.Net.Contrib.Spatial.Test
 
 			directory = NewDirectory();
 
-			indexWriter = new IndexWriter(directory, new WhitespaceAnalyzer(), true, IndexWriter.MaxFieldLength.UNLIMITED);
+			indexWriter = new IndexWriter(directory, new WhitespaceAnalyzer(), true, IndexWriter.MaxFieldLength.UNLIMITED, null);
 		}
 
 		[TearDown]
@@ -88,33 +88,33 @@ namespace Lucene.Net.Contrib.Spatial.Test
 
 		protected void addDocument(Document doc)
 		{
-			indexWriter.AddDocument(doc);
+			indexWriter.AddDocument(doc, null);
 		}
 
 		protected void addDocumentsAndCommit(List<Document> documents)
 		{
 			foreach (var document in documents)
 			{
-				indexWriter.AddDocument(document);
+				indexWriter.AddDocument(document, null);
 			}
 			commit();
 		}
 
 		protected void deleteAll()
 		{
-			indexWriter.DeleteAll();
+			indexWriter.DeleteAll(null);
 		}
 
 		protected void commit()
 		{
-			indexWriter.Commit();
+			indexWriter.Commit(null);
 			if (indexReader == null)
 			{
-				indexReader = (DirectoryReader)IndexReader.Open(directory, true);
+				indexReader = (DirectoryReader)IndexReader.Open(directory, true, null);
 			}
 			else
 			{
-				indexReader = (DirectoryReader)indexReader.Reopen();
+				indexReader = (DirectoryReader)indexReader.Reopen(null);
 			}
 			indexSearcher = newSearcher(indexReader);
 		}
@@ -128,12 +128,12 @@ namespace Lucene.Net.Contrib.Spatial.Test
 		{
 			try
 			{
-				TopDocs topDocs = indexSearcher.Search(query, numDocs);
+				TopDocs topDocs = indexSearcher.Search(query, numDocs, null);
 
 				var results = new List<SearchResult>();
 				foreach (ScoreDoc scoreDoc in topDocs.ScoreDocs)
 				{
-					results.Add(new SearchResult(scoreDoc.Score, indexSearcher.Doc(scoreDoc.Doc)));
+					results.Add(new SearchResult(scoreDoc.Score, indexSearcher.Doc(scoreDoc.Doc, null)));
 				}
 				return new SearchResults(topDocs.TotalHits, results);
 			}
@@ -163,7 +163,7 @@ namespace Lucene.Net.Contrib.Spatial.Test
 				str.Append("found: ").Append(numFound).Append('[');
 				foreach (SearchResult r in results)
 				{
-					String id = r.document.Get("id");
+					String id = r.document.Get("id", null);
 					str.Append(id).Append(", ");
 				}
 				str.Append(']');

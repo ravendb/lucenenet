@@ -18,6 +18,7 @@
 using System;
 using System.Runtime.CompilerServices;
 using Lucene.Net.Index;
+using Lucene.Net.Store;
 using Spatial4n.Core.Shapes;
 #if NET35
 using Lucene.Net.Support;
@@ -60,7 +61,7 @@ namespace Lucene.Net.Spatial.Util
 
 		private readonly object locker = new object();
 
-		public ShapeFieldCache<T> GetCache(IndexReader reader)
+		public ShapeFieldCache<T> GetCache(IndexReader reader, IState state)
 		{
 			lock (locker)
 			{
@@ -75,22 +76,22 @@ namespace Lucene.Net.Spatial.Util
 
 				idx = new ShapeFieldCache<T>(reader.MaxDoc, defaultSize);
 				var count = 0;
-				var tec = new TermsEnumCompatibility(reader, shapeField);
+				var tec = new TermsEnumCompatibility(reader, shapeField, state);
 
-				var term = tec.Next();
+				var term = tec.Next(state);
 				while (term != null)
 				{
 					var shape = ReadShape(term);
 					if (shape != null)
 					{
-						var docs = reader.TermDocs(new Term(shapeField, tec.Term().Text));
-						while (docs.Next())
+						var docs = reader.TermDocs(new Term(shapeField, tec.Term().Text), state);
+						while (docs.Next(state))
 						{
 							idx.Add(docs.Doc, shape);
 							count++;
 						}
 					}
-					term = tec.Next();
+					term = tec.Next(state);
 				}
 
 				sidx.Add(reader, idx);

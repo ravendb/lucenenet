@@ -2,14 +2,12 @@
 
   <PropertyGroup>
     <AssemblyTitle>Lucene.Net Contrib Spatial Tests</AssemblyTitle>
-    <VersionPrefix>3.0.5</VersionPrefix>
-    <TargetFramework>netcoreapp1.0</TargetFramework>
+    <VersionPrefix>3.0.10</VersionPrefix>
+    <TargetFramework>netcoreapp2.0</TargetFramework>
     <AssemblyName>Lucene.Net.Contrib.Spatial.Tests</AssemblyName>
-    <OutputType>Exe</OutputType>
-    <PackageId>Lucene.Net.Contrib.Spatial.Tests</PackageId>
-    <PackageTargetFallback>$(PackageTargetFallback);dotnet;dnxcore50</PackageTargetFallback>
-    <NetStandardImplicitPackageVersion>1.6.0</NetStandardImplicitPackageVersion>
-    <RuntimeFrameworkVersion>1.0.4</RuntimeFrameworkVersion>
+    <AssemblyOriginatorKeyFile>..\..\Lucene.Net.Test\Lucene.Net.snk</AssemblyOriginatorKeyFile>
+    <SignAssembly>true</SignAssembly>
+    <PublicSign Condition=" '$(OS)' != 'Windows_NT' ">true</PublicSign>
     <GenerateAssemblyTitleAttribute>false</GenerateAssemblyTitleAttribute>
     <GenerateAssemblyDescriptionAttribute>false</GenerateAssemblyDescriptionAttribute>
     <GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>
@@ -19,27 +17,50 @@
     <GenerateAssemblyInformationalVersionAttribute>false</GenerateAssemblyInformationalVersionAttribute>
     <GenerateAssemblyVersionAttribute>false</GenerateAssemblyVersionAttribute>
     <GenerateAssemblyFileVersionAttribute>false</GenerateAssemblyFileVersionAttribute>
+    <GenerateProgramFile>false</GenerateProgramFile>
+    <ApplicationIcon />
+    <OutputTypeEx>exe</OutputTypeEx>
+    <StartupObject>Lucene.Net.Contrib.Spatial.Tests.Program</StartupObject>
+    <FileVersion>3.0.10.0</FileVersion>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="BBox\TestBBoxStrategy.cs" />
+    <Compile Include="Compatibility\CompatibilityExtensionsTest.cs" />
+    <Compile Include="Compatibility\FixedBitSetTest.cs" />
+    <Compile Include="Compatibility\TermsFilterTest.cs" />
+    <Compile Include="PortedSolr3Test.cs" />
+    <Compile Include="Prefix\TestRecursivePrefixTreeStrategy.cs" />
+    <Compile Include="Prefix\TestTermQueryPrefixGridStrategy.cs" />
+    <Compile Include="Prefix\Tree\SpatialPrefixTreeTest.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Queries\SpatialArgsParserTest.cs" />
+    <Compile Include="SpatialMatchConcern.cs" />
+    <Compile Include="SpatialTestCase.cs" />
+    <Compile Include="SpatialTestQuery.cs" />
+    <Compile Include="StrategyTestCase.cs" />
+    <Compile Include="TestTestFramework.cs" />
+    <Compile Include="Vector\TestTwoDoublesStrategy.cs" />
+    <Compile Include="Program.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\..\Lucene.Net.Test\Lucene.Net.snk" Link="Lucene.Net.snk" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\..\Spatial4n\Spatial4n.Core\Spatial4n.Core.NTS.csproj" />
     <ProjectReference Include="..\..\..\src\Lucene.Net\Lucene.Net.csproj" />
     <ProjectReference Include="..\..\..\src\contrib\Lucene.Net.Contrib.Spatial.NTS\Lucene.Net.Contrib.Spatial.NTS.csproj" />
     <ProjectReference Include="..\..\Lucene.Net.Test\Lucene.Net.Test.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Spatial4n.Core" Version="0.3.1" />
-    <PackageReference Include="GeoAPI" Version="1.7.5" />
-    <PackageReference Include="NetTopologySuite" Version="1.15" />
-  </ItemGroup>
-
-  <PropertyGroup Condition=" '$(TargetFramework)' == 'netcoreapp1.0' ">
-    <DefineConstants>$(DefineConstants);DNXCORE50</DefineConstants>
-  </PropertyGroup>
-
-  <ItemGroup Condition=" '$(TargetFramework)' == 'netcoreapp1.0' ">
-    <PackageReference Include="Microsoft.CSharp" Version="4.0.1" />
-    <PackageReference Include="NUnitLite" Version="3.2.1" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.5.0-preview-20170727-01" />
+    <PackageReference Include="NUnit" Version="3.7.1" />
+    <PackageReference Include="NUnitLite" Version="3.7.2" />
+    <PackageReference Include="Microsoft.CSharp" Version="4.4.0" />
   </ItemGroup>
 
 </Project>

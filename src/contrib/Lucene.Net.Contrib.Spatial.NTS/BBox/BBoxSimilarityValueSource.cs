@@ -19,6 +19,7 @@ using Lucene.Net.Index;
 using Lucene.Net.Search;
 using Lucene.Net.Search.Function;
 using Lucene.Net.Spatial.Util;
+using Lucene.Net.Store;
 using Spatial4n.Core.Shapes;
 using Spatial4n.Core.Shapes.Impl;
 
@@ -46,18 +47,18 @@ namespace Lucene.Net.Spatial.BBox
 
 			private readonly IBits validMinX, validMaxX;
 
-			public BBoxSimilarityValueSourceDocValues(IndexReader reader, BBoxSimilarityValueSource enclosingInstance)
+			public BBoxSimilarityValueSourceDocValues(IndexReader reader, BBoxSimilarityValueSource enclosingInstance, IState state)
 			{
 				_enclosingInstance = enclosingInstance;
                 rect = _enclosingInstance.strategy.GetSpatialContext().MakeRectangle(0, 0, 0, 0); //reused
 
-			    minX = FieldCache_Fields.DEFAULT.GetDoubles(reader, enclosingInstance.strategy.field_minX/*, true*/);
-				minY = FieldCache_Fields.DEFAULT.GetDoubles(reader, enclosingInstance.strategy.field_minY/*, true*/);
-				maxX = FieldCache_Fields.DEFAULT.GetDoubles(reader, enclosingInstance.strategy.field_maxX/*, true*/);
-				maxY = FieldCache_Fields.DEFAULT.GetDoubles(reader, enclosingInstance.strategy.field_maxY/*, true*/);
+			    minX = FieldCache_Fields.DEFAULT.GetDoubles(reader, enclosingInstance.strategy.field_minX/*, true*/, state);
+				minY = FieldCache_Fields.DEFAULT.GetDoubles(reader, enclosingInstance.strategy.field_minY/*, true*/, state);
+				maxX = FieldCache_Fields.DEFAULT.GetDoubles(reader, enclosingInstance.strategy.field_maxX/*, true*/, state);
+				maxY = FieldCache_Fields.DEFAULT.GetDoubles(reader, enclosingInstance.strategy.field_maxY/*, true*/, state);
 
-				validMinX = FieldCache_Fields.DEFAULT.GetDocsWithField(reader, enclosingInstance.strategy.field_minX);
-				validMaxX = FieldCache_Fields.DEFAULT.GetDocsWithField(reader, enclosingInstance.strategy.field_maxX);
+				validMinX = FieldCache_Fields.DEFAULT.GetDocsWithField(reader, enclosingInstance.strategy.field_minX, state);
+				validMaxX = FieldCache_Fields.DEFAULT.GetDocsWithField(reader, enclosingInstance.strategy.field_maxX, state);
 			}
 
             public override float FloatVal(int doc)
@@ -97,9 +98,9 @@ namespace Lucene.Net.Spatial.BBox
 			}
 		}
 
-		public override DocValues GetValues(IndexReader reader)
+		public override DocValues GetValues(IndexReader reader, IState state)
 		{
-			return new BBoxSimilarityValueSourceDocValues(reader, this);
+			return new BBoxSimilarityValueSourceDocValues(reader, this, state);
 		}
 
 		public override string Description()

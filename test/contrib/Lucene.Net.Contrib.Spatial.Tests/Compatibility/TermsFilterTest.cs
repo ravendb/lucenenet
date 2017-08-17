@@ -54,32 +54,32 @@ namespace Lucene.Net.Contrib.Spatial.Test.Compatibility
 		{
 			String fieldName = "field1";
 			Directory rd = new RAMDirectory();
-			var w = new IndexWriter(rd, new KeywordAnalyzer(), IndexWriter.MaxFieldLength.UNLIMITED);
+			var w = new IndexWriter(rd, new KeywordAnalyzer(), IndexWriter.MaxFieldLength.UNLIMITED, null);
 			for (int i = 0; i < 100; i++)
 			{
 				var doc = new Document();
 				int term = i*10; //terms are units of 10;
 				doc.Add(new Field(fieldName, "" + term, Field.Store.YES, Field.Index.ANALYZED));
-				w.AddDocument(doc);
+				w.AddDocument(doc, null);
 			}
-			IndexReader reader = w.GetReader();
+			IndexReader reader = w.GetReader(null);
 			w.Close();
 
 			TermsFilter tf = new TermsFilter();
 			tf.AddTerm(new Term(fieldName, "19"));
-			FixedBitSet bits = (FixedBitSet) tf.GetDocIdSet(reader);
+			FixedBitSet bits = (FixedBitSet) tf.GetDocIdSet(reader, null);
 			Assert.AreEqual(0, bits.Cardinality(), "Must match nothing");
 
 			tf.AddTerm(new Term(fieldName, "20"));
-			bits = (FixedBitSet) tf.GetDocIdSet(reader);
+			bits = (FixedBitSet) tf.GetDocIdSet(reader, null);
 			Assert.AreEqual(1, bits.Cardinality(), "Must match 1");
 
 			tf.AddTerm(new Term(fieldName, "10"));
-			bits = (FixedBitSet) tf.GetDocIdSet(reader);
+			bits = (FixedBitSet) tf.GetDocIdSet(reader, null);
 			Assert.AreEqual(2, bits.Cardinality(), "Must match 2");
 
 			tf.AddTerm(new Term(fieldName, "00"));
-			bits = (FixedBitSet) tf.GetDocIdSet(reader);
+			bits = (FixedBitSet) tf.GetDocIdSet(reader, null);
 			Assert.AreEqual(2, bits.Cardinality(), "Must match 2");
 
 			reader.Close();

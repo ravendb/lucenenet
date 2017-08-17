@@ -147,14 +147,14 @@ namespace Lucene.Net.Contrib.Spatial.Test
                 {
                     //check stored value is there & parses
                     assertNotNull(
-                        new ShapeReadWriter(ctx).ReadShape(got.results[0].document.Get(strategy.GetFieldName())));
+                        new ShapeReadWriter(ctx).ReadShape(got.results[0].document.Get(strategy.GetFieldName(), null)));
                 }
                 if (concern.orderIsImportant)
                 {
                     var ids = q.ids.GetEnumerator();
                     foreach (var r in got.results)
                     {
-                        String id = r.document.Get("id");
+                        String id = r.document.Get("id", null);
                         if (!ids.MoveNext())
                             Assert.Fail(msg + " :: Did not get enough results.  Expected " + q.ids + ", got: " +
                                         got.toDebugString());
@@ -173,7 +173,7 @@ namespace Lucene.Net.Contrib.Spatial.Test
                         var found = new HashSet<String>();
                         foreach (var r in got.results)
                         {
-                            found.Add(r.document.Get("id"));
+                            found.Add(r.document.Get("id", null));
                         }
                         foreach (String s in q.ids)
                         {
@@ -188,7 +188,7 @@ namespace Lucene.Net.Contrib.Spatial.Test
                         var found = new List<String>();
                         foreach (SearchResult r in got.results)
                         {
-                            found.Add(r.document.Get("id"));
+                            found.Add(r.document.Get("id", null));
                         }
 
                         // sort both so that the order is not important
@@ -245,7 +245,7 @@ namespace Lucene.Net.Contrib.Spatial.Test
             //    }
             //    CheckHits.checkHits(random(), q, "", indexSearcher, expectedDocs);
 
-            TopDocs docs = indexSearcher.Search(q, 1000); //calculates the score
+            TopDocs docs = indexSearcher.Search(q, 1000, null); //calculates the score
             for (int i = 0; i < docs.ScoreDocs.Length; i++)
             {
                 ScoreDoc gotSD = docs.ScoreDocs[i];
