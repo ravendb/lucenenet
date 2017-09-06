@@ -33,7 +33,7 @@ namespace Lucene.Net.Util
 
 	    private void InitBlock()
 	    {
-	        sizes = new FastDictionary<Type, int, IdentityStructComparer<Type>>(IdentityStructComparer<Type>.Default);
+	        sizes = new Dictionary<Type, int>(IdentityStructComparer<Type>.Default);
 	        sizes[typeof(bool)] = 1;
             sizes[typeof (byte)] = 1;
             sizes[typeof(sbyte)] = 1;
@@ -45,7 +45,7 @@ namespace Lucene.Net.Util
             sizes[typeof (long)] = 8;
         }
 		// best guess primitive sizes
-        private FastDictionary<Type, int, IdentityStructComparer<Type>> sizes;
+        private Dictionary<Type, int> sizes;
 		
 		/*
 		* (non-Javadoc)

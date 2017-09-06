@@ -37,7 +37,7 @@ namespace Lucene.Net.Util
 	{
 		private MemoryModel memoryModel;
 		
-		private FastDictionary<object, object, IdentityStructComparer<object>> seen;
+		private Dictionary<object, object> seen;
 		
 		private int refSize;
 		private int arraySize;
@@ -80,7 +80,7 @@ namespace Lucene.Net.Util
 			this.checkInterned = checkInterned;
 			// Use Map rather than Set so that we can use an IdentityHashMap - not
 			// seeing an IdentityHashSet
-            seen = new FastDictionary<object, object, IdentityStructComparer<object>>(64, IdentityStructComparer<object>.Default);
+            seen = new Dictionary<object, object>(64, IdentityStructComparer<object>.Default);
 			this.refSize = memoryModel.ReferenceSize;
 			this.arraySize = memoryModel.ArraySize;
 			this.classSize = memoryModel.ClassSize;

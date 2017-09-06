@@ -97,8 +97,8 @@ namespace Lucene.Net.Util
 		
 		// These two maps must always be in sync!!!
 		// So they are private, final and read-only from the outside (read-only iterators)
-        private readonly FastDictionary<Type, AttributeImplItem, IdentityStructComparer<Type>> attributes;
-	    private readonly FastDictionary<Type, AttributeImplItem, IdentityStructComparer<Type>> attributeImpls;
+        private readonly Dictionary<Type, AttributeImplItem> attributes;
+	    private readonly Dictionary<Type, AttributeImplItem> attributeImpls;
 
         private readonly State[] currentState = null;
 	    private readonly AttributeFactory factory;
@@ -124,8 +124,8 @@ namespace Lucene.Net.Util
 		/// <summary> An AttributeSource using the supplied <see cref="AttributeFactory" /> for creating new <see cref="IAttribute" /> instances.</summary>
 		public AttributeSource(AttributeFactory factory)
 		{
-		    this.attributes = new FastDictionary<Type, AttributeImplItem, IdentityStructComparer<Type>>(IdentityStructComparer<Type>.Default); //att => att.Key);
-            this.attributeImpls = new FastDictionary<Type, AttributeImplItem, IdentityStructComparer<Type>>(IdentityStructComparer<Type>.Default); // att => att.Key);
+		    this.attributes = new Dictionary<Type, AttributeImplItem>(IdentityStructComparer<Type>.Default); //att => att.Key);
+            this.attributeImpls = new Dictionary<Type, AttributeImplItem>(IdentityStructComparer<Type>.Default); // att => att.Key);
             this.currentState = new State[1];
             this.factory = factory;
 		}
