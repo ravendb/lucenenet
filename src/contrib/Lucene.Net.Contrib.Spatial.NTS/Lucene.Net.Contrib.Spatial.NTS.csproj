@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <AssemblyTitle>Lucene.Net Contrib Spatial NTS</AssemblyTitle>
-    <VersionPrefix>3.0.11</VersionPrefix>
+    <VersionPrefix>3.0.12</VersionPrefix>
     <TargetFramework>netstandard2.0</TargetFramework>
     <AssemblyName>Lucene.Net.Contrib.Spatial.NTS</AssemblyName>
     <AssemblyOriginatorKeyFile>Lucene.Net.snk</AssemblyOriginatorKeyFile>
@@ -18,7 +18,7 @@
     <GenerateAssemblyInformationalVersionAttribute>false</GenerateAssemblyInformationalVersionAttribute>
     <GenerateAssemblyVersionAttribute>false</GenerateAssemblyVersionAttribute>
     <GenerateAssemblyFileVersionAttribute>false</GenerateAssemblyFileVersionAttribute>
-    <FileVersion>3.0.11.0</FileVersion>
+    <FileVersion>3.0.12.0</FileVersion>
   </PropertyGroup>
 
   <ItemGroup>
