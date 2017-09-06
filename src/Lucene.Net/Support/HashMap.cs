@@ -22,15 +22,22 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.CompilerServices;
+using Lucene.Net.Support;
 using Lucene.Net.Util;
 
 namespace Lucene.Net.Support
 {
+    public static class Helper
+    {
+        public const int MinBuckets = 8;
+    }
+
     [Serializable]
     public class HashMap<TKey, TValue> : HashMap<TKey, TValue, IEqualityComparer<TKey>>
     {
-        public HashMap() : base (DictionaryHelper.KMinBuckets, EqualityComparer<TKey>.Default)
+        public HashMap() : base (Helper.MinBuckets, EqualityComparer<TKey>.Default)
         {
         }
 
@@ -76,7 +83,7 @@ namespace Lucene.Net.Support
     public class HashMap<TKey, TValue, TComparer> : IDictionary<TKey, TValue> where TComparer : IEqualityComparer<TKey>
     {
         internal readonly TComparer _comparer;
-        internal readonly FastDictionary<TKey, TValue, TComparer> _dict;
+        internal readonly Dictionary<TKey, TValue> _dict;
         // Indicates the type of key is a non-nullable valuetype
         private readonly bool _isValueType;
         
@@ -86,14 +93,14 @@ namespace Lucene.Net.Support
         private TValue _nullValue;
 
         public HashMap(TComparer comparer)
-            : this(DictionaryHelper.KMinBuckets, comparer)
+            : this(Helper.MinBuckets, comparer)
         {            
         }
 
         public HashMap(int initialCapacity, TComparer comparer)
         {
             _comparer = comparer;
-            _dict = new FastDictionary<TKey, TValue, TComparer>(initialCapacity, _comparer);
+            _dict = new Dictionary<TKey, TValue>(initialCapacity, _comparer);
             _hasNullValue = false;
 
             if (typeof(TKey).IsValueType)
@@ -161,12 +168,16 @@ namespace Lucene.Net.Support
                 return _hasNullValue && EqualityComparer<TValue>.Default.Equals(item.Value, _nullValue);
             }
 
-            return _dict.Contains(item.Key);
+            return _dict.ContainsKey(item.Key);
         }
 
         void ICollection<KeyValuePair<TKey, TValue>>.CopyTo(KeyValuePair<TKey, TValue>[] array, int arrayIndex)
         {
-            _dict.CopyTo(array, arrayIndex);
+            foreach (var kvp in _dict)
+            {
+                array[arrayIndex++] = kvp;
+            }
+
             if(!_isValueType && _hasNullValue)
             {
                 array[array.Length - 1] = new KeyValuePair<TKey, TValue>(default(TKey), _nullValue);
@@ -326,9 +337,9 @@ namespace Lucene.Net.Support
         class NullValueCollection : ICollection<TValue>
         {
             private readonly TValue _nullValue;
-            private readonly FastDictionary<TKey, TValue, TComparer> _internalDict;
+            private readonly Dictionary<TKey, TValue> _internalDict;
 
-            public NullValueCollection(FastDictionary<TKey, TValue, TComparer> dict, TValue nullValue)
+            public NullValueCollection(Dictionary<TKey, TValue> dict, TValue nullValue)
             {
                 _internalDict = dict;
                 _nullValue = nullValue;
@@ -405,9 +416,9 @@ namespace Lucene.Net.Support
         /// </summary>
         class NullKeyCollection : ICollection<TKey>
         {
-            private readonly FastDictionary<TKey, TValue, TComparer> _internalDict;
+            private readonly Dictionary<TKey, TValue> _internalDict;
 
-            public NullKeyCollection(FastDictionary<TKey, TValue, TComparer> dict)
+            public NullKeyCollection(Dictionary<TKey, TValue> dict)
             {
                 _internalDict = dict;
             }
