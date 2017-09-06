@@ -38,7 +38,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyDefaultAlias("Lucene.Net.SpellChecker")]
 [assembly: AssemblyCulture("")]
 
-[assembly: AssemblyInformationalVersionAttribute("3.0.11")]
+[assembly: AssemblyInformationalVersionAttribute("3.0.12")]
 
 //
 // Version information for an assembly consists of the following four values:
@@ -51,7 +51,7 @@ using System.Runtime.InteropServices;
 // You can specify all the values or you can default the Revision and Build Numbers 
 // by using the '*' as shown below:
 
-[assembly: AssemblyVersion("3.0.11")]
+[assembly: AssemblyVersion("3.0.12")]
 
 //
 // In order to sign your assembly you must specify a key to use. Refer to the 
