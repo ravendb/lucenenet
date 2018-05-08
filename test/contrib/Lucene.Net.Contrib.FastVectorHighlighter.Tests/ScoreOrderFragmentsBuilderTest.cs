@@ -34,7 +34,7 @@ namespace Lucene.Net.Search.Vectorhighlight
         {
             FieldFragList ffl =  this.Ffl("a c", "a b b b b b b b b b b b a b a b b b b b c a a b b");
             ScoreOrderFragmentsBuilder sofb = new ScoreOrderFragmentsBuilder();
-            String[] f = sofb.CreateFragments(reader, 0, F, ffl, 3);
+            String[] f = sofb.CreateFragments(reader, 0, F, ffl, 3, null);
             Assert.AreEqual(3, f.Length);
             // check score order
             Assert.AreEqual("<b>c</b> <b>a</b> <b>a</b> b b", f[0]);
@@ -47,7 +47,7 @@ namespace Lucene.Net.Search.Vectorhighlight
             Make1d1fIndex(indexValue);
             Query query = paW.Parse(queryValue);
             FieldQuery fq = new FieldQuery(query, true, true);
-            FieldTermStack stack = new FieldTermStack(reader, 0, F, fq);
+            FieldTermStack stack = new FieldTermStack(reader, 0, F, fq, null);
             FieldPhraseList fpl = new FieldPhraseList(stack, fq);
             return new SimpleFragListBuilder().CreateFieldFragList(fpl, 20);
         }

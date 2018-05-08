@@ -40,11 +40,11 @@ namespace Lucene.Net.Search.Vectorhighlight
         {
             FieldFragList ffl = this.ffl("a", "a");
             SimpleFragmentsBuilder sfb = new SimpleFragmentsBuilder();
-            Assert.AreEqual("<b>a</b>", sfb.CreateFragment(reader, 0, F, ffl));
+            Assert.AreEqual("<b>a</b>", sfb.CreateFragment(reader, 0, F, ffl, null));
 
             // change tags
             sfb = new SimpleFragmentsBuilder(new String[] { "[" }, new String[] { "]" });
-            Assert.AreEqual("[a]", sfb.CreateFragment(reader, 0, F, ffl));
+            Assert.AreEqual("[a]", sfb.CreateFragment(reader, 0, F, ffl, null));
         }
 
         [Test]
@@ -52,7 +52,7 @@ namespace Lucene.Net.Search.Vectorhighlight
         {
             FieldFragList ffl = this.ffl("a", "a b b b b b b b b b b b a b a b");
             SimpleFragmentsBuilder sfb = new SimpleFragmentsBuilder();
-            String[] f = sfb.CreateFragments(reader, 0, F, ffl, 3);
+            String[] f = sfb.CreateFragments(reader, 0, F, ffl, 3, null);
             // 3 snippets requested, but should be 2
             Assert.AreEqual(2, f.Length);
             Assert.AreEqual("<b>a</b> b b b b b b b b b ", f[0]);
@@ -64,7 +64,7 @@ namespace Lucene.Net.Search.Vectorhighlight
         {
             FieldFragList ffl = this.ffl("a c", "a b b b b b b b b b b b a b a b b b b b c a a b b");
             SimpleFragmentsBuilder sfb = new SimpleFragmentsBuilder();
-            String[] f = sfb.CreateFragments(reader, 0, F, ffl, 3);
+            String[] f = sfb.CreateFragments(reader, 0, F, ffl, 3, null);
             Assert.AreEqual(3, f.Length);
             Assert.AreEqual("<b>a</b> b b b b b b b b b ", f[0]);
             Assert.AreEqual("b b <b>a</b> b <b>a</b> b b b b b ", f[1]);
@@ -77,7 +77,7 @@ namespace Lucene.Net.Search.Vectorhighlight
             Make1d1fIndex(indexValue);
             Query query = paW.Parse(queryValue);
             FieldQuery fq = new FieldQuery(query, true, true);
-            FieldTermStack stack = new FieldTermStack(reader, 0, F, fq);
+            FieldTermStack stack = new FieldTermStack(reader, 0, F, fq, null);
             FieldPhraseList fpl = new FieldPhraseList(stack, fq);
             return new SimpleFragListBuilder().CreateFieldFragList(fpl, 20);
         }
@@ -88,12 +88,12 @@ namespace Lucene.Net.Search.Vectorhighlight
             MakeIndexShortMV();
 
             FieldQuery fq = new FieldQuery(Tq("d"), true, true);
-            FieldTermStack stack = new FieldTermStack(reader, 0, F, fq);
+            FieldTermStack stack = new FieldTermStack(reader, 0, F, fq, null);
             FieldPhraseList fpl = new FieldPhraseList(stack, fq);
             SimpleFragListBuilder sflb = new SimpleFragListBuilder();
             FieldFragList ffl = sflb.CreateFieldFragList(fpl, 100);
             SimpleFragmentsBuilder sfb = new SimpleFragmentsBuilder();
-            Assert.AreEqual("a b c <b>d</b> e", sfb.CreateFragment(reader, 0, F, ffl));
+            Assert.AreEqual("a b c <b>d</b> e", sfb.CreateFragment(reader, 0, F, ffl, null));
         }
 
         [Test]
@@ -102,13 +102,13 @@ namespace Lucene.Net.Search.Vectorhighlight
             MakeIndexLongMV();
 
             FieldQuery fq = new FieldQuery(PqF("search", "engines"), true, true);
-            FieldTermStack stack = new FieldTermStack(reader, 0, F, fq);
+            FieldTermStack stack = new FieldTermStack(reader, 0, F, fq, null);
             FieldPhraseList fpl = new FieldPhraseList(stack, fq);
             SimpleFragListBuilder sflb = new SimpleFragListBuilder();
             FieldFragList ffl = sflb.CreateFieldFragList(fpl, 100);
             SimpleFragmentsBuilder sfb = new SimpleFragmentsBuilder();
             Assert.AreEqual(" most <b>search engines</b> use only one of these methods. Even the <b>search engines</b> that says they can use t",
-                sfb.CreateFragment(reader, 0, F, ffl));
+                sfb.CreateFragment(reader, 0, F, ffl, null));
         }
 
         [Test]
@@ -117,12 +117,12 @@ namespace Lucene.Net.Search.Vectorhighlight
             MakeIndexLongMVB();
 
             FieldQuery fq = new FieldQuery(PqF("sp", "pe", "ee", "ed"), true, true); // "speed" -(2gram)-> "sp","pe","ee","ed"
-            FieldTermStack stack = new FieldTermStack(reader, 0, F, fq);
+            FieldTermStack stack = new FieldTermStack(reader, 0, F, fq, null);
             FieldPhraseList fpl = new FieldPhraseList(stack, fq);
             SimpleFragListBuilder sflb = new SimpleFragListBuilder();
             FieldFragList ffl = sflb.CreateFieldFragList(fpl, 100);
             SimpleFragmentsBuilder sfb = new SimpleFragmentsBuilder();
-            Assert.AreEqual("ssing <b>speed</b>, the", sfb.CreateFragment(reader, 0, F, ffl));
+            Assert.AreEqual("ssing <b>speed</b>, the", sfb.CreateFragment(reader, 0, F, ffl, null));
         }
 
         [Test]
@@ -131,23 +131,23 @@ namespace Lucene.Net.Search.Vectorhighlight
             MakeUnstoredIndex();
 
             FieldQuery fq = new FieldQuery(Tq("aaa"), true, true);
-            FieldTermStack stack = new FieldTermStack(reader, 0, F, fq);
+            FieldTermStack stack = new FieldTermStack(reader, 0, F, fq, null);
             FieldPhraseList fpl = new FieldPhraseList(stack, fq);
             SimpleFragListBuilder sflb = new SimpleFragListBuilder();
             FieldFragList ffl = sflb.CreateFieldFragList(fpl, 100);
             SimpleFragmentsBuilder sfb = new SimpleFragmentsBuilder();
-            Assert.IsNull(sfb.CreateFragment(reader, 0, F, ffl));
+            Assert.IsNull(sfb.CreateFragment(reader, 0, F, ffl, null));
         }
 
         protected void MakeUnstoredIndex()
         {
-            IndexWriter writer = new IndexWriter(dir, analyzerW, true, IndexWriter.MaxFieldLength.LIMITED);
+            IndexWriter writer = new IndexWriter(dir, analyzerW, true, IndexWriter.MaxFieldLength.LIMITED, null);
             Document doc = new Document();
             doc.Add(new Field(F, "aaa", Field.Store.NO, Field.Index.ANALYZED, Field.TermVector.WITH_POSITIONS_OFFSETS));
-            writer.AddDocument(doc);
+            writer.AddDocument(doc, null);
             writer.Close();
 
-            reader = IndexReader.Open(dir, true);
+            reader = IndexReader.Open(dir, true, null);
         }
 
         [Test]
@@ -156,12 +156,12 @@ namespace Lucene.Net.Search.Vectorhighlight
             MakeIndexStrMV();
 
             FieldQuery fq = new FieldQuery(Tq("defg"), true, true);
-            FieldTermStack stack = new FieldTermStack(reader, 0, F, fq);
+            FieldTermStack stack = new FieldTermStack(reader, 0, F, fq, null);
             FieldPhraseList fpl = new FieldPhraseList(stack, fq);
             SimpleFragListBuilder sflb = new SimpleFragListBuilder();
             FieldFragList ffl = sflb.CreateFieldFragList(fpl, 100);
             SimpleFragmentsBuilder sfb = new SimpleFragmentsBuilder();
-            Assert.AreEqual("abc<b>defg</b>hijkl", sfb.CreateFragment(reader, 0, F, ffl));
+            Assert.AreEqual("abc<b>defg</b>hijkl", sfb.CreateFragment(reader, 0, F, ffl, null));
         }
     }
 }

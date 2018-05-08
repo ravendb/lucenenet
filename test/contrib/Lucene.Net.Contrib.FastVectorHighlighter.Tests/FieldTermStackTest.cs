@@ -36,7 +36,7 @@ namespace Lucene.Net.Search.Vectorhighlight
             MakeIndex();
 
             FieldQuery fq = new FieldQuery(Tq("a"), true, true);
-            FieldTermStack stack = new FieldTermStack(reader, 0, F, fq);
+            FieldTermStack stack = new FieldTermStack(reader, 0, F, fq, null);
             Assert.AreEqual(6, stack.termList.Count);
             Assert.AreEqual("a(0,1,0)", stack.Pop().ToString());
             Assert.AreEqual("a(2,3,1)", stack.Pop().ToString());
@@ -55,7 +55,7 @@ namespace Lucene.Net.Search.Vectorhighlight
             query.Add(Tq("b"), Occur.SHOULD);
             query.Add(Tq("c"), Occur.SHOULD);
             FieldQuery fq = new FieldQuery(query, true, true);
-            FieldTermStack stack = new FieldTermStack(reader, 0, F, fq);
+            FieldTermStack stack = new FieldTermStack(reader, 0, F, fq, null);
             Assert.AreEqual(8, stack.termList.Count);
             Assert.AreEqual("b(6,7,3)", stack.Pop().ToString());
             Assert.AreEqual("b(8,9,4)", stack.Pop().ToString());
@@ -73,7 +73,7 @@ namespace Lucene.Net.Search.Vectorhighlight
             MakeIndex();
 
             FieldQuery fq = new FieldQuery(PqF("c", "d"), true, true);
-            FieldTermStack stack = new FieldTermStack(reader, 0, F, fq);
+            FieldTermStack stack = new FieldTermStack(reader, 0, F, fq, null);
             Assert.AreEqual(3, stack.termList.Count);
             Assert.AreEqual("c(10,11,5)", stack.Pop().ToString());
             Assert.AreEqual("c(18,19,9)", stack.Pop().ToString());
@@ -102,7 +102,7 @@ namespace Lucene.Net.Search.Vectorhighlight
             makeIndexB();
 
             FieldQuery fq = new FieldQuery(Tq("ab"), true, true);
-            FieldTermStack stack = new FieldTermStack(reader, 0, F, fq);
+            FieldTermStack stack = new FieldTermStack(reader, 0, F, fq, null);
             Assert.AreEqual(2, stack.termList.Count);
             Assert.AreEqual("ab(2,4,2)", stack.Pop().ToString());
             Assert.AreEqual("ab(6,8,6)", stack.Pop().ToString());
@@ -117,7 +117,7 @@ namespace Lucene.Net.Search.Vectorhighlight
             query.Add(Tq("bc"), Occur.SHOULD);
             query.Add(Tq("ef"), Occur.SHOULD);
             FieldQuery fq = new FieldQuery(query, true, true);
-            FieldTermStack stack = new FieldTermStack(reader, 0, F, fq);
+            FieldTermStack stack = new FieldTermStack(reader, 0, F, fq, null);
             Assert.AreEqual(3, stack.termList.Count);
             Assert.AreEqual("bc(4,6,4)", stack.Pop().ToString());
             Assert.AreEqual("bc(8,10,8)", stack.Pop().ToString());
@@ -130,7 +130,7 @@ namespace Lucene.Net.Search.Vectorhighlight
             makeIndexB();
 
             FieldQuery fq = new FieldQuery(PqF("ab", "bb"), true, true);
-            FieldTermStack stack = new FieldTermStack(reader, 0, F, fq);
+            FieldTermStack stack = new FieldTermStack(reader, 0, F, fq, null);
             Assert.AreEqual(4, stack.termList.Count);
             Assert.AreEqual("ab(2,4,2)", stack.Pop().ToString());
             Assert.AreEqual("bb(3,5,3)", stack.Pop().ToString());
@@ -155,7 +155,7 @@ namespace Lucene.Net.Search.Vectorhighlight
             MakeIndexShortMV();
 
             FieldQuery fq = new FieldQuery(Tq("d"), true, true);
-            FieldTermStack stack = new FieldTermStack(reader, 0, F, fq);
+            FieldTermStack stack = new FieldTermStack(reader, 0, F, fq, null);
             Assert.AreEqual(1, stack.termList.Count);
             Assert.AreEqual("d(6,7,3)", stack.Pop().ToString());
         }
@@ -166,7 +166,7 @@ namespace Lucene.Net.Search.Vectorhighlight
             MakeIndexLongMV();
 
             FieldQuery fq = new FieldQuery(PqF("search", "engines"), true, true);
-            FieldTermStack stack = new FieldTermStack(reader, 0, F, fq);
+            FieldTermStack stack = new FieldTermStack(reader, 0, F, fq, null);
             Assert.AreEqual(4, stack.termList.Count);
             Assert.AreEqual("search(102,108,14)", stack.Pop().ToString());
             Assert.AreEqual("engines(109,116,15)", stack.Pop().ToString());
@@ -180,7 +180,7 @@ namespace Lucene.Net.Search.Vectorhighlight
             MakeIndexLongMVB();
 
             FieldQuery fq = new FieldQuery(PqF("sp", "pe", "ee", "ed"), true, true); // "speed" -(2gram)-> "sp","pe","ee","ed"
-            FieldTermStack stack = new FieldTermStack(reader, 0, F, fq);
+            FieldTermStack stack = new FieldTermStack(reader, 0, F, fq, null);
             Assert.AreEqual(4, stack.termList.Count);
             Assert.AreEqual("sp(88,90,61)", stack.Pop().ToString());
             Assert.AreEqual("pe(89,91,62)", stack.Pop().ToString());
@@ -194,7 +194,7 @@ namespace Lucene.Net.Search.Vectorhighlight
             MakeIndexLongMV();
 
             FieldQuery fq = new FieldQuery(Preq("engines"), true, true);
-            FieldTermStack stack = new FieldTermStack(reader, 0, F, fq);
+            FieldTermStack stack = new FieldTermStack(reader, 0, F, fq, null);
             Assert.AreEqual(2, stack.termList.Count);
             Assert.AreEqual("engines(109,116,15)", stack.Pop().ToString());
             Assert.AreEqual("engines(164,171,25)", stack.Pop().ToString());
@@ -206,7 +206,7 @@ namespace Lucene.Net.Search.Vectorhighlight
             MakeIndexLongMV();
 
             FieldQuery fq = new FieldQuery(Preq("engin"), true, true);
-            FieldTermStack stack = new FieldTermStack(reader, 0, F, fq);
+            FieldTermStack stack = new FieldTermStack(reader, 0, F, fq, null);
             Assert.AreEqual(2, stack.termList.Count);
             Assert.AreEqual("engines(109,116,15)", stack.Pop().ToString());
             Assert.AreEqual("engines(164,171,25)", stack.Pop().ToString());
@@ -218,7 +218,7 @@ namespace Lucene.Net.Search.Vectorhighlight
             MakeIndexLongMV();
 
             FieldQuery fq = new FieldQuery(Preq("engin"), true, true);
-            FieldTermStack stack = new FieldTermStack(reader, 0, F, fq);
+            FieldTermStack stack = new FieldTermStack(reader, 0, F, fq, null);
             FieldPhraseList fpl = new FieldPhraseList(stack, fq);
             Assert.AreEqual(2, fpl.phraseList.Count);
             Assert.AreEqual("engines(1.0)((109,116))", fpl.phraseList.First.Value.ToString());

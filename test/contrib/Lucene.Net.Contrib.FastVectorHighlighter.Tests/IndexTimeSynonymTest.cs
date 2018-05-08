@@ -42,7 +42,7 @@ namespace Lucene.Net.Search.Vectorhighlight
             MakeIndex1w();
 
             FieldQuery fq = new FieldQuery(Tq("Mac"), true, true);
-            FieldTermStack stack = new FieldTermStack(reader, 0, F, fq);
+            FieldTermStack stack = new FieldTermStack(reader, 0, F, fq, null);
             Assert.AreEqual(1, stack.termList.Count);
             Assert.AreEqual("Mac(11,20,3)", stack.Pop().ToString());
         }
@@ -56,7 +56,7 @@ namespace Lucene.Net.Search.Vectorhighlight
             bq.Add(Tq("Mac"), Occur.SHOULD);
             bq.Add(Tq("MacBook"), Occur.SHOULD);
             FieldQuery fq = new FieldQuery(bq, true, true);
-            FieldTermStack stack = new FieldTermStack(reader, 0, F, fq);
+            FieldTermStack stack = new FieldTermStack(reader, 0, F, fq, null);
             Assert.AreEqual(2, stack.termList.Count);
             Dictionary<String, String> expectedSet = new Dictionary<String, String>();
             expectedSet.Add("Mac(11,20,3)","");
@@ -71,7 +71,7 @@ namespace Lucene.Net.Search.Vectorhighlight
             MakeIndex1w2w();
 
             FieldQuery fq = new FieldQuery(Tq("pc"), true, true);
-            FieldTermStack stack = new FieldTermStack(reader, 0, F, fq);
+            FieldTermStack stack = new FieldTermStack(reader, 0, F, fq, null);
             Assert.AreEqual(1, stack.termList.Count);
             Assert.AreEqual("pc(3,5,1)", stack.Pop().ToString());
         }
@@ -82,7 +82,7 @@ namespace Lucene.Net.Search.Vectorhighlight
             MakeIndex1w2w();
 
             FieldQuery fq = new FieldQuery(PqF("personal", "computer"), true, true);
-            FieldTermStack stack = new FieldTermStack(reader, 0, F, fq);
+            FieldTermStack stack = new FieldTermStack(reader, 0, F, fq, null);
             Assert.AreEqual(2, stack.termList.Count);
             Assert.AreEqual("personal(3,5,1)", stack.Pop().ToString());
             Assert.AreEqual("computer(3,5,2)", stack.Pop().ToString());
@@ -94,7 +94,7 @@ namespace Lucene.Net.Search.Vectorhighlight
             MakeIndex1w2w();
 
             FieldQuery fq = new FieldQuery(Tq("computer"), true, true);
-            FieldTermStack stack = new FieldTermStack(reader, 0, F, fq);
+            FieldTermStack stack = new FieldTermStack(reader, 0, F, fq, null);
             Assert.AreEqual(1, stack.termList.Count);
             Assert.AreEqual("computer(3,5,2)", stack.Pop().ToString());
         }
@@ -108,7 +108,7 @@ namespace Lucene.Net.Search.Vectorhighlight
             bq.Add(Tq("pc"), Occur.SHOULD);
             bq.Add(PqF("personal", "computer"), Occur.SHOULD);
             FieldQuery fq = new FieldQuery(bq, true, true);
-            FieldTermStack stack = new FieldTermStack(reader, 0, F, fq);
+            FieldTermStack stack = new FieldTermStack(reader, 0, F, fq, null);
             Assert.AreEqual(3, stack.termList.Count);
             Dictionary<String, String> expectedSet = new Dictionary<String, String>();
             expectedSet.Add("pc(3,5,1)","");
@@ -124,7 +124,7 @@ namespace Lucene.Net.Search.Vectorhighlight
             MakeIndex2w1w();
 
             FieldQuery fq = new FieldQuery(Tq("pc"), true, true);
-            FieldTermStack stack = new FieldTermStack(reader, 0, F, fq);
+            FieldTermStack stack = new FieldTermStack(reader, 0, F, fq, null);
             Assert.AreEqual(1, stack.termList.Count);
             Assert.AreEqual("pc(3,20,1)", stack.Pop().ToString());
         }
@@ -135,7 +135,7 @@ namespace Lucene.Net.Search.Vectorhighlight
             MakeIndex2w1w();
 
             FieldQuery fq = new FieldQuery(PqF("personal", "computer"), true, true);
-            FieldTermStack stack = new FieldTermStack(reader, 0, F, fq);
+            FieldTermStack stack = new FieldTermStack(reader, 0, F, fq, null);
             Assert.AreEqual(2, stack.termList.Count);
             Assert.AreEqual("personal(3,20,1)", stack.Pop().ToString());
             Assert.AreEqual("computer(3,20,2)", stack.Pop().ToString());
@@ -147,7 +147,7 @@ namespace Lucene.Net.Search.Vectorhighlight
             MakeIndex2w1w();
 
             FieldQuery fq = new FieldQuery(Tq("computer"), true, true);
-            FieldTermStack stack = new FieldTermStack(reader, 0, F, fq);
+            FieldTermStack stack = new FieldTermStack(reader, 0, F, fq, null);
             Assert.AreEqual(1, stack.termList.Count);
             Assert.AreEqual("computer(3,20,2)", stack.Pop().ToString());
         }
@@ -161,7 +161,7 @@ namespace Lucene.Net.Search.Vectorhighlight
             bq.Add(Tq("pc"), Occur.SHOULD);
             bq.Add(PqF("personal", "computer"), Occur.SHOULD);
             FieldQuery fq = new FieldQuery(bq, true, true);
-            FieldTermStack stack = new FieldTermStack(reader, 0, F, fq);
+            FieldTermStack stack = new FieldTermStack(reader, 0, F, fq, null);
             Assert.AreEqual(3, stack.termList.Count);
             Dictionary<String, String> expectedSet = new Dictionary<String, String>();
             expectedSet.Add("pc(3,20,1)","");
@@ -177,7 +177,7 @@ namespace Lucene.Net.Search.Vectorhighlight
             MakeIndex1w2w();
 
             FieldQuery fq = new FieldQuery(PqF("personal", "computer"), true, true);
-            FieldTermStack stack = new FieldTermStack(reader, 0, F, fq);
+            FieldTermStack stack = new FieldTermStack(reader, 0, F, fq, null);
             FieldPhraseList fpl = new FieldPhraseList(stack, fq);
             Assert.AreEqual(1, fpl.phraseList.Count);
             Assert.AreEqual("personalcomputer(1.0)((3,5))", fpl.phraseList.First.Value.ToString());
@@ -191,7 +191,7 @@ namespace Lucene.Net.Search.Vectorhighlight
             MakeIndex1w2w();
 
             FieldQuery fq = new FieldQuery(Tq("computer"), true, true);
-            FieldTermStack stack = new FieldTermStack(reader, 0, F, fq);
+            FieldTermStack stack = new FieldTermStack(reader, 0, F, fq, null);
             FieldPhraseList fpl = new FieldPhraseList(stack, fq);
             Assert.AreEqual(1, fpl.phraseList.Count);
             Assert.AreEqual("computer(1.0)((3,5))", fpl.phraseList.First.Value.ToString());
@@ -208,7 +208,7 @@ namespace Lucene.Net.Search.Vectorhighlight
             bq.Add(Tq("pc"), Occur.SHOULD);
             bq.Add(PqF("personal", "computer"), Occur.SHOULD);
             FieldQuery fq = new FieldQuery(bq, true, true);
-            FieldTermStack stack = new FieldTermStack(reader, 0, F, fq);
+            FieldTermStack stack = new FieldTermStack(reader, 0, F, fq, null);
             FieldPhraseList fpl = new FieldPhraseList(stack, fq);
             Assert.AreEqual(1, fpl.phraseList.Count);
             Assert.IsTrue(fpl.phraseList.First.Value.ToString().IndexOf("(1.0)((3,5))") > 0);
@@ -222,7 +222,7 @@ namespace Lucene.Net.Search.Vectorhighlight
             MakeIndex2w1w();
 
             FieldQuery fq = new FieldQuery(Tq("pc"), true, true);
-            FieldTermStack stack = new FieldTermStack(reader, 0, F, fq);
+            FieldTermStack stack = new FieldTermStack(reader, 0, F, fq, null);
             FieldPhraseList fpl = new FieldPhraseList(stack, fq);
             Assert.AreEqual(1, fpl.phraseList.Count);
             Assert.AreEqual("pc(1.0)((3,20))", fpl.phraseList.First.Value.ToString());
@@ -236,7 +236,7 @@ namespace Lucene.Net.Search.Vectorhighlight
             MakeIndex2w1w();
 
             FieldQuery fq = new FieldQuery(PqF("personal", "computer"), true, true);
-            FieldTermStack stack = new FieldTermStack(reader, 0, F, fq);
+            FieldTermStack stack = new FieldTermStack(reader, 0, F, fq, null);
             FieldPhraseList fpl = new FieldPhraseList(stack, fq);
             Assert.AreEqual(1, fpl.phraseList.Count);
             Assert.AreEqual("personalcomputer(1.0)((3,20))", fpl.phraseList.First.Value.ToString());
@@ -250,7 +250,7 @@ namespace Lucene.Net.Search.Vectorhighlight
             MakeIndex2w1w();
 
             FieldQuery fq = new FieldQuery(Tq("computer"), true, true);
-            FieldTermStack stack = new FieldTermStack(reader, 0, F, fq);
+            FieldTermStack stack = new FieldTermStack(reader, 0, F, fq, null);
             FieldPhraseList fpl = new FieldPhraseList(stack, fq);
             Assert.AreEqual(1, fpl.phraseList.Count);
             Assert.AreEqual("computer(1.0)((3,20))", fpl.phraseList.First.Value.ToString());
@@ -267,7 +267,7 @@ namespace Lucene.Net.Search.Vectorhighlight
             bq.Add(Tq("pc"), Occur.SHOULD);
             bq.Add(PqF("personal", "computer"), Occur.SHOULD);
             FieldQuery fq = new FieldQuery(bq, true, true);
-            FieldTermStack stack = new FieldTermStack(reader, 0, F, fq);
+            FieldTermStack stack = new FieldTermStack(reader, 0, F, fq, null);
             FieldPhraseList fpl = new FieldPhraseList(stack, fq);
             Assert.AreEqual(1, fpl.phraseList.Count);
             Assert.IsTrue(fpl.phraseList.First.Value.ToString().IndexOf("(1.0)((3,20))") > 0);

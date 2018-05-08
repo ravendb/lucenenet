@@ -368,27 +368,27 @@ namespace Lucene.Net.Search.Vectorhighlight
         // make 1 doc with multi valued field
         protected void Make1dmfIndex(Analyzer analyzer, params String[] values)
         {
-            IndexWriter writer = new IndexWriter(dir, analyzer, true, IndexWriter.MaxFieldLength.LIMITED);
+            IndexWriter writer = new IndexWriter(dir, analyzer, true, IndexWriter.MaxFieldLength.LIMITED, null);
             Document doc = new Document();
             foreach (String value in values)
                 doc.Add(new Field(F, value, Field.Store.YES, Field.Index.ANALYZED, Field.TermVector.WITH_POSITIONS_OFFSETS));
-            writer.AddDocument(doc);
+            writer.AddDocument(doc, null);
             writer.Close();
 
-            reader = IndexReader.Open(dir,true);
+            reader = IndexReader.Open(dir,true, null);
         }
 
         // make 1 doc with multi valued & not analyzed field
         protected void Make1dmfIndexNA(String[] values)
         {
-            IndexWriter writer = new IndexWriter(dir, analyzerK, true, IndexWriter.MaxFieldLength.LIMITED);
+            IndexWriter writer = new IndexWriter(dir, analyzerK, true, IndexWriter.MaxFieldLength.LIMITED, null);
             Document doc = new Document();
             foreach (String value in values)
                 doc.Add(new Field(F, value, Field.Store.YES, Field.Index.NOT_ANALYZED, Field.TermVector.WITH_POSITIONS_OFFSETS));
-            writer.AddDocument(doc);
+            writer.AddDocument(doc, null);
             writer.Close();
 
-            reader = IndexReader.Open(dir, true);
+            reader = IndexReader.Open(dir, true, null);
         }
 
         protected void MakeIndexShortMV()

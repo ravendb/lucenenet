@@ -157,7 +157,7 @@ namespace Lucene.Net.Search.Vectorhighlight
             Make1d1fIndex(indexValue);
             Query query = paW.Parse(queryValue);
             FieldQuery fq = new FieldQuery(query, true, true);
-            FieldTermStack stack = new FieldTermStack(reader, 0, F, fq);
+            FieldTermStack stack = new FieldTermStack(reader, 0, F, fq, null);
             return new FieldPhraseList(stack, fq);
         }
 
@@ -167,7 +167,7 @@ namespace Lucene.Net.Search.Vectorhighlight
             MakeIndexShortMV();
 
             FieldQuery fq = new FieldQuery(Tq("d"), true, true);
-            FieldTermStack stack = new FieldTermStack(reader, 0, F, fq);
+            FieldTermStack stack = new FieldTermStack(reader, 0, F, fq, null);
             FieldPhraseList fpl = new FieldPhraseList(stack, fq);
             SimpleFragListBuilder sflb = new SimpleFragListBuilder();
             FieldFragList ffl = sflb.CreateFieldFragList(fpl, 100);
@@ -181,7 +181,7 @@ namespace Lucene.Net.Search.Vectorhighlight
             MakeIndexLongMV();
 
             FieldQuery fq = new FieldQuery(PqF("search", "engines"), true, true);
-            FieldTermStack stack = new FieldTermStack(reader, 0, F, fq);
+            FieldTermStack stack = new FieldTermStack(reader, 0, F, fq, null);
             FieldPhraseList fpl = new FieldPhraseList(stack, fq);
             SimpleFragListBuilder sflb = new SimpleFragListBuilder();
             FieldFragList ffl = sflb.CreateFieldFragList(fpl, 100);
@@ -195,7 +195,7 @@ namespace Lucene.Net.Search.Vectorhighlight
             MakeIndexLongMVB();
 
             FieldQuery fq = new FieldQuery(PqF("sp", "pe", "ee", "ed"), true, true); // "speed" -(2gram)-> "sp","pe","ee","ed"
-            FieldTermStack stack = new FieldTermStack(reader, 0, F, fq);
+            FieldTermStack stack = new FieldTermStack(reader, 0, F, fq, null);
             FieldPhraseList fpl = new FieldPhraseList(stack, fq);
             SimpleFragListBuilder sflb = new SimpleFragListBuilder();
             FieldFragList ffl = sflb.CreateFieldFragList(fpl, 100);
