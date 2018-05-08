@@ -1,0 +1,44 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <AssemblyTitle>Lucene.Net Contrib FastVectorHighlighter Tests</AssemblyTitle>
+    <VersionPrefix>3.0.12</VersionPrefix>
+    <TargetFramework>netcoreapp2.0</TargetFramework>
+    <AssemblyName>Lucene.Net.Contrib.FastVectorHighlighter.Tests</AssemblyName>
+    <AssemblyOriginatorKeyFile>..\..\Lucene.Net.Test\Lucene.Net.snk</AssemblyOriginatorKeyFile>
+    <SignAssembly>true</SignAssembly>
+    <PublicSign Condition=" '$(OS)' != 'Windows_NT' ">true</PublicSign>
+    <GenerateAssemblyTitleAttribute>false</GenerateAssemblyTitleAttribute>
+    <GenerateAssemblyDescriptionAttribute>false</GenerateAssemblyDescriptionAttribute>
+    <GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>
+    <GenerateAssemblyCompanyAttribute>false</GenerateAssemblyCompanyAttribute>
+    <GenerateAssemblyProductAttribute>false</GenerateAssemblyProductAttribute>
+    <GenerateAssemblyCopyrightAttribute>false</GenerateAssemblyCopyrightAttribute>
+    <GenerateAssemblyInformationalVersionAttribute>false</GenerateAssemblyInformationalVersionAttribute>
+    <GenerateAssemblyVersionAttribute>false</GenerateAssemblyVersionAttribute>
+    <GenerateAssemblyFileVersionAttribute>false</GenerateAssemblyFileVersionAttribute>
+    <GenerateProgramFile>false</GenerateProgramFile>
+    <ApplicationIcon />
+    <OutputTypeEx>exe</OutputTypeEx>
+    <StartupObject>Lucene.Net.Contrib.FastVectorHighlighter.Tests.Program</StartupObject>
+    <FileVersion>3.0.12.0</FileVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\..\Lucene.Net.Test\Lucene.Net.snk" Link="Lucene.Net.snk" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\src\Lucene.Net\Lucene.Net.csproj" />
+    <ProjectReference Include="..\..\..\src\contrib\Lucene.Net.Contrib.FastVectorHighlighter\Lucene.Net.Contrib.FastVectorHighlighter.csproj" />
+    <ProjectReference Include="..\..\Lucene.Net.Test\Lucene.Net.Test.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.7.0" />
+    <PackageReference Include="NUnit" Version="3.10.1" />
+    <PackageReference Include="NUnitLite" Version="3.10.1" />
+    <PackageReference Include="Microsoft.CSharp" Version="4.4.1" />
+  </ItemGroup>
+
+</Project>
