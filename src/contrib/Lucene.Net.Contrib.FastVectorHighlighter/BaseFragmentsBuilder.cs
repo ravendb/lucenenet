@@ -22,7 +22,7 @@ using System.Text;
 using Lucene.Net.Documents;
 using Lucene.Net.Search;
 using Lucene.Net.Index;
-
+using Lucene.Net.Store;
 using WeightedFragInfo = Lucene.Net.Search.Vectorhighlight.FieldFragList.WeightedFragInfo;
 using SubInfo = Lucene.Net.Search.Vectorhighlight.FieldFragList.WeightedFragInfo.SubInfo;
 using Toffs = Lucene.Net.Search.Vectorhighlight.FieldPhraseList.WeightedPhraseInfo.Toffs;
@@ -65,14 +65,14 @@ namespace Lucene.Net.Search.Vectorhighlight
 
         public abstract List<WeightedFragInfo> GetWeightedFragInfoList(List<WeightedFragInfo> src);
 
-        public virtual String CreateFragment(IndexReader reader, int docId, String fieldName, FieldFragList fieldFragList)
+        public virtual String CreateFragment(IndexReader reader, int docId, String fieldName, FieldFragList fieldFragList, IState state)
         {
-            String[] fragments = CreateFragments(reader, docId, fieldName, fieldFragList, 1);
+            String[] fragments = CreateFragments(reader, docId, fieldName, fieldFragList, 1, state);
             if (fragments == null || fragments.Length == 0) return null;
             return fragments[0];
         }
 
-        public virtual String[] CreateFragments(IndexReader reader, int docId, String fieldName, FieldFragList fieldFragList, int maxNumFragments)
+        public virtual String[] CreateFragments(IndexReader reader, int docId, String fieldName, FieldFragList fieldFragList, int maxNumFragments, IState state)
         {
             if (maxNumFragments < 0)
                 throw new ArgumentException("maxNumFragments(" + maxNumFragments + ") must be positive number.");
@@ -80,29 +80,29 @@ namespace Lucene.Net.Search.Vectorhighlight
             List<WeightedFragInfo> fragInfos = GetWeightedFragInfoList(fieldFragList.fragInfos);
 
             List<String> fragments = new List<String>(maxNumFragments);
-            Field[] values = GetFields(reader, docId, fieldName);
+            Field[] values = GetFields(reader, docId, fieldName, state);
             if (values.Length == 0) return null;
             StringBuilder buffer = new StringBuilder();
             int[] nextValueIndex = { 0 };
             for (int n = 0; n < maxNumFragments && n < fragInfos.Count; n++)
             {
                 WeightedFragInfo fragInfo = fragInfos[n];
-                fragments.Add(MakeFragment(buffer, nextValueIndex, values, fragInfo));
+                fragments.Add(MakeFragment(buffer, nextValueIndex, values, fragInfo, state));
             }
             return fragments.ToArray();
         }
 
         [Obsolete]
-        protected virtual String[] GetFieldValues(IndexReader reader, int docId, String fieldName)
+        protected virtual String[] GetFieldValues(IndexReader reader, int docId, String fieldName, IState state)
         {
-            Document doc = reader.Document(docId, new MapFieldSelector(new String[] { fieldName }));
-            return doc.GetValues(fieldName); // according to Document class javadoc, this never returns null
+            Document doc = reader.Document(docId, new MapFieldSelector(new String[] { fieldName }), state);
+            return doc.GetValues(fieldName, state); // according to Document class javadoc, this never returns null
         }
 
-        protected virtual Field[] GetFields(IndexReader reader, int docId, String fieldName)
+        protected virtual Field[] GetFields(IndexReader reader, int docId, String fieldName, IState state)
         {
             // according to javadoc, doc.getFields(fieldName) cannot be used with lazy loaded field???
-            Document doc = reader.Document(docId, new MapFieldSelector(new String[] { fieldName }));
+            Document doc = reader.Document(docId, new MapFieldSelector(new String[] { fieldName }), state);
             return doc.GetFields(fieldName); // according to Document class javadoc, this never returns null
         }
 
@@ -113,10 +113,10 @@ namespace Lucene.Net.Search.Vectorhighlight
             return MakeFragment(fragInfo, GetFragmentSource(buffer, index, values, s, fragInfo.endOffset), s);
         }
 
-        protected virtual String MakeFragment(StringBuilder buffer, int[] index, Field[] values, WeightedFragInfo fragInfo)
+        protected virtual String MakeFragment(StringBuilder buffer, int[] index, Field[] values, WeightedFragInfo fragInfo, IState state)
         {
             int s = fragInfo.startOffset;
-            return MakeFragment(fragInfo, GetFragmentSource(buffer, index, values, s, fragInfo.endOffset), s);
+            return MakeFragment(fragInfo, GetFragmentSource(buffer, index, values, s, fragInfo.endOffset, state), s);
         }
 
         private String MakeFragment(WeightedFragInfo fragInfo, String src, int s)
@@ -173,12 +173,12 @@ namespace Lucene.Net.Search.Vectorhighlight
             return buffer.ToString().Substring(startOffset, eo - startOffset);
         }
 
-        protected virtual String GetFragmentSource(StringBuilder buffer, int[] index, Field[] values, int startOffset, int endOffset)
+        protected virtual String GetFragmentSource(StringBuilder buffer, int[] index, Field[] values, int startOffset, int endOffset, IState state)
         {
             while (buffer.Length < endOffset && index[0] < values.Length)
             {
-                buffer.Append(values[index[0]].StringValue);
-                if (values[index[0]].IsTokenized && values[index[0]].StringValue.Length > 0 && index[0] + 1 < values.Length)
+                buffer.Append(values[index[0]].StringValue(state));
+                if (values[index[0]].IsTokenized && values[index[0]].StringValue(state).Length > 0 && index[0] + 1 < values.Length)
                     buffer.Append(' ');
                 index[0]++;
             }

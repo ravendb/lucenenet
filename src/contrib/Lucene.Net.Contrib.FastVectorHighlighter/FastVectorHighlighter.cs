@@ -20,6 +20,7 @@ using System.Collections.Generic;
 using System.Text;
 
 using Lucene.Net.Index;
+using Lucene.Net.Store;
 
 namespace Lucene.Net.Search.Vectorhighlight
 {
@@ -87,10 +88,10 @@ namespace Lucene.Net.Search.Vectorhighlight
         /// <param name="fragCharSize">the length (number of chars) of a fragment</param>
         /// <returns>the best fragment (snippet) string</returns>
         public String GetBestFragment(FieldQuery fieldQuery, IndexReader reader, int docId,
-            String fieldName, int fragCharSize)
+            String fieldName, int fragCharSize, IState state)
         {
-            FieldFragList fieldFragList = GetFieldFragList(fieldQuery, reader, docId, fieldName, fragCharSize);
-            return fragmentsBuilder.CreateFragment(reader, docId, fieldName, fieldFragList);
+            FieldFragList fieldFragList = GetFieldFragList(fieldQuery, reader, docId, fieldName, fragCharSize, state);
+            return fragmentsBuilder.CreateFragment(reader, docId, fieldName, fieldFragList, state);
         }
 
         /// <summary>
@@ -104,16 +105,16 @@ namespace Lucene.Net.Search.Vectorhighlight
         /// <param name="maxNumFragments">maximum number of fragments</param>
         /// <returns>created fragments or null when no fragments created. Size of the array can be less than maxNumFragments</returns>
         public String[] GetBestFragments(FieldQuery fieldQuery, IndexReader reader, int docId,
-            String fieldName, int fragCharSize, int maxNumFragments)
+            String fieldName, int fragCharSize, int maxNumFragments, IState state)
         {
-            FieldFragList fieldFragList = GetFieldFragList(fieldQuery, reader, docId, fieldName, fragCharSize);
-            return fragmentsBuilder.CreateFragments(reader, docId, fieldName, fieldFragList, maxNumFragments);
+            FieldFragList fieldFragList = GetFieldFragList(fieldQuery, reader, docId, fieldName, fragCharSize, state);
+            return fragmentsBuilder.CreateFragments(reader, docId, fieldName, fieldFragList, maxNumFragments, state);
         }
 
         private FieldFragList GetFieldFragList(FieldQuery fieldQuery, IndexReader reader, int docId,
-            String fieldName, int fragCharSize)
+            String fieldName, int fragCharSize, IState state)
         {
-            FieldTermStack fieldTermStack = new FieldTermStack(reader, docId, fieldName, fieldQuery);
+            FieldTermStack fieldTermStack = new FieldTermStack(reader, docId, fieldName, fieldQuery, state);
             FieldPhraseList fieldPhraseList = new FieldPhraseList(fieldTermStack, fieldQuery, phraseLimit);
             return fragListBuilder.CreateFieldFragList(fieldPhraseList, fragCharSize);
         }

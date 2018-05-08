@@ -22,6 +22,7 @@ using System.Text;
 using Lucene.Net.Documents;
 using Lucene.Net.Search;
 using Lucene.Net.Index;
+using Lucene.Net.Store;
 
 namespace Lucene.Net.Search.Vectorhighlight
 {
@@ -39,9 +40,9 @@ namespace Lucene.Net.Search.Vectorhighlight
         /// <param name="fieldName">field of the document to be highlighted</param>
         /// <param name="fieldFragList">FieldFragList object</param>
         /// <returns>a created fragment or null when no fragment created</returns>
-        String CreateFragment( IndexReader reader, int docId, String fieldName, FieldFragList fieldFragList ) ;
+        String CreateFragment(IndexReader reader, int docId, String fieldName, FieldFragList fieldFragList, IState state);
 
-        
+
         /// <summary>
         /// create multiple fragments.
         /// </summary>
@@ -51,6 +52,6 @@ namespace Lucene.Net.Search.Vectorhighlight
         /// <param name="fieldFragList">ieldFragList object</param>
         /// <param name="maxNumFragments">maximum number of fragments</param>
         /// <returns>created fragments or null when no fragments created. Size of the array can be less than maxNumFragments</returns>
-        String[] CreateFragments( IndexReader reader, int docId, String fieldName, FieldFragList fieldFragList, int maxNumFragments ) ;
+        String[] CreateFragments(IndexReader reader, int docId, String fieldName, FieldFragList fieldFragList, int maxNumFragments, IState state);
     }
 }

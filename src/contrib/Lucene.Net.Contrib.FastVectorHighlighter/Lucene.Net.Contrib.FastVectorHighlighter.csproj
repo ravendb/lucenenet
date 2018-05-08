@@ -7,6 +7,7 @@
     <AssemblyName>Lucene.Net.Contrib.FastVectorHighlighter</AssemblyName>
     <AssemblyOriginatorKeyFile>Lucene.Net.snk</AssemblyOriginatorKeyFile>
     <SignAssembly>true</SignAssembly>
+    <DefineConstants>$(DefineConstants);LUCENENET_350</DefineConstants>
     <PublicSign Condition=" '$(OS)' != 'Windows_NT' ">true</PublicSign>
     <PackageId>Lucene.Net.Contrib.FastVectorHighlighter</PackageId>
     <GenerateAssemblyTitleAttribute>false</GenerateAssemblyTitleAttribute>

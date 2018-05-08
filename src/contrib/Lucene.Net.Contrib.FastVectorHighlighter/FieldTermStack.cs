@@ -29,35 +29,15 @@ using Lucene.Net.Store;
 
 namespace Lucene.Net.Search.Vectorhighlight
 {
-   
-   /// <summary>
-   /// <c>FieldTermStack</c> is a stack that keeps query terms in the specified field
-   /// of the document to be highlighted.
-   /// </summary>
+
+    /// <summary>
+    /// <c>FieldTermStack</c> is a stack that keeps query terms in the specified field
+    /// of the document to be highlighted.
+    /// </summary>
     public class FieldTermStack
     {
         private String fieldName;
         public LinkedList<TermInfo> termList = new LinkedList<TermInfo>();
-
-        public static void Main(String[] args)
-        {
-            Analyzer analyzer = new WhitespaceAnalyzer();
-            QueryParser parser = new QueryParser(Util.Version.LUCENE_CURRENT, "f", analyzer);
-            Query query = parser.Parse("a x:b");
-            FieldQuery fieldQuery = new FieldQuery(query, true, false);
-
-            Directory dir = new RAMDirectory();
-            IndexWriter writer = new IndexWriter(dir, analyzer, IndexWriter.MaxFieldLength.LIMITED);
-            Document doc = new Document();
-            doc.Add(new Field("f", "a a a b b c a b b c d e f", Field.Store.YES, Field.Index.ANALYZED, Field.TermVector.WITH_POSITIONS_OFFSETS));
-            doc.Add(new Field("f", "b a b a f", Field.Store.YES, Field.Index.ANALYZED, Field.TermVector.WITH_POSITIONS_OFFSETS));
-            writer.AddDocument(doc);
-            writer.Close();
-
-            IndexReader reader = IndexReader.Open(dir,true);
-            FieldTermStack ftl = new FieldTermStack(reader, 0, "f", fieldQuery);
-            reader.Close();
-        }
 
         /// <summary>
         /// a constructor. 
@@ -67,21 +47,21 @@ namespace Lucene.Net.Search.Vectorhighlight
         /// <param name="fieldName">field of the document to be highlighted</param>
         /// <param name="fieldQuery">FieldQuery object</param>
 #if LUCENENET_350 //Lucene.Net specific code. See https://issues.apache.org/jira/browse/LUCENENET-350
-        public FieldTermStack(IndexReader reader, int docId, String fieldName, FieldQuery fieldQuery)
+        public FieldTermStack(IndexReader reader, int docId, String fieldName, FieldQuery fieldQuery, IState state)
         {
             this.fieldName = fieldName;
-            
+
             List<string> termSet = fieldQuery.getTermSet(fieldName);
 
             // just return to make null snippet if un-matched fieldName specified when fieldMatch == true
             if (termSet == null) return;
 
             //TermFreqVector tfv = reader.GetTermFreqVector(docId, fieldName);
-            VectorHighlightMapper tfv = new VectorHighlightMapper(termSet);    
-            reader.GetTermFreqVector(docId, fieldName, tfv);
-                
-            if (tfv.Size==0) return; // just return to make null snippets
-            
+            VectorHighlightMapper tfv = new VectorHighlightMapper(termSet);
+            reader.GetTermFreqVector(docId, fieldName, tfv, state);
+
+            if (tfv.Size == 0) return; // just return to make null snippets
+
             string[] terms = tfv.GetTerms();
             foreach (String term in terms)
             {
@@ -147,21 +127,21 @@ namespace Lucene.Net.Search.Vectorhighlight
             foreach (TermInfo t in arr) linkList.AddLast(t);
         }
 
-        int PosComparer(TermInfo t1,TermInfo t2)
+        int PosComparer(TermInfo t1, TermInfo t2)
         {
             return t1.Position - t2.Position;
         }
 
-       /// <summary>
-       /// 
-       /// </summary>
-       /// <value> field name </value>
-       public string FieldName
-       {
-           get { return fieldName; }
-       }
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <value> field name </value>
+        public string FieldName
+        {
+            get { return fieldName; }
+        }
 
-       /// <summary>
+        /// <summary>
         /// 
         /// </summary>
         /// <returns>the top TermInfo object of the stack</returns>
@@ -169,11 +149,11 @@ namespace Lucene.Net.Search.Vectorhighlight
         {
             if (termList.Count == 0) return null;
 
-            LinkedListNode<TermInfo> top =  termList.First;
+            LinkedListNode<TermInfo> top = termList.First;
             termList.RemoveFirst();
             return top.Value;
         }
-                
+
         /// <summary>
         /// 
         /// </summary>
