@@ -79,10 +79,13 @@ namespace Lucene.Net.Search
         /// <summary>For each document, an index into the lookup array. </summary>
         public int[] order;
 
+        public int[] reverseOrder;
+
         /// <summary>Creates one of these objects </summary>
-        public StringIndex(int[] values, System.String[] lookup)
+        public StringIndex(int[] values, int[] reverseOrder, System.String[] lookup)
         {
             this.order = values;
+            this.reverseOrder = reverseOrder;
             this.lookup = lookup;
         }
     }

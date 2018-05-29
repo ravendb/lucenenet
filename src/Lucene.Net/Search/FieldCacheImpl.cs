@@ -793,11 +793,15 @@ namespace Lucene.Net.Search
             {
                 System.String field = StringHelper.Intern(entryKey.field);
                 int[] retArray = new int[reader.MaxDoc];
+                for (var i = 0; i < retArray.Length; i++)
+                    retArray[i] = -1;
+
+                int[] retArrayOrdered = new int[reader.MaxDoc];
                 System.String[] mterms = new System.String[reader.MaxDoc + 1];
                 TermDocs termDocs = reader.TermDocs(state);
                 TermEnum termEnum = reader.Terms(new Term(field), state);
                 int t = 0; // current term number
-                
+                int docIndex = 0;
                 // an entry for documents that have no terms in this field
                 // should a document with no terms be at top or bottom?
                 // this puts them at the top - if it is changed, FieldDocSortedHitQueue
@@ -817,7 +821,11 @@ namespace Lucene.Net.Search
                         termDocs.Seek(termEnum, state);
                         while (termDocs.Next(state))
                         {
+                            var pt = retArray[termDocs.Doc];
                             retArray[termDocs.Doc] = t;
+
+                            if (pt == -1)
+                                retArrayOrdered[docIndex++] = termDocs.Doc;
                         }
                         
                         t++;
@@ -845,7 +853,7 @@ namespace Lucene.Net.Search
                     mterms = terms;
                 }
                 
-                StringIndex value_Renamed = new StringIndex(retArray, mterms);
+                StringIndex value_Renamed = new StringIndex(retArray, retArrayOrdered, mterms);
                 return value_Renamed;
             }
         }
