@@ -818,8 +818,11 @@ namespace Lucene.Net.Search
                         termDocs.Seek(termEnum, state);
                         while (termDocs.Next(state))
                         {
+                            var pt = retArray[termDocs.Doc];
                             retArray[termDocs.Doc] = t;
-                            retArrayOrdered[docIndex++] = termDocs.Doc;
+
+                            if (pt == 0)
+                                retArrayOrdered[docIndex++] = termDocs.Doc;
                         }
                         
                         t++;
