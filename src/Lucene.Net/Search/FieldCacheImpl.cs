@@ -793,9 +793,6 @@ namespace Lucene.Net.Search
             {
                 System.String field = StringHelper.Intern(entryKey.field);
                 int[] retArray = new int[reader.MaxDoc];
-                for (var i = 0; i < retArray.Length; i++)
-                    retArray[i] = -1;
-
                 int[] retArrayOrdered = new int[reader.MaxDoc];
                 System.String[] mterms = new System.String[reader.MaxDoc + 1];
                 TermDocs termDocs = reader.TermDocs(state);
@@ -821,11 +818,8 @@ namespace Lucene.Net.Search
                         termDocs.Seek(termEnum, state);
                         while (termDocs.Next(state))
                         {
-                            var pt = retArray[termDocs.Doc];
                             retArray[termDocs.Doc] = t;
-
-                            if (pt == -1)
-                                retArrayOrdered[docIndex++] = termDocs.Doc;
+                            retArrayOrdered[docIndex++] = termDocs.Doc;
                         }
                         
                         t++;
