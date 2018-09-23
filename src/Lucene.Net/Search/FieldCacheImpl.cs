@@ -794,6 +794,10 @@ namespace Lucene.Net.Search
                 System.String field = StringHelper.Intern(entryKey.field);
                 int[] retArray = new int[reader.MaxDoc];
                 int[] retArrayOrdered = new int[reader.MaxDoc];
+                for (int i = 0; i < retArrayOrdered.Length; i++)
+                {
+                    retArrayOrdered[i] = -1;
+                }
                 System.String[] mterms = new System.String[reader.MaxDoc + 1];
                 TermDocs termDocs = reader.TermDocs(state);
                 TermEnum termEnum = reader.Terms(new Term(field), state);
