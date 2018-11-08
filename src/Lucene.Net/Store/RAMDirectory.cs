@@ -16,6 +16,7 @@
  */
 
 using System;
+using System.Buffers;
 using Lucene.Net.Support;
 
 namespace Lucene.Net.Store
@@ -80,6 +81,9 @@ namespace Lucene.Net.Store
             {
                 SetLockFactory(new SingleInstanceLockFactory());
             }
+
+            if (ByteBlockPool == null)
+                ByteBlockPool = ArrayPool<byte>.Create();
         }
 		
 		public override System.String[] ListAll(IState state)

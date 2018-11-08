@@ -16,6 +16,7 @@
  */
 
 using System;
+using System.Buffers;
 using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
@@ -33,7 +34,7 @@ namespace Lucene.Net.Index
 		{
 			postingsHashHalfSize = postingsHashSize / 2;
 			postingsHashMask = postingsHashSize - 1;
-			postingsHash = new RawPostingList[postingsHashSize];
+		    postingsHash = ArrayPool<RawPostingList>.Shared.Rent(postingsHashSize);
 		}
 		
 		internal TermsHashConsumerPerField consumer;
@@ -98,12 +99,15 @@ namespace Lucene.Net.Index
 			
 			if (newSize != postingsHash.Length)
 			{
-				postingsHash = new RawPostingList[newSize];
+			    ArrayPool<RawPostingList>.Shared.Return(postingsHash, clearArray: true);
+
+			    postingsHash = ArrayPool<RawPostingList>.Shared.Rent(newSize);
 				postingsHashSize = newSize;
 				postingsHashHalfSize = newSize / 2;
 				postingsHashMask = newSize - 1;
 			}
-            System.Array.Clear(postingsHash,0,postingsHash.Length);
+
+		    System.Array.Clear(postingsHash, 0, postingsHash.Length);
 		}
 		
 		public void Reset()
@@ -581,8 +585,8 @@ namespace Lucene.Net.Index
 		{
 			
 			int newMask = newSize - 1;
-			
-			RawPostingList[] newHash = new RawPostingList[newSize];
+
+		    RawPostingList[] newHash = ArrayPool<RawPostingList>.Shared.Rent(newSize);
 			for (int i = 0; i < postingsHashSize; i++)
 			{
 				RawPostingList p0 = postingsHash[i];
@@ -619,6 +623,8 @@ namespace Lucene.Net.Index
 				}
 			}
 			
+            ArrayPool<RawPostingList>.Shared.Return(postingsHash, clearArray: true);
+
 			postingsHashMask = newMask;
 			postingsHash = newHash;
 			postingsHashSize = newSize;
