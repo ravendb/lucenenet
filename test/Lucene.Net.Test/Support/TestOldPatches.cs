@@ -208,7 +208,7 @@ namespace Lucene.Net.Support
         [Description("LUCENENET-100")]
         public void Test_Search_FieldDoc()
         {
-#if NETCOREAPP2_0
+#if NETCOREAPP
             Assert.Ignore("This test appears to test some kind of remote searching (but it actually throws an exception and ignores it). I don't think we need something like that, additionally DNX does not have offer ChannelServices");
 #else
             ANYPORT = new Random((int)(DateTime.Now.Ticks & 0x7fffffff)).Next(50000) + 10000;

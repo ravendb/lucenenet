@@ -16,7 +16,8 @@
  */
 
 using System;
-
+using System.Buffers;
+using System.Runtime.Serialization;
 using IndexFileNameFilter = Lucene.Net.Index.IndexFileNameFilter;
 
 namespace Lucene.Net.Store
@@ -261,5 +262,8 @@ namespace Lucene.Net.Store
         {
             get { return isOpen; }
         }
-	}
+
+        [NonSerialized]
+        internal ArrayPool<byte> ByteBlockPool = ArrayPool<byte>.Create();
+    }
 }

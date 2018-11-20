@@ -32,11 +32,7 @@ namespace Lucene.Net.Support
         {
             try
             {
-#if !NETSTANDARD2_0
                 asm = Assembly.Load(new AssemblyName("ICSharpCode.SharpZipLib"));
-#else
-                asm = Assembly.Load(new AssemblyName("ICSharpCode.SharpZipLib.Portable"));
-#endif
             }
             catch { }
         }

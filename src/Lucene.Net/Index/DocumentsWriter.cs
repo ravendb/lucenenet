@@ -16,6 +16,7 @@
  */
 
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -148,7 +149,7 @@ namespace Lucene.Net.Index
 			freeLevel = (long) (IndexWriter.DEFAULT_RAM_BUFFER_SIZE_MB * 1024 * 1024 * 0.95);
 			maxBufferedDocs = IndexWriter.DEFAULT_MAX_BUFFERED_DOCS;
 			skipDocWriter = new SkipDocWriter();
-            byteBlockAllocator = new ByteBlockAllocator(this, DocumentsWriter.BYTE_BLOCK_SIZE);
+            byteBlockAllocator = new ArrayPoolByteBlockAllocator(this, this.directory.ByteBlockPool, DocumentsWriter.BYTE_BLOCK_SIZE);
             perDocAllocator = new ByteBlockAllocator(this,DocumentsWriter.PER_DOC_BLOCK_SIZE);
 			waitQueue = new WaitQueue(this);
 		}
@@ -345,8 +346,8 @@ namespace Lucene.Net.Index
 		
 		internal DocumentsWriter(Directory directory, IndexWriter writer, IndexingChain indexingChain)
 		{
+		    this.directory = directory;
 			InitBlock();
-			this.directory = directory;
 			this.writer = writer;
 			this.similarity = writer.Similarity;
 			flushedDocCount = writer.MaxDoc();
@@ -1550,8 +1551,68 @@ namespace Lucene.Net.Index
 		internal const int BYTE_BLOCK_SIZE = 1 << BYTE_BLOCK_SHIFT;
 		internal const int BYTE_BLOCK_MASK = BYTE_BLOCK_SIZE - 1;
 		internal const int BYTE_BLOCK_NOT_MASK = ~ BYTE_BLOCK_MASK;
-		
-		internal class ByteBlockAllocator : ByteBlockPool.Allocator
+
+        internal class ArrayPoolByteBlockAllocator : ByteBlockPool.Allocator
+        {
+            public ArrayPoolByteBlockAllocator(DocumentsWriter enclosingInstance, ArrayPool<byte> pool, int blockSize)
+            {
+                _pool = pool;
+                _blockSize = blockSize;
+                InitBlock(enclosingInstance);
+            }
+            private void InitBlock(DocumentsWriter enclosingInstance)
+            {
+                Enclosing_Instance = enclosingInstance;
+            }
+
+            public DocumentsWriter Enclosing_Instance { get; private set; }
+
+            private readonly ArrayPool<byte> _pool;
+            readonly int _blockSize;
+
+            /* Allocate another byte[] from the shared pool */
+            public /*internal*/ override byte[] GetByteBlock(bool trackAllocations)
+            {
+                lock (Enclosing_Instance)
+                {
+                    return _pool.Rent(_blockSize);
+                }
+            }
+
+            /* Return byte[]'s to the pool */
+            public /*internal*/ override void RecycleByteBlocks(byte[][] blocks, int start, int end)
+            {
+                lock (Enclosing_Instance)
+                {
+                    for (int i = start; i < end; i++)
+                    {
+                        if (blocks[i] == null)
+                            continue;
+
+                        _pool.Return(blocks[i]);
+                        blocks[i] = null;
+                    }
+                }
+            }
+
+            public /*internal*/ override void RecycleByteBlocks(IList<byte[]> blocks)
+            {
+                lock (Enclosing_Instance)
+                {
+                    int size = blocks.Count;
+                    for (int i = 0; i < size; i++)
+                    {
+                        if (blocks[i] == null)
+                            continue;
+
+                        _pool.Return(blocks[i]);
+                        blocks[i] = null;
+                    }
+                }
+            }
+        }
+
+        internal class ByteBlockAllocator : ByteBlockPool.Allocator
 		{
             public ByteBlockAllocator(DocumentsWriter enclosingInstance, int blockSize)
 			{
@@ -1635,35 +1696,12 @@ namespace Lucene.Net.Index
 		internal static readonly int INT_BLOCK_SIZE = 1 << INT_BLOCK_SHIFT;
 		internal static readonly int INT_BLOCK_MASK = INT_BLOCK_SIZE - 1;
 
-        private List<int[]> freeIntBlocks = new List<int[]>();
-		
 		/* Allocate another int[] from the shared pool */
 		internal int[] GetIntBlock(bool trackAllocations)
 		{
 			lock (this)
 			{
-				int size = freeIntBlocks.Count;
-				int[] b;
-				if (0 == size)
-				{
-					// Always record a block allocated, even if
-					// trackAllocations is false.  This is necessary
-					// because this block will be shared between
-					// things that don't track allocations (term
-					// vectors) and things that do (freq/prox
-					// postings).
-					numBytesAlloc += INT_BLOCK_SIZE * INT_NUM_BYTE;
-					b = new int[INT_BLOCK_SIZE];
-				}
-				else
-				{
-				    b = freeIntBlocks[size - 1];
-				    freeIntBlocks.RemoveAt(size - 1);
-				}
-				if (trackAllocations)
-					numBytesUsed += INT_BLOCK_SIZE * INT_NUM_BYTE;
-				System.Diagnostics.Debug.Assert(numBytesUsed <= numBytesAlloc);
-				return b;
+			    return ArrayPool<int>.Shared.Rent(INT_BLOCK_SIZE);
 			}
 		}
 		
@@ -1691,13 +1729,16 @@ namespace Lucene.Net.Index
 			{
                 for (int i = start; i < end; i++)
                 {
-                    freeIntBlocks.Add(blocks[i]);
+                    if (blocks[i] == null)
+                        continue;
+
+                    ArrayPool<int>.Shared.Return(blocks[i]);
                     blocks[i] = null;
                 }
 			}
 		}
 		
-		internal ByteBlockAllocator byteBlockAllocator;
+		internal ArrayPoolByteBlockAllocator byteBlockAllocator;
 
         internal static int PER_DOC_BLOCK_SIZE = 1024;
 
@@ -1711,32 +1752,12 @@ namespace Lucene.Net.Index
 		
 		internal static readonly int MAX_TERM_LENGTH = CHAR_BLOCK_SIZE - 1;
 		
-		private List<char[]> freeCharBlocks = new List<char[]>();
-		
 		/* Allocate another char[] from the shared pool */
 		internal char[] GetCharBlock()
 		{
 			lock (this)
 			{
-				int size = freeCharBlocks.Count;
-				char[] c;
-				if (0 == size)
-				{
-					numBytesAlloc += CHAR_BLOCK_SIZE * CHAR_NUM_BYTE;
-					c = new char[CHAR_BLOCK_SIZE];
-				}
-				else
-				{
-				    c = freeCharBlocks[size - 1];
-				    freeCharBlocks.RemoveAt(size - 1);
-				}
-				// We always track allocations of char blocks, for now,
-				// because nothing that skips allocation tracking
-				// (currently only term vectors) uses its own char
-				// blocks.
-				numBytesUsed += CHAR_BLOCK_SIZE * CHAR_NUM_BYTE;
-				System.Diagnostics.Debug.Assert(numBytesUsed <= numBytesAlloc);
-				return c;
+			    return ArrayPool<char>.Shared.Rent(CHAR_BLOCK_SIZE);
 			}
 		}
 		
@@ -1747,7 +1768,10 @@ namespace Lucene.Net.Index
 			{
                 for (int i = 0; i < numBlocks; i++)
                 {
-                    freeCharBlocks.Add(blocks[i]);
+                    if (blocks[i] == null)
+                        continue;
+
+                    ArrayPool<char>.Shared.Return(blocks[i]);
                     blocks[i] = null;
                 }
 			}
@@ -1790,9 +1814,7 @@ namespace Lucene.Net.Index
                         " allocMB=" + ToMB(numBytesAlloc) + 
                         " deletesMB=" + ToMB(deletesRAMUsed) + 
                         " vs trigger=" + ToMB(freeTrigger) + 
-                        " byteBlockFree=" + ToMB(byteBlockAllocator.freeByteBlocks.Count * BYTE_BLOCK_SIZE) +
-                        " perDocFree=" + ToMB(perDocAllocator.freeByteBlocks.Count * PER_DOC_BLOCK_SIZE) +
-                        " charBlockFree=" + ToMB(freeCharBlocks.Count * CHAR_BLOCK_SIZE * CHAR_NUM_BYTE));
+                        " perDocFree=" + ToMB(perDocAllocator.freeByteBlocks.Count * PER_DOC_BLOCK_SIZE));
 				
 				long startBytesAlloc = numBytesAlloc + deletesRAMUsed;
 				
@@ -1810,9 +1832,6 @@ namespace Lucene.Net.Index
 					lock (this)
 					{
                         if (0 == perDocAllocator.freeByteBlocks.Count
-                              && 0 == byteBlockAllocator.freeByteBlocks.Count
-                              && 0 == freeCharBlocks.Count
-                              && 0 == freeIntBlocks.Count
                               && !any)
 						{
 							// Nothing else to free -- must flush now.
@@ -1826,24 +1845,6 @@ namespace Lucene.Net.Index
 							}
 							System.Diagnostics.Debug.Assert(numBytesUsed <= numBytesAlloc);
 							break;
-						}
-						
-						if ((0 == iter % 5) && byteBlockAllocator.freeByteBlocks.Count > 0)
-						{
-							byteBlockAllocator.freeByteBlocks.RemoveAt(byteBlockAllocator.freeByteBlocks.Count - 1);
-							numBytesAlloc -= BYTE_BLOCK_SIZE;
-						}
-						
-						if ((1 == iter % 5) && freeCharBlocks.Count > 0)
-						{
-							freeCharBlocks.RemoveAt(freeCharBlocks.Count - 1);
-							numBytesAlloc -= CHAR_BLOCK_SIZE * CHAR_NUM_BYTE;
-						}
-						
-						if ((2 == iter % 5) && freeIntBlocks.Count > 0)
-						{
-							freeIntBlocks.RemoveAt(freeIntBlocks.Count - 1);
-							numBytesAlloc -= INT_BLOCK_SIZE * INT_NUM_BYTE;
 						}
 
                         if ((3 == iter % 5) && perDocAllocator.freeByteBlocks.Count > 0)

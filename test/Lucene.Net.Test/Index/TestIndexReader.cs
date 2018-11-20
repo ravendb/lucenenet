@@ -48,7 +48,7 @@ namespace Lucene.Net.Index
     [TestFixture]
 	public class TestIndexReader:LuceneTestCase
 	{
-#if !NETCOREAPP2_0
+#if !NETCOREAPP
         /// <summary>Main for running test case by itself. </summary>
         [STAThread]
 		public static void  Main(System.String[] args)

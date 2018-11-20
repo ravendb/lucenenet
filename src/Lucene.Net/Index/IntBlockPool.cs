@@ -65,9 +65,7 @@ namespace Lucene.Net.Index
 		{
 			if (1 + bufferUpto == buffers.Length)
 			{
-				int[][] newBuffers = new int[(int) (buffers.Length * 1.5)][];
-				Array.Copy(buffers, 0, newBuffers, 0, buffers.Length);
-				buffers = newBuffers;
+                Array.Resize(ref buffers, (int) (buffers.Length * 1.5));
 			}
 			buffer = buffers[1 + bufferUpto] = docWriter.GetIntBlock(trackAllocations);
 			bufferUpto++;
