@@ -12,14 +12,6 @@
       <PackagePath>lib/netstandard2.0/</PackagePath>
       <Pack>true</Pack>
     </Content>
-    <Content Include="..\..\..\..\Spatial4n\Spatial4n.Core\bin\Release\netstandard2.0\GeoAPI.dll">
-      <PackagePath>lib/netstandard2.0/</PackagePath>
-      <Pack>true</Pack>
-    </Content>
-    <Content Include="..\..\..\..\Spatial4n\Spatial4n.Core\bin\Release\netstandard2.0\NetTopologySuite.dll">
-      <PackagePath>lib/netstandard2.0/</PackagePath>
-      <Pack>true</Pack>
-    </Content>
   </ItemGroup>
   
   <ItemGroup>
@@ -27,8 +19,9 @@
     <ProjectReference Include="..\..\Lucene.Net\Lucene.Net.csproj" />
   </ItemGroup>
 
-  <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard2.0' ">
-    <PackageReference Include="Microsoft.CSharp" Version="4.4.1" />
+  <ItemGroup>
+    <PackageReference Include="Microsoft.CSharp" Version="4.5.0" />
+    <PackageReference Include="NetTopologySuite" Version="1.15.2" />
   </ItemGroup>
 
 </Project>
