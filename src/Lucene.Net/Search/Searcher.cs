@@ -143,15 +143,56 @@ namespace Lucene.Net.Search
 	    /// <seealso cref="Lucene.Net.Search.Similarity.Default">
 	    /// </seealso>
 	    public virtual Similarity Similarity
-	    {
-	        get { return this.similarity; }
-	        set { this.similarity = value; }
-	    }
+        {
+            get
+            {
+                if ( usingLightWeightSimilarity)
+                {
+                    return LightWeightSimilarity.Instance;
+                }
 
-	    /// <summary> creates a weight for <c>query</c></summary>
-		/// <returns> new weight
-		/// </returns>
-		public /*protected internal*/ virtual Weight CreateWeight(Query query, IState state)
+                return similarity;
+            }
+            set => similarity = value;
+        }
+
+        /// <summary>
+        /// ThreadStatic flag to indicate if we want to disable idfExplanation
+        /// </summary>
+        [ThreadStatic]
+        protected static bool usingLightWeightSimilarity;
+
+        /// <summary>
+        /// Enable the light weight similarity feature
+        /// </summary>
+        /// <returns>A disposable object that disable the light weight feature on dispose</returns>
+        public static IDisposable EnableLightWeightSimilarity()
+        {
+            return new LightWeightSimilarityScope();
+        }
+
+        /// <summary>
+        /// A thread local scope that will enable us to use a lighter version of the similarity object
+        /// </summary>
+        private class LightWeightSimilarityScope : IDisposable
+        {
+            public LightWeightSimilarityScope()
+            {
+
+                usingLightWeightSimilarity = true;
+
+            }
+
+            public void Dispose()
+            {
+                usingLightWeightSimilarity = false;
+            }
+        }
+
+        /// <summary> creates a weight for <c>query</c></summary>
+        /// <returns> new weight
+        /// </returns>
+        public /*protected internal*/ virtual Weight CreateWeight(Query query, IState state)
 		{
 			return query.Weight(this, state);
 		}
