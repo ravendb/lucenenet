@@ -170,7 +170,7 @@ namespace Lucene.Net.Search
         /// <returns>A disposable object that disable the light weight feature on dispose</returns>
         public static LightWeightSimilarityScope EnableLightWeightSimilarity()
         {
-            return new LightWeightSimilarityScope();
+            return new LightWeightSimilarityScope(enableLightWeightSimilarity:true);
         }
 
         /// <summary>
