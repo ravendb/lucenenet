@@ -114,19 +114,18 @@ namespace Lucene.Net.Search
     {
         public override Explanation.IDFExplanation IdfExplain(ICollection<Term> terms, Searcher searcher, IState state)
         {
-            return TheExplanation.Value;
+            return TheExplanation;
         }
 
         public override Explanation.IDFExplanation IdfExplain(Term term, Searcher searcher, IState state)
         {
-            return TheExplanation.Value;
+            return TheExplanation;
         }
 
-        private static readonly Lazy<LightWeightSimilarity> _instance = new Lazy<LightWeightSimilarity>(() => new LightWeightSimilarity());
-        public static Similarity Instance => _instance.Value;
+        private static readonly LightWeightSimilarity _instance = new LightWeightSimilarity();
+        public static Similarity Instance => _instance;
 
-        private static readonly Lazy<Explanation.IDFExplanation> TheExplanation = new Lazy<Explanation.IDFExplanation>(() =>
-            new ThrowOnExplanation());
+        private static readonly Explanation.IDFExplanation TheExplanation = new ThrowOnExplanation();
 
         private class ThrowOnExplanation : Explanation.IDFExplanation
         {

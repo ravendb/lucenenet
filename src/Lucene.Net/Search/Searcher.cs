@@ -158,6 +158,8 @@ namespace Lucene.Net.Search
 
         /// <summary>
         /// ThreadStatic flag to indicate if we want to disable idfExplanation
+        /// This is allow two concurrent calls to the searcher with/without light weight similarity.
+        /// This also enables/disables the usage for new Searcher instances that are been generated during 'search' operation e.g QueryWrapperFilter.GetDocIdSet. 
         /// </summary>
         [ThreadStatic]
         protected static bool usingLightWeightSimilarity;
@@ -166,7 +168,7 @@ namespace Lucene.Net.Search
         /// Enable the light weight similarity feature
         /// </summary>
         /// <returns>A disposable object that disable the light weight feature on dispose</returns>
-        public static IDisposable EnableLightWeightSimilarity()
+        public static LightWeightSimilarityScope EnableLightWeightSimilarity()
         {
             return new LightWeightSimilarityScope();
         }
@@ -174,13 +176,11 @@ namespace Lucene.Net.Search
         /// <summary>
         /// A thread local scope that will enable us to use a lighter version of the similarity object
         /// </summary>
-        private class LightWeightSimilarityScope : IDisposable
+        public struct LightWeightSimilarityScope : IDisposable
         {
-            public LightWeightSimilarityScope()
+            public LightWeightSimilarityScope(bool enableLightWeightSimilarity)
             {
-
-                usingLightWeightSimilarity = true;
-
+                usingLightWeightSimilarity = enableLightWeightSimilarity;
             }
 
             public void Dispose()
