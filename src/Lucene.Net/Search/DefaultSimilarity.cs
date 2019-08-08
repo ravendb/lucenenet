@@ -122,8 +122,7 @@ namespace Lucene.Net.Search
             return TheExplanation;
         }
 
-        private static readonly LightWeightSimilarity _instance = new LightWeightSimilarity();
-        public static Similarity Instance => _instance;
+        public static readonly LightWeightSimilarity Instance = new LightWeightSimilarity();
 
         private static readonly Explanation.IDFExplanation TheExplanation = new ThrowOnExplanation();
 
