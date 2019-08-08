@@ -16,7 +16,9 @@
  */
 
 using System;
-
+using System.Collections.Generic;
+using Lucene.Net.Index;
+using Lucene.Net.Store;
 using FieldInvertState = Lucene.Net.Index.FieldInvertState;
 
 namespace Lucene.Net.Search
@@ -105,4 +107,33 @@ namespace Lucene.Net.Search
 	        set { internalDiscountOverlaps = value; }
 	    }
 	}
+
+    /// <summary>Expert: light weight scoring implementation that disables idfExplanation. </summary>
+    [Serializable]
+    public class LightWeightSimilarity : DefaultSimilarity
+    {
+        public override Explanation.IDFExplanation IdfExplain(ICollection<Term> terms, Searcher searcher, IState state)
+        {
+            return TheExplanation;
+        }
+
+        public override Explanation.IDFExplanation IdfExplain(Term term, Searcher searcher, IState state)
+        {
+            return TheExplanation;
+        }
+
+        public static readonly LightWeightSimilarity Instance = new LightWeightSimilarity();
+
+        private static readonly Explanation.IDFExplanation TheExplanation = new ThrowOnExplanation();
+
+        private class ThrowOnExplanation : Explanation.IDFExplanation
+        {
+            public override float Idf => 1.0f;
+            public override string Explain()
+            {
+                throw new NotImplementedException("Invoking 'Explain' on 'LightWeightSimilarity' isn't allowed this is likely a bug.");
+            }
+        }
+    }
+
 }
