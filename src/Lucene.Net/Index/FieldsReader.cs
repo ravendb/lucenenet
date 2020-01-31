@@ -58,7 +58,7 @@ namespace Lucene.Net.Index
 		// file.  This will be 0 if we have our own private file.
 		private readonly int docStoreOffset;
 		
-		private readonly CloseableThreadLocal<IndexInput> fieldsStreamTL = new CloseableThreadLocal<IndexInput>();
+		private readonly LightWeightThreadLocal<IndexInput> fieldsStreamTL = new LightWeightThreadLocal<IndexInput>();
 		private readonly bool isOriginal = false;
 		
 		/// <summary>Returns a cloned FieldsReader that shares open
@@ -197,7 +197,7 @@ namespace Lucene.Net.Index
                 {
                     indexStream.Close();
                 }
-                fieldsStreamTL.Close();
+                fieldsStreamTL.Dispose();
                 closed = true;
             }
         }

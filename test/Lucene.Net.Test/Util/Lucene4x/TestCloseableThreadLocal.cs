@@ -27,7 +27,7 @@ namespace Lucene.Net.Util.Lucene4x
         [Test]
         public virtual void TestInitValue()
         {
-            InitValueThreadLocal tl = new InitValueThreadLocal(this);
+            LightWeightThreadLocal<object> tl = new LightWeightThreadLocal<object>(_=>TEST_VALUE);
             string str = (string)tl.Get();
             Assert.AreEqual(TEST_VALUE, str);
         }
@@ -37,7 +37,7 @@ namespace Lucene.Net.Util.Lucene4x
         {
             // Tests that null can be set as a valid value (LUCENE-1805). this
             // previously failed in get().
-            DisposableThreadLocal<object> ctl = new Lucene.Net.Util.Lucene4x.DisposableThreadLocal<object>();
+            LightWeightThreadLocal<object> ctl = new LightWeightThreadLocal<object>();
             ctl.Set(null);
             Assert.IsNull(ctl.Get());
         }
@@ -47,23 +47,9 @@ namespace Lucene.Net.Util.Lucene4x
         {
             // LUCENE-1805: make sure default get returns null,
             // twice in a row
-            DisposableThreadLocal<object> ctl = new Lucene.Net.Util.Lucene4x.DisposableThreadLocal<object>();
+            LightWeightThreadLocal<object> ctl = new LightWeightThreadLocal<object>();
             Assert.IsNull(ctl.Get());
         }
 
-        public class InitValueThreadLocal : DisposableThreadLocal<object>
-        {
-            private readonly TestIDisposableThreadLocal OuterInstance;
-
-            public InitValueThreadLocal(TestIDisposableThreadLocal outerInstance)
-            {
-                this.OuterInstance = outerInstance;
-            }
-
-            protected internal override object InitialValue()
-            {
-                return TEST_VALUE;
-            }
-        }
     }
 }
