@@ -3,10 +3,11 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
+using System.Threading;
 
 namespace Lucene.Net.Util
 {
-    internal class LightWeightThreadLocal<T> : IDisposable
+    internal sealed class LightWeightThreadLocal<T> : IDisposable
     {
         [ThreadStatic] private static CurrentThreadState _state;
         private ConcurrentDictionary<CurrentThreadState, T> _values = new ConcurrentDictionary<CurrentThreadState, T>(ReferenceEqualityComparer<CurrentThreadState>.Default);
@@ -21,12 +22,6 @@ namespace Lucene.Net.Util
 
         public bool IsValueCreated => _state != null && _values.ContainsKey(_state);
 
-        public void Set(T value)
-        {
-            (_state ??= new CurrentThreadState()).Register(this);
-            _values[_state] = value;
-        }
-
         public T Get(IState state = null)
         {
             (_state ??= new CurrentThreadState()).Register(this);
@@ -39,11 +34,26 @@ namespace Lucene.Net.Util
             return v;
         }
 
+        public void Set(T value)
+        {
+            (_state ??= new CurrentThreadState()).Register(this);
+            _values[_state] = value;
+        }
+
         public void Dispose()
         {
-            GC.SuppressFinalize(this);
             var copy = _values;
+            if (copy == null)
+                return;
+
+            copy = Interlocked.CompareExchange(ref _values, null, copy);
+            if (copy == null)
+                return;
+
+            GC.SuppressFinalize(this);
+
             _values = null;
+
             while (copy.Count > 0)
             {
                 foreach (var kvp in copy)
@@ -62,56 +72,14 @@ namespace Lucene.Net.Util
             Dispose();
         }
 
-        private class CurrentThreadState
+        private sealed class CurrentThreadState
         {
-            private readonly HashSet<WeakReferenceToLightThreadLocal> _parents
-                = new HashSet<WeakReferenceToLightThreadLocal>();
-
-            private class WeakReferenceToLightThreadLocal : IEquatable<WeakReferenceToLightThreadLocal>
-            {
-                private readonly WeakReference<LightWeightThreadLocal<T>> _weak;
-                private readonly int _hashCode;
-
-                public bool TryGetTarget(out LightWeightThreadLocal<T> target)
-                {
-                    return _weak.TryGetTarget(out target);
-                }
-
-                public WeakReferenceToLightThreadLocal(LightWeightThreadLocal<T> instance)
-                {
-                    _hashCode = instance.GetHashCode();
-                    _weak = new WeakReference<LightWeightThreadLocal<T>>(instance);
-                }
-
-                public bool Equals(WeakReferenceToLightThreadLocal other)
-                {
-                    if (ReferenceEquals(null, other)) return false;
-                    if (ReferenceEquals(this, other)) return true;
-                    if (_hashCode != other._hashCode)
-                        return false;
-                    if (_weak.TryGetTarget(out var x) == false ||
-                       other._weak.TryGetTarget(out var y) == false)
-                        return false;
-                    return ReferenceEquals(x, y);
-                }
-
-                public override bool Equals(object obj)
-                {
-                    if (ReferenceEquals(null, obj)) return false;
-                    if (ReferenceEquals(this, obj)) return true;
-                    if (obj.GetType() != GetType()) return false;
-                    return Equals((WeakReferenceToLightThreadLocal)obj);
-                }
-
-                public override int GetHashCode()
-                {
-                    return _hashCode;
-                }
-            }
+            private readonly HashSet<WeakReferenceToLightWeightThreadLocal> _parents
+                = new HashSet<WeakReferenceToLightWeightThreadLocal>();
 
             public void Register(LightWeightThreadLocal<T> parent)
             {
-                _parents.Add(new WeakReferenceToLightThreadLocal(parent));
+                _parents.Add(new WeakReferenceToLightWeightThreadLocal(parent));
             }
 
             ~CurrentThreadState()
@@ -129,6 +97,53 @@ namespace Lucene.Net.Util
                         d.Dispose();
                     }
                 }
+            }
+        }
+
+        private sealed class WeakReferenceToLightWeightThreadLocal : IEquatable<WeakReferenceToLightWeightThreadLocal>
+        {
+            private readonly WeakReference<LightWeightThreadLocal<T>> _weak;
+            private readonly int _hashCode;
+
+            public bool TryGetTarget(out LightWeightThreadLocal<T> target)
+            {
+                return _weak.TryGetTarget(out target);
+            }
+
+            public WeakReferenceToLightWeightThreadLocal(LightWeightThreadLocal<T> instance)
+            {
+                _hashCode = instance.GetHashCode();
+                _weak = new WeakReference<LightWeightThreadLocal<T>>(instance);
+            }
+
+            public bool Equals(WeakReferenceToLightWeightThreadLocal other)
+            {
+                if (ReferenceEquals(null, other))
+                    return false;
+                if (ReferenceEquals(this, other))
+                    return true;
+                if (_hashCode != other._hashCode)
+                    return false;
+                if (_weak.TryGetTarget(out var x) == false ||
+                    other._weak.TryGetTarget(out var y) == false)
+                    return false;
+                return ReferenceEquals(x, y);
+            }
+
+            public override bool Equals(object obj)
+            {
+                if (ReferenceEquals(null, obj))
+                    return false;
+                if (ReferenceEquals(this, obj))
+                    return true;
+                if (obj.GetType() != GetType())
+                    return false;
+                return Equals((WeakReferenceToLightWeightThreadLocal)obj);
+            }
+
+            public override int GetHashCode()
+            {
+                return _hashCode;
             }
         }
 
