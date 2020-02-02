@@ -12,18 +12,40 @@ namespace Lucene.Net.Util
         [ThreadStatic] private static CurrentThreadState _state;
         private ConcurrentDictionary<CurrentThreadState, T> _values = new ConcurrentDictionary<CurrentThreadState, T>(ReferenceEqualityComparer<CurrentThreadState>.Default);
         private readonly Func<IState, T> _generator;
+        private readonly GlobalState _globalState = new GlobalState();
 
         public LightWeightThreadLocal(Func<IState, T> generator = null)
         {
             _generator = generator;
         }
 
-        public ICollection<T> Values => _values.Values;
+        public ICollection<T> Values
+        {
+            get
+            {
+                if (_globalState.Disposed != 0)
+                    throw new ObjectDisposedException(nameof(LightWeightThreadLocal<T>)); 
+                
+                return _values.Values;
+            }
+        }
 
-        public bool IsValueCreated => _state != null && _values.ContainsKey(_state);
+        public bool IsValueCreated
+        {
+            get
+            {
+                if (_globalState.Disposed != 0)
+                    throw new ObjectDisposedException(nameof(LightWeightThreadLocal<T>));
+
+                return _state != null && _values.ContainsKey(_state);
+            }
+        }
 
         public T Get(IState state = null)
         {
+            if (_globalState.Disposed != 0)
+                throw new ObjectDisposedException(nameof(LightWeightThreadLocal<T>));
+
             (_state ??= new CurrentThreadState()).Register(this);
             if (_values.TryGetValue(_state, out var v) == false &&
                 _generator != null)
@@ -36,6 +58,9 @@ namespace Lucene.Net.Util
 
         public void Set(T value)
         {
+            if (_globalState.Disposed != 0)
+                throw new ObjectDisposedException(nameof(LightWeightThreadLocal<T>));
+
             (_state ??= new CurrentThreadState()).Register(this);
             _values[_state] = value;
         }
@@ -51,7 +76,7 @@ namespace Lucene.Net.Util
                 return;
 
             GC.SuppressFinalize(this);
-
+            _globalState.Dispose();
             _values = null;
 
             while (copy.Count > 0)
@@ -77,11 +102,37 @@ namespace Lucene.Net.Util
             private readonly HashSet<WeakReferenceToLightWeightThreadLocal> _parents
                 = new HashSet<WeakReferenceToLightWeightThreadLocal>();
 
+            private readonly LocalState _localState = new LocalState();
+
             public void Register(LightWeightThreadLocal<T> parent)
             {
+                parent._globalState.UsedThreads.Add(_localState);
                 _parents.Add(new WeakReferenceToLightWeightThreadLocal(parent));
+                int parentsDisposed = _localState.ParentsDisposed;
+                if (parentsDisposed > 0)
+                {
+                    RemoveDisposedParents(parentsDisposed);
+                }
             }
 
+            private void RemoveDisposedParents(int parentsDisposed)
+            {
+                var toRemove = new List<WeakReferenceToLightWeightThreadLocal>();
+                foreach (var local in _parents)
+                {
+                    if (local.TryGetTarget(out var target) == false || target._globalState.Disposed != 0)
+                    {
+                        toRemove.Add(local);
+                    }
+                }
+
+                foreach (var remove in toRemove)
+                {
+                    _parents.Remove(remove);
+                }
+
+                Interlocked.Add(ref parentsDisposed, -parentsDisposed);
+            }
             ~CurrentThreadState()
             {
                 foreach (var parent in _parents)
@@ -160,6 +211,28 @@ namespace Lucene.Net.Util
             {
                 return RuntimeHelpers.GetHashCode(obj);
             }
+        }
+
+
+        private sealed class GlobalState
+        {
+            public int Disposed;
+            public readonly HashSet<LocalState> UsedThreads
+                = new HashSet<LocalState>(ReferenceEqualityComparer<LocalState>.Default);
+
+            public void Dispose()
+            {
+                Interlocked.Exchange(ref Disposed, 1);
+                foreach (var localState in UsedThreads)
+                {
+                    Interlocked.Increment(ref localState.ParentsDisposed);
+                }
+            }
+        }
+
+        private sealed class LocalState
+        {
+            public int ParentsDisposed;
         }
     }
 }

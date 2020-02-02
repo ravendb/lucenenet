@@ -50,7 +50,7 @@ namespace Lucene.Net.Util
 		{
 			// LUCENE-1805: make sure default get returns null,
 			// twice in a row
-            LightWeightThreadLocal<object> ctl = new LightWeightThreadLocal<object>(_=>TEST_VALUE);
+            LightWeightThreadLocal<object> ctl = new LightWeightThreadLocal<object>();
 			Assert.IsNull(ctl.Get(null));
 			Assert.IsNull(ctl.Get(null));
 		}
