@@ -45,15 +45,15 @@ namespace Lucene.Net.Index
 		}
 		private void  InitBlock()
 		{
-			fieldsReaderLocal = new FieldsReaderLocal(this);
+			fieldsReaderLocal = new LightWeightThreadLocal<FieldsReader>(state=> (FieldsReader)core.GetFieldsReaderOrig().Clone(state));
 		}
 		protected internal bool readOnly;
 		
 		private SegmentInfo si;
 		private int readBufferSize;
 		
-		internal CloseableThreadLocal<FieldsReader> fieldsReaderLocal;
-        internal CloseableThreadLocal<TermVectorsReader> termVectorsLocal = new CloseableThreadLocal<TermVectorsReader>();
+		internal LightWeightThreadLocal<FieldsReader> fieldsReaderLocal;
+        internal LightWeightThreadLocal<TermVectorsReader> termVectorsLocal = new LightWeightThreadLocal<TermVectorsReader>();
 		
 		internal BitVector deletedDocs = null;
 		internal Ref deletedDocsRef = null;
@@ -375,32 +375,6 @@ namespace Lucene.Net.Index
             {
                 get { return fieldInfos; }
             }
-		}
-		
-		/// <summary> Sets the initial value </summary>
-		private class FieldsReaderLocal : CloseableThreadLocal<FieldsReader>
-		{
-			public FieldsReaderLocal(SegmentReader enclosingInstance)
-			{
-				InitBlock(enclosingInstance);
-			}
-			private void  InitBlock(SegmentReader enclosingInstance)
-			{
-				this.enclosingInstance = enclosingInstance;
-			}
-			private SegmentReader enclosingInstance;
-			public SegmentReader Enclosing_Instance
-			{
-				get
-				{
-					return enclosingInstance;
-				}
-				
-			}
-			public /*protected internal*/ override FieldsReader InitialValue(IState state)
-			{
-				return (FieldsReader) Enclosing_Instance.core.GetFieldsReaderOrig().Clone(state);
-			}
 		}
 		
 		public /*internal*/ class Ref
@@ -1079,8 +1053,8 @@ namespace Lucene.Net.Index
 		
 		protected internal override void  DoClose(IState state)
 		{
-			termVectorsLocal.Close();
-			fieldsReaderLocal.Close();
+			termVectorsLocal.Dispose();
+			fieldsReaderLocal.Dispose();
 			
 			if (deletedDocs != null)
 			{

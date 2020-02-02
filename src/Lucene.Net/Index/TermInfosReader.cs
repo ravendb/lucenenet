@@ -18,6 +18,7 @@
 using System;
 using Lucene.Net.Store;
 using Lucene.Net.Support;
+using Lucene.Net.Util;
 using Lucene.Net.Util.Lucene4x;
 using Directory = Lucene.Net.Store.Directory;
 
@@ -37,7 +38,7 @@ namespace Lucene.Net.Index
 
         private bool isDisposed;
 
-		private readonly Lucene.Net.Util.Lucene4x.DisposableThreadLocal<ThreadResources> threadResources = new Lucene.Net.Util.Lucene4x.DisposableThreadLocal<ThreadResources>();
+		private readonly LightWeightThreadLocal<ThreadResources> threadResources = new LightWeightThreadLocal<ThreadResources>();
 		private readonly SegmentTermEnum origEnum;
 		private readonly long size;
 		
@@ -186,7 +187,7 @@ namespace Lucene.Net.Index
 		
 		private ThreadResources GetThreadResources(IState state)
 		{
-			ThreadResources resources = threadResources.Get();
+			ThreadResources resources = threadResources.Get(state);
 			if (resources == null)
 			{
 				resources = new ThreadResources { termEnum = Terms(state) };

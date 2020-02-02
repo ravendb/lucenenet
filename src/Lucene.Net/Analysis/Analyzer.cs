@@ -49,7 +49,7 @@ namespace Lucene.Net.Analysis
 			return TokenStream(fieldName, reader);
 		}
 		
-		private CloseableThreadLocal<Object> tokenStreams = new CloseableThreadLocal<Object>();
+		private LightWeightThreadLocal<Object> tokenStreams = new LightWeightThreadLocal<Object>();
 	    private bool isDisposed;
 
 	    /// <summary>Used by Analyzers that implement reusableTokenStream
@@ -161,7 +161,7 @@ namespace Lucene.Net.Analysis
             {
                 if (tokenStreams != null)
                 {
-                    tokenStreams.Close();
+                    tokenStreams.Dispose();
                     tokenStreams = null;
                 }
             }
