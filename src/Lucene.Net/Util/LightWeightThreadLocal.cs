@@ -76,7 +76,6 @@ namespace Lucene.Net.Util
             if (copy == null)
                 return;
 
-            GC.SuppressFinalize(this);
             _globalState.Dispose();
             _values = null;
 
@@ -93,10 +92,6 @@ namespace Lucene.Net.Util
             }
         }
 
-        ~LightWeightThreadLocal()
-        {
-            Dispose();
-        }
 
         private sealed class CurrentThreadState
         {
@@ -112,11 +107,12 @@ namespace Lucene.Net.Util
                 int parentsDisposed = _localState.ParentsDisposed;
                 if (parentsDisposed > 0)
                 {
-                    RemoveDisposedParents(parentsDisposed);
+                    RemoveDisposedParents();
+                    Interlocked.Add(ref _localState.ParentsDisposed, -parentsDisposed);
                 }
             }
 
-            private void RemoveDisposedParents(int parentsDisposed)
+            private void RemoveDisposedParents()
             {
                 var toRemove = new List<WeakReferenceToLightWeightThreadLocal>();
                 foreach (var local in _parents)
@@ -132,7 +128,6 @@ namespace Lucene.Net.Util
                     _parents.Remove(remove);
                 }
 
-                Interlocked.Add(ref parentsDisposed, -parentsDisposed);
             }
             ~CurrentThreadState()
             {
