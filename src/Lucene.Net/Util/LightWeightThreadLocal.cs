@@ -11,13 +11,16 @@ namespace Lucene.Net.Util
     {
         [ThreadStatic]
         private static CurrentThreadState _state;
-        private ConcurrentDictionary<CurrentThreadState, T> _values = new ConcurrentDictionary<CurrentThreadState, T>(ReferenceEqualityComparer<CurrentThreadState>.Default);
+
+        private readonly WeakReferenceCompareValue<LightWeightThreadLocal<T>> SelfReference;
+        private ConcurrentDictionary<WeakReferenceCompareValue<CurrentThreadState>, T> _values = new ConcurrentDictionary<WeakReferenceCompareValue<CurrentThreadState>, T>();
         private readonly Func<IState, T> _generator;
         private readonly GlobalState _globalState = new GlobalState();
 
         public LightWeightThreadLocal(Func<IState, T> generator = null)
         {
             _generator = generator;
+            SelfReference = new WeakReferenceCompareValue<LightWeightThreadLocal<T>>(this);
         }
 
         public ICollection<T> Values
@@ -26,7 +29,6 @@ namespace Lucene.Net.Util
             {
                 if (_globalState.Disposed != 0)
                     throw new ObjectDisposedException(nameof(LightWeightThreadLocal<T>));
-
                 return _values.Values;
             }
         }
@@ -38,23 +40,8 @@ namespace Lucene.Net.Util
                 if (_globalState.Disposed != 0)
                     throw new ObjectDisposedException(nameof(LightWeightThreadLocal<T>));
 
-                return _state != null && _values.ContainsKey(_state);
+                return _state != null && _values.ContainsKey(_state.SelfReference);
             }
-        }
-
-        public T Get(IState state = null)
-        {
-            if (_globalState.Disposed != 0)
-                throw new ObjectDisposedException(nameof(LightWeightThreadLocal<T>));
-
-            (_state ??= new CurrentThreadState()).Register(this);
-            if (_values.TryGetValue(_state, out var v) == false &&
-                _generator != null)
-            {
-                v = _generator(state);
-                _values[_state] = v;
-            }
-            return v;
         }
 
         public void Set(T value)
@@ -63,7 +50,22 @@ namespace Lucene.Net.Util
                 throw new ObjectDisposedException(nameof(LightWeightThreadLocal<T>));
 
             (_state ??= new CurrentThreadState()).Register(this);
-            _values[_state] = value;
+            _values[_state.SelfReference] = value;
+        }
+
+        public T Get(IState state = null)
+        {
+            if (_globalState.Disposed != 0)
+                throw new ObjectDisposedException(nameof(LightWeightThreadLocal<T>));
+            (_state ??= new CurrentThreadState()).Register(this);
+            if (_values.TryGetValue(_state.SelfReference, out var v) == false &&
+                _generator != null)
+            {
+                v = _generator(state);
+                _values[_state.SelfReference] = v;
+            }
+
+            return v;
         }
 
         public void Dispose()
@@ -92,18 +94,24 @@ namespace Lucene.Net.Util
             }
         }
 
-
         private sealed class CurrentThreadState
         {
-            private readonly HashSet<WeakReferenceToLightWeightThreadLocal> _parents
-                = new HashSet<WeakReferenceToLightWeightThreadLocal>();
+            private readonly HashSet<WeakReferenceCompareValue<LightWeightThreadLocal<T>>> _parents
+                = new HashSet<WeakReferenceCompareValue<LightWeightThreadLocal<T>>>();
+
+            public readonly WeakReferenceCompareValue<CurrentThreadState> SelfReference;
 
             private readonly LocalState _localState = new LocalState();
+
+            public CurrentThreadState()
+            {
+                SelfReference = new WeakReferenceCompareValue<CurrentThreadState>(this);
+            }
 
             public void Register(LightWeightThreadLocal<T> parent)
             {
                 parent._globalState.UsedThreads.TryAdd(_localState, null);
-                _parents.Add(new WeakReferenceToLightWeightThreadLocal(parent));
+                _parents.Add(parent.SelfReference);
                 int parentsDisposed = _localState.ParentsDisposed;
                 if (parentsDisposed > 0)
                 {
@@ -114,7 +122,7 @@ namespace Lucene.Net.Util
 
             private void RemoveDisposedParents()
             {
-                var toRemove = new List<WeakReferenceToLightWeightThreadLocal>();
+                var toRemove = new List<WeakReferenceCompareValue<LightWeightThreadLocal<T>>>();
                 foreach (var local in _parents)
                 {
                     if (local.TryGetTarget(out var target) == false || target._globalState.Disposed != 0)
@@ -127,18 +135,19 @@ namespace Lucene.Net.Util
                 {
                     _parents.Remove(remove);
                 }
-
             }
+
             ~CurrentThreadState()
             {
                 foreach (var parent in _parents)
                 {
                     if (parent.TryGetTarget(out var liveParent) == false)
                         continue;
+
                     var copy = liveParent._values;
                     if (copy == null)
                         continue;
-                    if (copy.TryRemove(this, out var value)
+                    if (copy.TryRemove(SelfReference, out var value)
                         && value is IDisposable d)
                     {
                         d.Dispose();
@@ -147,23 +156,24 @@ namespace Lucene.Net.Util
             }
         }
 
-        private sealed class WeakReferenceToLightWeightThreadLocal : IEquatable<WeakReferenceToLightWeightThreadLocal>
+        private sealed class WeakReferenceCompareValue<TK> : IEquatable<WeakReferenceCompareValue<TK>>
+            where TK : class
         {
-            private readonly WeakReference<LightWeightThreadLocal<T>> _weak;
+            private readonly WeakReference<TK> _weak;
             private readonly int _hashCode;
 
-            public bool TryGetTarget(out LightWeightThreadLocal<T> target)
+            public bool TryGetTarget(out TK target)
             {
                 return _weak.TryGetTarget(out target);
             }
 
-            public WeakReferenceToLightWeightThreadLocal(LightWeightThreadLocal<T> instance)
+            public WeakReferenceCompareValue(TK instance)
             {
                 _hashCode = instance.GetHashCode();
-                _weak = new WeakReference<LightWeightThreadLocal<T>>(instance);
+                _weak = new WeakReference<TK>(instance);
             }
 
-            public bool Equals(WeakReferenceToLightWeightThreadLocal other)
+            public bool Equals(WeakReferenceCompareValue<TK> other)
             {
                 if (ReferenceEquals(null, other))
                     return false;
@@ -183,9 +193,18 @@ namespace Lucene.Net.Util
                     return false;
                 if (ReferenceEquals(this, obj))
                     return true;
+                if (obj.GetType() == typeof(TK))
+                {
+                    int hashCode = obj.GetHashCode();
+                    if (hashCode != _hashCode)
+                        return false;
+                    if (_weak.TryGetTarget(out var other) == false)
+                        return false;
+                    return ReferenceEquals(other, obj);
+                }
                 if (obj.GetType() != GetType())
                     return false;
-                return Equals((WeakReferenceToLightWeightThreadLocal)obj);
+                return Equals((WeakReferenceCompareValue<TK>)obj);
             }
 
             public override int GetHashCode()
@@ -194,25 +213,10 @@ namespace Lucene.Net.Util
             }
         }
 
-        private sealed class ReferenceEqualityComparer<T> : IEqualityComparer<T>
-        {
-            public static readonly ReferenceEqualityComparer<T> Default = new ReferenceEqualityComparer<T>();
-
-            public bool Equals(T x, T y)
-            {
-                return ReferenceEquals(x, y);
-            }
-
-            public int GetHashCode(T obj)
-            {
-                return RuntimeHelpers.GetHashCode(obj);
-            }
-        }
-
-
         private sealed class GlobalState
         {
             public int Disposed;
+
             public readonly ConcurrentDictionary<LocalState, object> UsedThreads
                 = new ConcurrentDictionary<LocalState, object>(ReferenceEqualityComparer<LocalState>.Default);
 
@@ -229,6 +233,21 @@ namespace Lucene.Net.Util
         private sealed class LocalState
         {
             public int ParentsDisposed;
+        }
+
+        private sealed class ReferenceEqualityComparer<TK> : IEqualityComparer<TK>
+        {
+            public static readonly ReferenceEqualityComparer<TK> Default = new ReferenceEqualityComparer<TK>();
+
+            public bool Equals(TK x, TK y)
+            {
+                return ReferenceEquals(x, y);
+            }
+
+            public int GetHashCode(TK obj)
+            {
+                return RuntimeHelpers.GetHashCode(obj);
+            }
         }
     }
 }
