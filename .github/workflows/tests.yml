@@ -28,5 +28,5 @@ jobs:
       working-directory: ./test/Lucene.Net.Test
 
     - name: Test - Release
-      run: dotnet test --configuration Release --no-restore
+      run: dotnet test --configuration Release --no-restore /p:WarningLevel=0
       working-directory: ./test/Lucene.Net.Test
