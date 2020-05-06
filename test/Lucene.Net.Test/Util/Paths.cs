@@ -128,7 +128,7 @@ namespace Lucene.Net.Util
                     {
                         if (directory.GetFiles("Lucene.Net.sln").Length == 1)
                         {
-                            s_projectRootDirectory = directory.FullName;
+                            s_projectRootDirectory = directory.FullName + Path.DirectorySeparatorChar;
                             return s_projectRootDirectory;
                         }
 
