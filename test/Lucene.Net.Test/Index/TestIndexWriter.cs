@@ -54,6 +54,7 @@ using TermQuery = Lucene.Net.Search.TermQuery;
 using SpanTermQuery = Lucene.Net.Search.Spans.SpanTermQuery;
 using _TestUtil = Lucene.Net.Util._TestUtil;
 using System.Collections.Generic;
+using System.IO;
 using Lucene.Net.Store;
 using Lucene.Net.Test.Util;
 
@@ -5172,7 +5173,7 @@ namespace Lucene.Net.Index
         [Test]
         public virtual void TestOtherFiles()
         {
-            System.IO.DirectoryInfo indexDir = new System.IO.DirectoryInfo(System.IO.Path.Combine(AppSettings.Get("tempDir", ""), "otherfiles"));
+            System.IO.DirectoryInfo indexDir = new System.IO.DirectoryInfo(System.IO.Path.Combine(AppSettings.Get("tempDir", Path.GetTempPath()), "otherfiles"));
             Directory dir = FSDirectory.Open(indexDir);
             try
             {

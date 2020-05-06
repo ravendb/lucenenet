@@ -17,6 +17,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using Lucene.Net.Documents;
 using Lucene.Net.Support;
 using NUnit.Framework;
@@ -486,7 +487,7 @@ namespace Lucene.Net.Index
 		[Test]
 		public virtual void  TestWritingNorms()
 		{
-			System.String tempDir = AppSettings.Get("tempDir", "");
+			System.String tempDir = AppSettings.Get("tempDir", Path.GetTempPath());
 			if (tempDir == null)
 				throw new System.IO.IOException("tempDir undefined, cannot run test");
 
@@ -683,14 +684,14 @@ namespace Lucene.Net.Index
 		
 		private Directory GetDirectory()
 		{
-			return FSDirectory.Open(new System.IO.DirectoryInfo(System.IO.Path.Combine(AppSettings.Get("tempDir", ""), "testIndex")));
+			return FSDirectory.Open(new System.IO.DirectoryInfo(System.IO.Path.Combine(AppSettings.Get("tempDir", Path.GetTempPath()), "testIndex")));
 		}
 		
 		[Test]
 		public virtual void  TestFilesOpenClose()
 		{
 			// Create initial data set
-			System.IO.DirectoryInfo dirFile = new System.IO.DirectoryInfo(System.IO.Path.Combine(AppSettings.Get("tempDir", ""), "testIndex"));
+			System.IO.DirectoryInfo dirFile = new System.IO.DirectoryInfo(System.IO.Path.Combine(AppSettings.Get("tempDir", Path.GetTempPath()), "testIndex"));
 			Directory dir = GetDirectory();
 			IndexWriter writer = new IndexWriter(dir, new WhitespaceAnalyzer(), true, IndexWriter.MaxFieldLength.LIMITED, null);
 			AddDoc(writer, "test");
@@ -721,7 +722,7 @@ namespace Lucene.Net.Index
 		[Test]
 		public virtual void  TestLastModified()
 		{
-			System.IO.DirectoryInfo fileDir = new System.IO.DirectoryInfo(System.IO.Path.Combine(AppSettings.Get("tempDir", ""), "testIndex"));
+			System.IO.DirectoryInfo fileDir = new System.IO.DirectoryInfo(System.IO.Path.Combine(AppSettings.Get("tempDir", Path.GetTempPath()), "testIndex"));
 			for (int i = 0; i < 2; i++)
 			{
 				try
@@ -1208,7 +1209,7 @@ namespace Lucene.Net.Index
 		[Test]
 		public virtual void  TestOpenReaderAfterDelete()
 		{
-			System.IO.DirectoryInfo dirFile = new System.IO.DirectoryInfo(System.IO.Path.Combine(AppSettings.Get("tempDir", ""), "deletetest"));
+			System.IO.DirectoryInfo dirFile = new System.IO.DirectoryInfo(System.IO.Path.Combine(AppSettings.Get("tempDir", Path.GetTempPath()), "deletetest"));
 			Directory dir = FSDirectory.Open(dirFile);
 
             Assert.Throws<NoSuchDirectoryException>(() => IndexReader.Open(dir, false, null), "expected FileNotFoundException");

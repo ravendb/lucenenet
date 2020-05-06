@@ -709,7 +709,7 @@ namespace Lucene.Net.Index
 		
 		public static System.String FullDir(System.String dirName)
 		{
-			return new System.IO.FileInfo(System.IO.Path.Combine(AppSettings.Get("tempDir", ""), dirName)).FullName;
+			return new System.IO.FileInfo(System.IO.Path.Combine(AppSettings.Get("tempDir", Path.GetTempPath()), dirName)).FullName;
 		}
 		
 		internal const System.String TEXT_TO_COMPRESS = "this is a compressed field and should appear in 3.0 as an uncompressed field after merge";

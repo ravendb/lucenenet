@@ -56,7 +56,7 @@ namespace Lucene.Net.Util
                 if (s_tempDirectory == null)
                 {
                    
-                    string tempDirectory = AppSettings.Get("tempDir", "");
+                    string tempDirectory = AppSettings.Get("tempDir", Path.GetTempPath());
 
                     if (string.IsNullOrEmpty(tempDirectory) ||
                         !Directory.Exists(tempDirectory))

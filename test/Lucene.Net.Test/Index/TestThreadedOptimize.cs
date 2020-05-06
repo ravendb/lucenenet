@@ -16,6 +16,7 @@
  */
 
 using System;
+using System.IO;
 using Lucene.Net.Support;
 using NUnit.Framework;
 
@@ -179,7 +180,7 @@ namespace Lucene.Net.Index
 			runTest(directory, new ConcurrentMergeScheduler());
 			directory.Close();
 			
-			System.String tempDir = AppSettings.Get("tempDir", "");
+			System.String tempDir = AppSettings.Get("tempDir", Path.GetTempPath());
 			if (tempDir == null)
 				throw new System.IO.IOException("tempDir undefined, cannot run test");
 			

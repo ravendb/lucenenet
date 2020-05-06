@@ -17,6 +17,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using Lucene.Net.Support;
 using NUnit.Framework;
 
@@ -258,7 +259,7 @@ namespace Lucene.Net.Index
 		[Test]
 		public virtual void  TestLazyPerformance()
 		{
-			System.String tmpIODir = AppSettings.Get("tempDir", "");
+			System.String tmpIODir = AppSettings.Get("tempDir", Path.GetTempPath());
 			System.String path = tmpIODir + System.IO.Path.DirectorySeparatorChar.ToString() + "lazyDir" + Guid.NewGuid();
             System.IO.DirectoryInfo file = new System.IO.DirectoryInfo(path);
 			_TestUtil.RmDir(file);

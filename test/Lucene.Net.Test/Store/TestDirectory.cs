@@ -16,6 +16,7 @@
  */
 
 using System;
+using System.IO;
 using Lucene.Net.Support;
 using NUnit.Framework;
 
@@ -132,7 +133,7 @@ namespace Lucene.Net.Store
 		[Test]
 		public virtual void  TestDontCreate()
 		{
-			System.IO.DirectoryInfo path = new System.IO.DirectoryInfo(System.IO.Path.Combine(AppSettings.Get("tempDir", ""), "doesnotexist"));
+			System.IO.DirectoryInfo path = new System.IO.DirectoryInfo(System.IO.Path.Combine(AppSettings.Get("tempDir", Path.GetTempPath()), "doesnotexist"));
 			try
 			{
 				bool tmpBool;
@@ -190,7 +191,7 @@ namespace Lucene.Net.Store
 		[Test]
 		public virtual void  TestCopySubdir()
 		{
-			System.IO.DirectoryInfo path = new System.IO.DirectoryInfo(System.IO.Path.Combine(AppSettings.Get("tempDir", ""), "testsubdir"));
+			System.IO.DirectoryInfo path = new System.IO.DirectoryInfo(System.IO.Path.Combine(AppSettings.Get("tempDir", Path.GetTempPath()), "testsubdir"));
 			try
 			{
 				System.IO.Directory.CreateDirectory(path.FullName);
@@ -208,7 +209,7 @@ namespace Lucene.Net.Store
 		[Test]
 		public virtual void  TestNotDirectory()
 		{
-			System.IO.DirectoryInfo path = new System.IO.DirectoryInfo(System.IO.Path.Combine(AppSettings.Get("tempDir", ""), "testnotdir"));
+			System.IO.DirectoryInfo path = new System.IO.DirectoryInfo(System.IO.Path.Combine(AppSettings.Get("tempDir", Path.GetTempPath()), "testnotdir"));
 			Directory fsDir = new SimpleFSDirectory(path, null);
 			try
 			{

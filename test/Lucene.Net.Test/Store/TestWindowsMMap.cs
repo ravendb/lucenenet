@@ -26,6 +26,7 @@ using IndexWriter = Lucene.Net.Index.IndexWriter;
 using IndexSearcher = Lucene.Net.Search.IndexSearcher;
 using LuceneTestCase = Lucene.Net.Util.LuceneTestCase;
 using System.Collections.Generic;
+using System.IO;
 
 namespace Lucene.Net.Store
 {
@@ -68,7 +69,7 @@ namespace Lucene.Net.Store
 			return fb.ToString();
 		}
 		
-		private static readonly System.String storePathname = new System.IO.DirectoryInfo(System.IO.Path.Combine(AppSettings.Get("tempDir", ""), "testLuceneMmap")).FullName;
+		private static readonly System.String storePathname = new System.IO.DirectoryInfo(System.IO.Path.Combine(AppSettings.Get("tempDir", Path.GetTempPath()), "testLuceneMmap")).FullName;
 		
 		[Test]
 		public virtual void  TestMmapIndex()

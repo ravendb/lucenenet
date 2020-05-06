@@ -16,6 +16,7 @@
  */
 
 using System;
+using System.IO;
 using Lucene.Net.Index;
 using Lucene.Net.Support;
 using NUnit.Framework;
@@ -267,7 +268,7 @@ namespace Lucene.Net.Store
 		[Test]
 		public virtual void  TestSetBufferSize()
 		{
-			System.IO.DirectoryInfo indexDir = new System.IO.DirectoryInfo(System.IO.Path.Combine(AppSettings.Get("tempDir", ""), "testSetBufferSize"));
+			System.IO.DirectoryInfo indexDir = new System.IO.DirectoryInfo(System.IO.Path.Combine(AppSettings.Get("tempDir", Path.GetTempPath()), "testSetBufferSize"));
 			MockFSDirectory dir = new MockFSDirectory(indexDir, NewRandom());
 			try
 			{
