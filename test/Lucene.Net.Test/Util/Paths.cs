@@ -124,10 +124,18 @@ namespace Lucene.Net.Util
                 {
                     var directory = new DirectoryInfo(AppContext.BaseDirectory);
 
-                    for (var i = 0; i < 5; i++)
-                        directory = directory.Parent;
+                    for (var i = 0; i < 10; i++)
+                    {
+                        if (directory.GetFiles("Lucene.Net.sln").Length == 1)
+                        {
+                            s_projectRootDirectory = directory.FullName;
+                            return s_projectRootDirectory;
+                        }
 
-                    s_projectRootDirectory = directory.FullName;
+                        directory = directory.Parent;
+                    }
+
+                    throw new InvalidOperationException("Cannot determine root directory.");
                 }
                 return s_projectRootDirectory;
             }
