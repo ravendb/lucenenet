@@ -122,26 +122,12 @@ namespace Lucene.Net.Util
             {
                 if (s_projectRootDirectory == null)
                 {
-                    // we currently assume that the assembly's directory is root/bin/[Section]/[Build]
-                    // where [Section] is either core, demo, or contrib, and [Build] is either Debug or Release.  
-                    string assemblyLocation = AssemblyDirectory;
-                    int index = -1;
-                    if (assemblyLocation.IndexOf("build") > -1)
-                        index = assemblyLocation.IndexOf(Path.DirectorySeparatorChar + "build" + Path.DirectorySeparatorChar);
-                    else
-                        index = assemblyLocation.IndexOf(Path.DirectorySeparatorChar + "bin" + Path.DirectorySeparatorChar);
+                    var directory = new DirectoryInfo(AppContext.BaseDirectory);
 
-                    int difference = assemblyLocation.Substring(index).Count(o => o == Path.DirectorySeparatorChar);
+                    for (var i = 0; i < 5; i++)
+                        directory = directory.Parent;
 
-                    var list = new List<string>();
-
-                    for (int i = 0; i < difference; i++)
-                        list.Add("..");
-
-					var parameters = list.ToArray();
-
-                    s_projectRootDirectory = Path.GetFullPath(CombinePath(assemblyLocation, parameters));
-                    Console.WriteLine(s_projectRootDirectory);
+                    s_projectRootDirectory = directory.FullName;
                 }
                 return s_projectRootDirectory;
             }
@@ -180,7 +166,7 @@ namespace Lucene.Net.Util
             foreach (string segment in segments)
                 path = System.IO.Path.Combine(path, segment);
 
-            return path;
+            return Path.GetFullPath(path);
         }
     }
 }
