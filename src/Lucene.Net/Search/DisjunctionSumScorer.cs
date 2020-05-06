@@ -16,6 +16,9 @@
  */
 
 using System;
+using System.Buffers;
+using System.Collections.Generic;
+using System.Linq;
 using Lucene.Net.Store;
 using ScorerDocQueue = Lucene.Net.Util.ScorerDocQueue;
 
@@ -158,7 +161,7 @@ namespace Lucene.Net.Search
 			}
 			return currentDoc;
 		}
-		
+
 		/// <summary>Advance all subscorers after the current document determined by the
 		/// top of the <c>scorerDocQueue</c>.
 		/// Repeat until at least the minimum number of subscorers match on the same
@@ -178,13 +181,16 @@ namespace Lucene.Net.Search
 		/// <br/>For this, a Scorer array with minimumNrMatchers elements might
 		/// hold Scorers at currentDoc that are temporarily popped from scorerQueue.
 		/// </returns>
+
 		protected internal virtual bool AdvanceAfterCurrent(IState state)
 		{
 			do 
 			{
 				// repeat until minimum nr of matchers
 				currentDoc = scorerDocQueue.TopDoc();
-				currentScore = scorerDocQueue.TopScore(state);
+                var buffer = ArrayPool<float>.Shared.Rent(scorerDocQueue.MaxSize);
+                buffer[0] = scorerDocQueue.TopScore(state);
+
 				nrMatchers = 1;
 				do 
 				{
@@ -200,11 +206,20 @@ namespace Lucene.Net.Search
 					{
 						break; // All remaining subscorers are after currentDoc.
 					}
-					currentScore += scorerDocQueue.TopScore(state);
-					nrMatchers++;
-				}
+
+                    buffer[nrMatchers++] = scorerDocQueue.TopScore(state);
+                }
 				while (true);
-				
+
+                Array.Sort(buffer, 0, nrMatchers);
+                currentScore = 0;
+                for (int i = 0; i < nrMatchers; i++)
+                {
+                    currentScore += buffer[i];
+                }
+
+                ArrayPool<float>.Shared.Return(buffer);
+
 				if (nrMatchers >= minimumNrMatchers)
 				{
 					return true;

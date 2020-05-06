@@ -36,6 +36,8 @@ namespace Lucene.Net.Util
 		private HeapedScorerDoc[] heap;
 		private int maxSize;
 		private int size;
+
+        public int MaxSize => maxSize;
 		
 		private class HeapedScorerDoc
 		{
