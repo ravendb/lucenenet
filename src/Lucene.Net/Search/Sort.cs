@@ -112,7 +112,7 @@ namespace Lucene.Net.Search
 		public static readonly Sort INDEXORDER;
 		
 		// internal representation of the sort criteria
-		internal SortField[] fields;
+		internal ArraySegment<SortField> fields;
 		
 		/// <summary> Sorts by computed relevance. This is the same sort criteria as calling
 		/// <see cref="Searcher.Search(Query,int)" />without a sort criteria,
@@ -133,23 +133,35 @@ namespace Lucene.Net.Search
 		{
 			SetSort(fields);
 		}
-		
-		/// <summary>Sets the sort to the given criteria. </summary>
-		public virtual void  SetSort(SortField field)
+
+        /// <summary>Sorts in succession by the criteria in each SortField. </summary>
+        public Sort(ArraySegment<SortField> fields)
+        {
+            SetSort(fields);
+        }
+
+        /// <summary>Sets the sort to the given criteria. </summary>
+        public virtual void  SetSort(SortField field)
 		{
-			this.fields = new SortField[]{field};
+			this.fields = new ArraySegment<SortField>(new SortField[]{field});
 		}
 		
 		/// <summary>Sets the sort to the given criteria in succession. </summary>
 		public virtual void  SetSort(params SortField[] fields)
 		{
-			this.fields = fields;
+			this.fields = new ArraySegment<SortField>(fields);
 		}
-		
-		/// <summary> Representation of the sort criteria.</summary>
-		/// <returns> Array of SortField objects used in this sort criteria
-		/// </returns>
-		public virtual SortField[] GetSort()
+
+        /// <summary>Sets the sort to the given criteria in succession. </summary>
+        public virtual void SetSort(ArraySegment<SortField> fields)
+        {
+            this.fields = fields;
+        }
+
+        /// <summary> Representation of the sort criteria.</summary>
+        /// <returns> Array of SortField objects used in this sort criteria
+        /// </returns>
+        public virtual ArraySegment<SortField> GetSort()
 		{
 			return fields;
 		}
@@ -158,10 +170,10 @@ namespace Lucene.Net.Search
 		{
 			System.Text.StringBuilder buffer = new System.Text.StringBuilder();
 			
-			for (int i = 0; i < fields.Length; i++)
+            for (int i = 0; i < fields.Count; i++)
 			{
-				buffer.Append(fields[i].ToString());
-				if ((i + 1) < fields.Length)
+				buffer.Append(fields.Array[i + fields.Offset].ToString());
+				if ((i + 1) < fields.Count)
 					buffer.Append(',');
 			}
 			
@@ -182,13 +194,13 @@ namespace Lucene.Net.Search
                 result = true;
             else if ((this.fields != null) && (other.fields != null))
             {
-                if (this.fields.Length == other.fields.Length)
+                if (this.fields.Count == other.fields.Count)
                 {
-                    int length = this.fields.Length;
+                    int length = this.fields.Count;
                     result = true;
                     for (int i = 0; i < length; i++)
                     {
-                        if (!(this.fields[i].Equals(other.fields[i])))
+                        if (!(this.fields.Array[i + this.fields.Offset].Equals(other.fields.Array[i + other.fields.Offset])))
                         {
                             result = false;
                             break;

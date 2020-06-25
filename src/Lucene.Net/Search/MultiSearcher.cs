@@ -417,9 +417,9 @@ namespace Lucene.Net.Search
                                                     // if one of the Sort fields is FIELD_DOC, need to fix its values, so that
                                                     // it will break ties by doc Id properly.  Otherwise, it will compare to
                                                     // 'relative' doc Ids, that belong to two different searchables.
-                                                    for (int j = 0; j < docs.fields.Length; j++)
+                                                    for (int j = 0; j < docs.fields.Count; j++)
                                                     {
-                                                        if (docs.fields[j].Type == SortField.DOC)
+                                                        if (docs.fields.Array[j + docs.fields.Offset].Type == SortField.DOC)
                                                         {
                                                             // iterate over the score docs and change their fields value
                                                             for (int j2 = 0; j2 < docs.ScoreDocs.Length; j2++)

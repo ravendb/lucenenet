@@ -29,7 +29,7 @@ namespace Lucene.Net.Search
 	{
 		
 		/// <summary>The fields which were used to sort results by. </summary>
-		public SortField[] fields;
+		public ArraySegment<SortField> fields;
 		
 		/// <summary>Creates one of these objects.</summary>
 		/// <param name="totalHits"> Total number of hits for the query.
@@ -40,7 +40,7 @@ namespace Lucene.Net.Search
 		/// </param>
 		/// <param name="maxScore">  The maximum score encountered.
 		/// </param>
-		public TopFieldDocs(int totalHits, ScoreDoc[] scoreDocs, SortField[] fields, float maxScore):base(totalHits, scoreDocs, maxScore)
+		public TopFieldDocs(int totalHits, ScoreDoc[] scoreDocs, ArraySegment<SortField> fields, float maxScore):base(totalHits, scoreDocs, maxScore)
 		{
 			this.fields = fields;
 		}
