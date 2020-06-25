@@ -31,8 +31,8 @@ namespace Lucene.Net.Search
 	/// </since>
 	class FieldDocSortedHitQueue : PriorityQueue<FieldDoc>
 	{
-		internal volatile SortField[] fields = null;
-		
+		internal ArraySegment<SortField> fields;
+
 		// used in the case where the fields are sorted by locale
 		// based strings
 		internal volatile System.Globalization.CompareInfo[] collators;
@@ -53,7 +53,7 @@ namespace Lucene.Net.Search
 		/// This method is thread safe.
 		/// </summary>
 		/// <param name="fields"></param>
-		internal virtual void  SetFields(SortField[] fields)
+		internal virtual void  SetFields(ArraySegment<SortField> fields)
 		{
             lock (this)
 			{
@@ -63,7 +63,7 @@ namespace Lucene.Net.Search
 		}
 
         /// <summary>Returns the fields being used to sort. </summary>
-        internal virtual SortField[] GetFields()
+        internal virtual ArraySegment<SortField> GetFields()
         {
             return fields;
         }
@@ -74,14 +74,14 @@ namespace Lucene.Net.Search
 		/// </summary>
 		/// <param name="fields">Array of sort fields.</param>
 		/// <returns> Array, possibly <c>null</c>.</returns>
-		private System.Globalization.CompareInfo[] HasCollators(SortField[] fields)
+		private System.Globalization.CompareInfo[] HasCollators(ArraySegment<SortField> fields)
 		{
 			if (fields == null)
 				return null;
-			System.Globalization.CompareInfo[] ret = new System.Globalization.CompareInfo[fields.Length];
-			for (int i = 0; i < fields.Length; ++i)
+			System.Globalization.CompareInfo[] ret = new System.Globalization.CompareInfo[fields.Count];
+			for (int i = 0; i < fields.Count; ++i)
 			{
-				System.Globalization.CultureInfo locale = fields[i].Locale;
+				System.Globalization.CultureInfo locale = fields.Array[i + fields.Offset].Locale;
 				if (locale != null)
 					ret[i] = locale.CompareInfo;
 			}
@@ -95,11 +95,11 @@ namespace Lucene.Net.Search
 		/// <returns><c>true</c> if document <c>a</c> should be sorted after document <c>b</c>.</returns>
         public override bool LessThan(FieldDoc docA, FieldDoc docB)
 		{
-			int n = fields.Length;
+			int n = fields.Count;
 			int c = 0;
 			for (int i = 0; i < n && c == 0; ++i)
 			{
-				int type = fields[i].Type;
+				int type = fields.Array[i + fields.Offset].Type;
 				if(type == SortField.STRING)
 				{
 				    string s1 = (string) docA.fields[i];
@@ -115,7 +115,7 @@ namespace Lucene.Net.Search
                     {
                         c = 1;
                     }
-                    else if (fields[i].Locale == null)
+                    else if (fields.Array[i + fields.Offset].Locale == null)
                     {
                         c = s1.CompareTo(s2);
                     }
@@ -132,7 +132,7 @@ namespace Lucene.Net.Search
                         c = -c;
                     }
                 }
-				if (fields[i].Reverse)
+				if (fields.Array[i + fields.Offset].Reverse)
 				{
 					c = - c;
 				}

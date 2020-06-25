@@ -60,14 +60,14 @@ namespace Lucene.Net.Search
 			private FieldComparator comparator;
 			private int oneReverseMul;
 			
-			public OneComparatorFieldValueHitQueue(SortField[] fields, int size):base(fields)
+			public OneComparatorFieldValueHitQueue(ArraySegment<SortField> fields, int size):base(fields)
 			{
-				if (fields.Length == 0)
+				if (fields.Count == 0)
 				{
 					throw new System.ArgumentException("Sort must contain at least one field");
 				}
 				
-				SortField field = fields[0];
+				SortField field = fields.Array[0 + fields.Offset];
 				comparator = field.GetComparator(size, 0);
 				oneReverseMul = field.reverse?- 1:1;
 				
@@ -103,13 +103,13 @@ namespace Lucene.Net.Search
 		private sealed class MultiComparatorsFieldValueHitQueue : FieldValueHitQueue
 		{
 			
-			public MultiComparatorsFieldValueHitQueue(SortField[] fields, int size):base(fields)
+			public MultiComparatorsFieldValueHitQueue(ArraySegment<SortField> fields, int size):base(fields)
 			{
 				
 				int numComparators = comparators.Length;
 				for (int i = 0; i < numComparators; ++i)
 				{
-					SortField field = fields[i];
+					SortField field = fields.Array[i + fields.Offset];
 					
 					reverseMul[i] = field.reverse?- 1:1;
 					comparators[i] = field.GetComparator(size, i);
@@ -140,7 +140,7 @@ namespace Lucene.Net.Search
 		}
 		
 		// prevent instantiation and extension.
-		private FieldValueHitQueue(SortField[] fields)
+		private FieldValueHitQueue(ArraySegment<SortField> fields)
 		{
 			// When we get here, fields.length is guaranteed to be > 0, therefore no
 			// need to check it again.
@@ -149,7 +149,7 @@ namespace Lucene.Net.Search
 			// Therefore even in the case of a single comparator, create an array
 			// anyway.
 			this.fields = fields;
-			int numComparators = fields.Length;
+			int numComparators = fields.Count;
 			comparators = new FieldComparator[numComparators];
 			reverseMul = new int[numComparators];
 		}
@@ -166,15 +166,15 @@ namespace Lucene.Net.Search
 		/// <param name="size">The number of hits to retain. Must be greater than zero.
 		/// </param>
 		/// <throws>  IOException </throws>
-		public static FieldValueHitQueue Create(SortField[] fields, int size)
+		public static FieldValueHitQueue Create(ArraySegment<SortField> fields, int size)
 		{
 			
-			if (fields.Length == 0)
+			if (fields.Count == 0)
 			{
 				throw new System.ArgumentException("Sort must contain at least one field");
 			}
 			
-			if (fields.Length == 1)
+			if (fields.Count == 1)
 			{
 				return new OneComparatorFieldValueHitQueue(fields, size);
 			}
@@ -195,7 +195,7 @@ namespace Lucene.Net.Search
 		}
 		
 		/// <summary>Stores the sort criteria being used. </summary>
-		protected internal SortField[] fields;
+		protected internal ArraySegment<SortField> fields;
 		protected internal FieldComparator[] comparators;
 		protected internal int[] reverseMul;
 
@@ -227,7 +227,7 @@ namespace Lucene.Net.Search
 		}
 		
 		/// <summary>Returns the SortFields being used by this hit queue. </summary>
-		internal virtual SortField[] GetFields()
+		internal virtual ArraySegment<SortField> GetFields()
 		{
 			return fields;
 		}

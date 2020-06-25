@@ -1012,7 +1012,7 @@ namespace Lucene.Net.Search
 		/// <throws>  IOException </throws>
 		public static TopFieldCollector Create(Sort sort, int numHits, bool fillFields, bool trackDocScores, bool trackMaxScore, bool docsScoredInOrder)
 		{
-			if (sort.fields.Length == 0)
+			if (sort.fields.Count == 0)
 			{
 				throw new System.ArgumentException("Sort must contain at least one field");
 			}
