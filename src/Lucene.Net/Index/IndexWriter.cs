@@ -242,7 +242,7 @@ namespace Lucene.Net.Index
 		private SegmentInfos segmentInfos = new SegmentInfos(); // the segments
         private int optimizeMaxNumSegments;
 
-		private DocumentsWriter docWriter;
+		internal DocumentsWriter docWriter;
 		private IndexFileDeleter deleter;
 
         private ISet<SegmentInfo> segmentsToOptimize = Lucene.Net.Support.Compatibility.SetFactory.CreateHashSet<SegmentInfo>(); // used by optimize to note those needing optimization
@@ -266,7 +266,7 @@ namespace Lucene.Net.Index
 		private long mergeGen;
 		private bool stopMerges;
 		
-		private int flushCount;
+		internal int flushCount;
 		private int flushDeletesCount;
 		
 		// Used to only allow one addIndexes to proceed at once

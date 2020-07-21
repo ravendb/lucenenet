@@ -176,7 +176,8 @@ namespace Lucene.Net.Index
 		internal bool flushPending; // True when a thread has decided to flush
 		internal bool bufferIsFull; // True when it's time to write segment
 		private bool aborting; // True if an abort is pending
-		
+        internal int _offsetThreshold = (int)(int.MaxValue * 0.95); // we set threshold for ByteBlockPool offset to not overflow the int max value
+
 		private DocFieldProcessor docFieldProcessor;
 		
 		internal System.IO.StreamWriter infoStream;
@@ -975,6 +976,17 @@ namespace Lucene.Net.Index
 						flushPending = true;
 						state.doFlushAfter = true;
 					}
+
+                    if (flushPending == false && state.consumer is DocFieldProcessorPerThread processorPerThread 
+                                              && processorPerThread.consumer is DocInverterPerThread inverterPerThread 
+                                              && inverterPerThread.consumer is TermsHashPerThread termsHashPerThread)
+                    {
+                        if (termsHashPerThread.bytePool.byteOffset >= _offsetThreshold || termsHashPerThread.intPool.intOffset >= _offsetThreshold || termsHashPerThread.charPool.charOffset >= _offsetThreshold)
+                        {
+                            flushPending = true;
+                            state.doFlushAfter = true;
+                        }
+                    }
 					
 					success = true;
 				}
