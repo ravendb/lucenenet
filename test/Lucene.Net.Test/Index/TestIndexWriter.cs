@@ -55,6 +55,7 @@ using SpanTermQuery = Lucene.Net.Search.Spans.SpanTermQuery;
 using _TestUtil = Lucene.Net.Util._TestUtil;
 using System.Collections.Generic;
 using System.IO;
+using Lucene.Net.Analysis;
 using Lucene.Net.Store;
 using Lucene.Net.Test.Util;
 
@@ -5813,6 +5814,38 @@ namespace Lucene.Net.Index
             }
 
             dir.Close();
+        }
+
+        [Test]
+        public void TestOffsetThreshold()
+        {
+            var path = new DirectoryInfo(Path.Combine(AppSettings.Get("tempDir", Path.GetTempPath()), "TestOffsetThreshold"));
+            using (var dir = new SimpleFSDirectory(path))
+            {
+                using (var keywordAnalyzer = new KeywordAnalyzer())
+                using (var writer = new IndexWriter(dir, keywordAnalyzer, true, IndexWriter.MaxFieldLength.UNLIMITED, null))
+                {
+                    var doc = new Lucene.Net.Documents.Document();
+                    doc.Add(new Field("Name", "Egor", Field.Store.YES, Field.Index.ANALYZED));
+
+                    writer.docWriter._offsetThreshold = 1;
+                    var c = 0;
+                    while (c < 32000)
+                    {
+                        writer.AddDocument(doc, null);
+                        c++;
+                    }
+
+                    writer.Commit(null);
+
+                    Assert.True(writer.flushCount > 0);
+                    using (var search = new IndexSearcher(dir, null))
+                    {
+                        var topDocs = search.Search(new TermQuery(new Term("Name", "Egor")), 5, null);
+                        Assert.AreEqual(32000, topDocs.TotalHits);
+                    }
+                }
+            }
         }
     }
 }
