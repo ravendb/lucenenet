@@ -19,9 +19,11 @@
     <GenerateAssemblyInformationalVersionAttribute>false</GenerateAssemblyInformationalVersionAttribute>
     <GenerateAssemblyVersionAttribute>false</GenerateAssemblyVersionAttribute>
 
-    <PublicSign Condition=" '$(OS)' == 'Windows_NT' ">true</PublicSign>
     <SignAssembly Condition="'$(OS)' == 'Windows_NT'">true</SignAssembly>
     <AssemblyOriginatorKeyFile>Lucene.Net.snk</AssemblyOriginatorKeyFile>
 
   </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="SourceLink.Create.CommandLine" Version="2.8.3" PrivateAssets="All" /> 
+  </ItemGroup>
 </Project>

@@ -5,6 +5,7 @@
     <TargetFramework>netstandard2.0</TargetFramework>
     <AssemblyName>Lucene.Net</AssemblyName>
     <PackageId>Lucene.Net</PackageId>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
   
   <ItemGroup Condition="'$(OS)' == 'Windows_NT'">
