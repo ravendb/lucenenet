@@ -265,7 +265,9 @@ namespace Lucene.Net.Index
 		private IList<MergePolicy.OneMerge> mergeExceptions = new List<MergePolicy.OneMerge>();
 		private long mergeGen;
 		private bool stopMerges;
-		
+
+        public int PendingMergesCount => pendingMerges.Count;
+
 		internal int flushCount;
 		private int flushDeletesCount;
 		
@@ -3010,7 +3012,7 @@ namespace Lucene.Net.Index
 		/// to retrieve the next merge requested by the
 		/// MergePolicy 
 		/// </summary>
-		internal virtual MergePolicy.OneMerge GetNextMerge()
+		public virtual MergePolicy.OneMerge GetNextMerge()
 		{
 			lock (this)
 			{
@@ -4652,9 +4654,8 @@ namespace Lucene.Net.Index
 		/// <summary> Merges the indicated segments, replacing them in the stack with a
 		/// single segment.
 		/// </summary>
-		internal void  Merge(MergePolicy.OneMerge merge, IState state)
+		public void Merge(MergePolicy.OneMerge merge, IState state)
 		{
-			
 			bool success = false;
 			
 			try
@@ -5356,7 +5357,7 @@ namespace Lucene.Net.Index
 		}
 		
 		// Apply buffered deletes to all segments.
-		private bool ApplyDeletes(IState state)
+		protected virtual bool ApplyDeletes(IState state)
 		{
 			lock (this)
 			{
