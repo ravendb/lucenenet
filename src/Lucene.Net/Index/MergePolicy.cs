@@ -85,7 +85,32 @@ namespace Lucene.Net.Index
 			internal bool useCompoundFile;
 			internal bool aborted;
 			internal System.Exception error;
-			
+
+            public OneMergeStats Stats
+            {
+                get
+                {
+                    var totalDocuments = 0L;
+
+                    foreach (var segment in segments)
+                    {
+                        totalDocuments += segment.docCount;
+                    }
+
+                    return new OneMergeStats
+                    {
+                        NumberOfFiles = segments.Count,
+                        TotalDocuments = totalDocuments
+                    };
+                }
+            }
+
+            public class OneMergeStats
+            {
+                public int NumberOfFiles;
+                public long TotalDocuments;
+            }
+
 			public OneMerge(SegmentInfos segments, bool useCompoundFile)
 			{
 				if (0 == segments.Count)
