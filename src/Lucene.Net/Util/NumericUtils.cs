@@ -16,6 +16,7 @@
  */
 
 using System;
+using System.Buffers;
 using System.Runtime.CompilerServices;
 using Lucene.Net.Documents;
 using Lucene.Net.Search;
@@ -112,7 +113,7 @@ namespace Lucene.Net.Util
         /// <returns> number of chars written to buffer
         /// </returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static int LongToPrefixCoded(long val, int shift, char[] buffer)
+        public static int LongToPrefixCoded(long val, int shift, Span<char> buffer)
 		{
 		    if (shift > 63 || shift < 0)
 		        goto ERROR;
@@ -149,10 +150,19 @@ namespace Lucene.Net.Util
 		/// <param name="shift">how many bits to strip from the right
 		/// </param>
 		public static System.String LongToPrefixCoded(long val, int shift)
-		{
-			char[] buffer = new char[BUF_SIZE_LONG];
-			int len = LongToPrefixCoded(val, shift, buffer);
-			return new System.String(buffer, 0, len);
+        {
+            var pool = ArrayPool<char>.Shared;
+			Span<char> array = pool.Rent(BUF_SIZE_LONG);
+            try
+            {
+                var buffer = array.Slice(0, BUF_SIZE_LONG);
+                int len = LongToPrefixCoded(val, shift, buffer);
+                return new System.String(buffer.Slice(0, len));
+            }
+            finally
+            {
+				pool.Return(array.ToArray());
+            }
 		}
 		
 		/// <summary> This is a convenience method, that returns prefix coded bits of a long without
@@ -177,7 +187,7 @@ namespace Lucene.Net.Util
 		/// </param>
 		/// <returns> number of chars written to buffer
 		/// </returns>
-		public static int IntToPrefixCoded(int val, int shift, char[] buffer)
+		public static int IntToPrefixCoded(int val, int shift, Span<char> buffer)
 		{
 			if (shift > 31 || shift < 0)
 				throw new System.ArgumentException("Illegal shift value, must be 0..31");
@@ -205,9 +215,18 @@ namespace Lucene.Net.Util
 		/// </param>
 		public static System.String IntToPrefixCoded(int val, int shift)
 		{
-			char[] buffer = new char[BUF_SIZE_INT];
-			int len = IntToPrefixCoded(val, shift, buffer);
-			return new System.String(buffer, 0, len);
+            var pool = ArrayPool<char>.Shared;
+            Span<char> array = pool.Rent(BUF_SIZE_LONG);
+            try
+            {
+                var buffer = array.Slice(0, BUF_SIZE_LONG);
+                int len = IntToPrefixCoded(val, shift, buffer);
+                return new System.String(buffer.Slice(0, len));
+            }
+            finally
+            {
+                pool.Return(array.ToArray());
+            }
 		}
 		
 		/// <summary> This is a convenience method, that returns prefix coded bits of an int without
