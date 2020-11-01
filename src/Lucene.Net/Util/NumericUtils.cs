@@ -141,7 +141,7 @@ namespace Lucene.Net.Util
 	    {
 	        throw new System.ArgumentException("Illegal shift value, must be 0..63");
         }
-		
+
 		/// <summary> Expert: Returns prefix coded bits after reducing the precision by <c>shift</c> bits.
 		/// This is method is used by <see cref="LongRangeBuilder" />.
 		/// </summary>
@@ -151,18 +151,9 @@ namespace Lucene.Net.Util
 		/// </param>
 		public static System.String LongToPrefixCoded(long val, int shift)
         {
-            var pool = ArrayPool<char>.Shared;
-			Span<char> array = pool.Rent(BUF_SIZE_LONG);
-            try
-            {
-                var buffer = array.Slice(0, BUF_SIZE_LONG);
-                int len = LongToPrefixCoded(val, shift, buffer);
-                return new System.String(buffer.Slice(0, len));
-            }
-            finally
-            {
-				pool.Return(array.ToArray());
-            }
+            Span<char> buffer = stackalloc char[BUF_SIZE_LONG];
+            int len = LongToPrefixCoded(val, shift, buffer);
+            return new System.String(buffer.Slice(0, len));
 		}
 		
 		/// <summary> This is a convenience method, that returns prefix coded bits of a long without
@@ -215,18 +206,9 @@ namespace Lucene.Net.Util
 		/// </param>
 		public static System.String IntToPrefixCoded(int val, int shift)
 		{
-            var pool = ArrayPool<char>.Shared;
-            Span<char> array = pool.Rent(BUF_SIZE_LONG);
-            try
-            {
-                var buffer = array.Slice(0, BUF_SIZE_LONG);
-                int len = IntToPrefixCoded(val, shift, buffer);
-                return new System.String(buffer.Slice(0, len));
-            }
-            finally
-            {
-                pool.Return(array.ToArray());
-            }
+            Span<char> buffer = stackalloc char[BUF_SIZE_LONG];
+            int len = IntToPrefixCoded(val, shift, buffer);
+            return new System.String(buffer.Slice(0, len));
 		}
 		
 		/// <summary> This is a convenience method, that returns prefix coded bits of an int without

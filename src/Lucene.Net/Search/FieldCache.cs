@@ -32,22 +32,6 @@ using Single = Lucene.Net.Support.Single;
 
 namespace Lucene.Net.Search
 {
-
-    /// <summary> Expert: Maintains caches of term values.
-    /// 
-    /// <p/>Created: May 19, 2004 11:13:14 AM
-    /// 
-    /// </summary>
-    /// <since>   lucene 1.4
-    /// </since>
-    /// <version>  $Id: FieldCache.java 807841 2009-08-25 22:27:31Z markrmiller $
-    /// </version>
-    /// <seealso cref="Lucene.Net.Util.FieldCacheSanityChecker">
-    /// </seealso>
-    public sealed class CreationPlaceholder<T>
-    {
-        internal T value_Renamed;
-    }
     /// <summary>Expert: Stores term text values and document ordering data. </summary>
     public class StringIndex
     {

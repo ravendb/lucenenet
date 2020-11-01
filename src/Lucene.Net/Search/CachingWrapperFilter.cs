@@ -77,28 +77,22 @@ namespace Lucene.Net.Search
             public FilterCache(DeletesMode deletesMode)
             {
                 this.deletesMode = deletesMode;
+                _cache = new ConditionalWeakTable<object, T>();
             }
 
             public T Get(IndexReader reader, object coreKey, object delCoreKey)
             {
                 T value;
 
-                var current = _cache;
-                if (current == null)
-                {
-                    current = new ConditionalWeakTable<object, T>();
-                    current = Interlocked.CompareExchange(ref _cache, current, null) ?? current;
-                }
-
                 if (deletesMode == DeletesMode.IGNORE)
                 {
                     // key on core
-                    current.TryGetValue(coreKey, out value);
+                    _cache.TryGetValue(coreKey, out value);
                 }
                 else if (deletesMode == DeletesMode.RECACHE)
                 {
                     // key on deletes, if any, else core
-                    current.TryGetValue(delCoreKey, out value);
+                    _cache.TryGetValue(delCoreKey, out value);
                 }
                 else
                 {
@@ -106,13 +100,13 @@ namespace Lucene.Net.Search
                     System.Diagnostics.Debug.Assert(deletesMode == DeletesMode.DYNAMIC);
 
                     // first try for exact match
-                    current.TryGetValue(delCoreKey, out value);
+                    _cache.TryGetValue(delCoreKey, out value);
 
                     if (value == null)
                     {
                         // now for core match, but dynamically AND NOT
                         // deletions
-                        current.TryGetValue(coreKey, out value);
+                        _cache.TryGetValue(coreKey, out value);
                         if (value != null && reader.HasDeletions)
                         {
                             value = MergeDeletes(reader, value);
@@ -130,16 +124,16 @@ namespace Lucene.Net.Search
             {
                 if (deletesMode == DeletesMode.IGNORE)
                 {
-                    _cache.Add(coreKey, value);
+                    _cache.AddOrUpdate(coreKey, value);
                 }
                 else if (deletesMode == DeletesMode.RECACHE)
                 {
-                    _cache.Add(delCoreKey, value);
+                    _cache.AddOrUpdate(delCoreKey, value);
                 }
                 else
                 {
-                    _cache.Add(coreKey, value);
-                    _cache.Add(delCoreKey, value);
+                    _cache.AddOrUpdate(coreKey, value);
+                    _cache.AddOrUpdate(delCoreKey, value);
                 }
             }
         }
