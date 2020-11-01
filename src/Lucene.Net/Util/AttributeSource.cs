@@ -16,6 +16,7 @@
  */
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -51,8 +52,8 @@ namespace Lucene.Net.Util
 			private sealed class DefaultAttributeFactory:AttributeFactory
 			{
                 // This should be WeakDictionary<T, WeakReference<TImpl>> where typeof(T) is Attribute and TImpl is typeof(AttributeImpl)
-			    private static readonly ConditionalWeakTable<Type, WeakReference> attClassImplMap =
-			        new ConditionalWeakTable<Type, WeakReference>();
+			    private static readonly ConcurrentDictionary<Type, WeakReference> attClassImplMap =
+			        new ConcurrentDictionary<Type, WeakReference>();
                 			
 				public override Attribute CreateAttributeInstance<TAttImpl>()
 				{
@@ -83,7 +84,7 @@ namespace Lucene.Net.Util
                             string name = attClass.FullName.Replace(attClass.Name, attClass.Name.Substring(1)) + ", " +
                                           attClass.Assembly.FullName;
                             clazz = System.Type.GetType(name, true);
-                            attClassImplMap.AddOrUpdate(attClass, new WeakReference(clazz)); //OK
+                            attClassImplMap[attClass] = new WeakReference(clazz); //OK
                         }
                         catch (TypeLoadException) // was System.Exception
                         {

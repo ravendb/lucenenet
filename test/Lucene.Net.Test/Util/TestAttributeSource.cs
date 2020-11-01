@@ -116,8 +116,8 @@ namespace Lucene.Net.Util
             Assert.Ignore("Known issue");
 
             AttributeSource src = new AttributeSource();
-            ITermAttribute termAtt = src.AddAttribute<ITermAttribute>();
             ITypeAttribute typeAtt = src.AddAttribute<ITypeAttribute>();
+            ITermAttribute termAtt = src.AddAttribute<ITermAttribute>();
             termAtt.SetTermBuffer("TestTerm");
             typeAtt.Type = "TestType";
             Assert.AreEqual("(" + typeAtt.ToString() + "," + termAtt.ToString() + ")", src.ToString(), "Attributes should appear in original order");

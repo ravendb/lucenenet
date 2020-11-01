@@ -207,16 +207,15 @@ namespace Lucene.Net.Search
             public virtual T Get(IndexReader reader, Entry key, IState state)
             {
                 var innerCache = readerCache.GetOrCreateValue(reader.FieldCacheKey);
-                var value = innerCache.GetOrAdd(key, new CreationPlaceholder<T>());
+                var value = innerCache.GetOrAdd(key, new Lazy<T>(() => CreateValue(reader, key, state)));
 
-                if (value is CreationPlaceholder<T> progress)
+                if (value is Lazy<T> progress)
                 {
                     lock (progress) // we need this lock because create value is expensive, we don't want to perform it several times.
                     {
-                        if (progress.value_Renamed == null)
+                        if (progress.IsValueCreated == false)
                         {
-                            progress.value_Renamed = CreateValue(reader, key, state);
-                            innerCache[key] = progress.value_Renamed;
+                            innerCache[key] = progress.Value;
 
                             // Only check if key.custom (the parser) is
                             // non-null; else, we check twice for a single
@@ -226,11 +225,11 @@ namespace Lucene.Net.Search
                                 System.IO.StreamWriter infoStream = wrapper.InfoStream;
                                 if (infoStream != null)
                                 {
-                                    PrintNewInsanity(infoStream, progress.value_Renamed);
+                                    PrintNewInsanity(infoStream, progress.Value);
                                 }
                             }
                         }
-                        return progress.value_Renamed;
+                        return progress.Value;
                     }
                 }
 
@@ -242,6 +241,9 @@ namespace Lucene.Net.Search
                 foreach (var readerCacheEntry in readerCache)
                 {
                     var readerKey = readerCacheEntry.Key;
+                    if (readerKey == null)
+                        continue;
+
                     var innerCache = readerCacheEntry.Value;
                     foreach (var mapEntry in innerCache)
                     {

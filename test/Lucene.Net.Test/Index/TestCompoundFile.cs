@@ -392,7 +392,7 @@ namespace Lucene.Net.Index
 			AssertSameStreams("basic clone two", expected, two);
 			
 			// Now close the first stream
-			one.Close();
+			one.Dispose();
 			Assert.IsTrue(IsCSIndexInputOpen(one), "Only close when cr is closed");
 			
 			// The following should really fail since we couldn't expect to
@@ -404,7 +404,7 @@ namespace Lucene.Net.Index
 			
 			
 			// Now close the compound reader
-			cr.Close();
+			cr.Dispose();
 			Assert.IsFalse(IsCSIndexInputOpen(one), "Now closed one");
 			Assert.IsFalse(IsCSIndexInputOpen(two), "Now closed two");
 			
@@ -415,12 +415,12 @@ namespace Lucene.Net.Index
 			
 			
 			// Now close the second clone
-			two.Close();
+			two.Dispose();
 			expected.Seek(0, null);
 			two.Seek(0, null);
 			//assertSameStreams("basic clone two/4", expected, two);
 			
-			expected.Close();
+			expected.Dispose();
 		}
 		
 		
