@@ -18,6 +18,8 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
+using System.Threading;
 using Lucene.Net.Store;
 using Lucene.Net.Support;
 using IndexReader = Lucene.Net.Index.IndexReader;
@@ -68,7 +70,7 @@ namespace Lucene.Net.Search
              */
             // NOTE: not final so that we can dynamically re-init
             // after de-serialize
-            volatile IDictionary<Object, T> cache;
+            volatile ConditionalWeakTable<Object, T> _cache;
 
             private DeletesMode deletesMode;
 
@@ -79,46 +81,46 @@ namespace Lucene.Net.Search
 
             public T Get(IndexReader reader, object coreKey, object delCoreKey)
             {
-                lock (this)
+                T value;
+
+                var current = _cache;
+                if (current == null)
                 {
-                    T value;
+                    current = new ConditionalWeakTable<object, T>();
+                    current = Interlocked.CompareExchange(ref _cache, current, null) ?? current;
+                }
 
-                    if (cache == null)
+                if (deletesMode == DeletesMode.IGNORE)
+                {
+                    // key on core
+                    current.TryGetValue(coreKey, out value);
+                }
+                else if (deletesMode == DeletesMode.RECACHE)
+                {
+                    // key on deletes, if any, else core
+                    current.TryGetValue(delCoreKey, out value);
+                }
+                else
+                {
+
+                    System.Diagnostics.Debug.Assert(deletesMode == DeletesMode.DYNAMIC);
+
+                    // first try for exact match
+                    current.TryGetValue(delCoreKey, out value);
+
+                    if (value == null)
                     {
-                        cache = new WeakDictionary<object, T>();
-                    }
-
-                    if (deletesMode == DeletesMode.IGNORE)
-                    {
-                        // key on core
-                        value = cache[coreKey];
-                    }
-                    else if (deletesMode == DeletesMode.RECACHE)
-                    {
-                        // key on deletes, if any, else core
-                        value = cache[delCoreKey];
-                    }
-                    else
-                    {
-
-                        System.Diagnostics.Debug.Assert(deletesMode == DeletesMode.DYNAMIC);
-
-                        // first try for exact match
-                        value = cache[delCoreKey];
-
-                        if (value == null)
+                        // now for core match, but dynamically AND NOT
+                        // deletions
+                        current.TryGetValue(coreKey, out value);
+                        if (value != null && reader.HasDeletions)
                         {
-                            // now for core match, but dynamically AND NOT
-                            // deletions
-                            value = cache[coreKey];
-                            if (value != null && reader.HasDeletions)
-                            {
-                                value = MergeDeletes(reader, value);
-                            }
+                            value = MergeDeletes(reader, value);
                         }
                     }
-                    return value;
                 }
+
+                return value;
 
             }
        
@@ -126,21 +128,18 @@ namespace Lucene.Net.Search
 
             public void Put(object coreKey, object delCoreKey, T value)
             {
-                lock (this)
+                if (deletesMode == DeletesMode.IGNORE)
                 {
-                    if (deletesMode == DeletesMode.IGNORE)
-                    {
-                        cache[coreKey] = value;
-                    }
-                    else if (deletesMode == DeletesMode.RECACHE)
-                    {
-                        cache[delCoreKey] = value;
-                    }
-                    else
-                    {
-                        cache[coreKey] = value;
-                        cache[delCoreKey] = value;
-                    }
+                    _cache.Add(coreKey, value);
+                }
+                else if (deletesMode == DeletesMode.RECACHE)
+                {
+                    _cache.Add(delCoreKey, value);
+                }
+                else
+                {
+                    _cache.Add(coreKey, value);
+                    _cache.Add(delCoreKey, value);
                 }
             }
         }

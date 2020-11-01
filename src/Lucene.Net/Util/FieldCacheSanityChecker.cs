@@ -129,7 +129,7 @@ namespace Lucene.Net.Util
 				CacheEntry item = cacheEntries[i];
 				System.Object val = item.Value;
 				
-				if (val is Lucene.Net.Search.CreationPlaceholder)
+				if (val.GetType().GetGenericTypeDefinition() == typeof(Lucene.Net.Search.CreationPlaceholder<>))
 					continue;
 				
 				ReaderField rf = new ReaderField(item.ReaderKey, item.FieldName);

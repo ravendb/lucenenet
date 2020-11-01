@@ -22,6 +22,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using NUnit.Framework;
 
 namespace Lucene.Net.Support
@@ -32,7 +33,7 @@ namespace Lucene.Net.Support
         [Test]
         public void A_TestBasicOps()
         {
-            IDictionary<object, object> weakDictionary = TestWeakDictionaryBehavior.CreateDictionary();// new SupportClass.TjWeakHashTable();
+            ConditionalWeakTableWrapper<object, object> weakDictionary = TestWeakDictionaryBehavior.CreateDictionary();// new SupportClass.TjWeakHashTable();
             Hashtable realHashTable = new Hashtable();
 
             SmallObject[] so = new SmallObject[100];
@@ -60,7 +61,7 @@ namespace Lucene.Net.Support
 
             var values1 = weakDictionary.Values;
             var values2 = realHashTable.Values;
-            Assert.AreEqual(values1.Count, values2.Count);
+            Assert.AreEqual(values1.Length, values2.Count);
 
             realHashTable.Remove(new SmallObject(10000));
             weakDictionary.Remove(new SmallObject(10000));

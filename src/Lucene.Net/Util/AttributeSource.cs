@@ -51,8 +51,8 @@ namespace Lucene.Net.Util
 			private sealed class DefaultAttributeFactory:AttributeFactory
 			{
                 // This should be WeakDictionary<T, WeakReference<TImpl>> where typeof(T) is Attribute and TImpl is typeof(AttributeImpl)
-			    private static readonly WeakDictionary<Type, WeakReference> attClassImplMap =
-			        new WeakDictionary<Type, WeakReference>();
+			    private static readonly ConditionalWeakTable<Type, WeakReference> attClassImplMap =
+			        new ConditionalWeakTable<Type, WeakReference>();
                 			
 				public override Attribute CreateAttributeInstance<TAttImpl>()
 				{
@@ -72,26 +72,27 @@ namespace Lucene.Net.Util
 
                 private static Type GetClassForInterface<T>() where T : IAttribute
 				{
-					lock (attClassImplMap)
-					{
-					    var attClass = typeof (T);
-                        WeakReference refz = attClassImplMap[attClass];
-                        Type clazz = (refz == null) ? null : ((Type) refz.Target);
-						if (clazz == null)
-						{
-							try
-							{
-                                string name = attClass.FullName.Replace(attClass.Name, attClass.Name.Substring(1)) + ", " + attClass.Assembly.FullName;
-								attClassImplMap.Add(attClass, new WeakReference( clazz = System.Type.GetType(name, true))); //OK
-							}
-                            catch (TypeLoadException) // was System.Exception
-							{
-								throw new ArgumentException("Could not find implementing class for " + attClass.FullName);
-							}
-						}
-						return clazz;
-					}
-				}
+                    var attClass = typeof(T);
+
+                    attClassImplMap.TryGetValue(attClass, out var refz);
+                    Type clazz = (refz == null) ? null : ((Type) refz.Target);
+                    if (clazz == null)
+                    {
+                        try
+                        {
+                            string name = attClass.FullName.Replace(attClass.Name, attClass.Name.Substring(1)) + ", " +
+                                          attClass.Assembly.FullName;
+                            clazz = System.Type.GetType(name, true);
+                            attClassImplMap.AddOrUpdate(attClass, new WeakReference(clazz)); //OK
+                        }
+                        catch (TypeLoadException) // was System.Exception
+                        {
+                            throw new ArgumentException("Could not find implementing class for " + attClass.FullName);
+                        }
+                    }
+
+                    return clazz;
+                }
 			}
 		}
 		
@@ -167,7 +168,7 @@ namespace Lucene.Net.Util
         }
 
 	    /// <summary>a cache that stores all interfaces for known implementation classes for performance (slow reflection) </summary>
-	    private static readonly WeakDictionary<Type, LinkedList<WeakReference>> knownImplClasses = new WeakDictionary<Type, LinkedList<WeakReference>>();
+	    private static readonly ConditionalWeakTable<Type, LinkedList<WeakReference>> knownImplClasses = new ConditionalWeakTable<Type, LinkedList<WeakReference>>();
 
         /// <summary>
         /// <b>Expert:</b> Adds a custom AttributeImpl instance with one or more Attribute interfaces.
@@ -185,34 +186,27 @@ namespace Lucene.Net.Util
 			if (attributeImpls.TryGetValue(clazz, out var impl))
 				return;
 
-			LinkedList<WeakReference> foundInterfaces;
-			lock (knownImplClasses)
-			{
-				foundInterfaces = knownImplClasses[clazz];
-				if (foundInterfaces == null)
-				{
-                    // we have a strong reference to the class instance holding all interfaces in the list (parameter "att"),
-                    // so all WeakReferences are never evicted by GC
-					knownImplClasses.Add(clazz, foundInterfaces = new LinkedList<WeakReference>());
-					// find all interfaces that this attribute instance implements
-					// and that extend the Attribute interface
-					Type actClazz = clazz;
-					do 
-					{
-						Type[] interfaces = actClazz.GetInterfaces();
-						for (int i = 0; i < interfaces.Length; i++)
-						{
-							Type curInterface = interfaces[i];
-							if (curInterface != typeof(IAttribute) && typeof(IAttribute).IsAssignableFrom(curInterface))
-							{
-								foundInterfaces.AddLast(new WeakReference(curInterface));
-							}
-						}
-						actClazz = actClazz.BaseType;
-					}
-					while (actClazz != null);
-				}
-			}
+            if (knownImplClasses.TryGetValue(clazz, out var foundInterfaces) == false)
+            {
+                foundInterfaces = new LinkedList<WeakReference>();
+                Type actClazz = clazz;
+                do 
+                {
+                    Type[] interfaces = actClazz.GetInterfaces();
+                    for (int i = 0; i < interfaces.Length; i++)
+                    {
+                        Type curInterface = interfaces[i];
+                        if (curInterface != typeof(IAttribute) && typeof(IAttribute).IsAssignableFrom(curInterface))
+                        {
+                            foundInterfaces.AddLast(new WeakReference(curInterface));
+                        }
+                    }
+                    actClazz = actClazz.BaseType;
+                }
+                while (actClazz != null);
+
+                knownImplClasses.AddOrUpdate(clazz, foundInterfaces);
+            }
 			
 			// add all interfaces of this AttributeImpl to the maps
 			foreach(var curInterfaceRef in foundInterfaces)

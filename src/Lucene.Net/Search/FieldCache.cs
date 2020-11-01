@@ -44,9 +44,9 @@ namespace Lucene.Net.Search
     /// </version>
     /// <seealso cref="Lucene.Net.Util.FieldCacheSanityChecker">
     /// </seealso>
-    public sealed class CreationPlaceholder
+    public sealed class CreationPlaceholder<T>
     {
-        internal System.Object value_Renamed;
+        internal T value_Renamed;
     }
     /// <summary>Expert: Stores term text values and document ordering data. </summary>
     public class StringIndex

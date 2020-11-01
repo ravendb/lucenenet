@@ -20,17 +20,77 @@
 */
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
+using System.Runtime.CompilerServices;
 using NUnit.Framework;
 
 namespace Lucene.Net.Support
 {
+    public class ConditionalWeakTableWrapper<TKey, TValue> :  IEnumerable<KeyValuePair<TKey,TValue>> where TKey : class where TValue : class, new ()
+    {
+        private readonly ConditionalWeakTable<TKey, TValue> _table;
+
+        public ConditionalWeakTableWrapper()
+        {
+            _table = new ConditionalWeakTable<TKey, TValue>();
+        }
+
+        public bool ContainsKey(TKey key)
+        {
+            return _table.TryGetValue(key, out _);
+        }
+
+        public void Add(TKey key, TValue value)
+        {
+            _table.Add(key, value);
+        }
+
+        public void Remove(TKey key)
+        {
+            _table.Remove(key);
+        }
+
+        public void Clear()
+        {
+            _table.Clear();
+        }
+
+        public TValue this[TKey key]
+        {
+            get => _table.GetOrCreateValue(key);
+            set => _table.Add(key, value);
+        } 
+
+        public TValue[] Values => _table.Select(x => x.Value).ToArray();
+
+        public TKey[] Keys => _table.Select(x => x.Key).ToArray();
+
+        public int Count => _table.Count();
+
+
+        public IEnumerator<KeyValuePair<TKey, TValue>> GetEnumerator()
+        {
+            foreach (var kvp in _table)
+            {
+                yield return kvp;
+            }
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return GetEnumerator();
+        }
+    }
+
+
     [TestFixture]
     public class TestWeakDictionaryBehavior
     {
-        public static WeakDictionary<object, object> CreateDictionary()
+        public static ConditionalWeakTableWrapper<object, object> CreateDictionary()
         {
-            return new WeakDictionary<object, object>();
+            return new ConditionalWeakTableWrapper<object, object>();
         }
 
 
