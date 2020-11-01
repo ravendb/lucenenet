@@ -16,10 +16,13 @@
  */
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Lucene.Net.Index;
+using System.Runtime.CompilerServices;
+using System.Threading;
 using Lucene.Net.Store;
 using Lucene.Net.Support;
 using Lucene.Net.Util;
@@ -45,7 +48,14 @@ namespace Lucene.Net.Search
     /// </since>
     class FieldCacheImpl : FieldCache
     {
-        private IDictionary<Type, Cache> caches;
+        private LongCache _longCache;
+        private ByteCache _byteCache;
+        private ShortCache _shortCache;
+        private FloatCache _floatCache;
+        private IntCache _intCache;
+        private DoubleCache _doubleCache;
+        private StringCache _stringCache;
+        private StringIndexCache _stringIndexCache;
 
         internal FieldCacheImpl()
         {
@@ -53,18 +63,14 @@ namespace Lucene.Net.Search
         }
         private void  Init()
         {
-            lock (this)
-            {
-                caches = new HashMap<Type, Cache>(7);
-                caches[typeof(sbyte)] = new ByteCache(this);
-                caches[typeof(short)] = new ShortCache(this);
-                caches[typeof(int)] = new IntCache(this);
-                caches[typeof(float)] = new FloatCache(this);
-                caches[typeof(long)] = new LongCache(this);
-                caches[typeof(double)] = new DoubleCache(this);
-                caches[typeof(string)] = new StringCache(this);
-                caches[typeof(StringIndex)] = new StringIndexCache(this);
-            }
+            _byteCache = new ByteCache(this);
+            _shortCache = new ShortCache(this);
+            _intCache = new IntCache(this);
+            _floatCache = new FloatCache(this);
+            _longCache = new LongCache(this);
+            _doubleCache = new DoubleCache(this);
+            _stringCache = new StringCache(this);
+            _stringIndexCache = new StringIndexCache(this);
         }
 
         // lucene.net: java version 3.0.3 with patch in rev. 912330 applied:
@@ -83,13 +89,14 @@ namespace Lucene.Net.Search
         //                     WeakHashMap incorrectly and lead to ConcurrentModificationException
         public void Purge(IndexReader r)
         {
-            lock (this)
-            {
-                foreach (Cache c in caches.Values)
-                {
-                    c.Purge(r);
-                }
-            }
+            _byteCache.Purge(r);
+            _shortCache.Purge(r);
+            _intCache.Purge(r);
+            _floatCache.Purge(r);
+            _longCache.Purge(r);
+            _doubleCache.Purge(r);
+            _stringCache.Purge(r);
+            _stringIndexCache.Purge(r);
         }
 
         // lucene.net: java version 3.0.3 with patch in rev. 912330 applied:
@@ -97,31 +104,22 @@ namespace Lucene.Net.Search
         //                     WeakHashMap incorrectly and lead to ConcurrentModificationException
         public virtual CacheEntry[] GetCacheEntries()
         {
-            lock (this)
-            {
-                IList<CacheEntry> result = new List<CacheEntry>(17);
-                foreach (var cacheEntry in caches)
-                {
-                    var cache = cacheEntry.Value;
-                    var cacheType = cacheEntry.Key;
-                    lock (cache.readerCache)
-                    {
-                        foreach (var readerCacheEntry in cache.readerCache)
-                        {
-                            var readerKey = readerCacheEntry.Key;
-                            var innerCache = readerCacheEntry.Value;
-                            foreach (var mapEntry in innerCache)
-                            {
-                                Entry entry = mapEntry.Key;
-                                result.Add(new CacheEntryImpl(readerKey, entry.field, cacheType, entry.custom, mapEntry.Value));
-                            }
-                        }
-                    }
-                }
-                return result.ToArray();
-            }
+            // not sure it has to be Concurrent
+            var result = new ConcurrentBag<CacheEntry>();
+
+            _byteCache.AddToBag<sbyte>(result);
+            _shortCache.AddToBag<short>(result);
+            _intCache.AddToBag<int>(result);
+            _floatCache.AddToBag<float>(result);
+            _longCache.AddToBag<long>(result);
+            _doubleCache.AddToBag<double>(result);
+            _stringCache.AddToBag<string>(result);
+            _stringIndexCache.AddToBag<StringIndex>(result);
+           
+            return result.ToArray();
+
         }
-        
+
         private sealed class CacheEntryImpl : CacheEntry
         {
             private System.Object readerKey;
@@ -181,7 +179,7 @@ namespace Lucene.Net.Search
         }
         
         /// <summary>Expert: Internal cache. </summary>
-        internal abstract class Cache
+        internal abstract class Cache<T>
         {
             internal Cache()
             {
@@ -195,57 +193,31 @@ namespace Lucene.Net.Search
             
             internal FieldCache wrapper;
 
-            internal WeakDictionary<object, IDictionary<Entry, object>> readerCache = new WeakDictionary<object, IDictionary<Entry, object>>();
+            internal ConditionalWeakTable<object, ConcurrentDictionary<Entry, object>> readerCache = new ConditionalWeakTable<object, ConcurrentDictionary<Entry, object>>();
             
-            protected internal abstract System.Object CreateValue(IndexReader reader, Entry key, IState state);
+            protected internal abstract T CreateValue(IndexReader reader, Entry key, IState state);
 
             /* Remove this reader from the cache, if present. */
             public void Purge(IndexReader r)
             {
                 object readerKey = r.FieldCacheKey;
-                lock (readerCache)
-                {
-                    readerCache.Remove(readerKey);
-                }
+                readerCache.Remove(readerKey);
             }
             
-            public virtual System.Object Get(IndexReader reader, Entry key, IState state)
+            public virtual T Get(IndexReader reader, Entry key, IState state)
             {
-                IDictionary<Entry, object> innerCache;
-                System.Object value;
-                System.Object readerKey = reader.FieldCacheKey;
-                lock (readerCache)
+                var innerCache = readerCache.GetOrCreateValue(reader.FieldCacheKey);
+                var value = innerCache.GetOrAdd(key, new CreationPlaceholder<T>());
+
+                if (value is CreationPlaceholder<T> progress)
                 {
-                    innerCache = readerCache[readerKey];
-                    if (innerCache == null)
+                    lock (progress) // we need this lock because create value is expensive, we don't want to perform it several times.
                     {
-                        innerCache = new HashMap<Entry, object>();
-                        readerCache[readerKey] = innerCache;
-                        value = null;
-                    }
-                    else
-                    {
-                        value = innerCache[key];
-                    }
-                    if (value == null)
-                    {
-                        value = new CreationPlaceholder();
-                        innerCache[key] = value;
-                    }
-                }
-                if (value is CreationPlaceholder)
-                {
-                    lock (value)
-                    {
-                        CreationPlaceholder progress = (CreationPlaceholder) value;
                         if (progress.value_Renamed == null)
                         {
                             progress.value_Renamed = CreateValue(reader, key, state);
-                            lock (readerCache)
-                            {
-                                innerCache[key] = progress.value_Renamed;
-                            }
-                            
+                            innerCache[key] = progress.value_Renamed;
+
                             // Only check if key.custom (the parser) is
                             // non-null; else, we check twice for a single
                             // call to FieldCache.getXXX
@@ -261,9 +233,25 @@ namespace Lucene.Net.Search
                         return progress.value_Renamed;
                     }
                 }
-                return value;
+
+                return (T) value;
             }
-            
+
+            public void AddToBag<TType>(ConcurrentBag<CacheEntry> concurrentBag)
+            {
+                foreach (var readerCacheEntry in readerCache)
+                {
+                    var readerKey = readerCacheEntry.Key;
+                    var innerCache = readerCacheEntry.Value;
+                    foreach (var mapEntry in innerCache)
+                    {
+                        Entry entry = mapEntry.Key;
+                        concurrentBag.Add(new CacheEntryImpl(readerKey, entry.field, typeof(TType), entry.custom,
+                            mapEntry.Value));
+                    }
+                }
+            }
+
             private void  PrintNewInsanity(System.IO.StreamWriter infoStream, System.Object value_Renamed)
             {
                 FieldCacheSanityChecker.Insanity[] insanities = FieldCacheSanityChecker.CheckSanity(wrapper);
@@ -337,15 +325,15 @@ namespace Lucene.Net.Search
         // inherit javadocs
         public virtual sbyte[] GetBytes(IndexReader reader, System.String field, ByteParser parser, IState state)
         {
-            return (sbyte[]) caches[typeof(sbyte)].Get(reader, new Entry(field, parser), state);
+            return _byteCache.Get(reader, new Entry(field, parser), state);
         }
         
-        internal sealed class ByteCache:Cache
+        internal sealed class ByteCache:Cache<sbyte[]>
         {
             internal ByteCache(FieldCache wrapper):base(wrapper)
             {
             }
-            protected internal override System.Object CreateValue(IndexReader reader, Entry entryKey, IState state)
+            protected internal override sbyte[] CreateValue(IndexReader reader, Entry entryKey, IState state)
             {
                 Entry entry = entryKey;
                 System.String field = entry.field;
@@ -395,16 +383,16 @@ namespace Lucene.Net.Search
         // inherit javadocs
         public virtual short[] GetShorts(IndexReader reader, System.String field, ShortParser parser, IState state)
         {
-            return (short[]) caches[typeof(short)].Get(reader, new Entry(field, parser), state);
+            return _shortCache.Get(reader, new Entry(field, parser), state);
         }
         
-        internal sealed class ShortCache:Cache
+        internal sealed class ShortCache:Cache<short[]>
         {
             internal ShortCache(FieldCache wrapper):base(wrapper)
             {
             }
             
-            protected internal override System.Object CreateValue(IndexReader reader, Entry entryKey, IState state)
+            protected internal override short[] CreateValue(IndexReader reader, Entry entryKey, IState state)
             {
                 Entry entry = entryKey;
                 System.String field = entry.field;
@@ -454,16 +442,16 @@ namespace Lucene.Net.Search
         // inherit javadocs
         public virtual int[] GetInts(IndexReader reader, System.String field, IntParser parser, IState state)
         {
-            return (int[]) caches[typeof(int)].Get(reader, new Entry(field, parser), state);
+            return _intCache.Get(reader, new Entry(field, parser), state);
         }
         
-        internal sealed class IntCache:Cache
+        internal sealed class IntCache:Cache<int[]>
         {
             internal IntCache(FieldCache wrapper):base(wrapper)
             {
             }
             
-            protected internal override System.Object CreateValue(IndexReader reader, Entry entryKey, IState state)
+            protected internal override int[] CreateValue(IndexReader reader, Entry entryKey, IState state)
             {
                 Entry entry = entryKey;
                 System.String field = entry.field;
@@ -528,16 +516,16 @@ namespace Lucene.Net.Search
         public virtual float[] GetFloats(IndexReader reader, System.String field, FloatParser parser, IState state)
         {
             
-            return (float[]) caches[typeof(float)].Get(reader, new Entry(field, parser), state);
+            return _floatCache.Get(reader, new Entry(field, parser), state);
         }
         
-        internal sealed class FloatCache:Cache
+        internal sealed class FloatCache:Cache<float[]>
         {
             internal FloatCache(FieldCache wrapper):base(wrapper)
             {
             }
             
-            protected internal override System.Object CreateValue(IndexReader reader, Entry entryKey, IState state)
+            protected internal override float[] CreateValue(IndexReader reader, Entry entryKey, IState state)
             {
                 Entry entry = entryKey;
                 System.String field = entry.field;
@@ -600,16 +588,16 @@ namespace Lucene.Net.Search
         // inherit javadocs
         public virtual long[] GetLongs(IndexReader reader, System.String field, Lucene.Net.Search.LongParser parser, IState state)
         {
-            return (long[]) caches[typeof(long)].Get(reader, new Entry(field, parser), state);
+            return _longCache.Get(reader, new Entry(field, parser), state);
         }
         
-        internal sealed class LongCache:Cache
+        internal sealed class LongCache:Cache<long[]>
         {
             internal LongCache(FieldCache wrapper):base(wrapper)
             {
             }
             
-            protected internal override System.Object CreateValue(IndexReader reader, Entry entryKey, IState state)
+            protected internal override long[] CreateValue(IndexReader reader, Entry entryKey, IState state)
             {
                 Entry entry = entryKey;
                 System.String field = entry.field;
@@ -672,16 +660,16 @@ namespace Lucene.Net.Search
         // inherit javadocs
         public virtual double[] GetDoubles(IndexReader reader, System.String field, Lucene.Net.Search.DoubleParser parser, IState state)
         {
-            return (double[]) caches[typeof(double)].Get(reader, new Entry(field, parser), state);
+            return _doubleCache.Get(reader, new Entry(field, parser), state);
         }
         
-        internal sealed class DoubleCache:Cache
+        internal sealed class DoubleCache:Cache<double[]>
         {
             internal DoubleCache(FieldCache wrapper):base(wrapper)
             {
             }
             
-            protected internal override System.Object CreateValue(IndexReader reader, Entry entryKey, IState state)
+            protected internal override double[] CreateValue(IndexReader reader, Entry entryKey, IState state)
             {
                 Entry entry = entryKey;
                 System.String field = entry.field;
@@ -738,16 +726,16 @@ namespace Lucene.Net.Search
         // inherit javadocs
         public virtual System.String[] GetStrings(IndexReader reader, System.String field, IState state)
         {
-            return (System.String[]) caches[typeof(string)].Get(reader, new Entry(field, (Parser) null), state);
+            return _stringCache.Get(reader, new Entry(field, (Parser) null), state);
         }
         
-        internal sealed class StringCache:Cache
+        internal sealed class StringCache:Cache<string[]>
         {
             internal StringCache(FieldCache wrapper):base(wrapper)
             {
             }
             
-            protected internal override System.Object CreateValue(IndexReader reader, Entry entryKey, IState state)
+            protected internal override string[] CreateValue(IndexReader reader, Entry entryKey, IState state)
             {
                 System.String field = StringHelper.Intern(entryKey.field);
                 System.String[] retArray = new System.String[reader.MaxDoc];
@@ -782,16 +770,16 @@ namespace Lucene.Net.Search
         // inherit javadocs
         public virtual StringIndex GetStringIndex(IndexReader reader, System.String field, IState state)
         {
-            return (StringIndex) caches[typeof(StringIndex)].Get(reader, new Entry(field, (Parser) null), state);
+            return _stringIndexCache.Get(reader, new Entry(field, (Parser) null), state);
         }
-
-        internal sealed class StringIndexCache:Cache
+        
+        internal sealed class StringIndexCache:Cache<StringIndex>
         {
             internal StringIndexCache(FieldCache wrapper):base(wrapper)
             {
             }
-
-            protected internal override System.Object CreateValue(IndexReader reader, Entry entryKey, IState state)
+            
+            protected internal override StringIndex CreateValue(IndexReader reader, Entry entryKey, IState state)
             {
                 System.String field = StringHelper.Intern(entryKey.field);
                 int[] retArray = new int[reader.MaxDoc];

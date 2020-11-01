@@ -20,6 +20,7 @@
 */
 
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using NUnit.Framework;
 
 namespace Lucene.Net.Support
@@ -27,7 +28,7 @@ namespace Lucene.Net.Support
     [TestFixture]
     public class TestWeakDictionaryPerformance
     {
-        IDictionary<object, object> dictionary;
+        ConditionalWeakTableWrapper<object, object> dictionary;
         SmallObject[] keys;
 
 
@@ -37,7 +38,7 @@ namespace Lucene.Net.Support
             dictionary = TestWeakDictionaryBehavior.CreateDictionary();
         }
 
-        private void Fill(IDictionary<object, object> dictionary)
+        private void Fill(ConditionalWeakTableWrapper<object, object> dictionary)
         {
             foreach (SmallObject key in keys)
                 dictionary.Add(key, "value");
