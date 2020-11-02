@@ -128,11 +128,12 @@ namespace Lucene.Net.Util
 			{
 				CacheEntry item = cacheEntries[i];
 				System.Object val = item.Value;
-				
-				if (val.GetType() == typeof(Lazy<>))
-					continue;
-				
-				ReaderField rf = new ReaderField(item.ReaderKey, item.FieldName);
+
+                if (val.GetType().IsGenericType && 
+                    val.GetType().GetGenericTypeDefinition() == typeof(Lazy<>))
+                    continue;
+
+                ReaderField rf = new ReaderField(item.ReaderKey, item.FieldName);
 				
 				System.Int32 valId = val.GetHashCode();
 				

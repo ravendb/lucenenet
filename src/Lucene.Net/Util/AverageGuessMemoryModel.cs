@@ -43,6 +43,8 @@ namespace Lucene.Net.Util
 	        sizes[typeof(float)] = 4;
             sizes[typeof (double)] = 8;
             sizes[typeof (long)] = 8;
+            sizes[typeof (UIntPtr)] = UIntPtr.Size;
+            sizes[typeof (IntPtr)] = IntPtr.Size;
         }
 		// best guess primitive sizes
         private Dictionary<Type, int> sizes;
