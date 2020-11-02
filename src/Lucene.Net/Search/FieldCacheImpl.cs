@@ -73,9 +73,6 @@ namespace Lucene.Net.Search
             _stringIndexCache = new StringIndexCache(this);
         }
 
-        // lucene.net: java version 3.0.3 with patch in rev. 912330 applied:
-        // uschindler 21/02/2010 12:16:42 LUCENE-2273: Fixed bug in FieldCacheImpl.getCacheEntries() that used 
-        //                     WeakHashMap incorrectly and lead to ConcurrentModificationException
         public virtual void  PurgeAllCaches()
         {
             lock (this)
@@ -84,9 +81,6 @@ namespace Lucene.Net.Search
             }
         }
 
-        // lucene.net: java version 3.0.3 with patch in rev. 912330 applied:
-        // uschindler 21/02/2010 12:16:42 LUCENE-2273: Fixed bug in FieldCacheImpl.getCacheEntries() that used 
-        //                     WeakHashMap incorrectly and lead to ConcurrentModificationException
         public void Purge(IndexReader r)
         {
             _byteCache.Purge(r);
@@ -99,22 +93,19 @@ namespace Lucene.Net.Search
             _stringIndexCache.Purge(r);
         }
 
-        // lucene.net: java version 3.0.3 with patch in rev. 912330 applied:
-        // uschindler 21/02/2010 12:16:42 LUCENE-2273: Fixed bug in FieldCacheImpl.getCacheEntries() that used 
-        //                     WeakHashMap incorrectly and lead to ConcurrentModificationException
         public virtual CacheEntry[] GetCacheEntries()
         {
             // not sure it has to be Concurrent
             var result = new ConcurrentBag<CacheEntry>();
 
-            _byteCache.AddToBag<sbyte>(result);
-            _shortCache.AddToBag<short>(result);
-            _intCache.AddToBag<int>(result);
-            _floatCache.AddToBag<float>(result);
-            _longCache.AddToBag<long>(result);
-            _doubleCache.AddToBag<double>(result);
-            _stringCache.AddToBag<string>(result);
-            _stringIndexCache.AddToBag<StringIndex>(result);
+            _byteCache.AddToBag(result);
+            _shortCache.AddToBag(result);
+            _intCache.AddToBag(result);
+            _floatCache.AddToBag(result);
+            _longCache.AddToBag(result);
+            _doubleCache.AddToBag(result);
+            _stringCache.AddToBag(result);
+            _stringIndexCache.AddToBag(result);
            
             return result.ToArray();
 
@@ -236,7 +227,7 @@ namespace Lucene.Net.Search
                 return (T) value;
             }
 
-            public void AddToBag<TType>(ConcurrentBag<CacheEntry> concurrentBag)
+            public void AddToBag(ConcurrentBag<CacheEntry> concurrentBag)
             {
                 foreach (var readerCacheEntry in readerCache)
                 {
@@ -247,9 +238,11 @@ namespace Lucene.Net.Search
                     var innerCache = readerCacheEntry.Value;
                     foreach (var mapEntry in innerCache)
                     {
-                        Entry entry = mapEntry.Key;
-                        concurrentBag.Add(new CacheEntryImpl(readerKey, entry.field, typeof(TType), entry.custom,
-                            mapEntry.Value));
+                        var entry = mapEntry.Key;
+                        var value = mapEntry.Value;
+                        
+                        concurrentBag.Add(new CacheEntryImpl(readerKey, entry.field, typeof(T), entry.custom,
+                            value));
                     }
                 }
             }
