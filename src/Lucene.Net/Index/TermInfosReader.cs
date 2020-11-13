@@ -16,6 +16,7 @@
  */
 
 using System;
+using System.Buffers;
 using Lucene.Net.Store;
 using Lucene.Net.Support;
 using Lucene.Net.Util;
@@ -42,9 +43,9 @@ namespace Lucene.Net.Index
 		private readonly SegmentTermEnum origEnum;
 		private readonly long size;
 		
-		private readonly Term[] indexTerms;
-		private readonly TermInfo[] indexInfos;
-		private readonly long[] indexPointers;
+		private Span<Term> indexTerms => _holder.IndexTerms;
+		private Span<TermInfo> indexInfos => _holder.InfoArray;
+		private Span<long> indexPointers =>_holder.LongArray;
 		
 		private readonly int totalIndexInterval;
 		
@@ -76,6 +77,45 @@ namespace Lucene.Net.Index
 	        }
 	    }
 
+        private class ArrayHolder : IDisposable
+        {
+            private readonly int _size;
+            private readonly long[] _longArray;
+            private readonly Term[] _termArray;
+            private readonly TermInfo[] _termInfoArray;
+
+            public ArrayHolder(int size)
+            {
+                _size = size;
+                _longArray = ArrayPool<long>.Shared.Rent(size);
+                _termArray = ArrayPool<Term>.Shared.Rent(size);
+                _termInfoArray = ArrayPool<TermInfo>.Shared.Rent(size);
+            }
+
+            public Span<long> LongArray => _longArray.AsSpan(0, _size);
+            public Span<TermInfo> InfoArray => _termInfoArray.AsSpan(0, _size);
+            public Span<Term> IndexTerms => _termArray.AsSpan(0, _size);
+
+            public void Dispose()
+            {
+                ArrayPool<long>.Shared.Return(_longArray);
+                ArrayPool<Term>.Shared.Return(_termArray);
+                ArrayPool<TermInfo>.Shared.Return(_termInfoArray);
+
+                GC.SuppressFinalize(this);
+            }
+
+            ~ArrayHolder()
+            {
+				#if DEBUG
+                Console.WriteLine("Array holder is leaking...");
+				#endif
+				Dispose();
+            }
+        }
+
+        private readonly ArrayHolder _holder;
+
         private readonly DoubleBarrelLRUCache<CloneableTerm, TermInfo> termInfoCache = new DoubleBarrelLRUCache<CloneableTerm, TermInfo>(DEFAULT_CACHE_SIZE);
 
 		/// <summary> Per-thread resources managed by ThreadLocal</summary>
@@ -102,7 +142,6 @@ namespace Lucene.Net.Index
 				origEnum = new SegmentTermEnum(directory.OpenInput(segment + "." + IndexFileNames.TERMS_EXTENSION, readBufferSize, state), fieldInfos, false, state);
 				size = origEnum.size;
 				
-				
 				if (indexDivisor != - 1)
 				{
 					// Load terms index
@@ -113,9 +152,8 @@ namespace Lucene.Net.Index
 					{
 						int indexSize = 1 + ((int) indexEnum.size - 1) / indexDivisor; // otherwise read index
 						
-						indexTerms = new Term[indexSize];
-						indexInfos = new TermInfo[indexSize];
-						indexPointers = new long[indexSize];
+                        _holder?.Dispose();
+                        _holder = new ArrayHolder(indexSize);
 						
 						for (int i = 0; indexEnum.Next(state); i++)
 						{
@@ -137,9 +175,7 @@ namespace Lucene.Net.Index
 				{
 					// Do not load terms index:
 					totalIndexInterval = - 1;
-					indexTerms = null;
-					indexInfos = null;
-					indexPointers = null;
+                    _holder?.Dispose();
 				}
 				success = true;
 			}
@@ -175,6 +211,7 @@ namespace Lucene.Net.Index
             if (origEnum != null)
                 origEnum.Dispose();
             threadResources.Dispose();
+            _holder?.Dispose();
 
             isDisposed = true;
         }
