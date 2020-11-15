@@ -496,26 +496,54 @@ namespace Lucene.Net.Index
 				int end = start + mergeFactor;
 				while (end <= 1 + upto)
 				{
-					bool anyTooLarge = false;
+                    SegmentInfos segmentsToMerge = new SegmentInfos();
+                    long totalSize = 0;
+					int processed = 0;
+
+					// we have a limitation: non-contiguous segment merges aren't allowed
 					for (int i = start; i < end; i++)
-					{
+                    {
 						SegmentInfo info = infos.Info(i);
-						anyTooLarge |= (Size(info, state) >= maxMergeSize || SizeDocs(info, state) >= maxMergeDocs);
+                        var segmentSize = Size(info, state);
+                        if (segmentSize >= maxMergeSize || SizeDocs(info, state) >= maxMergeDocs)
+                        {
+							// a single segment is larger then the maximum allowed
+							break;
+                        }
+
+                        var newTotalSize = totalSize + segmentSize;
+						if (newTotalSize > maxMergeSize)
+                        {
+							// the total size of all segments will exceed the maximum allowed size
+                            break;
+						}
+
+                        totalSize = newTotalSize;
+						processed++;
+						segmentsToMerge.Add(info);
 					}
-					
-					if (!anyTooLarge)
+
+					if (segmentsToMerge.Count > 1)
 					{
 						if (spec == null)
 							spec = new MergeSpecification();
 						if (Verbose())
-							Message("    " + start + " to " + end + ": add this merge");
-                        spec.Add(MakeOneMerge(infos, infos.Range(start, end), state));
+							Message("    " + segmentsToMerge.Count + " segments were added to this merge, total size: " + totalSize + " bytes" );
+                        spec.Add(MakeOneMerge(infos, segmentsToMerge, state));
 					}
 					else if (Verbose())
-						Message("    " + start + " to " + end + ": contains segment over maxMergeSize or maxMergeDocs; skipping");
-					
-					start = end;
-					end = start + mergeFactor;
+						Message("    " + start + " to " + end + ": doesn't have enough segments to execute a merge");
+
+                    if (processed == 0)
+                    {
+						// no segments to merge, we skip one and try to recalculate using the rest ones
+                        processed = 1;
+                    }
+
+                    start += processed;
+
+					if (start == end)
+					    end += processed;
 				}
 				
 				start = 1 + upto;
