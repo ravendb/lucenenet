@@ -543,7 +543,7 @@ namespace Lucene.Net.Index
                     start += processed;
 
 					if (start == end)
-					    end += processed;
+					    end += mergeFactor;
 				}
 				
 				start = 1 + upto;
