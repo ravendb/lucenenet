@@ -35,6 +35,7 @@ namespace Lucene.Net.Index
 		/// <seealso cref="MaxMergeMB">
 		/// </seealso>
 		public static readonly long DEFAULT_MAX_MERGE_MB = long.MaxValue;
+		public static readonly long DEFAULT_LARGE_SEGMENT_SIZE_MB = long.MaxValue;
 		
 		public LogByteSizeMergePolicy(IndexWriter writer)
             : base(writer)
@@ -43,6 +44,7 @@ namespace Lucene.Net.Index
             //mgarski - the line below causes an overflow in .NET, resulting in a negative number...
 			//maxMergeSize = (long) (DEFAULT_MAX_MERGE_MB * 1024 * 1024);
             maxMergeSize = DEFAULT_MAX_MERGE_MB;
+            largeSegmentSize = DEFAULT_LARGE_SEGMENT_SIZE_MB;
 		}
 		protected internal override long Size(SegmentInfo info, IState state)
 		{
@@ -81,17 +83,31 @@ namespace Lucene.Net.Index
 	        }
 	    }
 
-	    /// <summary>Gets or sets the minimum size for the lowest level segments.
-	    /// Any segments below this size are considered to be on
-	    /// the same level (even if they vary drastically in size)
-	    /// and will be merged whenever there are mergeFactor of
-	    /// them.  This effectively truncates the "long tail" of
-	    /// small segments that would otherwise be created into a
-	    /// single level.  If you set this too large, it could
-	    /// greatly increase the merging cost during indexing (if
-	    /// you flush many small segments). 
-	    /// </summary>
-	    public virtual double MinMergeMB
+        public virtual double LargeSegmentSizeMB
+        {
+            get { return largeSegmentSize / 1024d / 1024d; }
+            set
+            {
+				//mgarski: java gracefully overflows to Int64.MaxValue, .NET to MinValue...
+                largeSegmentSize = (long)(value * 1024 * 1024);
+                if (largeSegmentSize < 0)
+                {
+                    largeSegmentSize = DEFAULT_LARGE_SEGMENT_SIZE_MB;
+                }
+            }
+        }
+
+		/// <summary>Gets or sets the minimum size for the lowest level segments.
+		/// Any segments below this size are considered to be on
+		/// the same level (even if they vary drastically in size)
+		/// and will be merged whenever there are mergeFactor of
+		/// them.  This effectively truncates the "long tail" of
+		/// small segments that would otherwise be created into a
+		/// single level.  If you set this too large, it could
+		/// greatly increase the merging cost during indexing (if
+		/// you flush many small segments). 
+		/// </summary>
+		public virtual double MinMergeMB
 	    {
 	        get { return ((double) minMergeSize)/1024/1024; }
 	        set { minMergeSize = (long) (value*1024*1024); }

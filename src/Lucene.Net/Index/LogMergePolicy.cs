@@ -54,6 +54,7 @@ namespace Lucene.Net.Index
 		/// merged at a time 
 		/// </summary>
 		public const int DEFAULT_MERGE_FACTOR = 10;
+		public const int DEFAULT_NUMBER_OF_LARGE_SEGMENTS_TO_MERGE_IN_A_SINGLE_BATCH = DEFAULT_MERGE_FACTOR;
 		
 		/// <summary>Default maximum segment size.  A segment of this size</summary>
 		/// <seealso cref="MaxMergeDocs">
@@ -67,9 +68,11 @@ namespace Lucene.Net.Index
         public static double DEFAULT_NO_CFS_RATIO = 0.1;
 		
 		private int mergeFactor = DEFAULT_MERGE_FACTOR;
+		private int numberOfLargeSegmentsToMergeInASingleBatch = DEFAULT_NUMBER_OF_LARGE_SEGMENTS_TO_MERGE_IN_A_SINGLE_BATCH;
 		
 		internal long minMergeSize;
 		internal long maxMergeSize;
+		internal long largeSegmentSize;
 		internal int maxMergeDocs = DEFAULT_MAX_MERGE_DOCS;
 
         protected double internalNoCFSRatio = DEFAULT_NO_CFS_RATIO;
@@ -134,6 +137,17 @@ namespace Lucene.Net.Index
 	            this.mergeFactor = value;
 	        }
 	    }
+
+        public virtual int NumberOfLargeSegmentsToMergeInASingleBatch
+		{
+            get { return numberOfLargeSegmentsToMergeInASingleBatch; }
+            set
+            {
+                if (value < 2)
+                    throw new System.ArgumentException("mergeFactor cannot be less than 2");
+                this.numberOfLargeSegmentsToMergeInASingleBatch = value;
+            }
+        }
 
 		public override bool UseCompoundFile(SegmentInfos infos, SegmentInfo info)
 		{
@@ -413,7 +427,6 @@ namespace Lucene.Net.Index
 		/// </summary>
 		public override MergeSpecification FindMerges(SegmentInfos infos, IState state)
 		{
-			
 			int numSegments = infos.Count;
 			if (Verbose())
 				Message("findMerges: " + numSegments + " segments");
@@ -454,7 +467,6 @@ namespace Lucene.Net.Index
 			int start = 0;
 			while (start < numSegments)
 			{
-				
 				// Find max level of all segments not already
 				// quantized.
 				float maxLevel = levels[start];
@@ -498,7 +510,8 @@ namespace Lucene.Net.Index
 				{
                     SegmentInfos segmentsToMerge = new SegmentInfos();
                     long totalSize = 0;
-					int processed = 0;
+					var processed = 0;
+                    var largeSegmentsCount = 0;
 
 					// we have a limitation: non-contiguous segment merges aren't allowed
 					for (int i = start; i < end; i++)
@@ -510,11 +523,17 @@ namespace Lucene.Net.Index
 							// a single segment is larger then the maximum allowed
 							break;
                         }
-
+						
                         var newTotalSize = totalSize + segmentSize;
 						if (newTotalSize > maxMergeSize)
                         {
 							// the total size of all segments will exceed the maximum allowed size
+                            break;
+						}
+
+                        if (segmentSize > largeSegmentSize && ++largeSegmentsCount > numberOfLargeSegmentsToMergeInASingleBatch)
+                        {
+							// limit the number of merged large segments
                             break;
 						}
 
@@ -551,7 +570,7 @@ namespace Lucene.Net.Index
 			
 			return spec;
 		}
-        
+
         protected OneMerge MakeOneMerge(SegmentInfos infos, SegmentInfos infosToMerge, IState state)
         {
             bool doCFS;
