@@ -133,18 +133,22 @@ namespace Lucene.Net.Index
 	        set
 	        {
 	            if (value < 2)
-	                throw new System.ArgumentException("mergeFactor cannot be less than 2");
+	                throw new System.ArgumentException($"{nameof(mergeFactor)} cannot be less than 2");
 	            this.mergeFactor = value;
 	        }
 	    }
 
-        public virtual int NumberOfLargeSegmentsToMergeInASingleBatch
+		/// <summary>Gets or sets how many large segments are going
+		/// to be merged in a single merge batch
+		/// The size of a large segment is defined by setting <see cref="LogMergePolicy.LargeSegmentSizeMB" />
+		/// </summary>
+		public virtual int NumberOfLargeSegmentsToMergeInASingleBatch
 		{
             get { return numberOfLargeSegmentsToMergeInASingleBatch; }
             set
             {
                 if (value < 2)
-                    throw new System.ArgumentException("mergeFactor cannot be less than 2");
+                    throw new System.ArgumentException($"{nameof(numberOfLargeSegmentsToMergeInASingleBatch)} cannot be less than 2");
                 this.numberOfLargeSegmentsToMergeInASingleBatch = value;
             }
         }
