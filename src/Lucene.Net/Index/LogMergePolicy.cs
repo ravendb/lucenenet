@@ -141,6 +141,9 @@ namespace Lucene.Net.Index
 		/// <summary>Gets or sets how many large segments are going
 		/// to be merged in a single merge batch
 		/// The size of a large segment is defined by setting <see cref="LogMergePolicy.LargeSegmentSizeMB" />
+		/// The reason that we want to limit the number of large segments that we merge
+		/// is that merging large segments takes time and consumes a lot of memory
+		/// This comes with a cost of creating multiple segments
 		/// </summary>
 		public virtual int NumberOfLargeSegmentsToMergeInASingleBatch
 		{
