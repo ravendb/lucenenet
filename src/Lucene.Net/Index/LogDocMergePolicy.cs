@@ -40,6 +40,7 @@ namespace Lucene.Net.Index
 			// maxMergeSize is never used by LogDocMergePolicy; set
 			// it to Long.MAX_VALUE to disable it
 			maxMergeSize = System.Int64.MaxValue;
+            largeSegmentSize = System.Int64.MaxValue;
 		}
 		protected internal override long Size(SegmentInfo info, IState state)
 		{
