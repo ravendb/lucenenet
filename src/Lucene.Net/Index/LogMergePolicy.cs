@@ -68,7 +68,7 @@ namespace Lucene.Net.Index
         public static double DEFAULT_NO_CFS_RATIO = 0.1;
 		
 		private int mergeFactor = DEFAULT_MERGE_FACTOR;
-		private int numberOfLargeSegmentsToMergeInASingleBatch = DEFAULT_NUMBER_OF_LARGE_SEGMENTS_TO_MERGE_IN_A_SINGLE_BATCH;
+		private int numberOfLargeSegmentsToMergeInSingleBatch = DEFAULT_NUMBER_OF_LARGE_SEGMENTS_TO_MERGE_IN_A_SINGLE_BATCH;
 		
 		internal long minMergeSize;
 		internal long maxMergeSize;
@@ -145,14 +145,14 @@ namespace Lucene.Net.Index
 		/// is that merging large segments takes time and consumes a lot of memory
 		/// This comes with a cost of creating multiple segments
 		/// </summary>
-		public virtual int NumberOfLargeSegmentsToMergeInASingleBatch
+		public virtual int NumberOfLargeSegmentsToMergeInSingleBatch
 		{
-            get { return numberOfLargeSegmentsToMergeInASingleBatch; }
+            get { return numberOfLargeSegmentsToMergeInSingleBatch; }
             set
             {
                 if (value < 2)
-                    throw new System.ArgumentException($"{nameof(numberOfLargeSegmentsToMergeInASingleBatch)} cannot be less than 2");
-                this.numberOfLargeSegmentsToMergeInASingleBatch = value;
+                    throw new System.ArgumentException($"{nameof(numberOfLargeSegmentsToMergeInSingleBatch)} cannot be less than 2");
+                this.numberOfLargeSegmentsToMergeInSingleBatch = value;
             }
         }
 
@@ -538,7 +538,7 @@ namespace Lucene.Net.Index
                             break;
 						}
 
-                        if (segmentSize > largeSegmentSize && ++largeSegmentsCount > numberOfLargeSegmentsToMergeInASingleBatch)
+                        if (segmentSize > largeSegmentSize && ++largeSegmentsCount > numberOfLargeSegmentsToMergeInSingleBatch)
                         {
 							// limit the number of merged large segments
                             break;
