@@ -18,6 +18,7 @@
 using System;
 using Lucene.Net.Store;
 using Lucene.Net.Support;
+using Lucene.Net.Util;
 using IndexReader = Lucene.Net.Index.IndexReader;
 using ByteParser = Lucene.Net.Search.ByteParser;
 using DoubleParser = Lucene.Net.Search.DoubleParser;
@@ -778,24 +779,24 @@ namespace Lucene.Net.Search
 		{
 			
 			private int[] ords;
-			private System.String[] values;
+			private UnmanagedStringArray values;
 			private int[] readerGen;
 			
 			private int currentReaderGen = - 1;
-			private System.String[] lookup;
+			private UnmanagedStringArray lookup;
 			private int[] order;
 			private System.String field;
 			
 			private int bottomSlot = - 1;
 			private int bottomOrd;
-			private System.String bottomValue;
+			private UnmanagedStringArray.UnmanagedString bottomValue;
 			private bool reversed;
 			private int sortPos;
 			
 			public StringOrdValComparator(int numHits, System.String field, int sortPos, bool reversed)
 			{
 				ords = new int[numHits];
-				values = new System.String[numHits];
+                values = new UnmanagedStringArray(numHits);
 				readerGen = new int[numHits];
 				this.sortPos = sortPos;
 				this.reversed = reversed;
@@ -813,22 +814,23 @@ namespace Lucene.Net.Search
 					}
 				}
 				
-				System.String val1 = values[slot1];
-				System.String val2 = values[slot2];
-				if (val1 == null)
+				var val1 = values[slot1];
+				var val2 = values[slot2];
+				if (val1.IsNull)
 				{
-					if (val2 == null)
+					if (val2.IsNull)
 					{
 						return 0;
 					}
 					return - 1;
 				}
-				else if (val2 == null)
+				else if (val2.IsNull)
 				{
 					return 1;
 				}
-				return String.CompareOrdinal(val1, val2);
-			}
+
+                return UnmanagedStringArray.UnmanagedString.CompareOrdinal(val1, val2);
+            }
 			
 			public override int CompareBottom(int doc, IState state)
 			{
@@ -840,30 +842,31 @@ namespace Lucene.Net.Search
 					return cmp;
 				}
 				
-				System.String val2 = lookup[order];
-				if (bottomValue == null)
+				var val2 = lookup[order];
+				if (bottomValue.IsNull)
 				{
-					if (val2 == null)
+					if (val2.IsNull)
 					{
 						return 0;
 					}
 					// bottom wins
 					return - 1;
 				}
-				else if (val2 == null)
+				else if (val2.IsNull)
 				{
 					// doc wins
 					return 1;
 				}
-				return String.CompareOrdinal(bottomValue, val2);
-			}
+
+                return UnmanagedStringArray.UnmanagedString.CompareOrdinal(bottomValue, val2);
+            }
 			
 			private void  Convert(int slot)
 			{
 				readerGen[slot] = currentReaderGen;
 				int index = 0;
-				System.String value_Renamed = values[slot];
-				if (value_Renamed == null)
+				var value_Renamed = values[slot];
+				if (value_Renamed.IsNull)
 				{
 					ords[slot] = 0;
 					return ;
@@ -901,7 +904,7 @@ namespace Lucene.Net.Search
 				int ord = order[doc];
 				ords[slot] = ord;
 				System.Diagnostics.Debug.Assert(ord >= 0);
-				values[slot] = lookup[ord];
+                lookup.CopyTo(values, slot, ord);
 				readerGen[slot] = currentReaderGen;
 			}
 			
@@ -933,13 +936,13 @@ namespace Lucene.Net.Search
 			}
 
 		    public override IComparable this[int slot]
-		    {
-		        get { return values[slot]; }
-		    }
+            {
+                get { return values[slot]; }
+            }
 
 		    public string[] GetValues()
 		    {
-		        return values;
+		        return values.ToStrings();
 		    }
 
 		    public int BottomSlot
@@ -1031,23 +1034,23 @@ namespace Lucene.Net.Search
 		    }
 		}
 		
-		protected internal static int BinarySearch(System.String[] a, System.String key)
+		protected internal static int BinarySearch(UnmanagedStringArray a, UnmanagedStringArray.UnmanagedString key)
 		{
 			return BinarySearch(a, key, 0, a.Length - 1);
 		}
 		
-		protected internal static int BinarySearch(System.String[] a, System.String key, int low, int high)
+		protected internal static int BinarySearch(UnmanagedStringArray a, UnmanagedStringArray.UnmanagedString key, int low, int high)
 		{
 			
 			while (low <= high)
 			{
 				int mid = Number.URShift((low + high), 1);
-				System.String midVal = a[mid];
+				var midVal = a[mid];
 				int cmp;
-				if (midVal != null)
-				{
-					cmp = String.CompareOrdinal(midVal, key);
-				}
+				if (midVal.IsNull == false)
+                {
+                    cmp = UnmanagedStringArray.UnmanagedString.CompareOrdinal(midVal, key);
+                }
 				else
 				{
 					cmp = - 1;

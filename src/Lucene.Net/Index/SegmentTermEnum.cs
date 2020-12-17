@@ -28,7 +28,7 @@ namespace Lucene.Net.Index
 		internal long size;
 		internal long position = - 1;
 		
-		private TermBuffer termBuffer = new TermBuffer();
+        internal TermBuffer termBuffer = new TermBuffer();
 		private TermBuffer prevBuffer = new TermBuffer();
 		private TermBuffer scanBuffer = new TermBuffer(); // used for scanning
 		

@@ -34,7 +34,10 @@ namespace Lucene.Net.Index
 		
 		private UnicodeUtil.UTF16Result text = new UnicodeUtil.UTF16Result();
 		private UnicodeUtil.UTF8Result bytes = new UnicodeUtil.UTF8Result();
-		
+
+        public Span<char> TextAsSpan => new Span<char>(text.result, 0, text.length);
+        public string Field => field;
+
 		public int CompareTo(TermBuffer other)
 		{
 			if ((System.Object) field == (System.Object) other.field)

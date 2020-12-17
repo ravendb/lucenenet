@@ -19,6 +19,7 @@ using System;
 using System.IO;
 using Lucene.Net.Store;
 using Lucene.Net.Support;
+using Lucene.Net.Util;
 using Double = Lucene.Net.Support.Double;
 using NumericTokenStream = Lucene.Net.Analysis.NumericTokenStream;
 using NumericField = Lucene.Net.Documents.NumericField;
@@ -61,7 +62,7 @@ namespace Lucene.Net.Search
             while (low <= high)
             {
                 int mid = Number.URShift((low + high), 1);
-                int cmp = String.CompareOrdinal(lookup[mid], key);
+                int cmp = UnmanagedStringArray.UnmanagedString.CompareOrdinal(lookup[mid], key);
 
                 if (cmp < 0)
                     low = mid + 1;
@@ -74,7 +75,7 @@ namespace Lucene.Net.Search
         }
 
         /// <summary>All the term values, in natural order. </summary>
-        public System.String[] lookup;
+        public UnmanagedStringArray lookup;
 
         /// <summary>For each document, an index into the lookup array. </summary>
         public int[] order;
@@ -82,13 +83,14 @@ namespace Lucene.Net.Search
         public int[] reverseOrder;
 
         /// <summary>Creates one of these objects </summary>
-        public StringIndex(int[] values, int[] reverseOrder, System.String[] lookup)
+        public StringIndex(int[] values, int[] reverseOrder, UnmanagedStringArray lookup)
         {
             this.order = values;
             this.reverseOrder = reverseOrder;
             this.lookup = lookup;
         }
     }
+
     /// <summary> EXPERT: A unique Identifier/Description for each item in the FieldCache. 
     /// Can be useful for logging/debugging.
     /// <p/>
