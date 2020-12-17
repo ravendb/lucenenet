@@ -145,7 +145,13 @@ namespace Lucene.Net.Util
 						size += refSize;
                         fields[i].GetType(); 
 						try
-						{
+                        {
+                            if (fields[i].FieldType.IsPointer)
+                            {
+                                size += IntPtr.Size;
+								continue;
+                            }
+
 							System.Object value_Renamed = fields[i].GetValue(obj);
 							if (value_Renamed != null)
 							{

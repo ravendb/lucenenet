@@ -19,8 +19,10 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Lucene.Net.Index;
 using Lucene.Net.Store;
 using Lucene.Net.Support;
+using Lucene.Net.Util;
 using NumericField = Lucene.Net.Documents.NumericField;
 using IndexReader = Lucene.Net.Index.IndexReader;
 using Term = Lucene.Net.Index.Term;
@@ -782,13 +784,13 @@ namespace Lucene.Net.Search
         {
             return (StringIndex) caches[typeof(StringIndex)].Get(reader, new Entry(field, (Parser) null), state);
         }
-        
+
         internal sealed class StringIndexCache:Cache
         {
             internal StringIndexCache(FieldCache wrapper):base(wrapper)
             {
             }
-            
+
             protected internal override System.Object CreateValue(IndexReader reader, Entry entryKey, IState state)
             {
                 System.String field = StringHelper.Intern(entryKey.field);
@@ -798,26 +800,28 @@ namespace Lucene.Net.Search
                 {
                     retArrayOrdered[i] = -1;
                 }
-                System.String[] mterms = new System.String[reader.MaxDoc + 1];
+
+                var length = reader.MaxDoc + 1;
+                UnmanagedStringArray mterms = new UnmanagedStringArray(reader.MaxDoc + 1);
                 TermDocs termDocs = reader.TermDocs(state);
-                TermEnum termEnum = reader.Terms(new Term(field), state);
+                
+                SegmentTermEnum termEnum = (SegmentTermEnum)reader.Terms(new Term(field), state);
                 int t = 0; // current term number
                 int docIndex = 0;
                 // an entry for documents that have no terms in this field
                 // should a document with no terms be at top or bottom?
                 // this puts them at the top - if it is changed, FieldDocSortedHitQueue
                 // needs to change as well.
-                mterms[t++] = null;
+                t++;
                 
                 try
                 {
                     do 
                     {
-                        Term term = termEnum.Term;
-                        if (term == null || term.Field != field || t >= mterms.Length) break;
-                        
+                        if (termEnum.termBuffer.Field != field || t >= length) break;
+
                         // store term text
-                        mterms[t] = term.Text;
+                        mterms.Add(termEnum.termBuffer.TextAsSpan);
                         
                         termDocs.Seek(termEnum, state);
                         while (termDocs.Next(state))
@@ -838,22 +842,7 @@ namespace Lucene.Net.Search
                     termDocs.Close();
                     termEnum.Close();
                 }
-                
-                if (t == 0)
-                {
-                    // if there are no terms, make the term array
-                    // have a single null entry
-                    mterms = new System.String[1];
-                }
-                else if (t < mterms.Length)
-                {
-                    // if there are less terms than documents,
-                    // trim off the dead array space
-                    System.String[] terms = new System.String[t];
-                    Array.Copy(mterms, 0, terms, 0, t);
-                    mterms = terms;
-                }
-                
+
                 StringIndex value_Renamed = new StringIndex(retArray, retArrayOrdered, mterms);
                 return value_Renamed;
             }
