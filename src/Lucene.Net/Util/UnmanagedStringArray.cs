@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -98,7 +99,44 @@ namespace Lucene.Net.Util
 
             public int CompareTo(object other)
             {
-                return CompareOrdinal(this, (UnmanagedString) other);
+                if (other == null)
+                    return CompareOrdinal(this, null);
+
+                if (other is UnmanagedString us)
+                    return CompareOrdinal(this, us);
+
+                if (other is string s)
+                {
+                    byte[] arr = null;
+                    Span<byte> stringAsBytes = stackalloc byte[0]; // relax the compiler
+                    var stringAsSpan = s.AsSpan();
+
+                    var size = (ushort) Encoding.UTF8.GetByteCount(stringAsSpan);
+
+                    if (size <= 256) // allocate on the stack
+                    {
+                        stringAsBytes = stackalloc byte[size];
+                    }
+                    else
+                    {
+                        var pooledSize = BitUtil.NextHighestPowerOfTwo(size);
+                        arr = ArrayPool<byte>.Shared.Rent(pooledSize);
+                        stringAsBytes = new Span<byte>(arr, 0, size);
+                    }
+
+                    try
+                    {
+                        Encoding.UTF8.GetBytes(stringAsSpan, stringAsBytes);
+                        return CompareOrdinal(this, stringAsBytes);
+                    }
+                    finally
+                    {
+                        if (arr != null)
+                            ArrayPool<byte>.Shared.Return(arr);
+                    }
+                }
+
+                throw new ArgumentException($"Unknown type {other.GetType()} for comparison");
             }
         }
 
