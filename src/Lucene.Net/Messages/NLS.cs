@@ -250,7 +250,7 @@ namespace Lucene.Net.Messages
 		//@SuppressWarnings("unchecked")
 		private static void  MakeAccessible(System.Reflection.FieldInfo field)
 		{
-#if !NETSTANDARD2_0
+#if !NETSTANDARD2_1
             if (System.Security.SecurityManager.SecurityEnabled)
 			{
 				//field.setAccessible(true);   // {{Aroush-2.9}} java.lang.reflect.AccessibleObject.setAccessible

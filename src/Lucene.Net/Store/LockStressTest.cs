@@ -32,7 +32,7 @@ namespace Lucene.Net.Store
 	
 	public class LockStressTest
 	{
-#if !NETSTANDARD2_0
+#if !NETSTANDARD2_1
         [STAThread]
 		public static int Main(System.String[] args)
 		{

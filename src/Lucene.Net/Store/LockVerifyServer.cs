@@ -39,7 +39,7 @@ namespace Lucene.Net.Store
 			return "[" + (((DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond) - startTime) / 1000) + "s] ";
 		}
 
-#if !NETSTANDARD2_0
+#if !NETSTANDARD2_1
         [STAThread]
 		public static int Main(System.String[] args)
 		{

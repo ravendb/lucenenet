@@ -1190,7 +1190,7 @@ namespace Lucene.Net.QueryParsers
             return sb.ToString();
         }
 
-#if !NETSTANDARD2_0
+#if !NETSTANDARD2_1
         /// <summary> Command line tool to test QueryParser, using {@link Lucene.Net.Analysis.SimpleAnalyzer}.
         /// Usage:<br/>
         /// <c>java Lucene.Net.QueryParsers.QueryParser &lt;input&gt;</c>

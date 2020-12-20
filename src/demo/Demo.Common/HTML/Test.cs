@@ -21,7 +21,7 @@ namespace Lucene.Net.Demo.Html
 {
     class Test
 	{
-#if !NETSTANDARD2_0
+#if !NETSTANDARD2_1
         [STAThread]
 		public static void  Main(System.String[] argv)
 		{
