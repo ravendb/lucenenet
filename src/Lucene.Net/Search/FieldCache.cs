@@ -16,7 +16,9 @@
  */
 
 using System;
+using System.Buffers;
 using System.IO;
+using System.Text;
 using Lucene.Net.Store;
 using Lucene.Net.Support;
 using Lucene.Net.Util;
@@ -49,7 +51,7 @@ namespace Lucene.Net.Search
     /// <summary>Expert: Stores term text values and document ordering data. </summary>
     public class StringIndex
     {
-
+        
         public virtual int BinarySearchLookup(System.String key)
         {
             // this special case is the reason that Arrays.binarySearch() isn't useful.
@@ -59,19 +61,46 @@ namespace Lucene.Net.Search
             int low = 1;
             int high = lookup.Length - 1;
 
-            while (low <= high)
-            {
-                int mid = Number.URShift((low + high), 1);
-                int cmp = UnmanagedStringArray.UnmanagedString.CompareOrdinal(lookup[mid], key);
+            byte[] arr = null;
+            Span<byte> stringAsBytes = stackalloc byte[0]; // relax the compiler
+            var stringAsSpan = key.AsSpan();
 
-                if (cmp < 0)
-                    low = mid + 1;
-                else if (cmp > 0)
-                    high = mid - 1;
-                else
-                    return mid; // key found
+            var size = (ushort) Encoding.UTF8.GetByteCount(key);
+
+            if (size <= 256) // allocate on the stack
+            {
+                stringAsBytes = stackalloc byte[size];
             }
-            return -(low + 1); // key not found.
+            else
+            {
+                var pooledSize = BitUtil.NextHighestPowerOfTwo(size);
+                arr = ArrayPool<byte>.Shared.Rent(pooledSize);
+                stringAsBytes = new Span<byte>(arr, 0, size);
+            }
+
+            try
+            {
+                Encoding.UTF8.GetBytes(stringAsSpan, stringAsBytes);
+
+                while (low <= high)
+                {
+                    int mid = Number.URShift((low + high), 1);
+                    int cmp = UnmanagedStringArray.UnmanagedString.CompareOrdinal(lookup[mid], stringAsBytes);
+
+                    if (cmp < 0)
+                        low = mid + 1;
+                    else if (cmp > 0)
+                        high = mid - 1;
+                    else
+                        return mid; // key found
+                }
+                return -(low + 1); // key not found.
+            }
+            finally
+            {
+                if (arr != null)
+                    ArrayPool<byte>.Shared.Return(arr);
+            }
         }
 
         /// <summary>All the term values, in natural order. </summary>

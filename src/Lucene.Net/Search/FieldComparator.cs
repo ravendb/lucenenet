@@ -779,7 +779,7 @@ namespace Lucene.Net.Search
 		{
 			
 			private int[] ords;
-			private UnmanagedStringArray values;
+			private UnmanagedStringArray.UnmanagedString[] values;
 			private int[] readerGen;
 			
 			private int currentReaderGen = - 1;
@@ -796,7 +796,7 @@ namespace Lucene.Net.Search
 			public StringOrdValComparator(int numHits, System.String field, int sortPos, bool reversed)
 			{
 				ords = new int[numHits];
-                values = new UnmanagedStringArray(numHits);
+                values = new UnmanagedStringArray.UnmanagedString[numHits];
 				readerGen = new int[numHits];
 				this.sortPos = sortPos;
 				this.reversed = reversed;
@@ -904,7 +904,7 @@ namespace Lucene.Net.Search
 				int ord = order[doc];
 				ords[slot] = ord;
 				System.Diagnostics.Debug.Assert(ord >= 0);
-                lookup.CopyTo(values, slot, ord);
+                values[slot] = lookup[ord];
 				readerGen[slot] = currentReaderGen;
 			}
 			
@@ -942,7 +942,19 @@ namespace Lucene.Net.Search
 
 		    public string[] GetValues()
 		    {
-		        return values.ToStrings();
+                var strings = new string[values.Length];
+                for (int i = 0; i < values.Length; i++)
+                {
+                    if (values[i].IsNull)
+                    {
+                        strings[i] = null;
+                        continue;
+                    }
+
+                    strings[i] = values[i].ToString();
+                }
+
+                return strings;
 		    }
 
 		    public int BottomSlot
