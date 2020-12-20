@@ -87,8 +87,16 @@ namespace Lucene.Net.Search
 			}
 			return ret;
 		}
-		
-		
+
+
+        private bool IsNull(object obj)
+        {
+            if (obj is UnmanagedStringArray.UnmanagedString us)
+                return us.IsNull;
+
+            return ReferenceEquals(obj, null);
+        }
+
 		/// <summary> Returns whether <c>a</c> is less relevant than <c>b</c>.</summary>
         /// <param name="docA">ScoreDoc</param>
         /// <param name="docB">ScoreDoc</param>
@@ -102,54 +110,35 @@ namespace Lucene.Net.Search
 				int type = fields.Array[i + fields.Offset].Type;
 				if(type == SortField.STRING)
 				{
-                    if (docA.fields[i] is UnmanagedStringArray.UnmanagedString us1 &&
-                        docB.fields[i] is UnmanagedStringArray.UnmanagedString us2)
+                    var s1 = docA.fields[i];
+                    var s2 = docB.fields[i];
+                    // null values need to be sorted first, because of how FieldCache.getStringIndex()
+                    // works - in that routine, any documents without a value in the given field are
+                    // put first.  If both are null, the next SortField is used
+                    if (IsNull(s1))
                     {
-                        // null values need to be sorted first, because of how FieldCache.getStringIndex()
-                        // works - in that routine, any documents without a value in the given field are
-                        // put first.  If both are null, the next SortField is used
-                        if (us1.IsNull)
+                        c = (IsNull(s2)) ? 0 : -1;
+                    }
+                    else if (IsNull(s2))
+                    {
+                        c = 1;
+                    }
+                    else if (fields.Array[i + fields.Offset].Locale == null)
+                    {
+                        if (s2 is UnmanagedStringArray.UnmanagedString us2)
                         {
-                            c = (us2.IsNull) ? 0 : -1;
-                        }
-                        else if (us2.IsNull)
-                        {
-                            c = 1;
-                        }
-                        else if (fields.Array[i + fields.Offset].Locale == null)
-                        {
-                            c = us1.CompareTo(us2);
+                            c = -us2.CompareTo(s1);
                         }
                         else
                         {
-                            c = collators[i].Compare(us1.ToString(), us2.ToString());
+                            c = s1.CompareTo(s2);
                         }
                     }
                     else
                     {
-                        var s1 = (string) docA.fields[i];
-                        var s2 = (string) docB.fields[i];
-                        // null values need to be sorted first, because of how FieldCache.getStringIndex()
-                        // works - in that routine, any documents without a value in the given field are
-                        // put first.  If both are null, the next SortField is used
-                        if (s1 == null)
-                        {
-                            c = (s2 == null) ? 0 : -1;
-                        }
-                        else if (s2 == null)
-                        {
-                            c = 1;
-                        }
-                        else if (fields.Array[i + fields.Offset].Locale == null)
-                        {
-                            c = s1.CompareTo(s2);
-                        }
-                        else
-                        {
-                            c = collators[i].Compare(s1, s2);
-                        }
+                        c = collators[i].Compare(s1.ToString(), s2.ToString());
                     }
-				   
+
                 }
                 else
                 {

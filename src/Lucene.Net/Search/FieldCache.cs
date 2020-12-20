@@ -51,7 +51,6 @@ namespace Lucene.Net.Search
     /// <summary>Expert: Stores term text values and document ordering data. </summary>
     public class StringIndex
     {
-        
         public virtual int BinarySearchLookup(System.String key)
         {
             // this special case is the reason that Arrays.binarySearch() isn't useful.
@@ -65,7 +64,7 @@ namespace Lucene.Net.Search
             Span<byte> stringAsBytes = stackalloc byte[0]; // relax the compiler
             var stringAsSpan = key.AsSpan();
 
-            var size = (ushort) Encoding.UTF8.GetByteCount(key);
+            var size = (ushort) Encoding.UTF8.GetByteCount(stringAsSpan);
 
             if (size <= 256) // allocate on the stack
             {
