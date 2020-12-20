@@ -10,10 +10,7 @@ namespace Lucene.Net.Util
     {
         private class Segment : IDisposable
         {
-            public static long SegmentNumber;
-
             public readonly int Size;
-            public readonly long Number;
 
             public byte* Start;
             public byte* CurrentPosition => Start + Used;
@@ -25,7 +22,7 @@ namespace Lucene.Net.Util
                 Start = (byte*) Marshal.AllocHGlobal(size);
                 Used = 0;
                 Size = size;
-                Number = Interlocked.Increment(ref SegmentNumber);
+                MemoryMonitor.Instance.Add(size);
             }
 
             public void Add(ushort size, out byte* position)
@@ -40,7 +37,10 @@ namespace Lucene.Net.Util
             {
                 GC.SuppressFinalize(this);
                 if (Start != null)
+                {
                     Marshal.FreeHGlobal((IntPtr) Start);
+                    MemoryMonitor.Instance.Free(Size);
+                }
                 Start = null;
             }
 
@@ -53,7 +53,6 @@ namespace Lucene.Net.Util
         public struct UnmanagedString : IComparable
         {
             public byte* Start;
-            public long Owner;
 
             public int Size => IsNull ? 0 : *(ushort*) Start;
             public Span<byte> StringAsBytes => new Span<byte>(Start + sizeof(ushort), Size);
@@ -78,7 +77,7 @@ namespace Lucene.Net.Util
                 return strA.StringAsBytes.SequenceCompareTo(strB.StringAsBytes);
             }
 
-            public static int CompareOrdinal(UnmanagedString strA, string strB)
+            public static int CompareOrdinal(UnmanagedString strA, Span<byte> strB)
             {
                 if (strA.IsNull && strB == null)
                     return 0;
@@ -89,11 +88,10 @@ namespace Lucene.Net.Util
                 if (strA.IsNull)
                     return -1;
 
-                Span<byte> managed = Encoding.UTF8.GetBytes(strB);
-                return strA.StringAsBytes.SequenceCompareTo(managed);
+                return strA.StringAsBytes.SequenceCompareTo(strB);
             }
 
-            public static int CompareOrdinal(string strA, UnmanagedString strB)
+            public static int CompareOrdinal(Span<byte> strA, UnmanagedString strB)
             {
                 return -CompareOrdinal(strB, strA);
             }
@@ -106,7 +104,6 @@ namespace Lucene.Net.Util
 
         private UnmanagedString[] _strings;
         private List<Segment> _segments = new List<Segment>();
-        private SortedDictionary<long, Segment> _sortedSegments = new SortedDictionary<long, Segment>();
 
         public int Length => _index;
         public int _index = 1;
@@ -133,53 +130,54 @@ namespace Lucene.Net.Util
         {
             var newSegment = new Segment(segmentSize);
             _segments.Add(newSegment);
-            _sortedSegments.Add(newSegment.Number, newSegment);
             return newSegment;
         }
 
         public void Add(Span<char> str)
         {
-            fixed (char* s = str)
-            {
-                var size = (ushort) Encoding.UTF8.GetByteCount(s, str.Length);
-                var segment = GetSegment(size + sizeof(ushort));
+            var size = (ushort) Encoding.UTF8.GetByteCount(str);
+            var segment = GetSegment(size + sizeof(ushort));
 
-                segment.Add(size, out var position);
-                fixed (byte* r = new Span<byte>(position + sizeof(ushort), size))
-                {
-                    Encoding.UTF8.GetBytes(s, str.Length, r, size);
-                }
-                _strings[_index].Start = position;
-                _strings[_index].Owner = segment.Number;
-                _index++;
-            }
+            segment.Add(size, out var position);
+
+            Encoding.UTF8.GetBytes(str, new Span<byte>(position + sizeof(ushort), size));
+
+            _strings[_index].Start = position;
+            _index++;
         }
 
-        public UnmanagedString this[int position] => _strings[position];
-
-        public void CopyTo(UnmanagedStringArray dest, int destPosition, int position)
+        public UnmanagedString this[int position]
         {
-            var str = _strings[position];
-            if (str.IsNull == false)
-            {
-                var seg = _sortedSegments[str.Owner];
-                // this is unmanaged, so we need to keep the segment around!
-                if (dest._sortedSegments.ContainsKey(seg.Number) == false) 
-                    dest._sortedSegments.Add(seg.Number, seg);
-            }
-
-            dest._strings[destPosition] = str;
+            get => _strings[position];
+            set => _strings[position] = value;
         }
 
-        public string[] ToStrings()
+        public class MemoryMonitor
         {
-            var strings = new string[_strings.Length];
-            for (int i = 1; i < _strings.Length; i++)
+            public static readonly MemoryMonitor Instance;
+
+            private int _numberOfSegments;
+            public int NumberOfSegments => _numberOfSegments;
+
+            private long _allocatedMemory;
+            public long AllocatedMemory => _allocatedMemory;
+
+            static MemoryMonitor()
             {
-                strings[i] = _strings[i].ToString();
+                Instance = new MemoryMonitor();
             }
 
-            return strings;
+            public void Add(int size)
+            {
+                Interlocked.Increment(ref _numberOfSegments);
+                Interlocked.Add(ref _allocatedMemory, size);
+            }
+
+            public void Free(int size)
+            {
+                Interlocked.Decrement(ref _numberOfSegments);
+                Interlocked.Add(ref _allocatedMemory, -size);
+            }
         }
     }
 }
