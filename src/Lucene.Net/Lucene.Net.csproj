@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <AssemblyTitle>Lucene.Net</AssemblyTitle>
-    <TargetFramework>netstandard2.0</TargetFramework>
+    <TargetFramework>netstandard2.1</TargetFramework>
     <AssemblyName>Lucene.Net</AssemblyName>
     <PackageId>Lucene.Net</PackageId>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>

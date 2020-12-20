@@ -681,7 +681,7 @@ namespace Lucene.Net.Analysis
 			return dirty;
 		}
 
-#if !NETSTANDARD2_0
+#if !NETSTANDARD2_1
         /// <summary>Test program for demonstrating the Stemmer.  It reads a file and
         /// stems each word, writing the result to standard out.
         /// Usage: Stemmer file-name

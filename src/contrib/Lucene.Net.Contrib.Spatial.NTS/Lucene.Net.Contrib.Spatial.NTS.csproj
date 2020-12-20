@@ -2,14 +2,14 @@
 
   <PropertyGroup>
     <AssemblyTitle>Lucene.Net Contrib Spatial NTS</AssemblyTitle>
-    <TargetFramework>netstandard2.0</TargetFramework>
+    <TargetFramework>netstandard2.1</TargetFramework>
     <AssemblyName>Lucene.Net.Contrib.Spatial.NTS</AssemblyName>
     <PackageId>Lucene.Net.Contrib.Spatial.NTS</PackageId>
   </PropertyGroup>
 
   <ItemGroup>
     <Content Include="..\..\..\..\Spatial4n\Spatial4n.Core\bin\Release\netstandard2.0\Spatial4n.Core.NTS.dll">
-      <PackagePath>lib/netstandard2.0/</PackagePath>
+      <PackagePath>lib/netstandard2.1/</PackagePath>
       <Pack>true</Pack>
     </Content>
   </ItemGroup>
