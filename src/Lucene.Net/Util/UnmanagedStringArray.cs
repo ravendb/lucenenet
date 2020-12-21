@@ -3,13 +3,12 @@ using System.Buffers;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Text;
-using System.Threading;
 
 namespace Lucene.Net.Util
 {
     public unsafe class UnmanagedStringArray
     {
-        private class Segment : IDisposable
+        public class Segment : IDisposable
         {
             public readonly int Size;
 
@@ -18,12 +17,17 @@ namespace Lucene.Net.Util
             public int Free => Size - Used;
             public int Used;
 
+            public delegate byte* AllocateSegmentDelegate(long size);
+            public delegate void FreeSegmentDelegate(byte* ptr, long size);
+
+            public static AllocateSegmentDelegate AllocateMemory = (size) => (byte*) Marshal.AllocHGlobal((IntPtr) size);
+            public static FreeSegmentDelegate FreeMemory = (ptr, _) => Marshal.FreeHGlobal((IntPtr) ptr);
+
             public Segment(int size)
             {
-                Start = (byte*) Marshal.AllocHGlobal(size);
+                Start = AllocateMemory(size);
                 Used = 0;
                 Size = size;
-                MemoryMonitor.Instance.Add(size);
             }
 
             public void Add(ushort size, out byte* position)
@@ -39,8 +43,7 @@ namespace Lucene.Net.Util
                 GC.SuppressFinalize(this);
                 if (Start != null)
                 {
-                    Marshal.FreeHGlobal((IntPtr) Start);
-                    MemoryMonitor.Instance.Free(Size);
+                    FreeMemory(Start, Size);
                 }
                 Start = null;
             }
@@ -188,34 +191,6 @@ namespace Lucene.Net.Util
         {
             get => _strings[position];
             set => _strings[position] = value;
-        }
-
-        public class MemoryMonitor
-        {
-            public static readonly MemoryMonitor Instance;
-
-            private int _numberOfSegments;
-            public int NumberOfSegments => _numberOfSegments;
-
-            private long _allocatedMemory;
-            public long AllocatedMemory => _allocatedMemory;
-
-            static MemoryMonitor()
-            {
-                Instance = new MemoryMonitor();
-            }
-
-            public void Add(int size)
-            {
-                Interlocked.Increment(ref _numberOfSegments);
-                Interlocked.Add(ref _allocatedMemory, size);
-            }
-
-            public void Free(int size)
-            {
-                Interlocked.Decrement(ref _numberOfSegments);
-                Interlocked.Add(ref _allocatedMemory, -size);
-            }
         }
     }
 }
