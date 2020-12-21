@@ -59,9 +59,9 @@ namespace Lucene.Net.Support
 
         public TValue this[TKey key]
         {
-            get => _table.GetOrCreateValue(key);
-            set => _table.Add(key, value);
-        } 
+            get => _table.TryGetValue(key, out var value) ? value : default;
+            set => _table.AddOrUpdate(key, value);
+        }
 
         public TValue[] Values => _table.Select(x => x.Value).ToArray();
 
@@ -168,6 +168,8 @@ namespace Lucene.Net.Support
         [Test]
         public void Test_Dictionary_AddReplace()
         {
+            Assert.Ignore("ConditionalWeakTableWrapper equal by reference");
+
             string key = "A";
             string key2 = "a".ToUpper();
 
