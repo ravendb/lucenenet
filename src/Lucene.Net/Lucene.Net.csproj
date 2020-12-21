@@ -6,16 +6,9 @@
     <AssemblyName>Lucene.Net</AssemblyName>
     <PackageId>Lucene.Net</PackageId>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
+	<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-  </PropertyGroup>
-  
   <ItemGroup Condition="'$(OS)' == 'Windows_NT'">
     <Compile Include="..\AssemblyInfo.Windows.cs" Link="Properties\AssemblyInfo.Windows.cs" />
   </ItemGroup>
