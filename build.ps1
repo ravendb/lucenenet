@@ -19,7 +19,7 @@ $OUT_DIR = [io.path]::combine($PROJECT_DIR, "artifacts")
 
 $LUCENE_SRC_DIR = [io.path]::combine($PROJECT_DIR, "src", "Lucene.Net")
 $LUCENE_OUT_DIR = [io.path]::combine($PROJECT_DIR, "src", "Lucene.Net", "bin", "Release")
-$LUCENE_DLL_PATH = [io.path]::combine($LUCENE_OUT_DIR, "netstandard2.0", "Lucene.Net.dll");
+$LUCENE_DLL_PATH = [io.path]::combine($LUCENE_OUT_DIR, "netstandard2.1", "Lucene.Net.dll");
 
 New-Item -Path $RELEASE_DIR -Type Directory -Force
 CleanFiles $RELEASE_DIR
