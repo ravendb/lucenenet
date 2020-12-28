@@ -4485,7 +4485,7 @@ namespace Lucene.Net.Index
 
             internal override void Handle(System.Exception t)
             {
-                System.Console.Out.WriteLine(t.StackTrace);
+                System.Console.Out.WriteLine(t);
                 lock (failures.SyncRoot)
                 {
                     failures.Add(t);
@@ -4573,7 +4573,7 @@ namespace Lucene.Net.Index
             {
                 if (!(t is AlreadyClosedException) && !(t is System.NullReferenceException))
                 {
-                    System.Console.Out.WriteLine(t.StackTrace);
+                    System.Console.Out.WriteLine(t);
                     lock (failures.SyncRoot)
                     {
                         failures.Add(t);
@@ -4671,7 +4671,7 @@ namespace Lucene.Net.Index
                 }
                 if (report)
                 {
-                    System.Console.Out.WriteLine(t.StackTrace);
+                    System.Console.Out.WriteLine(t);
                     lock (failures.SyncRoot)
                     {
                         failures.Add(t);
