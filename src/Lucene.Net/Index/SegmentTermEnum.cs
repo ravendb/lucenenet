@@ -32,7 +32,7 @@ namespace Lucene.Net.Index
 		private TermBuffer prevBuffer = new TermBuffer();
 		private TermBuffer scanBuffer = new TermBuffer(); // used for scanning
 		
-		private TermInfo termInfo = new TermInfo();
+		private TermInfo termInfo;
 		
 		private readonly int format;
 		private readonly bool isIndex = false;
