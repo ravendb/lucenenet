@@ -22,25 +22,24 @@ namespace Lucene.Net.Index
 	
 	/// <summary>A TermInfo is the record of information stored for a term.</summary>
 	
-	sealed class TermInfo
+	struct TermInfo
 	{
 		/// <summary>The number of documents which contain the term. </summary>
-		internal int docFreq = 0;
+		internal int docFreq;
 		
-		internal long freqPointer = 0;
-		internal long proxPointer = 0;
+		internal long freqPointer;
+		internal long proxPointer;
 		internal int skipOffset;
-		
-		internal TermInfo()
-		{
-		}
-		
+
+        public bool IsEmpty => docFreq == 0 && freqPointer == 0 && proxPointer == 0 && skipOffset == 0;
+
 		internal TermInfo(int df, long fp, long pp)
 		{
 			docFreq = df;
 			freqPointer = fp;
 			proxPointer = pp;
-		}
+            skipOffset = 0;
+        }
 		
 		internal TermInfo(TermInfo ti)
 		{

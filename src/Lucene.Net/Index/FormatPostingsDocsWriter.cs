@@ -101,7 +101,7 @@ namespace Lucene.Net.Index
 			return posWriter;
 		}
 		
-		private TermInfo termInfo = new TermInfo(); // minimize consing
+		private TermInfo termInfo; // minimize consing
 		internal UnicodeUtil.UTF8Result utf8 = new UnicodeUtil.UTF8Result();
 		
 		/// <summary>Called when we are done adding docs to this term </summary>
