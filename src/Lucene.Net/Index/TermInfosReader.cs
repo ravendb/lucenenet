@@ -99,7 +99,7 @@ namespace Lucene.Net.Index
             public void Dispose()
             {
                 ArrayPool<long>.Shared.Return(_longArray);
-                ArrayPool<Term>.Shared.Return(_termArray);
+                ArrayPool<Term>.Shared.Return(_termArray, clearArray: true);
                 ArrayPool<TermInfo>.Shared.Return(_termInfoArray);
 
                 GC.SuppressFinalize(this);
@@ -276,7 +276,7 @@ namespace Lucene.Net.Index
 		private TermInfo Get(Term term, bool useCache, IState state)
 		{
 			if (size == 0)
-				return null;
+				return default;
 			
 			EnsureIndexIsRead();
 			
@@ -289,7 +289,7 @@ namespace Lucene.Net.Index
 				cache = termInfoCache;
 				// check the cache first if the term was recently looked up
 				ti = cache.Get(new CloneableTerm(DeepCopyOf(term)));
-				if (ti != null)
+				if (ti.IsEmpty == false)
 				{
 					return ti;
 				}
@@ -320,7 +320,7 @@ namespace Lucene.Net.Index
 					}
 					else
 					{
-						ti = null;
+						ti = default;
 					}
 					
 					return ti;
@@ -340,7 +340,7 @@ namespace Lucene.Net.Index
 			}
 			else
 			{
-				ti = null;
+				ti = default;
 			}
 			return ti;
 		}

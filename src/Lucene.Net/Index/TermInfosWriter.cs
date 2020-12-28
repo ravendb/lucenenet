@@ -44,7 +44,7 @@ namespace Lucene.Net.Index
 
 		private FieldInfos fieldInfos;
 		private IndexOutput output;
-		private TermInfo lastTi = new TermInfo();
+		private TermInfo lastTi;
 		private long size;
 		
 		// TODO: the default values for these two parameters should be settable from

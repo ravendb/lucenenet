@@ -96,7 +96,7 @@ namespace Lucene.Net.Index
 			FieldInfo fi = parent.core.fieldInfos.FieldInfo(term.Field);
 			currentFieldOmitTermFreqAndPositions = (fi != null) && fi.omitTermFreqAndPositions;
 			currentFieldStoresPayloads = (fi != null) && fi.storePayloads;
-			if (ti == null)
+			if (ti.IsEmpty)
 			{
 				df = 0;
 			}

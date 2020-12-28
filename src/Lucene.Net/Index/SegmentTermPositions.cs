@@ -47,7 +47,7 @@ namespace Lucene.Net.Index
 		internal override void  Seek(TermInfo ti, Term term, IState state)
 		{
 			base.Seek(ti, term, state);
-			if (ti != null)
+			if (ti.IsEmpty == false)
 				lazySkipPointer = ti.proxPointer;
 			
 			lazySkipProxCount = 0;

@@ -1204,7 +1204,7 @@ namespace Lucene.Net.Index
 		{
 			EnsureOpen();
 			TermInfo ti = core.GetTermsReader().Get(t, state);
-			if (ti != null)
+			if (ti.IsEmpty == false)
 				return ti.docFreq;
 			else
 				return 0;
