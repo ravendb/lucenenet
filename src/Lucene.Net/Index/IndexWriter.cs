@@ -18,6 +18,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Runtime.ExceptionServices;
 using Lucene.Net.Store;
 using Lucene.Net.Support;
 using Analyzer = Lucene.Net.Analysis.Analyzer;
@@ -4610,9 +4611,8 @@ namespace Lucene.Net.Index
 			}
 		}
 		
-		private void  HandleMergeException(System.Exception t, MergePolicy.OneMerge merge, IState state)
+		private void HandleMergeException(System.Exception t, MergePolicy.OneMerge merge, IState state)
 		{
-			
 			if (infoStream != null)
 			{
 				Message("handleMergeException: merge=" + merge.SegString(directory, state) + " exc=" + t);
@@ -4632,12 +4632,16 @@ namespace Lucene.Net.Index
 				// in which case we must throw it so, for example, the
 				// rollbackTransaction code in addIndexes* is
 				// executed.
-				if (merge.isExternal)
-					throw t;
+                if (merge.isExternal)
+                {
+                    var exceptionDispatchInfo = ExceptionDispatchInfo.Capture(t);
+                    exceptionDispatchInfo.Throw();
+                }
 			}
             else if (t is System.IO.IOException || t is System.SystemException || t is System.ApplicationException)
             {
-                throw t;
+                var exceptionDispatchInfo = ExceptionDispatchInfo.Capture(t);
+                exceptionDispatchInfo.Throw();
             }
             else
             {
