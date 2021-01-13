@@ -5877,7 +5877,9 @@ namespace Lucene.Net.Index
 				Message("hit OutOfMemoryError inside " + location);
 			}
 			hitOOM = true;
-			throw oom;
+
+            var exceptionDispatchInfo = ExceptionDispatchInfo.Capture(oom);
+            exceptionDispatchInfo.Throw();
 		}
 		
 		// Used only by assert for testing.  Current points:
