@@ -42,7 +42,7 @@ namespace Lucene.Net.Spatial.Prefix
             if (op != SpatialOperation.Intersects)
 				throw new UnsupportedSpatialOperation(op);
 
-			Shape shape = args.Shape;
+			IShape shape = args.Shape;
             int detailLevel = grid.GetLevelForDistance(args.ResolveDistErr(ctx, distErrPct));
 			var cells = grid.GetNodes(shape, detailLevel, false);
 			var filter = new TermsFilter();

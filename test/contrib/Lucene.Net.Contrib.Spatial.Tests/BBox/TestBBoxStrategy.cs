@@ -32,9 +32,9 @@ namespace Lucene.Net.Contrib.Spatial.Test.BBox
 			this.strategy = new BBoxStrategy(ctx, "bbox");
 		}
 
-        protected override Shape convertShapeFromGetDocuments(Spatial4n.Core.Shapes.Shape shape)
+        protected override IShape convertShapeFromGetDocuments(Spatial4n.Core.Shapes.IShape shape)
         {
-            return shape.GetBoundingBox();
+            return shape.BoundingBox;
         }
 
 		[Test]

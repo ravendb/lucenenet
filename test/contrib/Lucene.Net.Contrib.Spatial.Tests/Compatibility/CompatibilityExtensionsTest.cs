@@ -42,7 +42,7 @@ namespace Lucene.Net.Contrib.Spatial.Test.Compatibility
 
         private Document CreateRandomDoc(int docId, Random rng, SpatialContext ctx)
         {
-            Point shape = ctx.MakePoint(DistanceUtils.NormLonDEG(rng.NextDouble() * 360.0), DistanceUtils.NormLatDEG(rng.NextDouble() * 180.0));
+            IPoint shape = ctx.MakePoint(DistanceUtils.NormLonDEG(rng.NextDouble() * 360.0), DistanceUtils.NormLatDEG(rng.NextDouble() * 180.0));
 
             var doc = new Document();
 
@@ -102,10 +102,10 @@ namespace Lucene.Net.Contrib.Spatial.Test.Compatibility
             string[] parts = doc.Get(StrategyPrefix, null)
                 .Split(' ');
 
-            Point pt = ctx.MakePoint(double.Parse(parts[0]),
+            IPoint pt = ctx.MakePoint(double.Parse(parts[0]),
                                      double.Parse(parts[1]));
 
-            Circle circle = ctx.MakeCircle(pt, DistanceUtils.Dist2Degrees(distanceInKms, DistanceUtils.EARTH_MEAN_RADIUS_KM));
+            ICircle circle = ctx.MakeCircle(pt, DistanceUtils.Dist2Degrees(distanceInKms, DistanceUtils.EARTH_MEAN_RADIUS_KM));
 
             var args = new SpatialArgs(SpatialOperation.Intersects, circle);
 

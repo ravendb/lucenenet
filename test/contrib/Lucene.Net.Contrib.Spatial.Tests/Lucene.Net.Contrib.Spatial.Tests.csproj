@@ -28,11 +28,15 @@
     <Compile Include="SpatialTestQuery.cs" />
     <Compile Include="StrategyTestCase.cs" />
     <Compile Include="TestTestFramework.cs" />
+    <Compile Include="Utils\LineReader.cs" />
+    <Compile Include="Utils\Samples\SampleData.cs" />
+    <Compile Include="Utils\Samples\SampleDataReader.cs" />
+    <Compile Include="Utils\Samples\SampleDataWriter.cs" />
     <Compile Include="Vector\TestTwoDoublesStrategy.cs" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\..\Spatial4n\Spatial4n.Core\Spatial4n.Core.NTS.csproj" />
+    <ProjectReference Include="..\..\..\..\Spatial4n\Spatial4n.Core.NTS\Spatial4n.Core.NTS.csproj" />
     <ProjectReference Include="..\..\..\src\Lucene.Net\Lucene.Net.csproj" />
     <ProjectReference Include="..\..\..\src\contrib\Lucene.Net.Contrib.Spatial.NTS\Lucene.Net.Contrib.Spatial.NTS.csproj" />
     <ProjectReference Include="..\..\Lucene.Net.Test\Lucene.Net.Test.csproj" />

@@ -23,7 +23,6 @@ using Lucene.Net.Spatial.Util;
 using Lucene.Net.Store;
 using Spatial4n.Core.Distance;
 using Spatial4n.Core.Shapes;
-using Spatial4n.Core.Shapes.Impl;
 
 namespace Lucene.Net.Spatial.Vector
 {
@@ -33,9 +32,9 @@ namespace Lucene.Net.Spatial.Vector
 	public class DistanceValueSource : ValueSource
 	{
 		private readonly PointVectorStrategy strategy;
-		private readonly Point from;
+		private readonly IPoint from;
 
-		public DistanceValueSource(PointVectorStrategy strategy, Point from)
+		public DistanceValueSource(PointVectorStrategy strategy, IPoint from)
 		{
 			this.strategy = strategy;
 			this.from = from;
@@ -48,8 +47,8 @@ namespace Lucene.Net.Spatial.Vector
 			private readonly double[] ptX, ptY;
 			private readonly IBits validX, validY;
 
-            private readonly Point from;
-            private readonly DistanceCalculator calculator;
+            private readonly IPoint from;
+            private readonly IDistanceCalculator calculator;
             private readonly double nullValue;
 
 			public DistanceDocValues(DistanceValueSource enclosingInstance, IndexReader reader, IState state)
@@ -62,8 +61,8 @@ namespace Lucene.Net.Spatial.Vector
 				validY = FieldCache_Fields.DEFAULT.GetDocsWithField(reader, enclosingInstance.strategy.GetFieldNameY(), state);
 
                 from = enclosingInstance.from;
-                calculator = enclosingInstance.strategy.GetSpatialContext().GetDistCalc();
-                nullValue = (enclosingInstance.strategy.GetSpatialContext().IsGeo() ? 180 : double.MaxValue);
+                calculator = enclosingInstance.strategy.GetSpatialContext().DistCalc;
+                nullValue = (enclosingInstance.strategy.GetSpatialContext().IsGeo ? 180 : double.MaxValue);
 			}
 
 			public override float FloatVal(int doc)

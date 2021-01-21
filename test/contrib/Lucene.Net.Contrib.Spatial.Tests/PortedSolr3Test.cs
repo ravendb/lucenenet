@@ -15,8 +15,6 @@
  * limitations under the License.
  */
 
-using System;
-using System.Collections.Generic;
 using Lucene.Net.Search;
 using Lucene.Net.Spatial;
 using Lucene.Net.Spatial.Prefix;
@@ -26,14 +24,16 @@ using Lucene.Net.Spatial.Vector;
 using NUnit.Framework;
 using Spatial4n.Core.Context;
 using Spatial4n.Core.Distance;
-using Spatial4n.Core.Io;
 using Spatial4n.Core.Shapes;
+using System;
+using System.Collections.Generic;
 
 namespace Lucene.Net.Contrib.Spatial.Test
 {
-   /*
-	* Based off of Solr 3's SpatialFilterTest.
-	*/
+    /*
+     * Based off of Solr 3's SpatialFilterTest.
+     */
+
     public class PortedSolr3Test : StrategyTestCase
     {
         public class TestValuesProvider
@@ -69,7 +69,10 @@ namespace Lucene.Net.Contrib.Spatial.Test
         {
             public readonly SpatialStrategy strategy;
 
-            public Param(SpatialStrategy strategy) { this.strategy = strategy; }
+            public Param(SpatialStrategy strategy)
+            {
+                this.strategy = strategy;
+            }
 
             public override String ToString()
             {
@@ -100,7 +103,7 @@ namespace Lucene.Net.Contrib.Spatial.Test
         }
 
         [Test, Sequential]
-        public void testIntersections([ValueSourceAttribute(typeof (TestValuesProvider), "ParamsProvider")] Param p)
+        public void testIntersections([ValueSourceAttribute(typeof(TestValuesProvider), "ParamsProvider")] Param p)
         {
             this.ctx = p.strategy.GetSpatialContext();
             this.strategy = p.strategy;
@@ -158,11 +161,11 @@ namespace Lucene.Net.Contrib.Spatial.Test
         private void _checkHits(bool bbox, String ptStr, double distKM, int assertNumFound, params int[] assertIds)
         {
             SpatialOperation op = SpatialOperation.Intersects;
-            Point pt = (Point) new ShapeReadWriter(ctx).ReadShape(ptStr);
+            IPoint pt = (IPoint)ctx.ReadShape(ptStr);
             double distDEG = DistanceUtils.Dist2Degrees(distKM, DistanceUtils.EARTH_MEAN_RADIUS_KM);
-            Shape shape = ctx.MakeCircle(pt, distDEG);
+            IShape shape = ctx.MakeCircle(pt, distDEG);
             if (bbox)
-                shape = shape.GetBoundingBox();
+                shape = shape.BoundingBox;
 
             SpatialArgs args = new SpatialArgs(op, shape);
             //args.setDistPrecision(0.025);

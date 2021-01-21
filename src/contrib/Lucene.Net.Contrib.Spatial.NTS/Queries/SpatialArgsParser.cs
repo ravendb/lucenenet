@@ -19,7 +19,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using Spatial4n.Core.Context;
-using Spatial4n.Core.Io;
+using Spatial4n.Core.IO;
 using Spatial4n.Core.Shapes;
 
 namespace Lucene.Net.Spatial.Queries
@@ -74,7 +74,7 @@ namespace Lucene.Net.Spatial.Queries
 				throw new ArgumentException("missing body : " + v);
 			}
 
-            Shape shape = new ShapeReadWriter(ctx).ReadShape(body);
+			IShape shape = ctx.ReadShape(body);
 			var args = new SpatialArgs(op, shape);
 
 			if (v.Length > (edx + 1))

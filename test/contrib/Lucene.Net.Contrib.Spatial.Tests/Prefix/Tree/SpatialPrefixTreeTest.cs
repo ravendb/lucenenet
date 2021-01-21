@@ -43,7 +43,7 @@ namespace Lucene.Net.Contrib.Spatial.Test.Prefix.Tree
 			Node prevN = null;
 			Node n = trie.GetWorldNode();
 			Assert.AreEqual(0, n.GetLevel());
-			Assert.AreEqual(ctx.GetWorldBounds(), n.GetShape());
+			Assert.AreEqual(ctx.WorldBounds, n.GetShape());
 			while (n.GetLevel() < trie.GetMaxLevels())
 			{
 				prevN = n;
@@ -52,11 +52,11 @@ namespace Lucene.Net.Contrib.Spatial.Test.Prefix.Tree
 				n = it.Current; //TODO random which one?
 
 				Assert.AreEqual(prevN.GetLevel() + 1, n.GetLevel());
-				Rectangle prevNShape = (Rectangle) prevN.GetShape();
-				Shape s = n.GetShape();
-				Rectangle sbox = s.GetBoundingBox();
-				Assert.IsTrue(prevNShape.GetWidth() > sbox.GetWidth());
-				Assert.IsTrue(prevNShape.GetHeight() > sbox.GetHeight());
+				IRectangle prevNShape = (IRectangle) prevN.GetShape();
+				IShape s = n.GetShape();
+				IRectangle sbox = s.BoundingBox;
+				Assert.IsTrue(prevNShape.Width > sbox.Width);
+				Assert.IsTrue(prevNShape.Height > sbox.Height);
 			}
 		}
 	}

@@ -28,18 +28,18 @@ namespace Lucene.Net.Spatial.BBox
     /// </summary>
     public class DistanceSimilarity : BBoxSimilarity
     {
-        private readonly Point queryPoint;
-        private readonly DistanceCalculator distCalc;
+        private readonly IPoint queryPoint;
+        private readonly IDistanceCalculator distCalc;
         private readonly double nullValue;
 
-        public DistanceSimilarity(SpatialContext ctx, Point queryPoint)
+        public DistanceSimilarity(SpatialContext ctx, IPoint queryPoint)
         {
             this.queryPoint = queryPoint;
-            this.distCalc = ctx.GetDistCalc();
-            this.nullValue = (ctx.IsGeo() ? 180 : double.MaxValue);
+            this.distCalc = ctx.DistCalc;
+            this.nullValue = (ctx.IsGeo ? 180 : double.MaxValue);
         }
 
-        public double Score(Rectangle indexRect, Explanation exp)
+        public double Score(IRectangle indexRect, Explanation exp)
         {
             double score;
             if (indexRect == null)
@@ -48,11 +48,11 @@ namespace Lucene.Net.Spatial.BBox
             }
             else
             {
-                score = distCalc.Distance(queryPoint, indexRect.GetCenter());
+                score = distCalc.Distance(queryPoint, indexRect.Center);
             }
             if (exp != null)
             {
-                exp.Value = (float) score;
+                exp.Value = (float)score;
                 exp.Description = GetType().Name;
                 exp.AddDetail(new Explanation(-1f, "" + queryPoint));
                 exp.AddDetail(new Explanation(-1f, "" + indexRect));

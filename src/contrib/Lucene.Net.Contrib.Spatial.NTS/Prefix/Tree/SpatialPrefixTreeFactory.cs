@@ -49,7 +49,7 @@ namespace Lucene.Net.Spatial.Prefix.Tree
 			SpatialPrefixTreeFactory instance;
 			String cname;
             if (!args.TryGetValue(PREFIX_TREE, out cname) || cname == null)
-				cname = ctx.IsGeo() ? "geohash" : "quad";
+				cname = ctx.IsGeo ? "geohash" : "quad";
 			if ("geohash".Equals(cname, StringComparison.OrdinalIgnoreCase))
 				instance = new GeohashPrefixTree.Factory();
 			else if ("quad".Equals(cname, StringComparison.OrdinalIgnoreCase))
@@ -82,7 +82,7 @@ namespace Lucene.Net.Spatial.Prefix.Tree
             double degrees;
             if (!args.TryGetValue(MAX_DIST_ERR, out mlStr) || mlStr == null)
             {
-                if (!ctx.IsGeo())
+                if (!ctx.IsGeo)
                     return; //let default to max
                 degrees = DistanceUtils.Dist2Degrees(DEFAULT_GEO_MAX_DETAIL_KM, DistanceUtils.EARTH_MEAN_RADIUS_KM);
             }

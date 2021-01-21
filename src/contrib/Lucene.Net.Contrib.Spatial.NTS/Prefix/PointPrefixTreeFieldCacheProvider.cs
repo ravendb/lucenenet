@@ -15,37 +15,37 @@
  * limitations under the License.
  */
 
-using System;
 using Lucene.Net.Index;
 using Lucene.Net.Spatial.Prefix.Tree;
 using Lucene.Net.Spatial.Util;
 using Spatial4n.Core.Shapes;
+using System;
 
 namespace Lucene.Net.Spatial.Prefix
 {
     /// <summary>
     /// Implementation of {@link ShapeFieldCacheProvider} designed for {@link PrefixTreeStrategy}s.
-    /// 
+    ///
     /// Note, due to the fragmented representation of Shapes in these Strategies, this implementation
     /// can only retrieve the central {@link Point} of the original Shapes.
     /// </summary>
-	public class PointPrefixTreeFieldCacheProvider : ShapeFieldCacheProvider<Point>
-	{
-		readonly SpatialPrefixTree grid; //
+	public class PointPrefixTreeFieldCacheProvider : ShapeFieldCacheProvider<IPoint>
+    {
+        private readonly SpatialPrefixTree grid; //
 
-		public PointPrefixTreeFieldCacheProvider(SpatialPrefixTree grid, String shapeField, int defaultSize)
-			: base(shapeField, defaultSize)
-		{
-			this.grid = grid;
-		}
+        public PointPrefixTreeFieldCacheProvider(SpatialPrefixTree grid, String shapeField, int defaultSize)
+            : base(shapeField, defaultSize)
+        {
+            this.grid = grid;
+        }
 
-		//A kluge that this is a field
-		private Node scanCell = null;
+        //A kluge that this is a field
+        private Node scanCell = null;
 
-		protected override Point ReadShape(Term term)
-		{
-			scanCell = grid.GetNode(term.Text, scanCell);
-			return scanCell.IsLeaf() ? scanCell.GetShape().GetCenter() : null;
-		}
-	}
+        protected override IPoint ReadShape(Term term)
+        {
+            scanCell = grid.GetNode(term.Text, scanCell);
+            return scanCell.IsLeaf() ? scanCell.GetShape().Center : null;
+        }
+    }
 }

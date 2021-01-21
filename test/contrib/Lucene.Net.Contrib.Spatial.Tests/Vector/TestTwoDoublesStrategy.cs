@@ -39,7 +39,7 @@ namespace Lucene.Net.Contrib.Spatial.Test.Vector
 		[Test]
 		public void testCircleShapeSupport()
 		{
-            Circle circle = ctx.MakeCircle(ctx.MakePoint(0, 0), 10);
+            ICircle circle = ctx.MakeCircle(ctx.MakePoint(0, 0), 10);
 			SpatialArgs args = new SpatialArgs(SpatialOperation.Intersects, circle);
 			Query query = this.strategy.MakeQuery(args);
 
@@ -49,7 +49,7 @@ namespace Lucene.Net.Contrib.Spatial.Test.Vector
 		[Test]
 		public void testInvalidQueryShape()
 		{
-            Point point = ctx.MakePoint(0, 0);
+            IPoint point = ctx.MakePoint(0, 0);
 			var args = new SpatialArgs(SpatialOperation.Intersects, point);
 			Assert.Throws<InvalidOperationException>(() => this.strategy.MakeQuery(args));
 		}

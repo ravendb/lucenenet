@@ -63,7 +63,7 @@ namespace Lucene.Net.Spatial.Prefix.Tree
 		public virtual void Reset(string newToken)
 		{
 			Debug.Assert(GetLevel() != 0);
-			shapeRel = SpatialRelation.NULL_VALUE;
+			shapeRel = SpatialRelation.NOT_SET;
 			SetToken(newToken);
 			b_fixLeaf();
 		}
@@ -141,10 +141,10 @@ namespace Lucene.Net.Spatial.Prefix.Tree
 		 * @param shapeFilter an optional filter for the returned cells.
 		 * @return A set of cells (no dups), sorted. Not Modifiable.
 		 */
-		public IList<Node> GetSubCells(Shape shapeFilter)
+		public IList<Node> GetSubCells(IShape shapeFilter)
 		{
 			//Note: Higher-performing subclasses might override to consider the shape filter to generate fewer cells.
-			var point = shapeFilter as Point;
+			var point = shapeFilter as IPoint;
 			if (point != null)
 			{
 #if !NET35
@@ -179,7 +179,7 @@ namespace Lucene.Net.Spatial.Prefix.Tree
 		 * Precondition: Never called when getLevel() == maxLevel.
 		 * Precondition: this.getShape().relate(p) != DISJOINT.
 		 */
-		public abstract Node GetSubCell(Point p);
+		public abstract Node GetSubCell(IPoint p);
 
 		//TODO Cell getSubCell(byte b)
 
@@ -196,11 +196,11 @@ namespace Lucene.Net.Spatial.Prefix.Tree
 		 */
 		public abstract int GetSubCellsSize();
 
-		public abstract Shape GetShape();
+		public abstract IShape GetShape();
 
-		public virtual Point GetCenter()
+		public virtual IPoint GetCenter()
 		{
-			return GetShape().GetCenter();
+			return GetShape().Center;
 		}
 
 

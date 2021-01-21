@@ -34,7 +34,7 @@ namespace Lucene.Net.Spatial.Util
     /// them to the Cache.
     /// </summary>
     /// <typeparam name="T"></typeparam>
-	public abstract class ShapeFieldCacheProvider<T> where T : Shape
+	public abstract class ShapeFieldCacheProvider<T> where T : IShape
 	{
 		//private Logger log = Logger.getLogger(getClass().getName());
 
