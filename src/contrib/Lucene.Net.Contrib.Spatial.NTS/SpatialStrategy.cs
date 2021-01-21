@@ -82,9 +82,9 @@ namespace Lucene.Net.Spatial
 		/// </summary>
 		/// <param name="shape"></param>
 		/// <returns>Not null nor will it have null elements.</returns>
-		public abstract AbstractField[] CreateIndexableFields(Shape shape);
+		public abstract AbstractField[] CreateIndexableFields(IShape shape);
 
-		public AbstractField CreateStoredField(Shape shape)
+		public AbstractField CreateStoredField(IShape shape)
 		{
 			return new Field(GetFieldName(), ctx.ToString(shape), Field.Store.YES, Field.Index.NOT_ANALYZED_NO_NORMS, Field.TermVector.NO);
 		}
@@ -94,7 +94,7 @@ namespace Lucene.Net.Spatial
 		/// indexed shape and {@code queryPoint}.  If there are multiple indexed shapes
 		/// then the closest one is chosen.
 		/// </summary>
-		public abstract ValueSource MakeDistanceValueSource(Point queryPoint);
+		public abstract ValueSource MakeDistanceValueSource(IPoint queryPoint);
 
 	    /// <summary>
 	    /// Make a (ConstantScore) Query based principally on {@link org.apache.lucene.spatial.query.SpatialOperation}
@@ -132,14 +132,14 @@ namespace Lucene.Net.Spatial
         /// </summary>
         /// <param name="queryShape"></param>
         /// <returns></returns>
-        public ValueSource MakeRecipDistanceValueSource(Shape queryShape)
+        public ValueSource MakeRecipDistanceValueSource(IShape queryShape)
         {
-            Rectangle bbox = queryShape.GetBoundingBox();
-            double diagonalDist = ctx.GetDistCalc().Distance(
-                ctx.MakePoint(bbox.GetMinX(), bbox.GetMinY()), bbox.GetMaxX(), bbox.GetMaxY());
+            IRectangle bbox = queryShape.BoundingBox;
+            double diagonalDist = ctx.DistCalc.Distance(
+                ctx.MakePoint(bbox.MinX, bbox.MinY), bbox.MaxX, bbox.MaxY);
             double distToEdge = diagonalDist*0.5;
             float c = (float) distToEdge*0.1f; //one tenth
-            return new ReciprocalFloatFunction(MakeDistanceValueSource(queryShape.GetCenter()), 1f, c, c);
+            return new ReciprocalFloatFunction(MakeDistanceValueSource(queryShape.Center), 1f, c, c);
         }
 
 	    public override string ToString()

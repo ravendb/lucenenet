@@ -35,7 +35,7 @@ namespace Lucene.Net.Contrib.Spatial.Test.Prefix
 			SpatialContext ctx = SpatialContext.GEO;
 			TermQueryPrefixTreeStrategy prefixGridStrategy = new TermQueryPrefixTreeStrategy(new QuadPrefixTree(ctx), "geo");
 
-			Shape point = ctx.MakePoint(-118.243680, 34.052230);
+			IShape point = ctx.MakePoint(-118.243680, 34.052230);
 
 			Document losAngeles = new Document();
 			losAngeles.Add(new Field("name", "Los Angeles", Field.Store.YES, Field.Index.NOT_ANALYZED_NO_NORMS));

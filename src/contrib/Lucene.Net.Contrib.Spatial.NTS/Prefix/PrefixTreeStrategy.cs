@@ -67,22 +67,22 @@ namespace Lucene.Net.Spatial.Prefix
         /// </summary>
         public double DistErrPct { get; set; }
 
-		public override AbstractField[] CreateIndexableFields(Shape shape)
+		public override AbstractField[] CreateIndexableFields(IShape shape)
 		{
 		    double distErr = SpatialArgs.CalcDistanceFromErrPct(shape, distErrPct, ctx);
 		    return CreateIndexableFields(shape, distErr);
 		}
 
-        public AbstractField[] CreateIndexableFields(Shape shape, double distErr)
+        public AbstractField[] CreateIndexableFields(IShape shape, double distErr)
         {
             int detailLevel = grid.GetLevelForDistance(distErr);
             var cells = grid.GetNodes(shape, detailLevel, true);//true=intermediates cells
 			//If shape isn't a point, add a full-resolution center-point so that
             // PointPrefixTreeFieldCacheProvider has the center-points.
 			// TODO index each center of a multi-point? Yes/no?
-			if (!(shape is Point))
+			if (!(shape is IPoint))
 			{
-				Point ctr = shape.GetCenter();
+				IPoint ctr = shape.Center;
                 //TODO should be smarter; don't index 2 tokens for this in CellTokenStream. Harmless though.
 				cells.Add(grid.GetNodes(ctr, grid.GetMaxLevels(), false)[0]);
 			}
@@ -145,14 +145,14 @@ namespace Lucene.Net.Spatial.Prefix
 			}
 		}
 
-		public ShapeFieldCacheProvider<Point> GetCacheProvider()
+		public ShapeFieldCacheProvider<IPoint> GetCacheProvider()
 		{
 			var providerFieldName = GetFieldName();
 			return provider.GetOrAdd(providerFieldName,key => 
 				new PointPrefixTreeFieldCacheProvider(grid, key, defaultFieldValuesArrayLen));
 		}
 
-        public override ValueSource MakeDistanceValueSource(Point queryPoint)
+        public override ValueSource MakeDistanceValueSource(IPoint queryPoint)
 		{
 			var p = (PointPrefixTreeFieldCacheProvider)GetCacheProvider();
             return new ShapeFieldCacheDistanceValueSource(ctx, p, queryPoint);

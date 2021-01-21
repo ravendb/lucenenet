@@ -120,7 +120,7 @@ namespace Lucene.Net.Spatial.Prefix.Tree
 			return target;
 		}
 
-		protected virtual Node GetNode(Point p, int level)
+		protected virtual Node GetNode(IPoint p, int level)
 		{
 			return GetNodes(p, level, false).ElementAt(0);
 		}
@@ -135,7 +135,7 @@ namespace Lucene.Net.Spatial.Prefix.Tree
 		 * override this method to invoke {@link #getNodesAltPoint(com.spatial4j.core.shape.Point, int, boolean)}.
 		 * TODO consider another approach returning an iterator -- won't build up all cells in memory.
 		 */
-		public virtual IList<Node> GetNodes(Shape shape, int detailLevel, bool inclParents)
+		public virtual IList<Node> GetNodes(IShape shape, int detailLevel, bool inclParents)
 		{
 			if (detailLevel > maxLevels)
 			{
@@ -143,12 +143,12 @@ namespace Lucene.Net.Spatial.Prefix.Tree
 			}
 
 			List<Node> cells;
-			if (shape is Point)
+			if (shape is IPoint)
 			{
 				//optimized point algorithm
 				int initialCapacity = inclParents ? 1 + detailLevel : 1;
 				cells = new List<Node>(initialCapacity);
-				RecursiveGetNodes(GetWorldNode(), (Point)shape, detailLevel, true, cells);
+				RecursiveGetNodes(GetWorldNode(), (IPoint)shape, detailLevel, true, cells);
 				Debug.Assert(cells.Count == initialCapacity);
 			}
 			else
@@ -164,7 +164,7 @@ namespace Lucene.Net.Spatial.Prefix.Tree
 			return cells;
 		}
 
-		private void RecursiveGetNodes(Node node, Shape shape, int detailLevel, bool inclParents, IList<Node> result)
+		private void RecursiveGetNodes(Node node, IShape shape, int detailLevel, bool inclParents, IList<Node> result)
 		{
 			if (node.IsLeaf())
 			{//cell is within shape
@@ -204,7 +204,7 @@ namespace Lucene.Net.Spatial.Prefix.Tree
 			}
 		}
 
-		private void RecursiveGetNodes(Node node, Point point, int detailLevel, bool inclParents, IList<Node> result)
+		private void RecursiveGetNodes(Node node, IPoint point, int detailLevel, bool inclParents, IList<Node> result)
 		{
 			if (inclParents)
 			{
@@ -228,7 +228,7 @@ namespace Lucene.Net.Spatial.Prefix.Tree
 		 * to this implementation, which calls {@link #getNode(com.spatial4j.core.shape.Point, int)} and
 		 * then calls {@link #getNode(String)} repeatedly if inclParents is true.
 		 */
-		protected virtual IList<Node> GetNodesAltPoint(Point p, int detailLevel, bool inclParents)
+		protected virtual IList<Node> GetNodesAltPoint(IPoint p, int detailLevel, bool inclParents)
 		{
 			Node cell = GetNode(p, detailLevel);
 			if (!inclParents)

@@ -30,11 +30,11 @@ namespace Lucene.Net.Spatial.Util
 	/// </summary>
 	public class ShapeFieldCacheDistanceValueSource : ValueSource
 	{
-		private readonly ShapeFieldCacheProvider<Point> provider;
+		private readonly ShapeFieldCacheProvider<IPoint> provider;
 		private readonly SpatialContext ctx;
-		private readonly Point from;
+		private readonly IPoint from;
 
-		public ShapeFieldCacheDistanceValueSource(SpatialContext ctx, ShapeFieldCacheProvider<Point> provider, Point from)
+		public ShapeFieldCacheDistanceValueSource(SpatialContext ctx, ShapeFieldCacheProvider<IPoint> provider, IPoint from)
 		{
             this.ctx = ctx;
 			this.from = from;
@@ -44,9 +44,9 @@ namespace Lucene.Net.Spatial.Util
 		public class CachedDistanceDocValues : DocValues
 		{
 			private readonly ShapeFieldCacheDistanceValueSource enclosingInstance;
-			private readonly ShapeFieldCache<Point> cache;
-		    private readonly Point from;
-		    private readonly DistanceCalculator calculator;
+			private readonly ShapeFieldCache<IPoint> cache;
+		    private readonly IPoint from;
+		    private readonly IDistanceCalculator calculator;
 		    private readonly double nullValue;
 
 			public CachedDistanceDocValues(IndexReader reader, ShapeFieldCacheDistanceValueSource enclosingInstance, IState state)
@@ -55,8 +55,8 @@ namespace Lucene.Net.Spatial.Util
 				this.enclosingInstance = enclosingInstance;
 				
                 from = enclosingInstance.from;
-			    calculator = enclosingInstance.ctx.GetDistCalc();
-			    nullValue = (enclosingInstance.ctx.IsGeo() ? 180 : double.MaxValue);
+			    calculator = enclosingInstance.ctx.DistCalc;
+			    nullValue = (enclosingInstance.ctx.IsGeo ? 180 : double.MaxValue);
 			}
 
 			public override float FloatVal(int doc)

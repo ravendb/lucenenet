@@ -38,9 +38,9 @@ namespace Lucene.Net.Contrib.Spatial.Test.Queries
 			String arg = SpatialOperation.IsWithin + "(-10 -20 10 20)";
 			SpatialArgs outValue = parser.Parse(arg, ctx);
 			Assert.AreEqual(SpatialOperation.IsWithin, outValue.Operation);
-			Rectangle bounds = (Rectangle)outValue.Shape;
-			Assert.AreEqual(-10.0, bounds.GetMinX(), 0D);
-			Assert.AreEqual(10.0, bounds.GetMaxX(), 0D);
+			IRectangle bounds = (IRectangle)outValue.Shape;
+			Assert.AreEqual(-10.0, bounds.MinX, 0D);
+			Assert.AreEqual(10.0, bounds.MaxX, 0D);
 
 			// Disjoint should not be scored
 			arg = SpatialOperation.IsDisjointTo + " (-10 10 -20 20)";

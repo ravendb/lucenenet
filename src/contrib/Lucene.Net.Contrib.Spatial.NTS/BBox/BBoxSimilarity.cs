@@ -24,7 +24,7 @@ namespace Lucene.Net.Spatial.BBox
     /// Abstraction of the calculation used to determine how similar two Bounding Boxes are.
     /// </summary>
 	public interface BBoxSimilarity
-	{
-		double Score(Rectangle extent, Explanation exp);
-	}
+    {
+        double Score(IRectangle extent, Explanation exp);
+    }
 }

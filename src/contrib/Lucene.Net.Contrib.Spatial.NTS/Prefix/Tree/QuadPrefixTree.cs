@@ -65,7 +65,7 @@ namespace Lucene.Net.Spatial.Prefix.Tree
 		int[] levelS; // side
 		int[] levelN; // number
 
-		public QuadPrefixTree(SpatialContext ctx, Rectangle bounds, int maxLevels)
+		public QuadPrefixTree(SpatialContext ctx, IRectangle bounds, int maxLevels)
 			: base(ctx, maxLevels)
 		{
 			Init(ctx, bounds, maxLevels);
@@ -74,21 +74,21 @@ namespace Lucene.Net.Spatial.Prefix.Tree
 		public QuadPrefixTree(SpatialContext ctx)
 			: base(ctx, DEFAULT_MAX_LEVELS)
 		{
-			Init(ctx, ctx.GetWorldBounds(), DEFAULT_MAX_LEVELS);
+			Init(ctx, ctx.WorldBounds, DEFAULT_MAX_LEVELS);
 		}
 
 		public QuadPrefixTree(SpatialContext ctx, int maxLevels)
 			: base(ctx, maxLevels)
 		{
-			Init(ctx, ctx.GetWorldBounds(), maxLevels);
+			Init(ctx, ctx.WorldBounds, maxLevels);
 		}
 
-		protected void Init(SpatialContext ctx, Rectangle bounds, int maxLevels)
+		protected void Init(SpatialContext ctx, IRectangle bounds, int maxLevels)
 		{
-			this.xmin = bounds.GetMinX();
-			this.xmax = bounds.GetMaxX();
-			this.ymin = bounds.GetMinY();
-			this.ymax = bounds.GetMaxY();
+			this.xmin = bounds.MinX;
+			this.xmax = bounds.MaxX;
+			this.ymin = bounds.MinY;
+			this.ymax = bounds.MaxY;
 
 			levelW = new double[maxLevels];
 			levelH = new double[maxLevels];
@@ -129,10 +129,10 @@ namespace Lucene.Net.Spatial.Prefix.Tree
 			return maxLevels;
 		}
 
-		protected override Node GetNode(Point p, int level)
+		protected override Node GetNode(IPoint p, int level)
 		{
 			var cells = new List<Node>(1);
-            Build(xmid, ymid, 0, cells, new StringBuilder(), ctx.MakePoint(p.GetX(), p.GetY()), level);
+            Build(xmid, ymid, 0, cells, new StringBuilder(), ctx.MakePoint(p.X, p.Y), level);
 			return cells[0];//note cells could be longer if p on edge
 		}
 
@@ -146,16 +146,16 @@ namespace Lucene.Net.Spatial.Prefix.Tree
 			throw new System.NotImplementedException();
 		}
 
-		public override IList<Node> GetNodes(Shape shape, int detailLevel, bool inclParents)
+		public override IList<Node> GetNodes(IShape shape, int detailLevel, bool inclParents)
 		{
-			var point = shape as Point;
+			var point = shape as IPoint;
 			if (point != null)
 				return base.GetNodesAltPoint(point, detailLevel, inclParents);
 			else
 				return base.GetNodes(shape, detailLevel, inclParents);
 		}
 
-		private void Build(double x, double y, int level, List<Node> matches, StringBuilder str, Shape shape, int maxLevel)
+		private void Build(double x, double y, int level, List<Node> matches, StringBuilder str, IShape shape, int maxLevel)
 		{
 			Debug.Assert(str.Length == level);
 			double w = levelW[level] / 2;
@@ -181,7 +181,7 @@ namespace Lucene.Net.Spatial.Prefix.Tree
 			int level,
 			List<Node> matches,
 			StringBuilder str,
-			Shape shape,
+			IShape shape,
 			int maxLevel)
 		{
 			Debug.Assert(str.Length == level);
@@ -189,7 +189,7 @@ namespace Lucene.Net.Spatial.Prefix.Tree
 			double h = levelH[level] / 2;
 
 			int strlen = str.Length;
-            Rectangle rectangle = ctx.MakeRectangle(cx - w, cx + w, cy - h, cy + h);
+            IRectangle rectangle = ctx.MakeRectangle(cx - w, cx + w, cy - h, cy + h);
             SpatialRelation v = shape.Relate(rectangle);
 			if (SpatialRelation.CONTAINS == v)
 			{
@@ -257,21 +257,21 @@ namespace Lucene.Net.Spatial.Prefix.Tree
 				return 4;
 			}
 
-			public override Node GetSubCell(Point p)
+			public override Node GetSubCell(IPoint p)
 			{
 				return ((QuadPrefixTree)spatialPrefixTree).GetNode(p, GetLevel() + 1); //not performant!
 			}
 
-			private Shape shape;//cache
+			private IShape shape;//cache
 
-			public override Shape GetShape()
+			public override IShape GetShape()
 			{
 				if (shape == null)
 					shape = MakeShape();
 				return shape;
 			}
 
-			private Rectangle MakeShape()
+			private IRectangle MakeShape()
 			{
 				String token = GetTokenString();
 				var tree = ((QuadPrefixTree)spatialPrefixTree);

@@ -72,22 +72,22 @@ namespace Lucene.Net.Spatial.BBox
         // Indexing
         //---------------------------------
 
-        public override AbstractField[] CreateIndexableFields(Shape shape)
+        public override AbstractField[] CreateIndexableFields(IShape shape)
         {
-            var rect = shape as Rectangle;
+            var rect = shape as IRectangle;
             if (rect != null)
                 return CreateIndexableFields(rect);
             throw new InvalidOperationException("Can only index Rectangle, not " + shape);
         }
 
-        public AbstractField[] CreateIndexableFields(Rectangle bbox)
+        public AbstractField[] CreateIndexableFields(IRectangle bbox)
         {
             var fields = new AbstractField[5];
-            fields[0] = DoubleField(field_minX, bbox.GetMinX());
-            fields[1] = DoubleField(field_maxX, bbox.GetMaxX());
-            fields[2] = DoubleField(field_minY, bbox.GetMinY());
-            fields[3] = DoubleField(field_maxY, bbox.GetMaxY());
-            fields[4] = new Field(field_xdl, bbox.GetCrossesDateLine() ? "T" : "F", Field.Store.NO,
+            fields[0] = DoubleField(field_minX, bbox.MinX);
+            fields[1] = DoubleField(field_maxX, bbox.MaxX);
+            fields[2] = DoubleField(field_minY, bbox.MinY);
+            fields[3] = DoubleField(field_maxY, bbox.MaxY);
+            fields[4] = new Field(field_xdl, bbox.CrossesDateLine ? "T" : "F", Field.Store.NO,
                                   Field.Index.NOT_ANALYZED_NO_NORMS) {OmitNorms = true, OmitTermFreqAndPositions = true};
             return fields;
         }
@@ -100,12 +100,12 @@ namespace Lucene.Net.Spatial.BBox
             return f;
         }
 
-        public override ValueSource MakeDistanceValueSource(Point queryPoint)
+        public override ValueSource MakeDistanceValueSource(IPoint queryPoint)
         {
             return new BBoxSimilarityValueSource(this, new DistanceSimilarity(this.GetSpatialContext(), queryPoint));
         }
 
-        public ValueSource MakeBBoxAreaSimilarityValueSource(Rectangle queryBox)
+        public ValueSource MakeBBoxAreaSimilarityValueSource(IRectangle queryBox)
         {
             return new BBoxSimilarityValueSource(
                 this, new AreaSimilarity(queryBox, queryPower, targetPower));
@@ -136,7 +136,7 @@ namespace Lucene.Net.Spatial.BBox
 
 		private Query MakeSpatialQuery(SpatialArgs args)
 		{
-            var bbox = args.Shape as Rectangle;
+            var bbox = args.Shape as IRectangle;
             if (bbox == null)
                 throw new InvalidOperationException("Can only query by Rectangle, not " + args.Shape);
 
@@ -169,7 +169,7 @@ namespace Lucene.Net.Spatial.BBox
 		/// </summary>
 		/// <param name="bbox"></param>
 		/// <returns>The spatial query</returns>
-		protected Query MakeContains(Rectangle bbox)
+		protected Query MakeContains(IRectangle bbox)
 		{
 
 			// general case
@@ -177,22 +177,22 @@ namespace Lucene.Net.Spatial.BBox
 
 			// Y conditions
 			// docMinY <= queryExtent.GetMinY() AND docMaxY >= queryExtent.GetMaxY()
-			Query qMinY = NumericRangeQuery.NewDoubleRange(field_minY, precisionStep, null, bbox.GetMinY(), false, true);
-			Query qMaxY = NumericRangeQuery.NewDoubleRange(field_maxY, precisionStep, bbox.GetMaxY(), null, true, false);
+			Query qMinY = NumericRangeQuery.NewDoubleRange(field_minY, precisionStep, null, bbox.MinY, false, true);
+			Query qMaxY = NumericRangeQuery.NewDoubleRange(field_maxY, precisionStep, bbox.MaxY, null, true, false);
 			Query yConditions = this.MakeQuery(new Query[] { qMinY, qMaxY }, Occur.MUST);
 
 			// X conditions
 			Query xConditions = null;
 
 			// queries that do not cross the date line
-			if (!bbox.GetCrossesDateLine())
+			if (!bbox.CrossesDateLine)
 			{
 
 				// X Conditions for documents that do not cross the date line,
 				// documents that contain the min X and max X of the query envelope,
 				// docMinX <= queryExtent.GetMinX() AND docMaxX >= queryExtent.GetMaxX()
-				Query qMinX = NumericRangeQuery.NewDoubleRange(field_minX, precisionStep, null, bbox.GetMinX(), false, true);
-				Query qMaxX = NumericRangeQuery.NewDoubleRange(field_maxX, precisionStep, bbox.GetMaxX(), null, true, false);
+				Query qMinX = NumericRangeQuery.NewDoubleRange(field_minX, precisionStep, null, bbox.MinX, false, true);
+				Query qMaxX = NumericRangeQuery.NewDoubleRange(field_maxX, precisionStep, bbox.MaxX, null, true, false);
 				Query qMinMax = this.MakeQuery(new Query[] { qMinX, qMaxX }, Occur.MUST);
 				Query qNonXDL = this.MakeXDL(false, qMinMax);
 
@@ -200,8 +200,8 @@ namespace Lucene.Net.Spatial.BBox
 				// the left portion of the document contains the min X of the query
 				// OR the right portion of the document contains the max X of the query,
 				// docMinXLeft <= queryExtent.GetMinX() OR docMaxXRight >= queryExtent.GetMaxX()
-				Query qXDLLeft = NumericRangeQuery.NewDoubleRange(field_minX, precisionStep, null, bbox.GetMinX(), false, true);
-				Query qXDLRight = NumericRangeQuery.NewDoubleRange(field_maxX, precisionStep, bbox.GetMaxX(), null, true, false);
+				Query qXDLLeft = NumericRangeQuery.NewDoubleRange(field_minX, precisionStep, null, bbox.MinX, false, true);
+				Query qXDLRight = NumericRangeQuery.NewDoubleRange(field_maxX, precisionStep, bbox.MaxX, null, true, false);
 				Query qXDLLeftRight = this.MakeQuery(new Query[] { qXDLLeft, qXDLRight }, Occur.SHOULD);
 				Query qXDL = this.MakeXDL(true, qXDLLeftRight);
 
@@ -219,8 +219,8 @@ namespace Lucene.Net.Spatial.BBox
 				// the left portion of the document contains the min X of the query
 				// AND the right portion of the document contains the max X of the query,
 				// docMinXLeft <= queryExtent.GetMinX() AND docMaxXRight >= queryExtent.GetMaxX()
-				Query qXDLLeft = NumericRangeQuery.NewDoubleRange(field_minX, precisionStep, null, bbox.GetMinX(), false, true);
-				Query qXDLRight = NumericRangeQuery.NewDoubleRange(field_maxX, precisionStep, bbox.GetMaxX(), null, true, false);
+				Query qXDLLeft = NumericRangeQuery.NewDoubleRange(field_minX, precisionStep, null, bbox.MinX, false, true);
+				Query qXDLRight = NumericRangeQuery.NewDoubleRange(field_maxX, precisionStep, bbox.MaxX, null, true, false);
 				Query qXDLLeftRight = this.MakeQuery(new Query[] { qXDLLeft, qXDLRight }, Occur.MUST);
 
 				xConditions = this.MakeXDL(true, qXDLLeftRight);
@@ -235,7 +235,7 @@ namespace Lucene.Net.Spatial.BBox
 		/// </summary>
 		/// <param name="bbox"></param>
 		/// <returns>the spatial query</returns>
-		Query MakeDisjoint(Rectangle bbox)
+		Query MakeDisjoint(IRectangle bbox)
 		{
 
 			// general case
@@ -243,21 +243,21 @@ namespace Lucene.Net.Spatial.BBox
 
 			// Y conditions
 			// docMinY > queryExtent.GetMaxY() OR docMaxY < queryExtent.GetMinY()
-			Query qMinY = NumericRangeQuery.NewDoubleRange(field_minY, precisionStep, bbox.GetMaxY(), null, false, false);
-			Query qMaxY = NumericRangeQuery.NewDoubleRange(field_maxY, precisionStep, null, bbox.GetMinY(), false, false);
+			Query qMinY = NumericRangeQuery.NewDoubleRange(field_minY, precisionStep, bbox.MaxY, null, false, false);
+			Query qMaxY = NumericRangeQuery.NewDoubleRange(field_maxY, precisionStep, null, bbox.MinY, false, false);
 			Query yConditions = this.MakeQuery(new Query[] { qMinY, qMaxY }, Occur.SHOULD);
 
 			// X conditions
 			Query xConditions = null;
 
 			// queries that do not cross the date line
-			if (!bbox.GetCrossesDateLine())
+			if (!bbox.CrossesDateLine)
 			{
 
 				// X Conditions for documents that do not cross the date line,
 				// docMinX > queryExtent.GetMaxX() OR docMaxX < queryExtent.GetMinX()
-				Query qMinX = NumericRangeQuery.NewDoubleRange(field_minX, precisionStep, bbox.GetMaxX(), null, false, false);
-				Query qMaxX = NumericRangeQuery.NewDoubleRange(field_maxX, precisionStep, null, bbox.GetMinX(), false, false);
+				Query qMinX = NumericRangeQuery.NewDoubleRange(field_minX, precisionStep, bbox.MaxX, null, false, false);
+				Query qMaxX = NumericRangeQuery.NewDoubleRange(field_maxX, precisionStep, null, bbox.MinX, false, false);
 				Query qMinMax = this.MakeQuery(new Query[] { qMinX, qMaxX }, Occur.SHOULD);
 				Query qNonXDL = this.MakeXDL(false, qMinMax);
 
@@ -268,8 +268,8 @@ namespace Lucene.Net.Spatial.BBox
 				// where: docMaxXLeft = 180.0, docMinXRight = -180.0
 				// (docMaxXLeft  < queryExtent.GetMinX()) equates to (180.0  < queryExtent.GetMinX()) and is ignored
 				// (docMinXRight > queryExtent.GetMaxX()) equates to (-180.0 > queryExtent.GetMaxX()) and is ignored
-				Query qMinXLeft = NumericRangeQuery.NewDoubleRange(field_minX, precisionStep, bbox.GetMaxX(), null, false, false);
-				Query qMaxXRight = NumericRangeQuery.NewDoubleRange(field_maxX, precisionStep, null, bbox.GetMinX(), false, false);
+				Query qMinXLeft = NumericRangeQuery.NewDoubleRange(field_minX, precisionStep, bbox.MaxX, null, false, false);
+				Query qMaxXRight = NumericRangeQuery.NewDoubleRange(field_maxX, precisionStep, null, bbox.MinX, false, false);
 				Query qLeftRight = this.MakeQuery(new Query[] { qMinXLeft, qMaxXRight }, Occur.MUST);
 				Query qXDL = this.MakeXDL(true, qLeftRight);
 
@@ -286,8 +286,8 @@ namespace Lucene.Net.Spatial.BBox
 				// (docMinX > queryExtent.GetMaxX()Left OR docMaxX < queryExtent.GetMinX()) AND (docMinX > queryExtent.GetMaxX() OR docMaxX < queryExtent.GetMinX()Left)
 				// where: queryExtent.GetMaxX()Left = 180.0, queryExtent.GetMinX()Left = -180.0
 				Query qMinXLeft = NumericRangeQuery.NewDoubleRange(field_minX, precisionStep, 180.0, null, false, false);
-				Query qMaxXLeft = NumericRangeQuery.NewDoubleRange(field_maxX, precisionStep, null, bbox.GetMinX(), false, false);
-				Query qMinXRight = NumericRangeQuery.NewDoubleRange(field_minX, precisionStep, bbox.GetMaxX(), null, false, false);
+				Query qMaxXLeft = NumericRangeQuery.NewDoubleRange(field_maxX, precisionStep, null, bbox.MinX, false, false);
+				Query qMinXRight = NumericRangeQuery.NewDoubleRange(field_minX, precisionStep, bbox.MaxX, null, false, false);
 				Query qMaxXRight = NumericRangeQuery.NewDoubleRange(field_maxX, precisionStep, null, -180.0, false, false);
 				Query qLeft = this.MakeQuery(new Query[] { qMinXLeft, qMaxXLeft }, Occur.SHOULD);
 				Query qRight = this.MakeQuery(new Query[] { qMinXRight, qMaxXRight }, Occur.SHOULD);
@@ -307,14 +307,14 @@ namespace Lucene.Net.Spatial.BBox
 		 *
 		 * @return the spatial query
 		 */
-		public Query MakeEquals(Rectangle bbox)
+		public Query MakeEquals(IRectangle bbox)
 		{
 
 			// docMinX = queryExtent.GetMinX() AND docMinY = queryExtent.GetMinY() AND docMaxX = queryExtent.GetMaxX() AND docMaxY = queryExtent.GetMaxY()
-			Query qMinX = NumericRangeQuery.NewDoubleRange(field_minX, precisionStep, bbox.GetMinX(), bbox.GetMinX(), true, true);
-			Query qMinY = NumericRangeQuery.NewDoubleRange(field_minY, precisionStep, bbox.GetMinY(), bbox.GetMinY(), true, true);
-			Query qMaxX = NumericRangeQuery.NewDoubleRange(field_maxX, precisionStep, bbox.GetMaxX(), bbox.GetMaxX(), true, true);
-			Query qMaxY = NumericRangeQuery.NewDoubleRange(field_maxY, precisionStep, bbox.GetMaxY(), bbox.GetMaxY(), true, true);
+			Query qMinX = NumericRangeQuery.NewDoubleRange(field_minX, precisionStep, bbox.MinX, bbox.MinX, true, true);
+			Query qMinY = NumericRangeQuery.NewDoubleRange(field_minY, precisionStep, bbox.MinY, bbox.MinY, true, true);
+			Query qMaxX = NumericRangeQuery.NewDoubleRange(field_maxX, precisionStep, bbox.MaxX, bbox.MaxX, true, true);
+			Query qMaxY = NumericRangeQuery.NewDoubleRange(field_maxY, precisionStep, bbox.MaxY, bbox.MaxY, true, true);
 			
 			var bq = new BooleanQuery
 			         	{
@@ -331,7 +331,7 @@ namespace Lucene.Net.Spatial.BBox
 		/// </summary>
 		/// <param name="bbox"></param>
 		/// <returns>the spatial query</returns>
-		Query MakeIntersects(Rectangle bbox)
+		Query MakeIntersects(IRectangle bbox)
 		{
 
 			// the original intersects query does not work for envelopes that cross the date line,
@@ -376,7 +376,7 @@ namespace Lucene.Net.Spatial.BBox
 		 *
 		 * @return the spatial query
 		 */
-		Query MakeWithin(Rectangle bbox)
+		Query MakeWithin(IRectangle bbox)
 		{
 
 			// general case
@@ -384,8 +384,8 @@ namespace Lucene.Net.Spatial.BBox
 
 			// Y conditions
 			// docMinY >= queryExtent.GetMinY() AND docMaxY <= queryExtent.GetMaxY()
-			Query qMinY = NumericRangeQuery.NewDoubleRange(field_minY, precisionStep, bbox.GetMinY(), null, true, false);
-			Query qMaxY = NumericRangeQuery.NewDoubleRange(field_maxY, precisionStep, null, bbox.GetMaxY(), false, true);
+			Query qMinY = NumericRangeQuery.NewDoubleRange(field_minY, precisionStep, bbox.MinY, null, true, false);
+			Query qMaxY = NumericRangeQuery.NewDoubleRange(field_maxY, precisionStep, null, bbox.MaxY, false, true);
 			Query yConditions = this.MakeQuery(new Query[] { qMinY, qMaxY }, Occur.MUST);
 
 			// X conditions
@@ -396,24 +396,24 @@ namespace Lucene.Net.Spatial.BBox
 			// AND the right portion of the document must be within the right portion of the query
 			// docMinXLeft >= queryExtent.GetMinX() AND docMaxXLeft <= 180.0
 			// AND docMinXRight >= -180.0 AND docMaxXRight <= queryExtent.GetMaxX()
-			Query qXDLLeft = NumericRangeQuery.NewDoubleRange(field_minX, precisionStep, bbox.GetMinX(), null, true, false);
-			Query qXDLRight = NumericRangeQuery.NewDoubleRange(field_maxX, precisionStep, null, bbox.GetMaxX(), false, true);
+			Query qXDLLeft = NumericRangeQuery.NewDoubleRange(field_minX, precisionStep, bbox.MinX, null, true, false);
+			Query qXDLRight = NumericRangeQuery.NewDoubleRange(field_maxX, precisionStep, null, bbox.MaxX, false, true);
 			Query qXDLLeftRight = this.MakeQuery(new Query[] { qXDLLeft, qXDLRight }, Occur.MUST);
 			Query qXDL = this.MakeXDL(true, qXDLLeftRight);
 
 			// queries that do not cross the date line
-			if (!bbox.GetCrossesDateLine())
+			if (!bbox.CrossesDateLine)
 			{
 
 				// X Conditions for documents that do not cross the date line,
 				// docMinX >= queryExtent.GetMinX() AND docMaxX <= queryExtent.GetMaxX()
-				Query qMinX = NumericRangeQuery.NewDoubleRange(field_minX, precisionStep, bbox.GetMinX(), null, true, false);
-				Query qMaxX = NumericRangeQuery.NewDoubleRange(field_maxX, precisionStep, null, bbox.GetMaxX(), false, true);
+				Query qMinX = NumericRangeQuery.NewDoubleRange(field_minX, precisionStep, bbox.MinX, null, true, false);
+				Query qMaxX = NumericRangeQuery.NewDoubleRange(field_maxX, precisionStep, null, bbox.MaxX, false, true);
 				Query qMinMax = this.MakeQuery(new Query[] { qMinX, qMaxX }, Occur.MUST);
 				Query qNonXDL = this.MakeXDL(false, qMinMax);
 
 				// apply the non-XDL or XDL X conditions
-				if ((bbox.GetMinX() <= -180.0) && bbox.GetMaxX() >= 180.0)
+				if ((bbox.MinX <= -180.0) && bbox.MaxX >= 180.0)
 				{
 					xConditions = this.MakeQuery(new Query[] { qNonXDL, qXDL }, Occur.SHOULD);
 				}
@@ -431,14 +431,14 @@ namespace Lucene.Net.Spatial.BBox
 
 				// the document should be within the left portion of the query
 				// docMinX >= queryExtent.GetMinX() AND docMaxX <= 180.0
-				Query qMinXLeft = NumericRangeQuery.NewDoubleRange(field_minX, precisionStep, bbox.GetMinX(), null, true, false);
+				Query qMinXLeft = NumericRangeQuery.NewDoubleRange(field_minX, precisionStep, bbox.MinX, null, true, false);
 				Query qMaxXLeft = NumericRangeQuery.NewDoubleRange(field_maxX, precisionStep, null, 180.0, false, true);
 				Query qLeft = this.MakeQuery(new Query[] { qMinXLeft, qMaxXLeft }, Occur.MUST);
 
 				// the document should be within the right portion of the query
 				// docMinX >= -180.0 AND docMaxX <= queryExtent.GetMaxX()
 				Query qMinXRight = NumericRangeQuery.NewDoubleRange(field_minX, precisionStep, -180.0, null, true, false);
-				Query qMaxXRight = NumericRangeQuery.NewDoubleRange(field_maxX, precisionStep, null, bbox.GetMaxX(), false, true);
+				Query qMaxXRight = NumericRangeQuery.NewDoubleRange(field_maxX, precisionStep, null, bbox.MaxX, false, true);
 				Query qRight = this.MakeQuery(new Query[] { qMinXRight, qMaxXRight }, Occur.MUST);
 
 				// either left or right conditions should occur,

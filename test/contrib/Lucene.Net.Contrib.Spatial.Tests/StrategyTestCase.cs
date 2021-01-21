@@ -15,11 +15,7 @@
  * limitations under the License.
  */
 
-using System;
-using System.Collections.Generic;
-using System.IO;
 using Lucene.Net.Documents;
-using Lucene.Net.Index;
 using Lucene.Net.Search;
 using Lucene.Net.Search.Function;
 using Lucene.Net.Spatial;
@@ -28,9 +24,11 @@ using Lucene.Net.Spatial.Util;
 using Lucene.Net.Util;
 using NUnit.Framework;
 using Spatial4n.Core.Context;
-using Spatial4n.Core.Io;
 using Spatial4n.Core.Io.Samples;
 using Spatial4n.Core.Shapes;
+using System;
+using System.Collections.Generic;
+using System.IO;
 
 namespace Lucene.Net.Contrib.Spatial.Test
 {
@@ -92,7 +90,7 @@ namespace Lucene.Net.Contrib.Spatial.Test
                 var document = new Document();
                 document.Add(new Field("id", data.id, Field.Store.YES, Field.Index.ANALYZED));
                 document.Add(new Field("name", data.name, Field.Store.YES, Field.Index.ANALYZED));
-                Shape shape = new ShapeReadWriter(ctx).ReadShape(data.shape);
+                IShape shape = ctx.ReadShape(data.shape);
                 shape = convertShapeFromGetDocuments(shape);
                 if (shape != null)
                 {
@@ -112,7 +110,7 @@ namespace Lucene.Net.Contrib.Spatial.Test
 
         /* Subclasses may override to transform or remove a shape for indexing */
 
-        protected virtual Shape convertShapeFromGetDocuments(Shape shape)
+        protected virtual IShape convertShapeFromGetDocuments(IShape shape)
         {
             return shape;
         }
@@ -147,7 +145,7 @@ namespace Lucene.Net.Contrib.Spatial.Test
                 {
                     //check stored value is there & parses
                     assertNotNull(
-                        new ShapeReadWriter(ctx).ReadShape(got.results[0].document.Get(strategy.GetFieldName(), null)));
+                        ctx.ReadShape(got.results[0].document.Get(strategy.GetFieldName(), null)));
                 }
                 if (concern.orderIsImportant)
                 {
@@ -206,16 +204,16 @@ namespace Lucene.Net.Contrib.Spatial.Test
 
         protected void adoc(String id, String shapeStr)
         {
-            Shape shape = shapeStr == null ? null : new ShapeReadWriter(ctx).ReadShape(shapeStr);
+            IShape shape = shapeStr == null ? null : ctx.ReadShape(shapeStr);
             addDocument(newDoc(id, shape));
         }
 
-        protected void adoc(String id, Shape shape)
+        protected void adoc(String id, IShape shape)
         {
             addDocument(newDoc(id, shape));
         }
 
-        protected virtual Document newDoc(String id, Shape shape)
+        protected virtual Document newDoc(String id, IShape shape)
         {
             Document doc = new Document();
             doc.Add(new Field("id", id, Field.Store.YES, Field.Index.ANALYZED));

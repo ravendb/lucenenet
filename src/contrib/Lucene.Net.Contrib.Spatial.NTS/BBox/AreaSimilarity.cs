@@ -52,13 +52,13 @@ namespace Lucene.Net.Spatial.BBox
 	   /*
 		* Properties associated with the query envelope
 		*/
-		private readonly Rectangle queryExtent;
+		private readonly IRectangle queryExtent;
 		private readonly double queryArea;
 
 		private readonly double targetPower;
 		private readonly double queryPower;
 
-		public AreaSimilarity(Rectangle queryExtent, double queryPower, double targetPower)
+		public AreaSimilarity(IRectangle queryExtent, double queryPower, double targetPower)
 		{
 			this.queryExtent = queryExtent;
 			this.queryArea = queryExtent.GetArea(null);
@@ -74,7 +74,7 @@ namespace Lucene.Net.Spatial.BBox
 			//  }
 		}
 
-		public AreaSimilarity(Rectangle queryExtent)
+		public AreaSimilarity(IRectangle queryExtent)
 			: this(queryExtent, 2.0, 0.5)
 		{
 		}
@@ -84,7 +84,7 @@ namespace Lucene.Net.Spatial.BBox
 			return queryExtent + ";" + queryPower + ";" + targetPower;
 		}
 
-		public double Score(Rectangle target, Explanation exp)
+		public double Score(IRectangle target, Explanation exp)
 		{
 			if (target == null || queryArea <= 0)
 			{
@@ -97,25 +97,25 @@ namespace Lucene.Net.Spatial.BBox
 			}
 			double score = 0;
 
-			double top = Math.Min(queryExtent.GetMaxY(), target.GetMaxY());
-			double bottom = Math.Max(queryExtent.GetMinY(), target.GetMinY());
+			double top = Math.Min(queryExtent.MaxY, target.MaxY);
+			double bottom = Math.Max(queryExtent.MinY, target.MinY);
 			double height = top - bottom;
 			double width = 0;
 
 			// queries that cross the date line
-			if (queryExtent.GetCrossesDateLine())
+			if (queryExtent.CrossesDateLine)
 			{
 				// documents that cross the date line
-				if (target.GetCrossesDateLine())
+				if (target.CrossesDateLine)
 				{
-					double left = Math.Max(queryExtent.GetMinX(), target.GetMinX());
-					double right = Math.Min(queryExtent.GetMaxX(), target.GetMaxX());
+					double left = Math.Max(queryExtent.MinX, target.MinX);
+					double right = Math.Min(queryExtent.MaxX, target.MaxX);
 					width = right + 360.0 - left;
 				}
 				else
 				{
-					double qryWestLeft = Math.Max(queryExtent.GetMinX(), target.GetMaxX());
-					double qryWestRight = Math.Min(target.GetMaxX(), 180.0);
+					double qryWestLeft = Math.Max(queryExtent.MinX, target.MaxX);
+					double qryWestRight = Math.Min(target.MaxX, 180.0);
 					double qryWestWidth = qryWestRight - qryWestLeft;
 					if (qryWestWidth > 0)
 					{
@@ -123,8 +123,8 @@ namespace Lucene.Net.Spatial.BBox
 					}
 					else
 					{
-						double qryEastLeft = Math.Max(target.GetMaxX(), -180.0);
-						double qryEastRight = Math.Min(queryExtent.GetMaxX(), target.GetMaxX());
+						double qryEastLeft = Math.Max(target.MaxX, -180.0);
+						double qryEastRight = Math.Min(queryExtent.MaxX, target.MaxX);
 						double qryEastWidth = qryEastRight - qryEastLeft;
 						if (qryEastWidth > 0)
 						{
@@ -136,10 +136,10 @@ namespace Lucene.Net.Spatial.BBox
 			else
 			{ // queries that do not cross the date line
 
-				if (target.GetCrossesDateLine())
+				if (target.CrossesDateLine)
 				{
-					double tgtWestLeft = Math.Max(queryExtent.GetMinX(), target.GetMinX());
-					double tgtWestRight = Math.Min(queryExtent.GetMaxX(), 180.0);
+					double tgtWestLeft = Math.Max(queryExtent.MinX, target.MinX);
+					double tgtWestRight = Math.Min(queryExtent.MaxX, 180.0);
 					double tgtWestWidth = tgtWestRight - tgtWestLeft;
 					if (tgtWestWidth > 0)
 					{
@@ -147,8 +147,8 @@ namespace Lucene.Net.Spatial.BBox
 					}
 					else
 					{
-						double tgtEastLeft = Math.Max(queryExtent.GetMinX(), -180.0);
-						double tgtEastRight = Math.Min(queryExtent.GetMaxX(), target.GetMaxX());
+						double tgtEastLeft = Math.Max(queryExtent.MinX, -180.0);
+						double tgtEastRight = Math.Min(queryExtent.MaxX, target.MaxX);
 						double tgtEastWidth = tgtEastRight - tgtEastLeft;
 						if (tgtEastWidth > 0)
 						{
@@ -158,8 +158,8 @@ namespace Lucene.Net.Spatial.BBox
 				}
 				else
 				{
-					double left = Math.Max(queryExtent.GetMinX(), target.GetMinX());
-					double right = Math.Min(queryExtent.GetMaxX(), target.GetMaxX());
+					double left = Math.Max(queryExtent.MinX, target.MinX);
+					double right = Math.Min(queryExtent.MaxX, target.MaxX);
 					width = right - left;
 				}
 			}

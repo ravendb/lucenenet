@@ -57,11 +57,11 @@ if (!scan) {
 
 		private readonly String fieldName;
 		private readonly SpatialPrefixTree grid;
-		private readonly Shape queryShape;
+		private readonly IShape queryShape;
 		private readonly int prefixGridScanLevel;//at least one less than grid.getMaxLevels()
 		private readonly int detailLevel;
 
-		public RecursivePrefixTreeFilter(String fieldName, SpatialPrefixTree grid, Shape queryShape, int prefixGridScanLevel,
+		public RecursivePrefixTreeFilter(String fieldName, SpatialPrefixTree grid, IShape queryShape, int prefixGridScanLevel,
 							 int detailLevel)
 		{
 			this.fieldName = fieldName;
@@ -143,8 +143,8 @@ if (!scan) {
 								continue;
 							if (termLevel == detailLevel || scanCell.IsLeaf())
 							{
-								Shape cShape;
-								if (termLevel == grid.GetMaxLevels() && queryShape.HasArea())
+								IShape cShape;
+								if (termLevel == grid.GetMaxLevels() && queryShape.HasArea)
 								//TODO should put more thought into implications of box vs point
 									cShape = scanCell.GetCenter();
 								else

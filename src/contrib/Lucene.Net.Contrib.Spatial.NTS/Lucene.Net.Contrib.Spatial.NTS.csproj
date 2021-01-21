@@ -15,7 +15,7 @@
   </ItemGroup>
   
   <ItemGroup>
-    <ProjectReference Include="..\..\..\..\Spatial4n\Spatial4n.Core\Spatial4n.Core.NTS.csproj" PrivateAssets="All" />
+    <ProjectReference Include="..\..\..\..\Spatial4n\Spatial4n.Core.NTS\Spatial4n.Core.NTS.csproj" />
     <ProjectReference Include="..\..\Lucene.Net\Lucene.Net.csproj" />
   </ItemGroup>
 

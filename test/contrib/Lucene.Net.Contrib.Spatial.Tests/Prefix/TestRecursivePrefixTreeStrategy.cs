@@ -72,17 +72,17 @@ namespace Lucene.Net.Contrib.Spatial.Test.Prefix
         {
             init(GeohashPrefixTree.GetMaxLevelsPossible());
 
-            Point iPt = ctx.MakePoint(2.8028712999999925, 48.3708044); //lon, lat
+            IPoint iPt = ctx.MakePoint(2.8028712999999925, 48.3708044); //lon, lat
             addDocument(newDoc("iPt", iPt));
             commit();
 
-            Point qPt = ctx.MakePoint(2.4632387000000335, 48.6003516);
+            IPoint qPt = ctx.MakePoint(2.4632387000000335, 48.6003516);
 
             double KM2DEG = DistanceUtils.Dist2Degrees(1, DistanceUtils.EARTH_MEAN_RADIUS_KM);
             double DEG2KM = 1/KM2DEG;
 
             const double DIST = 35.75; //35.7499...
-            assertEquals(DIST, ctx.GetDistCalc().Distance(iPt, qPt)*DEG2KM, 0.001);
+            assertEquals(DIST, ctx.DistCalc.Distance(iPt, qPt)*DEG2KM, 0.001);
 
             //distErrPct will affect the query shape precision. The indexed precision
             // was set to nearly zilch via init(GeohashPrefixTree.getMaxLevelsPossible());
@@ -109,16 +109,16 @@ namespace Lucene.Net.Contrib.Spatial.Test.Prefix
             var random = NewRandom();
 
             //1. Iterate test with the cluster at some worldly point of interest
-            var clusterCenters = new Point[] {ctx.MakePoint(-180, 0), ctx.MakePoint(0, 90), ctx.MakePoint(0, -90)};
+            var clusterCenters = new IPoint[] {ctx.MakePoint(-180, 0), ctx.MakePoint(0, 90), ctx.MakePoint(0, -90)};
             foreach (var clusterCenter in clusterCenters)
             {
                 //2. Iterate on size of cluster (a really small one and a large one)
-                String hashCenter = GeohashUtils.EncodeLatLon(clusterCenter.GetY(), clusterCenter.GetX(), maxLength);
+                String hashCenter = GeohashUtils.EncodeLatLon(clusterCenter.Y, clusterCenter.X, maxLength);
                 //calculate the number of degrees in the smallest grid box size (use for both lat & lon)
                 String smallBox = hashCenter.Substring(0, hashCenter.Length - 1); //chop off leaf precision
-                Rectangle clusterDims = GeohashUtils.DecodeBoundary(smallBox, ctx);
-                double smallRadius = Math.Max(clusterDims.GetMaxX() - clusterDims.GetMinX(),
-                                              clusterDims.GetMaxY() - clusterDims.GetMinY());
+                IRectangle clusterDims = GeohashUtils.DecodeBoundary(smallBox, ctx);
+                double smallRadius = Math.Max(clusterDims.MaxX - clusterDims.MinX,
+                                              clusterDims.MaxY - clusterDims.MinY);
                 Assert.IsTrue(smallRadius < 1);
                 const double largeRadius = 20d; //good large size; don't use >=45 for this test code to work
                 double[] radiusDegs = {largeRadius, smallRadius};
@@ -126,13 +126,13 @@ namespace Lucene.Net.Contrib.Spatial.Test.Prefix
                 {
                     //3. Index random points in this cluster box
                     deleteAll();
-                    var points = new List<Point>();
+                    var points = new List<IPoint>();
                     for (int i = 0; i < 20; i++)
                     {
                         //Note that this will not result in randomly distributed points in the
                         // circle, they will be concentrated towards the center a little. But
                         // it's good enough.
-                        Point pt = ctx.GetDistCalc().PointOnBearing(clusterCenter,
+                        IPoint pt = ctx.DistCalc.PointOnBearing(clusterCenter,
                                                                     random.NextDouble()*radiusDeg, random.Next()*360,
                                                                     ctx, null);
                         pt = alignGeohash(pt);
@@ -144,7 +144,7 @@ namespace Lucene.Net.Contrib.Spatial.Test.Prefix
                     //3. Use some query centers. Each is twice the cluster's radius away.
                     for (int ri = 0; ri < 4; ri++)
                     {
-                        Point queryCenter = ctx.GetDistCalc().PointOnBearing(clusterCenter,
+                        IPoint queryCenter = ctx.DistCalc.PointOnBearing(clusterCenter,
                                                                              radiusDeg*2, random.Next(360), ctx, null);
                         queryCenter = alignGeohash(queryCenter);
                         //4.1 Query a small box getting nothing
@@ -159,8 +159,8 @@ namespace Lucene.Net.Contrib.Spatial.Test.Prefix
                         int ids_sz = 0;
                         for (int i = 0; i < points.Count; i++)
                         {
-                            Point point = points[i];
-                            if (ctx.GetDistCalc().Distance(queryCenter, point) <= queryDist)
+                            IPoint point = points[i];
+                            if (ctx.DistCalc.Distance(queryCenter, point) <= queryDist)
                                 ids[ids_sz++] = i;
                         }
 
@@ -175,9 +175,9 @@ namespace Lucene.Net.Contrib.Spatial.Test.Prefix
             } //for clusterCenter
         }
 
-        private SpatialArgs q(Point pt, double dist, double distErrPct = 0.0)
+        private SpatialArgs q(IPoint pt, double dist, double distErrPct = 0.0)
         {
-            Shape shape = ctx.MakeCircle(pt, dist);
+            IShape shape = ctx.MakeCircle(pt, dist);
             var args = new SpatialArgs(SpatialOperation.Intersects, shape);
             args.DistErrPct = distErrPct;
             return args;
@@ -203,9 +203,9 @@ namespace Lucene.Net.Contrib.Spatial.Test.Prefix
 
         /* NGeohash round-trip for given precision. */
 
-        private Point alignGeohash(Point p)
+        private IPoint alignGeohash(IPoint p)
         {
-            return GeohashUtils.Decode(GeohashUtils.EncodeLatLon(p.GetY(), p.GetX(), maxLength), ctx);
+            return GeohashUtils.Decode(GeohashUtils.EncodeLatLon(p.Y, p.X, maxLength), ctx);
         }
     }
 }
