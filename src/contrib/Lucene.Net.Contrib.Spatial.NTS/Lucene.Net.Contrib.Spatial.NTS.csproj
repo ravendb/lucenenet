@@ -8,7 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Content Include="..\..\..\..\Spatial4n\Spatial4n.Core\bin\Release\netstandard2.1\Spatial4n.Core.NTS.dll">
+    <Content Include="..\..\..\..\Spatial4n\Spatial4n.Core\bin\Release\netstandard2.0\Spatial4n.Core.NTS.dll">
       <PackagePath>lib/netstandard2.1/</PackagePath>
       <Pack>true</Pack>
     </Content>
