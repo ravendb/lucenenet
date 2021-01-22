@@ -19,6 +19,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using Lucene.Net.Analysis.Tokenattributes;
@@ -52,14 +53,15 @@ namespace Lucene.Net.Util
 			private sealed class DefaultAttributeFactory:AttributeFactory
 			{
                 // This should be WeakDictionary<T, WeakReference<TImpl>> where typeof(T) is Attribute and TImpl is typeof(AttributeImpl)
-			    private static readonly ConcurrentDictionary<Type, WeakReference> attClassImplMap =
-			        new ConcurrentDictionary<Type, WeakReference>();
+			    private static Dictionary<Type, Func<object>> attClassImplMap =
+			        new Dictionary<Type, Func<object>>();
                 			
 				public override Attribute CreateAttributeInstance<TAttImpl>()
 				{
 					try
 					{
-                        return (Attribute)Activator.CreateInstance(GetClassForInterface<TAttImpl>());
+						var ctor = GetClassForInterface<TAttImpl>();
+						return (Attribute)ctor();
 					}
 					catch (UnauthorizedAccessException)
                     {
@@ -71,28 +73,38 @@ namespace Lucene.Net.Util
                     //}
 				}
 
-                private static Type GetClassForInterface<T>() where T : IAttribute
+                private static Func<object> GetClassForInterface<T>() where T : IAttribute
 				{
                     var attClass = typeof(T);
 
-                    attClassImplMap.TryGetValue(attClass, out var refz);
-                    Type clazz = (refz == null) ? null : ((Type) refz.Target);
-                    if (clazz == null)
+					if (attClassImplMap.TryGetValue(attClass, out var ctor) == false)
                     {
-                        try
-                        {
-                            string name = attClass.FullName.Replace(attClass.Name, attClass.Name.Substring(1)) + ", " +
-                                          attClass.Assembly.FullName;
-                            clazz = System.Type.GetType(name, true);
-                            attClassImplMap[attClass] = new WeakReference(clazz); //OK
-                        }
-                        catch (TypeLoadException) // was System.Exception
-                        {
-                            throw new ArgumentException("Could not find implementing class for " + attClass.FullName);
-                        }
-                    }
+						try
+						{
+							string name = attClass.FullName.Replace(attClass.Name, attClass.Name.Substring(1)) + ", " +
+										  attClass.Assembly.FullName;
+							var clazz = Type.GetType(name, true);
 
-                    return clazz;
+							var ctorz = clazz
+								.GetConstructors(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
+								.FirstOrDefault(x => x.GetParameters().Length == 0);
+							var instance = ctorz != null
+								? Expression.New(ctorz)
+								: Expression.New(clazz);
+
+							var lambda = Expression.Lambda<Func<object>>(instance);
+
+							ctor = lambda.Compile();
+
+							attClassImplMap = new Dictionary<Type, Func<object>>(attClassImplMap) { [attClass] = ctor };
+						}
+						catch (TypeLoadException) // was System.Exception
+						{
+							throw new ArgumentException("Could not find implementing class for " + attClass.FullName);
+						}
+					}
+
+					return ctor;
                 }
 			}
 		}
