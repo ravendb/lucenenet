@@ -8,14 +8,20 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Content Include="..\..\..\..\Spatial4n\Spatial4n.Core\bin\Release\netstandard2.0\Spatial4n.Core.NTS.dll">
+    <Content Include="..\..\..\..\Spatial4n\Spatial4n.Core.NTS\bin\Release\netstandard2.0\Spatial4n.Core.NTS.dll">
+      <PackagePath>lib/netstandard2.1/</PackagePath>
+      <Pack>true</Pack>
+    </Content>
+    <Content Include="..\..\..\..\Spatial4n\Spatial4n.Core.NTS\bin\Release\netstandard2.0\Spatial4n.Core.dll">
       <PackagePath>lib/netstandard2.1/</PackagePath>
       <Pack>true</Pack>
     </Content>
   </ItemGroup>
   
   <ItemGroup>
-    <ProjectReference Include="..\..\..\..\Spatial4n\Spatial4n.Core.NTS\Spatial4n.Core.NTS.csproj" />
+    <ProjectReference Include="..\..\..\..\Spatial4n\Spatial4n.Core.NTS\Spatial4n.Core.NTS.csproj">
+      <PrivateAssets>All</PrivateAssets>
+    </ProjectReference>
     <ProjectReference Include="..\..\Lucene.Net\Lucene.Net.csproj" />
   </ItemGroup>
 
