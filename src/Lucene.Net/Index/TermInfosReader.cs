@@ -98,11 +98,16 @@ namespace Lucene.Net.Index
 
             public void Dispose()
             {
-                ArrayPool<long>.Shared.Return(_longArray);
-                ArrayPool<Term>.Shared.Return(_termArray, clearArray: true);
-                ArrayPool<TermInfo>.Shared.Return(_termInfoArray);
-
                 GC.SuppressFinalize(this);
+
+                if (_longArray != null)
+                    ArrayPool<long>.Shared.Return(_longArray);
+
+                if (_termArray != null)
+                    ArrayPool<Term>.Shared.Return(_termArray, clearArray: true);
+
+                if (_termInfoArray != null)
+                    ArrayPool<TermInfo>.Shared.Return(_termInfoArray);
             }
 
             ~ArrayHolder()
