@@ -36,6 +36,13 @@ namespace Lucene.Net.Util
                 *(ushort*) CurrentPosition = size;
 
                 Used += sizeof(short) + size;
+                if (Used > Size)
+                    ThrowOutOfRange();
+            }
+
+            private void ThrowOutOfRange()
+            {
+                throw new ArgumentOutOfRangeException("Somehow got to size " + Used + ", but my max size is " + Size);
             }
 
             public void Dispose()
@@ -160,11 +167,19 @@ namespace Lucene.Net.Util
                 return GetAndAddNewSegment(4096);
 
             // naive but simple
-            var seg = _segments[_segments.Count - 1];
+            var seg = _segments[^1];
             if (seg.Free > size)
                 return seg;
 
-            return GetAndAddNewSegment(Math.Min(1024 * 1024, seg.Size * 2));
+            var segmentSize = Math.Min(1024 * 1024, seg.Size * 2);
+            if (size > segmentSize)
+            {
+                // too big, make it 4KB aligned so if there is wasted space in the end, it is just
+                // a single memory page. In most cases, if we have one big size, we'll have a lot, so we
+                // want to avoid power of two here
+                segmentSize = ((size / 4096) + (size % 4096 == 0 ? 0 : 1)) * 4096;
+            }
+            return GetAndAddNewSegment(segmentSize);
         }
 
         private Segment GetAndAddNewSegment(int segmentSize)
