@@ -353,7 +353,7 @@ namespace Lucene.Net.Store
                 {
                     // RuntimeException instead of IOException because
                     // super() does not throw IOException currently:
-                    throw new System.SystemException("MockRAMDirectory: cannot close: there are still open files: " + openFiles);
+                    throw new System.SystemException("MockRAMDirectory: cannot close: there are still open files: " + string.Join(", ", openFiles.Keys));
                 }
             }
 

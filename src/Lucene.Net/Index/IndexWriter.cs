@@ -517,7 +517,6 @@ namespace Lucene.Net.Index
 					
 					if (pooled && (drop || (!Enclosing_Instance.poolReaders && sr.RefCount == 1)))
 					{
-
                         // We invoke deleter.checkpoint below, so we must be
                         // sync'd on IW if there are changes:
 						
@@ -527,20 +526,17 @@ namespace Lucene.Net.Index
                         // Discard (don't save) changes when we are dropping
                         // the reader; this is used only on the sub-readers
                         // after a successful merge.
-                        sr.hasChanges &= !drop;
-
-                        bool hasChanges = sr.hasChanges;
-						
-						// Drop our ref -- this will commit any pending
-						// changes to the dir
-                        sr.Close();
-
-                        // We are the last ref to this reader; since we're
-                        // not pooling readers, we release it:
-                        readerMap.Remove(sr.SegmentInfo);
-
-                        if (hasChanges)
+                        if (drop)
                         {
+                            sr.CloseWithoutCommit();
+                            readerMap.Remove(sr.SegmentInfo);
+							return;
+                        }
+
+                        if (sr.hasChanges)
+                        {
+							sr.Commit(state);
+
                             // Must checkpoint w/ deleter, because this
                             // segment reader will have created new _X_N.del
                             // file.
@@ -692,6 +688,7 @@ namespace Lucene.Net.Index
 						// TODO: we may want to avoid doing this while
 						// synchronized
 						// Returns a ref, which we xfer to readerMap:
+
 						sr = SegmentReader.Get(false, info.dir, info, readBufferSize, doOpenStores, termsIndexDivisor, state);
                         if (info.dir == enclosingInstance.directory)
                         {
@@ -1022,7 +1019,7 @@ namespace Lucene.Net.Index
 		{
 			InitBlock();
 			Init(d, a, create, null, mfl.Limit, null, null, state);
-		}
+        }
 		
 		/// <summary> Constructs an IndexWriter for the index in
 		/// <c>d</c>, first creating it if it does not
@@ -1301,7 +1298,7 @@ namespace Lucene.Net.Index
 				}
 				
 				SetRollbackSegmentInfos(segmentInfos);
-				
+
 				docWriter = new DocumentsWriter(directory, this, indexingChain);
 				docWriter.SetInfoStream(infoStream);
 				docWriter.SetMaxFieldLength(maxFieldLength);
