@@ -192,6 +192,24 @@ namespace Lucene.Net.Index
 			}
 		}
 		
+        public void CloseWithoutCommit()
+        {
+            lock (this)
+            {
+                if (!closed)
+                {
+                    System.Diagnostics.Debug.Assert(refCount > 0);
+                    EnsureOpen();
+                    if (refCount == 1)
+                    {
+                        DoClose(null);
+                        closed = true;
+                    }
+                    refCount--;
+                }
+            }
+        }
+
 		protected internal IndexReader()
 		{
 			refCount = 1;
