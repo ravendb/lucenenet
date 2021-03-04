@@ -37,12 +37,12 @@ namespace Lucene.Net.Util
 
                 Used += sizeof(short) + size;
                 if (Used > Size)
-                    ThrowOutOfRange();
+                    ThrowOutOfRange(size);
             }
 
-            private void ThrowOutOfRange()
+            private void ThrowOutOfRange(ushort size)
             {
-                throw new ArgumentOutOfRangeException("Somehow got to size " + Used + ", but my max size is " + Size);
+                throw new ArgumentOutOfRangeException(nameof(Used),$"Requested:{size}, Used: {Used}, but my max size is {Size}");
             }
 
             public void Dispose()
@@ -164,7 +164,10 @@ namespace Lucene.Net.Util
         private Segment GetSegment(int size)
         {
             if (_segments.Count == 0)
-                return GetAndAddNewSegment(4096);
+            {
+                var firstSegmentSize = AdjustSegmentSize(4096, size);
+                return GetAndAddNewSegment(firstSegmentSize);
+            }
 
             // naive but simple
             var seg = _segments[^1];
@@ -172,6 +175,13 @@ namespace Lucene.Net.Util
                 return seg;
 
             var segmentSize = Math.Min(1024 * 1024, seg.Size * 2);
+            segmentSize = AdjustSegmentSize(segmentSize, size);
+
+            return GetAndAddNewSegment(segmentSize);
+        }
+
+        private static int AdjustSegmentSize(int segmentSize, int size)
+        {
             if (size > segmentSize)
             {
                 // too big, make it 4KB aligned so if there is wasted space in the end, it is just
@@ -179,7 +189,8 @@ namespace Lucene.Net.Util
                 // want to avoid power of two here
                 segmentSize = ((size / 4096) + (size % 4096 == 0 ? 0 : 1)) * 4096;
             }
-            return GetAndAddNewSegment(segmentSize);
+
+            return segmentSize;
         }
 
         private Segment GetAndAddNewSegment(int segmentSize)
