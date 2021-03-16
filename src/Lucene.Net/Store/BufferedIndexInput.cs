@@ -16,6 +16,7 @@
  */
 
 using System;
+using System.Buffers;
 using Lucene.Net.Util;
 
 namespace Lucene.Net.Store
@@ -67,7 +68,7 @@ namespace Lucene.Net.Store
 					// Resize the existing buffer and carefully save as
 					// many bytes as possible starting from the current
 					// bufferPosition
-					byte[] newBuffer = new byte[newSize];
+					byte[] newBuffer = ArrayPool<byte>.Shared.Rent(newSize);
 					int leftInBuffer = bufferLength - bufferPosition;
 					int numToCopy;
 					if (leftInBuffer > newSize)
@@ -85,6 +86,9 @@ namespace Lucene.Net.Store
 		
 		protected internal virtual void  NewBuffer(byte[] newBuffer)
 		{
+			if (buffer != null)
+				ArrayPool<byte>.Shared.Return(buffer);
+
 			// Subclasses can do something here
 			buffer = newBuffer;
 		}
@@ -181,7 +185,7 @@ namespace Lucene.Net.Store
 			
 			if (buffer == null)
 			{
-				NewBuffer(new byte[_bufferSize]); // allocate buffer lazily
+				NewBuffer(ArrayPool<byte>.Shared.Rent(_bufferSize)); // allocate buffer lazily
 				SeekInternal(bufferStart);
 			}
 			ReadInternal(buffer, 0, newLength, state);

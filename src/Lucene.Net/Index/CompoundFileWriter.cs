@@ -16,6 +16,7 @@
  */
 
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 using Lucene.Net.Store;
 using Directory = Lucene.Net.Store.Directory;
@@ -191,11 +192,18 @@ namespace Lucene.Net.Index
 
                 // Open the files and copy their data into the stream.
                 // Remember the locations of each file's data section.
-                var buffer = new byte[16384];
-                foreach (FileEntry fe in entries)
+                var buffer = ArrayPool<byte>.Shared.Rent(16384);
+                try
                 {
-                    fe.dataOffset = os.FilePointer;
-                    CopyFile(fe, os, buffer, state);
+					foreach (FileEntry fe in entries)
+					{
+						fe.dataOffset = os.FilePointer;
+						CopyFile(fe, os, buffer, state);
+					}
+				}
+                finally
+                {
+					ArrayPool<byte>.Shared.Return(buffer);
                 }
 
                 // Write the data offsets into the directory of the compound stream

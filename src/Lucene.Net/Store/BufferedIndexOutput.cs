@@ -16,6 +16,8 @@
  */
 
 using System;
+using System.Buffers;
+using System.Runtime.InteropServices;
 
 namespace Lucene.Net.Store
 {
@@ -25,7 +27,7 @@ namespace Lucene.Net.Store
 	{
 		internal const int BUFFER_SIZE = 16384;
 		
-		private Memory<byte> buffer = new byte[BUFFER_SIZE];
+		private Memory<byte> buffer = ArrayPool<byte>.Shared.Rent(BUFFER_SIZE);
 		private long bufferStart = 0; // position in file of buffer
 		private int bufferPosition = 0; // position in buffer
 
@@ -148,6 +150,9 @@ namespace Lucene.Net.Store
             if (disposing)
             {
                 Flush();
+
+				if (MemoryMarshal.TryGetArray<byte>(buffer, out var segment))
+					ArrayPool<byte>.Shared.Return(segment.Array);
             }
 
 		    isDisposed = true;

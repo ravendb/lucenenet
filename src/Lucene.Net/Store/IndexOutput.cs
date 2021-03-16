@@ -16,6 +16,7 @@
  */
 
 using System;
+using System.Buffers;
 using Lucene.Net.Support;
 using UnicodeUtil = Lucene.Net.Util.UnicodeUtil;
 
@@ -194,26 +195,31 @@ namespace Lucene.Net.Store
 		}
 		
 		private static int COPY_BUFFER_SIZE = 16384;
-		private byte[] copyBuffer;
 		
 		/// <summary>Copy numBytes bytes from input to ourself. </summary>
 		public virtual void  CopyBytes(IndexInput input, long numBytes, IState state)
 		{
 			System.Diagnostics.Debug.Assert(numBytes >= 0, "numBytes=" + numBytes);
 			long left = numBytes;
-			if (copyBuffer == null)
-				copyBuffer = new byte[COPY_BUFFER_SIZE];
-			while (left > 0)
-			{
-				int toCopy;
-				if (left > COPY_BUFFER_SIZE)
-					toCopy = COPY_BUFFER_SIZE;
-				else
-					toCopy = (int) left;
-				input.ReadBytes(copyBuffer, 0, toCopy, state);
-				WriteBytes(copyBuffer, 0, toCopy);
-				left -= toCopy;
+			var copyBuffer = ArrayPool<byte>.Shared.Rent(COPY_BUFFER_SIZE);
+            try
+            {
+				while (left > 0)
+				{
+					int toCopy;
+					if (left > COPY_BUFFER_SIZE)
+						toCopy = COPY_BUFFER_SIZE;
+					else
+						toCopy = (int)left;
+					input.ReadBytes(copyBuffer, 0, toCopy, state);
+					WriteBytes(copyBuffer, 0, toCopy);
+					left -= toCopy;
+				}
 			}
+            finally
+            {
+				ArrayPool<byte>.Shared.Return(copyBuffer);
+            }
 		}
 		
 		/// <summary>Forces any buffered output to be written. </summary>
