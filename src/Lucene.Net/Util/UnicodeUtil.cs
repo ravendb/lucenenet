@@ -76,15 +76,15 @@ namespace Lucene.Net.Util
 		
 		public sealed class UTF8Result
 		{
-			public byte[] result = new byte[10];
+			public Memory<byte> result = new byte[10];
 			public int length;
 			
 			public void  SetLength(int newLength)
 			{
 				if (result.Length < newLength)
 				{
-					byte[] newArray = new byte[(int) (1.5 * newLength)];
-					Array.Copy(result, 0, newArray, 0, length);
+					Memory<byte> newArray = new byte[(int) (1.5 * newLength)];
+					result.Span.Slice(0, length).CopyTo(newArray.Span);
 					result = newArray;
 				}
 				length = newLength;
@@ -124,7 +124,7 @@ namespace Lucene.Net.Util
 			
 			int upto = 0;
 			int i = offset;
-			byte[] out_Renamed = result.result;
+			Memory<byte> out_Renamed = result.result;
 			
 			while (true)
 			{
@@ -133,26 +133,26 @@ namespace Lucene.Net.Util
 				
 				if (upto + 4 > out_Renamed.Length)
 				{
-					byte[] newOut = new byte[2 * out_Renamed.Length];
+					Memory<byte> newOut = new byte[2 * out_Renamed.Length];
 					System.Diagnostics.Debug.Assert(newOut.Length >= upto + 4);
-					Array.Copy(out_Renamed, 0, newOut, 0, upto);
+					out_Renamed.Span.Slice(0, upto).CopyTo(newOut.Span);
 					result.result = out_Renamed = newOut;
 				}
 				if (code < 0x80)
-					out_Renamed[upto++] = (byte) code;
+					out_Renamed.Span[upto++] = (byte) code;
 				else if (code < 0x800)
 				{
-					out_Renamed[upto++] = (byte) (0xC0 | (code >> 6));
-					out_Renamed[upto++] = (byte) (0x80 | (code & 0x3F));
+					out_Renamed.Span[upto++] = (byte) (0xC0 | (code >> 6));
+					out_Renamed.Span[upto++] = (byte) (0x80 | (code & 0x3F));
 				}
 				else if (code < 0xD800 || code > 0xDFFF)
 				{
 					if (code == 0xffff)
 					// END
 						break;
-					out_Renamed[upto++] = (byte) (0xE0 | (code >> 12));
-					out_Renamed[upto++] = (byte) (0x80 | ((code >> 6) & 0x3F));
-					out_Renamed[upto++] = (byte) (0x80 | (code & 0x3F));
+					out_Renamed.Span[upto++] = (byte) (0xE0 | (code >> 12));
+					out_Renamed.Span[upto++] = (byte) (0x80 | ((code >> 6) & 0x3F));
+					out_Renamed.Span[upto++] = (byte) (0x80 | (code & 0x3F));
 				}
 				else
 				{
@@ -166,18 +166,18 @@ namespace Lucene.Net.Util
 						{
 							utf32 = ((code - 0xD7C0) << 10) + (utf32 & 0x3FF);
 							i++;
-							out_Renamed[upto++] = (byte) (0xF0 | (utf32 >> 18));
-							out_Renamed[upto++] = (byte) (0x80 | ((utf32 >> 12) & 0x3F));
-							out_Renamed[upto++] = (byte) (0x80 | ((utf32 >> 6) & 0x3F));
-							out_Renamed[upto++] = (byte) (0x80 | (utf32 & 0x3F));
+							out_Renamed.Span[upto++] = (byte) (0xF0 | (utf32 >> 18));
+							out_Renamed.Span[upto++] = (byte) (0x80 | ((utf32 >> 12) & 0x3F));
+							out_Renamed.Span[upto++] = (byte) (0x80 | ((utf32 >> 6) & 0x3F));
+							out_Renamed.Span[upto++] = (byte) (0x80 | (utf32 & 0x3F));
 							continue;
 						}
 					}
 					// replace unpaired surrogate or out-of-order low surrogate
 					// with substitution character
-					out_Renamed[upto++] = (byte) (0xEF);
-					out_Renamed[upto++] = (byte) (0xBF);
-					out_Renamed[upto++] = (byte) (0xBD);
+					out_Renamed.Span[upto++] = (byte) (0xEF);
+					out_Renamed.Span[upto++] = (byte) (0xBF);
+					out_Renamed.Span[upto++] = (byte) (0xBD);
 				}
 			}
 			//assert matches(source, offset, i-offset-1, out, upto);
@@ -194,7 +194,7 @@ namespace Lucene.Net.Util
 			int upto = 0;
 			int i = offset;
 			int end = offset + length;
-			byte[] out_Renamed = result.result;
+			Memory<byte> out_Renamed = result.result;
 			
 			while (i < end)
 			{
@@ -203,23 +203,23 @@ namespace Lucene.Net.Util
 				
 				if (upto + 4 > out_Renamed.Length)
 				{
-					byte[] newOut = new byte[2 * out_Renamed.Length];
+					Memory<byte> newOut = new byte[2 * out_Renamed.Length];
 					System.Diagnostics.Debug.Assert(newOut.Length >= upto + 4);
-					Array.Copy(out_Renamed, 0, newOut, 0, upto);
+					out_Renamed.Span.Slice(0, upto).CopyTo(newOut.Span);
 					result.result = out_Renamed = newOut;
 				}
 				if (code < 0x80)
-					out_Renamed[upto++] = (byte) code;
+					out_Renamed.Span[upto++] = (byte) code;
 				else if (code < 0x800)
 				{
-					out_Renamed[upto++] = (byte) (0xC0 | (code >> 6));
-					out_Renamed[upto++] = (byte) (0x80 | (code & 0x3F));
+					out_Renamed.Span[upto++] = (byte) (0xC0 | (code >> 6));
+					out_Renamed.Span[upto++] = (byte) (0x80 | (code & 0x3F));
 				}
 				else if (code < 0xD800 || code > 0xDFFF)
 				{
-					out_Renamed[upto++] = (byte) (0xE0 | (code >> 12));
-					out_Renamed[upto++] = (byte) (0x80 | ((code >> 6) & 0x3F));
-					out_Renamed[upto++] = (byte) (0x80 | (code & 0x3F));
+					out_Renamed.Span[upto++] = (byte) (0xE0 | (code >> 12));
+					out_Renamed.Span[upto++] = (byte) (0x80 | ((code >> 6) & 0x3F));
+					out_Renamed.Span[upto++] = (byte) (0x80 | (code & 0x3F));
 				}
 				else
 				{
@@ -233,18 +233,18 @@ namespace Lucene.Net.Util
 						{
 							utf32 = ((code - 0xD7C0) << 10) + (utf32 & 0x3FF);
 							i++;
-							out_Renamed[upto++] = (byte) (0xF0 | (utf32 >> 18));
-							out_Renamed[upto++] = (byte) (0x80 | ((utf32 >> 12) & 0x3F));
-							out_Renamed[upto++] = (byte) (0x80 | ((utf32 >> 6) & 0x3F));
-							out_Renamed[upto++] = (byte) (0x80 | (utf32 & 0x3F));
+							out_Renamed.Span[upto++] = (byte) (0xF0 | (utf32 >> 18));
+							out_Renamed.Span[upto++] = (byte) (0x80 | ((utf32 >> 12) & 0x3F));
+							out_Renamed.Span[upto++] = (byte) (0x80 | ((utf32 >> 6) & 0x3F));
+							out_Renamed.Span[upto++] = (byte) (0x80 | (utf32 & 0x3F));
 							continue;
 						}
 					}
 					// replace unpaired surrogate or out-of-order low surrogate
 					// with substitution character
-					out_Renamed[upto++] = (byte) (0xEF);
-					out_Renamed[upto++] = (byte) (0xBF);
-					out_Renamed[upto++] = (byte) (0xBD);
+					out_Renamed.Span[upto++] = (byte) (0xEF);
+					out_Renamed.Span[upto++] = (byte) (0xBF);
+					out_Renamed.Span[upto++] = (byte) (0xBD);
 				}
 			}
 			//assert matches(source, offset, length, out, upto);
@@ -259,7 +259,7 @@ namespace Lucene.Net.Util
 		{
 			int end = offset + length;
 			
-			byte[] out_Renamed = result.result;
+			Memory<byte> out_Renamed = result.result;
 			
 			int upto = 0;
 			for (int i = offset; i < end; i++)
@@ -268,23 +268,23 @@ namespace Lucene.Net.Util
 				
 				if (upto + 4 > out_Renamed.Length)
 				{
-					byte[] newOut = new byte[2 * out_Renamed.Length];
+					Memory<byte> newOut = new byte[2 * out_Renamed.Length];
 					System.Diagnostics.Debug.Assert(newOut.Length >= upto + 4);
-					Array.Copy(out_Renamed, 0, newOut, 0, upto);
+					out_Renamed.Span.Slice(0, upto).CopyTo(newOut.Span);
 					result.result = out_Renamed = newOut;
 				}
 				if (code < 0x80)
-					out_Renamed[upto++] = (byte) code;
+					out_Renamed.Span[upto++] = (byte) code;
 				else if (code < 0x800)
 				{
-					out_Renamed[upto++] = (byte) (0xC0 | (code >> 6));
-					out_Renamed[upto++] = (byte) (0x80 | (code & 0x3F));
+					out_Renamed.Span[upto++] = (byte) (0xC0 | (code >> 6));
+					out_Renamed.Span[upto++] = (byte) (0x80 | (code & 0x3F));
 				}
 				else if (code < 0xD800 || code > 0xDFFF)
 				{
-					out_Renamed[upto++] = (byte) (0xE0 | (code >> 12));
-					out_Renamed[upto++] = (byte) (0x80 | ((code >> 6) & 0x3F));
-					out_Renamed[upto++] = (byte) (0x80 | (code & 0x3F));
+					out_Renamed.Span[upto++] = (byte) (0xE0 | (code >> 12));
+					out_Renamed.Span[upto++] = (byte) (0x80 | ((code >> 6) & 0x3F));
+					out_Renamed.Span[upto++] = (byte) (0x80 | (code & 0x3F));
 				}
 				else
 				{
@@ -298,18 +298,18 @@ namespace Lucene.Net.Util
 						{
 							utf32 = ((code - 0xD7C0) << 10) + (utf32 & 0x3FF);
 							i++;
-							out_Renamed[upto++] = (byte) (0xF0 | (utf32 >> 18));
-							out_Renamed[upto++] = (byte) (0x80 | ((utf32 >> 12) & 0x3F));
-							out_Renamed[upto++] = (byte) (0x80 | ((utf32 >> 6) & 0x3F));
-							out_Renamed[upto++] = (byte) (0x80 | (utf32 & 0x3F));
+							out_Renamed.Span[upto++] = (byte) (0xF0 | (utf32 >> 18));
+							out_Renamed.Span[upto++] = (byte) (0x80 | ((utf32 >> 12) & 0x3F));
+							out_Renamed.Span[upto++] = (byte) (0x80 | ((utf32 >> 6) & 0x3F));
+							out_Renamed.Span[upto++] = (byte) (0x80 | (utf32 & 0x3F));
 							continue;
 						}
 					}
 					// replace unpaired surrogate or out-of-order low surrogate
 					// with substitution character
-					out_Renamed[upto++] = (byte) (0xEF);
-					out_Renamed[upto++] = (byte) (0xBF);
-					out_Renamed[upto++] = (byte) (0xBD);
+					out_Renamed.Span[upto++] = (byte) (0xEF);
+					out_Renamed.Span[upto++] = (byte) (0xBF);
+					out_Renamed.Span[upto++] = (byte) (0xBD);
 				}
 			}
 			//assert matches(s, offset, length, out, upto);
@@ -321,9 +321,8 @@ namespace Lucene.Net.Util
 		/// in utf8, re-using the results from the previous call
 		/// up until offset. 
 		/// </summary>
-		public static void  UTF8toUTF16(byte[] utf8, int offset, int length, UTF16Result result)
-		{
-			
+		public static void  UTF8toUTF16(Span<byte> utf8, int offset, int length, UTF16Result result)
+        {
 			int end = offset + length;
 			char[] out_Renamed = result.result;
 			if (result.offsets.Length <= end)

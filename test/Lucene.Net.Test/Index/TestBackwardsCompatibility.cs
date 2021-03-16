@@ -173,7 +173,7 @@ namespace Lucene.Net.Index
                         else
                         {
                             Assert.IsTrue(compressed.IsBinary);
-                            Assert.IsTrue(BINARY_TO_COMPRESS.SequenceEqual(compressed.GetBinaryValue(null)),
+                            Assert.IsTrue(BINARY_TO_COMPRESS.SequenceEqual(compressed.GetBinaryValue(null).ToArray()),
                                           "incorrectly decompressed binary");
                         }
                     }
@@ -189,7 +189,7 @@ namespace Lucene.Net.Index
                         count++;
                         // read the size from the binary value using BinaryReader (this prevents us from doing the shift ops ourselves):
                         // ugh, Java uses Big-Endian streams, so we need to do it manually.
-                        byte[] encodedSize = d.GetFieldable("compressed").GetBinaryValue(null).Take(4).Reverse().ToArray();
+                        byte[] encodedSize = d.GetFieldable("compressed").GetBinaryValue(null).ToArray().Take(4).Reverse().ToArray();
                         int actualSize = BitConverter.ToInt32(encodedSize, 0);
                         int compressedSize = int.Parse(d.Get("compressedSize", null));
                         bool binary = int.Parse(d.Get("id", null))%2 > 0;

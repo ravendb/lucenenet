@@ -28,7 +28,7 @@ namespace Lucene.Net.Support
     public class Deflater
     {
         delegate void SetLevelDelegate(int level);
-        delegate void SetInputDelegate(byte[] input, int offset, int count);
+        delegate void SetInputDelegate(Span<byte> input);
         delegate void FinishDelegate();
         delegate bool GetIsFinishedDelegate();
         delegate int DeflateDelegate(byte[] output);
@@ -76,9 +76,9 @@ namespace Lucene.Net.Support
             setLevelMethod(level);
         }
 
-        public void SetInput(byte[] input, int offset, int count)
+        public void SetInput(Span<byte> input)
         {
-            setInputMethod(input, offset, count);
+            setInputMethod(input);
         }
 
         public void Finish()

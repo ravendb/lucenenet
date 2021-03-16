@@ -16,6 +16,7 @@
  */
 
 using System;
+using System.Buffers;
 using Lucene.Net.Support;
 using UnicodeUtil = Lucene.Net.Util.UnicodeUtil;
 
@@ -35,29 +36,8 @@ namespace Lucene.Net.Store
 		/// <seealso cref="IndexInput.ReadByte()">
 		/// </seealso>
 		public abstract void  WriteByte(byte b);
-		
-		/// <summary>Writes an array of bytes.</summary>
-		/// <param name="b">the bytes to write
-		/// </param>
-		/// <param name="length">the number of bytes to write
-		/// </param>
-		/// <seealso cref="IndexInput.ReadBytes(byte[],int,int)">
-		/// </seealso>
-		public virtual void  WriteBytes(byte[] b, int length)
-		{
-			WriteBytes(b, 0, length);
-		}
-		
-		/// <summary>Writes an array of bytes.</summary>
-		/// <param name="b">the bytes to write
-		/// </param>
-		/// <param name="offset">the offset in the byte array
-		/// </param>
-		/// <param name="length">the number of bytes to write
-		/// </param>
-		/// <seealso cref="IndexInput.ReadBytes(byte[],int,int)">
-		/// </seealso>
-		public abstract void  WriteBytes(byte[] b, int offset, int length);
+
+		public abstract void WriteBytes(Span<byte> b);
 		
 		/// <summary>Writes an int as four bytes.</summary>
 		/// <seealso cref="IndexInput.ReadInt()">
@@ -119,7 +99,7 @@ namespace Lucene.Net.Store
             UnicodeUtil.UTF8Result utf8Result = new UnicodeUtil.UTF8Result();
 			UnicodeUtil.UTF16toUTF8(s, 0, s.Length, utf8Result);
 			WriteVInt(utf8Result.length);
-			WriteBytes(utf8Result.result, 0, utf8Result.length);
+			WriteBytes(utf8Result.result.Span.Slice(0, utf8Result.length));
 		}
 		
 		/// <summary>Writes a sub sequence of characters from s as the old
@@ -192,25 +172,28 @@ namespace Lucene.Net.Store
 		}
 		
 		private static int COPY_BUFFER_SIZE = 16384;
-		private byte[] copyBuffer;
 		
 		/// <summary>Copy numBytes bytes from input to ourself. </summary>
 		public virtual void  CopyBytes(IndexInput input, long numBytes, IState state)
 		{
 			System.Diagnostics.Debug.Assert(numBytes >= 0, "numBytes=" + numBytes);
 			long left = numBytes;
-			if (copyBuffer == null)
-				copyBuffer = new byte[COPY_BUFFER_SIZE];
-			while (left > 0)
-			{
-				int toCopy;
-				if (left > COPY_BUFFER_SIZE)
-					toCopy = COPY_BUFFER_SIZE;
-				else
-					toCopy = (int) left;
-				input.ReadBytes(copyBuffer, 0, toCopy, state);
-				WriteBytes(copyBuffer, 0, toCopy);
-				left -= toCopy;
+			using(var copyBuffer = MemoryPool<byte>.Shared.Rent(COPY_BUFFER_SIZE))
+            {
+				while (left > 0)
+				{
+					int toCopy;
+					if (left > COPY_BUFFER_SIZE)
+						toCopy = COPY_BUFFER_SIZE;
+					else
+						toCopy = (int)left;
+
+					var buffer = copyBuffer.Memory.Span.Slice(0, toCopy);
+
+					input.ReadBytes(buffer, state);
+					WriteBytes(buffer);
+					left -= toCopy;
+				}
 			}
 		}
 		

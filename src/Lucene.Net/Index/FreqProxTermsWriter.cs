@@ -16,6 +16,7 @@
  */
 
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 using Lucene.Net.Store;
 using UnicodeUtil = Lucene.Net.Util.UnicodeUtil;
@@ -154,8 +155,6 @@ namespace Lucene.Net.Index
 	        }
 		}
 		
-		private byte[] payloadBuffer;
-		
 		/* Walk through all unique text tokens (Posting
 		* instances) found in this field and serialize them
 		* into a single RAM segment. */
@@ -230,31 +229,50 @@ namespace Lucene.Net.Index
 					if (!currentFieldOmitTermFreqAndPositions)
 					{
 						// omitTermFreqAndPositions == false so we do write positions &
-						// payload          
-						int position = 0;
-						for (int j = 0; j < termDocFreq; j++)
-						{
-							int code = prox.ReadVInt(state);
-							position += (code >> 1);
-							
-							int payloadLength;
-							if ((code & 1) != 0)
-							{
-								// This position has a payload
-								payloadLength = prox.ReadVInt(state);
-								
-								if (payloadBuffer == null || payloadBuffer.Length < payloadLength)
-									payloadBuffer = new byte[payloadLength];
-								
-								prox.ReadBytes(payloadBuffer, 0, payloadLength, state);
-							}
-							else
-								payloadLength = 0;
-							
-							posConsumer.AddPosition(position, payloadBuffer, 0, payloadLength);
-						} //End for
+						// payload
 						
-						posConsumer.Finish();
+						IMemoryOwner<byte> payloadBuffer = null;
+
+                        try
+                        {
+							int position = 0;
+							for (int j = 0; j < termDocFreq; j++)
+							{
+								int code = prox.ReadVInt(state);
+								position += (code >> 1);
+
+								int payloadLength;
+								if ((code & 1) != 0)
+								{
+									// This position has a payload
+									payloadLength = prox.ReadVInt(state);
+
+									if (payloadBuffer == null)
+										payloadBuffer = MemoryPool<byte>.Shared.Rent(payloadLength);
+									else if (payloadBuffer.Memory.Length < payloadLength)
+									{
+										payloadBuffer.Dispose();
+										payloadBuffer = MemoryPool<byte>.Shared.Rent(payloadLength);
+									}
+
+									prox.ReadBytes(payloadBuffer.Memory.Span.Slice(0, payloadLength), state);
+								}
+								else
+									payloadLength = 0;
+
+                                var payload = payloadLength == 0
+                                    ? Span<byte>.Empty
+                                    : payloadBuffer.Memory.Span.Slice(0, payloadLength);
+
+                                posConsumer.AddPosition(position, payload);
+							} //End for
+
+							posConsumer.Finish();
+						}
+                        finally
+                        {
+							payloadBuffer?.Dispose();
+						}
 					}
 					
 					if (!minState.NextDoc(state))

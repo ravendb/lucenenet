@@ -46,7 +46,7 @@ namespace Lucene.Net.Store
 		/// </param>
 		/// <seealso cref="IndexOutput.WriteBytes(byte[],int)">
 		/// </seealso>
-		public abstract void  ReadBytes(byte[] b, int offset, int len, IState state);
+		public abstract void  ReadBytes(Span<byte> b, IState state);
 		
 		/// <summary>Reads a specified number of bytes into an array at the
 		/// specified offset with control over whether the read
@@ -65,10 +65,10 @@ namespace Lucene.Net.Store
 		/// </param>
 		/// <seealso cref="IndexOutput.WriteBytes(byte[],int)">
 		/// </seealso>
-		public virtual void  ReadBytes(byte[] b, int offset, int len, bool useBuffer, IState state)
+		public virtual void  ReadBytes(Span<byte> b, bool useBuffer, IState state)
 		{
 			// Default to ignoring useBuffer entirely
-			ReadBytes(b, offset, len, state);
+			ReadBytes(b, state);
 		}
 		
 		/// <summary>Reads four bytes and returns an int.</summary>
@@ -139,9 +139,9 @@ namespace Lucene.Net.Store
 			if (preUTF8Strings)
 				return ReadModifiedUTF8String(state);
 			int length = ReadVInt(state);
-            byte[] bytes = new byte[length];
-			ReadBytes(bytes, 0, length, state);
-            return System.Text.Encoding.UTF8.GetString(bytes, 0, length);
+            Span<byte> bytes = new byte[length];
+			ReadBytes(bytes, state);
+            return System.Text.Encoding.UTF8.GetString(bytes);
 		}
 		
 		private System.String ReadModifiedUTF8String(IState state)

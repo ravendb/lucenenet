@@ -67,14 +67,14 @@ namespace Lucene.Net.Search.Payloads
 		/// <returns> payloads Collection
 		/// </returns>
 		/// <throws>  IOException </throws>
-		public virtual ICollection<byte[]> GetPayloadsForQuery(Query query, IState state)
+		public virtual ICollection<Memory<byte>> GetPayloadsForQuery(Query query, IState state)
 		{
-			ICollection<byte[]> payloads = new List<byte[]>();
+			ICollection<Memory<byte>> payloads = new List<Memory<byte>>();
 			QueryToSpanQuery(query, payloads, state);
 			return payloads;
 		}
 		
-		private void  QueryToSpanQuery(Query query, ICollection<byte[]> payloads, IState state)
+		private void  QueryToSpanQuery(Query query, ICollection<Memory<byte>> payloads, IState state)
 		{
 			if (query is BooleanQuery)
 			{
@@ -192,7 +192,7 @@ namespace Lucene.Net.Search.Payloads
 			}
 		}
 		
-		private void  GetPayloads(ICollection<byte[]> payloads, SpanQuery query, IState state)
+		private void  GetPayloads(ICollection<Memory<byte>> payloads, SpanQuery query, IState state)
 		{
 			Spans.Spans spans = query.GetSpans(reader, state);
 			
@@ -200,8 +200,8 @@ namespace Lucene.Net.Search.Payloads
 			{
 				if (spans.IsPayloadAvailable())
 				{
-                    ICollection<byte[]> payload = spans.GetPayload(state);
-                    foreach (byte[] bytes in payload)
+                    ICollection<Memory<byte>> payload = spans.GetPayload(state);
+                    foreach (Memory<byte> bytes in payload)
                     {
                         payloads.Add(bytes);
                     }

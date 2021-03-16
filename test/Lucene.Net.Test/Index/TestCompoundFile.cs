@@ -112,16 +112,16 @@ namespace Lucene.Net.Index
 			Assert.AreEqual(expected.Length(null), test.Length(null), msg + " length");
 			Assert.AreEqual(expected.FilePointer(null), test.FilePointer(null), msg + " position");
 			
-			byte[] expectedBuffer = new byte[512];
-			byte[] testBuffer = new byte[expectedBuffer.Length];
+			Span<byte> expectedBuffer = new byte[512];
+			Span<byte> testBuffer = new byte[expectedBuffer.Length];
 			
 			long remainder = expected.Length(null) - expected.FilePointer(null);
 			while (remainder > 0)
 			{
 				int readLen = (int) System.Math.Min(remainder, expectedBuffer.Length);
-				expected.ReadBytes(expectedBuffer, 0, readLen, null);
-				test.ReadBytes(testBuffer, 0, readLen, null);
-				AssertEqualArrays(msg + ", remainder " + remainder, expectedBuffer, testBuffer, 0, readLen);
+				expected.ReadBytes(expectedBuffer.Slice(0, readLen), null);
+				test.ReadBytes(testBuffer.Slice(0, readLen), null);
+				AssertEqualArrays(msg + ", remainder " + remainder, expectedBuffer.Slice(0, readLen).ToArray(), testBuffer.Slice(0, readLen).ToArray(), 0, readLen);
 				remainder -= readLen;
 			}
 		}
@@ -605,13 +605,13 @@ namespace Lucene.Net.Index
 			CompoundFileReader cr = new CompoundFileReader(dir, "f.comp", null);
 			IndexInput is_Renamed = cr.OpenInput("f2", null);
 			is_Renamed.Seek(is_Renamed.Length(null) - 10, null);
-			byte[] b = new byte[100];
-			is_Renamed.ReadBytes(b, 0, 10, null);
+			Memory<byte> b = new byte[100];
+			is_Renamed.ReadBytes(b.Span.Slice(0, 10), null);
 			
             Assert.Throws<System.IO.IOException>(() => is_Renamed.ReadByte(null), "Single byte read past end of file");
 			
 			is_Renamed.Seek(is_Renamed.Length(null) - 10, null);
-		    Assert.Throws<System.IO.IOException>(() => is_Renamed.ReadBytes(b, 0, 50, null), "Block read past end of file");
+		    Assert.Throws<System.IO.IOException>(() => is_Renamed.ReadBytes(b.Span.Slice(0, 50), null), "Block read past end of file");
 			
 			is_Renamed.Close();
 			cr.Close();
@@ -625,14 +625,14 @@ namespace Lucene.Net.Index
 		{
 			IndexOutput os = dir.CreateOutput("testBufferStart.txt", null);
 			
-			byte[] largeBuf = new byte[2048];
+			Span<byte> largeBuf = new byte[2048];
 			for (int i = 0; i < largeBuf.Length; i++)
 			{
 				largeBuf[i] = (byte) ((new System.Random().NextDouble()) * 256);
 			}
 			
 			long currentPos = os.FilePointer;
-			os.WriteBytes(largeBuf, largeBuf.Length);
+			os.WriteBytes(largeBuf);
 			
 			try
 			{

@@ -216,9 +216,9 @@ namespace Lucene.Net.Index
 				return this.input.ReadByte(null);
 			}
 			
-			public override void  ReadBytes(byte[] b, int offset, int len, IState state)
+			public override void  ReadBytes(Span<byte> b, IState state)
 			{
-				this.input.ReadBytes(b, offset, len, null);
+				this.input.ReadBytes(b, null);
 			}
 
             protected override void Dispose(bool disposing)

@@ -173,11 +173,11 @@ namespace Lucene.Net.Index
 				int prefix = 0;
 				if (j > 0)
 				{
-					byte[] lastTermBytes = perThread.utf8Results[1 - encoderUpto].result;
-					byte[] termBytes = perThread.utf8Results[encoderUpto].result;
+					Memory<byte> lastTermBytes = perThread.utf8Results[1 - encoderUpto].result;
+					Memory<byte> termBytes = perThread.utf8Results[encoderUpto].result;
 					while (prefix < lastTermBytesCount && prefix < termBytesCount)
 					{
-						if (lastTermBytes[prefix] != termBytes[prefix])
+						if (lastTermBytes.Span[prefix] != termBytes.Span[prefix])
 							break;
 						prefix++;
 					}
@@ -188,7 +188,7 @@ namespace Lucene.Net.Index
 				int suffix = termBytesCount - prefix;
 				tvf.WriteVInt(prefix);
 				tvf.WriteVInt(suffix);
-				tvf.WriteBytes(utf8Result.result, prefix, suffix);
+				tvf.WriteBytes(utf8Result.result.Span.Slice(prefix, suffix));
 				tvf.WriteVInt(freq);
 				
 				if (doVectorPositions)

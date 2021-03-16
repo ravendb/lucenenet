@@ -89,9 +89,9 @@ namespace Lucene.Net.Search.Spans
 			
 			// TODO: Remove warning after API has been finalized
 
-		    public override ICollection<byte[]> GetPayload(IState state)
+		    public override ICollection<Memory<byte>> GetPayload(IState state)
 		    {
-		        System.Collections.Generic.ICollection<byte[]> result = null;
+		        System.Collections.Generic.ICollection<Memory<byte>> result = null;
 		        if (spans.IsPayloadAvailable())
 		        {
 		            result = spans.GetPayload(state);

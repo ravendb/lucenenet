@@ -114,8 +114,8 @@ namespace Lucene.Net.Search.Spans
 			fieldExpl.AddDetail(idfExpl);
 			
 			Explanation fieldNormExpl = new Explanation();
-			byte[] fieldNorms = reader.Norms(field, state);
-			float fieldNorm = fieldNorms != null?Similarity.DecodeNorm(fieldNorms[doc]):1.0f;
+			Memory<byte> fieldNorms = reader.Norms(field, state);
+			float fieldNorm = fieldNorms.IsEmpty == false ? Similarity.DecodeNorm(fieldNorms.Span[doc]):1.0f;
 			fieldNormExpl.Value = fieldNorm;
 			fieldNormExpl.Description = "fieldNorm(field=" + field + ", doc=" + doc + ")";
 			fieldExpl.AddDetail(fieldNormExpl);

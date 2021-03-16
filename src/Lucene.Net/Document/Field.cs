@@ -195,9 +195,9 @@ namespace Lucene.Net.Documents
             }
             fieldsData = value;
         }
-        
+
         /// <summary>Expert: change the value of this field.  See <a href="#setValue(java.lang.String)">setValue(String)</a>. </summary>
-        public void  SetValue(byte[] value)
+        public void  SetValue(Memory<byte> value)
         {
             if (!internalIsBinary)
             {
@@ -206,18 +206,6 @@ namespace Lucene.Net.Documents
             fieldsData = value;
             internalBinaryLength = value.Length;
             internalbinaryOffset = 0;
-        }
-        
-        /// <summary>Expert: change the value of this field.  See <a href="#setValue(java.lang.String)">setValue(String)</a>. </summary>
-        public void  SetValue(byte[] value, int offset, int length)
-        {
-            if (!internalIsBinary)
-            {
-                throw new System.ArgumentException("cannot set a byte[] value on a non-binary field");
-            }
-            fieldsData = value;
-            internalBinaryLength = length;
-            internalbinaryOffset = offset;
         }
         
         /// <summary>Expert: sets the token stream to be used for indexing and causes isIndexed() and isTokenized() to return true.
@@ -448,7 +436,7 @@ namespace Lucene.Net.Documents
         /// <param name="store">How <c>value</c> should be stored (compressed or not)
         /// </param>
         /// <throws>  IllegalArgumentException if store is <c>Store.NO</c>  </throws>
-        public Field(System.String name, byte[] value_Renamed, Store store):this(name, value_Renamed, 0, value_Renamed.Length, store)
+        public Field(System.String name, Memory<byte> value_Renamed, Store store):this(name, value_Renamed, 0, value_Renamed.Length, store)
         {
         }
         
@@ -466,14 +454,12 @@ namespace Lucene.Net.Documents
         /// <param name="store">How <c>value</c> should be stored (compressed or not)
         /// </param>
         /// <throws>  IllegalArgumentException if store is <c>Store.NO</c>  </throws>
-        public Field(System.String name, byte[] value_Renamed, int offset, int length, Store store)
+        public Field(System.String name, Memory<byte> value_Renamed, int offset, int length, Store store)
         {
             
             if (name == null)
                 throw new System.ArgumentException("name cannot be null");
-            if (value_Renamed == null)
-                throw new System.ArgumentException("value cannot be null");
-            
+
             this.internalName = StringHelper.Intern(name); // field names are interned
             fieldsData = value_Renamed;
             

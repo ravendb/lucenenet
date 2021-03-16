@@ -103,7 +103,7 @@ namespace Lucene.Net.Index
                 
         private SegmentReader[] subReaders;
         private int[] starts; // 1st docno for each segment
-        private HashMap<string, byte[]> normsCache = new HashMap<string, byte[]>();
+        private HashMap<string, Memory<byte>> normsCache = new HashMap<string, Memory<byte>>();
         private int maxDoc = 0;
         private int numDocs = - 1;
         private bool hasDeletions = false;
@@ -241,7 +241,7 @@ namespace Lucene.Net.Index
         
         /// <summary>This constructor is only used for <see cref="Reopen()" /> </summary>
         internal DirectoryReader(Directory directory, SegmentInfos infos, SegmentReader[] oldReaders, int[] oldStarts,
-                                 IEnumerable<KeyValuePair<string, byte[]>> oldNormsCache, bool readOnly, bool doClone, int termInfosIndexDivisor, IState state)
+                                 IEnumerable<KeyValuePair<string, Memory<byte>>> oldNormsCache, bool readOnly, bool doClone, int termInfosIndexDivisor, IState state)
         {
             this.internalDirectory = directory;
             this.readOnly = readOnly;
@@ -364,10 +364,10 @@ namespace Lucene.Net.Index
                     {
                         continue;
                     }
+
+                    Memory<byte> oldBytes = entry.Value;
                     
-                    byte[] oldBytes = entry.Value;
-                    
-                    var bytes = new byte[MaxDoc];
+                    Memory<byte> bytes = new byte[MaxDoc];
                     
                     for (int i = 0; i < subReaders.Length; i++)
                     {
@@ -381,11 +381,11 @@ namespace Lucene.Net.Index
                             // we don't have to synchronize here: either this constructor is called from a SegmentReader,
                             // in which case no old norms cache is present, or it is called from MultiReader.reopen(),
                             // which is synchronized
-                            Array.Copy(oldBytes, oldStarts[oldReaderIndex], bytes, starts[i], starts[i + 1] - starts[i]);
+                            oldBytes.Span.Slice(oldStarts[oldReaderIndex], starts[i + 1] - starts[i]).CopyTo(bytes.Span.Slice(starts[i]));
                         }
                         else
                         {
-                            subReaders[i].Norms(field, bytes, starts[i], state);
+                            subReaders[i].Norms(field, bytes.Span.Slice(starts[i]), state);
                         }
                     }
                     
@@ -759,48 +759,49 @@ namespace Lucene.Net.Index
         	return subReaders.Any(t => t.HasNorms(field, state));
         }
         
-        public override byte[] Norms(System.String field, IState state)
+        public override Memory<byte> Norms(System.String field, IState state)
         {
             lock (this)
             {
                 EnsureOpen();
-                byte[] bytes = normsCache[field];
-                if (bytes != null)
+                Memory<byte> bytes = normsCache[field];
+                if (bytes.IsEmpty == false)
                     return bytes; // cache hit
                 if (!HasNorms(field, state))
                     return null;
                 
                 bytes = new byte[MaxDoc];
                 for (int i = 0; i < subReaders.Length; i++)
-                    subReaders[i].Norms(field, bytes, starts[i], state);
+                    subReaders[i].Norms(field, bytes.Span.Slice(starts[i]), state);
                 normsCache[field] = bytes; // update cache
                 return bytes;
             }
         }
         
-        public override void  Norms(System.String field, byte[] result, int offset, IState state)
+        public override void  Norms(System.String field, Span<byte> result, IState state)
         {
+            var offset = 0;
             lock (this)
             {
                 EnsureOpen();
-                byte[] bytes = normsCache[field];
-                if (bytes == null && !HasNorms(field, state))
+                Memory<byte> bytes = normsCache[field];
+                if (bytes.IsEmpty && !HasNorms(field, state))
                 {
                     byte val = DefaultSimilarity.EncodeNorm(1.0f);
-                    for (int index = offset; index < result.Length; index++)
-                        result.SetValue(val, index);
+                    for (int index = 0; index < result.Length; index++)
+                        result[index] = val;
                 }
-                else if (bytes != null)
+                else if (bytes.IsEmpty == false)
                 {
                     // cache hit
-                    Array.Copy(bytes, 0, result, offset, MaxDoc);
+                    bytes.Span.Slice(0, MaxDoc).CopyTo(result.Slice(offset));
                 }
                 else
                 {
                     for (int i = 0; i < subReaders.Length; i++)
                     {
                         // read from segments
-                        subReaders[i].Norms(field, result, offset + starts[i], state);
+                        subReaders[i].Norms(field, result.Slice(starts[i]), state);
                     }
                 }
             }
@@ -1532,9 +1533,9 @@ namespace Lucene.Net.Index
                 get { return ((TermPositions) current).PayloadLength; }
             }
 
-            public virtual byte[] GetPayload(byte[] data, int offset, IState state)
+            public virtual Memory<byte> GetPayload(Memory<byte> data, IState state)
             {
-                return ((TermPositions) current).GetPayload(data, offset, state);
+                return ((TermPositions) current).GetPayload(data, state);
             }
             
             

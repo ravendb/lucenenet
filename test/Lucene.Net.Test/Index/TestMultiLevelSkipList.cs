@@ -89,9 +89,9 @@ namespace Lucene.Net.Index
 			Assert.AreEqual(target, tp.Doc, "Wrong document " + tp.Doc + " after skipTo target " + target);
 			Assert.AreEqual(1, tp.Freq, "Frequency is not 1: " + tp.Freq);
 			tp.NextPosition(null);
-			byte[] b = new byte[1];
-			tp.GetPayload(b, 0, null);
-			Assert.AreEqual((byte) target, b[0], "Wrong payload for the target " + target + ": " + b[0]);
+			Memory<byte> b = new byte[1];
+			tp.GetPayload(b, null);
+			Assert.AreEqual((byte) target, b.Span[0], "Wrong payload for the target " + target + ": " + b.Span[0]);
 		}
 		
 		private class PayloadAnalyzer:Analyzer
@@ -158,10 +158,10 @@ namespace Lucene.Net.Index
 				return this.input.ReadByte(null);
 			}
 			
-			public override void  ReadBytes(byte[] b, int offset, int len, IState state)
+			public override void  ReadBytes(Span<byte> b, IState state)
 			{
-				Enclosing_Instance.counter += len;
-				this.input.ReadBytes(b, offset, len, null);
+				Enclosing_Instance.counter += b.Length;
+				this.input.ReadBytes(b, null);
 			}
 
             protected override void Dispose(bool disposing)

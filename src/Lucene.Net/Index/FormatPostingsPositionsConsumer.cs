@@ -15,6 +15,8 @@
  * limitations under the License.
  */
 
+using System;
+
 namespace Lucene.Net.Index
 {
 	
@@ -24,7 +26,7 @@ namespace Lucene.Net.Index
 		/// <summary>Add a new position &amp; payload.  If payloadLength > 0
 		/// you must read those bytes from the IndexInput. 
 		/// </summary>
-		internal abstract void  AddPosition(int position, byte[] payload, int payloadOffset, int payloadLength);
+		internal abstract void  AddPosition(int position, Span<byte> payload);
 		
 		/// <summary>Called when we are done adding positions &amp; payloads </summary>
 		internal abstract void  Finish();

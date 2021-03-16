@@ -26,6 +26,7 @@ using MergeAbortedException = Lucene.Net.Index.MergePolicy.MergeAbortedException
 using Directory = Lucene.Net.Store.Directory;
 using IndexInput = Lucene.Net.Store.IndexInput;
 using IndexOutput = Lucene.Net.Store.IndexOutput;
+using System.Buffers;
 
 namespace Lucene.Net.Index
 {
@@ -99,7 +100,7 @@ namespace Lucene.Net.Index
 		}
 		
 		/// <summary>norms header placeholder </summary>
-		internal static readonly byte[] NORMS_HEADER = new byte[]{(byte) 'N', (byte) 'R', (byte) 'M', unchecked((byte) - 1)};
+		internal static readonly Memory<byte> NORMS_HEADER = new byte[]{(byte) 'N', (byte) 'R', (byte) 'M', unchecked((byte) - 1)};
 		
 		private Directory directory;
 		private System.String segment;
@@ -773,7 +774,6 @@ namespace Lucene.Net.Index
 			}
 		}
 		
-		private byte[] payloadBuffer;
 		private int[][] docMaps;
 		internal int[][] GetDocMaps()
 		{
@@ -825,19 +825,38 @@ namespace Lucene.Net.Index
 					
 					if (!omitTermFreqAndPositions)
 					{
-						for (int j = 0; j < freq; j++)
-						{
-							int position = postings.NextPosition(state);
-							int payloadLength = postings.PayloadLength;
-							if (payloadLength > 0)
+						IMemoryOwner<byte> payloadBuffer = null;
+						try
+                        {
+							for (int j = 0; j < freq; j++)
 							{
-								if (payloadBuffer == null || payloadBuffer.Length < payloadLength)
-									payloadBuffer = new byte[payloadLength];
-								postings.GetPayload(payloadBuffer, 0, state);
+								int position = postings.NextPosition(state);
+								int payloadLength = postings.PayloadLength;
+								if (payloadLength > 0)
+								{
+									if (payloadBuffer == null)
+										payloadBuffer = MemoryPool<byte>.Shared.Rent(payloadLength);
+									else if (payloadBuffer.Memory.Length < payloadLength)
+                                    {
+										payloadBuffer.Dispose();
+										payloadBuffer = MemoryPool<byte>.Shared.Rent(payloadLength);
+									}
+
+									postings.GetPayload(payloadBuffer.Memory, state);
+								}
+
+                                var payload = payloadLength == 0
+                                    ? Span<byte>.Empty
+                                    : payloadBuffer.Memory.Span.Slice(0, payloadLength);
+
+								posConsumer.AddPosition(position, payload);
 							}
-							posConsumer.AddPosition(position, payloadBuffer, 0, payloadLength);
+							posConsumer.Finish();
 						}
-						posConsumer.Finish();
+                        finally
+                        {
+							payloadBuffer?.Dispose();
+                        }
 					}
 				}
 			}
@@ -848,7 +867,7 @@ namespace Lucene.Net.Index
 		
 		private void  MergeNorms(IState state)
 		{
-			byte[] normBuffer = null;
+			IMemoryOwner<byte> normBuffer = null;
 			IndexOutput output = null;
 			try
 			{
@@ -861,21 +880,27 @@ namespace Lucene.Net.Index
 						if (output == null)
 						{
 							output = directory.CreateOutput(segment + "." + IndexFileNames.NORMS_EXTENSION, state);
-							output.WriteBytes(NORMS_HEADER, NORMS_HEADER.Length);
+							output.WriteBytes(NORMS_HEADER.Span);
 						}
 						foreach(IndexReader reader in readers)
 						{
 							int maxDoc = reader.MaxDoc;
-							if (normBuffer == null || normBuffer.Length < maxDoc)
-							{
-								// the buffer is too small for the current segment
-								normBuffer = new byte[maxDoc];
-							}
-							reader.Norms(fi.name, normBuffer, 0, state);
+                            if (normBuffer == null)
+                            {
+                                normBuffer = MemoryPool<byte>.Shared.Rent(maxDoc);
+                            } 
+                            else if (normBuffer.Memory.Length < maxDoc)
+                            {
+                                // the buffer is too small for the current segment
+								normBuffer.Dispose();
+								normBuffer = MemoryPool<byte>.Shared.Rent(maxDoc);
+                            }
+
+							reader.Norms(fi.name, normBuffer.Memory.Span, state);
 							if (!reader.HasDeletions)
 							{
 								//optimized case for segments without deleted docs
-								output.WriteBytes(normBuffer, maxDoc);
+								output.WriteBytes(normBuffer.Memory.Span.Slice(0, maxDoc));
 							}
 							else
 							{
@@ -885,7 +910,7 @@ namespace Lucene.Net.Index
 								{
 									if (!reader.IsDeleted(k))
 									{
-										output.WriteByte(normBuffer[k]);
+										output.WriteByte(normBuffer.Memory.Span[k]);
 									}
 								}
 							}
@@ -896,6 +921,8 @@ namespace Lucene.Net.Index
 			}
 			finally
 			{
+				normBuffer?.Dispose();
+
 				if (output != null)
 				{
 					output.Close();

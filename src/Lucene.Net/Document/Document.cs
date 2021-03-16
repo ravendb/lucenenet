@@ -16,6 +16,7 @@
  */
 
 using System;
+using System.Collections.Generic;
 using Lucene.Net.Store;
 
 // for javadoc
@@ -36,7 +37,7 @@ namespace Lucene.Net.Documents
     /// 
     /// <p/>Note that fields which are <i>not</i> <see cref="IFieldable.IsStored()">stored</see> are
     /// <i>not</i> available in documents retrieved from the index, e.g. with <see cref="ScoreDoc.Doc" />,
-    /// <see cref="Searcher.Doc(int)" /> or <see cref="IndexReader.Document(int)" />.
+    /// <see cref="Searcher.Doc(int)" /> or <see cref="Document" />.
     /// </summary>
     [Serializable]
     public sealed class Document
@@ -220,7 +221,7 @@ namespace Lucene.Net.Documents
 		/// <summary>Returns a List of all the fields in a document.
 		/// <p/>Note that fields which are <i>not</i> <see cref="IFieldable.IsStored()">stored</see> are
 		/// <i>not</i> available in documents retrieved from the
-		/// index, e.g. <see cref="Searcher.Doc(int)" /> or <see cref="IndexReader.Document(int)" />.
+		/// index, e.g. <see cref="Searcher.Doc(int)" /> or <see cref="Document" />.
 		/// </summary>
 		public System.Collections.Generic.IList<IFieldable> GetFields()
 		{
@@ -310,8 +311,8 @@ namespace Lucene.Net.Documents
 			
 			return result.ToArray();
 		}
-		
-		private static readonly byte[][] NO_BYTES = new byte[0][];
+
+        private static readonly List<Memory<byte>> NO_BYTES = new List<Memory<byte>>();
 		
 		/// <summary> Returns an array of byte arrays for of the fields that have the name specified
 		/// as the method parameter.  This method returns an empty
@@ -323,9 +324,9 @@ namespace Lucene.Net.Documents
 		/// </param>
 		/// <returns> a <c>byte[][]</c> of binary field values
 		/// </returns>
-		public byte[][] GetBinaryValues(System.String name, IState state)
+		public List<Memory<byte>> GetBinaryValues(System.String name, IState state)
 		{
-			var result = new System.Collections.Generic.List<byte[]>();
+			var result = new System.Collections.Generic.List<Memory<byte>>();
 			foreach(IFieldable field in fields)
 			{
 				if (field.Name.Equals(name) && (field.IsBinary))
@@ -335,7 +336,7 @@ namespace Lucene.Net.Documents
 			if (result.Count == 0)
 				return NO_BYTES;
 
-            return result.ToArray();
+            return result;
         }
 		
 		/// <summary> Returns an array of bytes for the first (or only) field that has the name
@@ -348,7 +349,7 @@ namespace Lucene.Net.Documents
 		/// </param>
 		/// <returns> a <c>byte[]</c> containing the binary field value or <c>null</c>
 		/// </returns>
-		public byte[] GetBinaryValue(System.String name, IState state)
+		public Memory<byte> GetBinaryValue(System.String name, IState state)
 		{
 			foreach(IFieldable field in fields)
 			{

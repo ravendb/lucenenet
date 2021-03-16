@@ -156,10 +156,10 @@ namespace Lucene.Net.Search.Spans
 			}
 			// TODO: Remove warning after API has been finalized
 
-		    public override ICollection<byte[]> GetPayload(IState state)
-		    {
-		        return spans.GetPayload(state).ToArray();
-		    }
+		    public override ICollection<Memory<byte>> GetPayload(IState state)
+            {
+                return spans.GetPayload(state);
+            }
 
 		    // TODO: Remove warning after API has been finalized
 
@@ -320,9 +320,9 @@ namespace Lucene.Net.Search.Spans
 	    /// <summary> WARNING: The List is not necessarily in order of the the positions</summary>
 	    /// <returns> Collection of &amp;lt;c&amp;gt;byte[]&amp;lt;/c&amp;gt; payloads </returns>
 	    /// <throws>  IOException </throws>
-	    public override ICollection<byte[]> GetPayload(IState state)
+	    public override ICollection<Memory<byte>> GetPayload(IState state)
 	    {
-            System.Collections.Generic.ISet<byte[]> matchPayload = Lucene.Net.Support.Compatibility.SetFactory.CreateHashSet<byte[]>();
+            System.Collections.Generic.ISet<Memory<byte>> matchPayload = Lucene.Net.Support.Compatibility.SetFactory.CreateHashSet<Memory<byte>>();
 	        for (SpansCell cell = first; cell != null; cell = cell.next)
 	        {
 	            if (cell.IsPayloadAvailable())

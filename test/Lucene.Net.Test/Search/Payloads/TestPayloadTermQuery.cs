@@ -348,7 +348,7 @@ namespace Lucene.Net.Search.Payloads
 		{
 			
 			// TODO: Remove warning after API has been finalized
-			public override float ScorePayload(int docId, System.String fieldName, int start, int end, byte[] payload, int offset, int length)
+			public override float ScorePayload(int docId, System.String fieldName, int start, int end, Span<byte> payload)
 			{
 				//we know it is size 4 here, so ignore the offset/length
 				return payload[0];

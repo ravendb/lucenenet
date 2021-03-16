@@ -16,6 +16,7 @@
  */
 
 using System;
+using System.Buffers;
 using Lucene.Net.Store;
 using BufferedIndexInput = Lucene.Net.Store.BufferedIndexInput;
 using IndexInput = Lucene.Net.Store.IndexInput;
@@ -281,24 +282,27 @@ namespace Lucene.Net.Index
 		/// <summary>used to buffer the top skip levels </summary>
 		private sealed class SkipBuffer : IndexInput
 		{
-			private byte[] data;
+			private IMemoryOwner<byte> data;
 			private readonly long pointer;
-			private int pos;
+            private readonly int length;
+            private int pos;
 
 		    private bool isDisposed;
 			
 			internal SkipBuffer(IndexInput input, int length, IState state)
 			{
-				data = new byte[length];
+				data = MemoryPool<byte>.Shared.Rent(length);
 				pointer = input.FilePointer(state);
-				input.ReadBytes(data, 0, length, state);
-			}
+				input.ReadBytes(data.Memory.Span.Slice(0, length), state);
+                this.length = length;
+            }
 
             protected override void Dispose(bool disposing)
             {
                 if (isDisposed) return;
                 if (disposing)
                 {
+					data?.Dispose();
                     data = null;
                 }
 
@@ -312,18 +316,18 @@ namespace Lucene.Net.Index
 
 		    public override long Length(IState state)
 			{
-				return data.Length;
+				return length;
 			}
 			
 			public override byte ReadByte(IState state)
 			{
-				return data[pos++];
+				return data.Memory.Span[pos++];
 			}
 			
-			public override void  ReadBytes(byte[] b, int offset, int len, IState state)
+			public override void  ReadBytes(Span<byte> b, IState state)
 			{
-				Array.Copy(data, pos, b, offset, len);
-				pos += len;
+				data.Memory.Span.Slice(pos, b.Length).CopyTo(b);
+				pos += b.Length;
 			}
 			
 			public override void  Seek(long pos, IState state)

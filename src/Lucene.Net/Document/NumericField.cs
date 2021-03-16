@@ -217,7 +217,7 @@ namespace Lucene.Net.Documents
 	    }
 
 	    /// <summary>Returns always <c>null</c> for numeric fields </summary>
-		public override byte[] GetBinaryValue(byte[] result, IState state)
+		public override Memory<byte> GetBinaryValue(Memory<byte> result, IState state)
 		{
 			return null;
 		}

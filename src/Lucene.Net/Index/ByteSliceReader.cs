@@ -32,7 +32,7 @@ namespace Lucene.Net.Index
 	{
 		internal ByteBlockPool pool;
 		internal int bufferUpto;
-		internal byte[] buffer;
+		internal Memory<byte> buffer;
 		public int upto;
 		internal int limit;
 		internal int level;
@@ -79,7 +79,7 @@ namespace Lucene.Net.Index
 			System.Diagnostics.Debug.Assert(upto <= limit);
 			if (upto == limit)
 				NextSlice();
-			return buffer[upto++];
+			return buffer.Span[upto++];
 		}
 		
 		public long WriteTo(IndexOutput @out)
@@ -90,13 +90,13 @@ namespace Lucene.Net.Index
 				if (limit + bufferOffset == endIndex)
 				{
 					System.Diagnostics.Debug.Assert(endIndex - bufferOffset >= upto);
-					@out.WriteBytes(buffer, upto, limit - upto);
+					@out.WriteBytes(buffer.Span.Slice(upto, limit - upto));
 					size += limit - upto;
 					break;
 				}
 				else
 				{
-					@out.WriteBytes(buffer, upto, limit - upto);
+					@out.WriteBytes(buffer.Span.Slice(upto, limit - upto));
 					size += limit - upto;
 					NextSlice();
 				}
@@ -109,7 +109,7 @@ namespace Lucene.Net.Index
 		{
 			
 			// Skip to our next slice
-			int nextIndex = ((buffer[limit] & 0xff) << 24) + ((buffer[1 + limit] & 0xff) << 16) + ((buffer[2 + limit] & 0xff) << 8) + (buffer[3 + limit] & 0xff);
+			int nextIndex = ((buffer.Span[limit] & 0xff) << 24) + ((buffer.Span[1 + limit] & 0xff) << 16) + ((buffer.Span[2 + limit] & 0xff) << 8) + (buffer.Span[3 + limit] & 0xff);
 			
 			level = ByteBlockPool.nextLevelArray[level];
 			int newSize = ByteBlockPool.levelSizeArray[level];
@@ -134,15 +134,17 @@ namespace Lucene.Net.Index
 			}
 		}
 		
-		public override void  ReadBytes(byte[] b, int offset, int len, IState state)
+		public override void  ReadBytes(Span<byte> b, IState state)
 		{
+			var len = b.Length;
+			var offset = 0;
 			while (len > 0)
 			{
 				int numLeft = limit - upto;
 				if (numLeft < len)
 				{
 					// Read entire slice
-					Array.Copy(buffer, upto, b, offset, numLeft);
+					buffer.Span.Slice(upto, numLeft).CopyTo(b.Slice(offset));
 					offset += numLeft;
 					len -= numLeft;
 					NextSlice();
@@ -150,7 +152,7 @@ namespace Lucene.Net.Index
 				else
 				{
 					// This slice is the last one
-					Array.Copy(buffer, upto, b, offset, len);
+					buffer.Span.Slice(upto, len).CopyTo(b.Slice(offset));
 					upto += len;
 					break;
 				}

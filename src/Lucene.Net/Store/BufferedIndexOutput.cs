@@ -16,6 +16,8 @@
  */
 
 using System;
+using System.Buffers;
+using System.Runtime.InteropServices;
 
 namespace Lucene.Net.Store
 {
@@ -25,7 +27,7 @@ namespace Lucene.Net.Store
 	{
 		internal const int BUFFER_SIZE = 16384;
 		
-		private byte[] buffer = new byte[BUFFER_SIZE];
+		private IMemoryOwner<byte> buffer = MemoryPool<byte>.Shared.Rent(BUFFER_SIZE);
 		private long bufferStart = 0; // position in file of buffer
 		private int bufferPosition = 0; // position in buffer
 
@@ -38,24 +40,19 @@ namespace Lucene.Net.Store
 		{
 			if (bufferPosition >= BUFFER_SIZE)
 				Flush();
-			buffer[bufferPosition++] = b;
+			buffer.Memory.Span[bufferPosition++] = b;
 		}
 		
-		/// <summary>Writes an array of bytes.</summary>
-		/// <param name="b">the bytes to write
-		/// </param>
-		/// <param name="length">the number of bytes to write
-		/// </param>
-		/// <seealso cref="IndexInput.ReadBytes(byte[],int,int)">
-		/// </seealso>
-		public override void  WriteBytes(byte[] b, int offset, int length)
+		public override void WriteBytes(Span<byte> b)
 		{
+			var length = b.Length;
+			var offset = 0;
 			int bytesLeft = BUFFER_SIZE - bufferPosition;
 			// is there enough space in the buffer?
 			if (bytesLeft >= length)
 			{
 				// we add the data to the end of the buffer
-				Array.Copy(b, offset, buffer, bufferPosition, length);
+				b.Slice(offset, length).CopyTo(buffer.Memory.Span.Slice(bufferPosition));
 				bufferPosition += length;
 				// if the buffer is full, flush it
 				if (BUFFER_SIZE - bufferPosition == 0)
@@ -70,7 +67,7 @@ namespace Lucene.Net.Store
 					if (bufferPosition > 0)
 						Flush();
 					// and write data at once
-					FlushBuffer(b, offset, length);
+					FlushBuffer(b.Slice(offset, length));
 					bufferStart += length;
 				}
 				else
@@ -80,8 +77,9 @@ namespace Lucene.Net.Store
 					int pieceLength;
 					while (pos < length)
 					{
-						pieceLength = (length - pos < bytesLeft)?length - pos:bytesLeft;
-						Array.Copy(b, pos + offset, buffer, bufferPosition, pieceLength);
+						pieceLength = (length - pos < bytesLeft) ? length - pos : bytesLeft;
+
+						b.Slice(pos + offset, pieceLength).CopyTo(buffer.Memory.Span.Slice(bufferPosition));
 						pos += pieceLength;
 						bufferPosition += pieceLength;
 						// if the buffer is full, flush it
@@ -95,11 +93,11 @@ namespace Lucene.Net.Store
 				}
 			}
 		}
-		
+
 		/// <summary>Forces any buffered output to be written. </summary>
 		public override void  Flush()
 		{
-			FlushBuffer(buffer, bufferPosition);
+			FlushBuffer(buffer.Memory.Span.Slice(0, bufferPosition));
 			bufferStart += bufferPosition;
 			bufferPosition = 0;
 		}
@@ -125,16 +123,23 @@ namespace Lucene.Net.Store
 		/// </param>
 		/// <param name="len">the number of bytes to write
 		/// </param>
-		public abstract void  FlushBuffer(byte[] b, int offset, int len);
-		
+		public void  FlushBuffer(byte[] b, int offset, int len)
+        {
+			FlushBuffer(new Span<byte>(b, offset, len));
+        }
+
+		public abstract void FlushBuffer(Span<byte> b);
+
 		/// <summary>Closes this stream to further operations. </summary>
-        protected override void Dispose(bool disposing)
+		protected override void Dispose(bool disposing)
         {
             if (isDisposed) return;
 
             if (disposing)
             {
                 Flush();
+				buffer?.Dispose();
+				buffer = null;
             }
 
 		    isDisposed = true;

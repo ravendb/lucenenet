@@ -98,11 +98,11 @@ namespace Lucene.Net.Search.Spans
 		
 		// TODO: Remove warning after API has been finalized
 
-	    public override ICollection<byte[]> GetPayload(IState state)
+	    public override ICollection<Memory<byte>> GetPayload(IState state)
 	    {
-	        byte[] bytes = new byte[internalPositions.PayloadLength];
-	        bytes = internalPositions.GetPayload(bytes, 0, state);
-	        var val = new System.Collections.Generic.List<byte[]>();
+	        Memory<byte> bytes = new byte[internalPositions.PayloadLength];
+	        bytes = internalPositions.GetPayload(bytes, state);
+	        var val = new System.Collections.Generic.List<Memory<byte>>();
 	        val.Add(bytes);
 	        return val;
 	    }

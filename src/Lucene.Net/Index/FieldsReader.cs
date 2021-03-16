@@ -383,9 +383,9 @@ namespace Lucene.Net.Index
 			if (binary)
 			{
 				int toRead = fieldsStream.ReadVInt(state);
-				var b = new byte[toRead];
-				fieldsStream.ReadBytes(b, 0, b.Length, state);
-				doc.Add(compressed ? new Field(fi.name, Uncompress(b), Field.Store.YES) : new Field(fi.name, b, Field.Store.YES));
+				Memory<byte> b = new byte[toRead];
+				fieldsStream.ReadBytes(b.Span, state);
+				doc.Add(compressed ? new Field(fi.name, Uncompress(b.Span), Field.Store.YES) : new Field(fi.name, b, Field.Store.YES));
 			}
 			else
 			{
@@ -398,9 +398,9 @@ namespace Lucene.Net.Index
 				{
 					int toRead = fieldsStream.ReadVInt(state);
 					
-					var b = new byte[toRead];
-					fieldsStream.ReadBytes(b, 0, b.Length, state);
-					f = new Field(fi.name, false, System.Text.Encoding.GetEncoding("UTF-8").GetString(Uncompress(b)), store, index,
+					Span<byte> b = new byte[toRead];
+					fieldsStream.ReadBytes(b, state);
+					f = new Field(fi.name, false, System.Text.Encoding.GetEncoding("UTF-8").GetString(Uncompress(b).Span), store, index,
 					              termVector) {OmitTermFreqAndPositions = fi.omitTermFreqAndPositions, OmitNorms = fi.omitNorms};
 				}
 				else
@@ -525,17 +525,17 @@ namespace Lucene.Net.Index
 		        		localFieldsStream.Seek(pointer, state);
 		        		if (isCompressed)
 		        		{
-		        			var b = new byte[toRead];
-		        			localFieldsStream.ReadBytes(b, 0, b.Length, state);
+		        			Span<byte> b = new byte[toRead];
+		        			localFieldsStream.ReadBytes(b, state);
 		        			fieldsData =
-		        				System.Text.Encoding.GetEncoding("UTF-8").GetString(Enclosing_Instance.Uncompress(b));
+		        				System.Text.Encoding.GetEncoding("UTF-8").GetString(Enclosing_Instance.Uncompress(b).Span);
 		        		}
 		        		else
 		        		{
 		        			if (Enclosing_Instance.format >= FieldsWriter.FORMAT_VERSION_UTF8_LENGTH_IN_BYTES)
 		        			{
-		        				var bytes = new byte[toRead];
-		        				localFieldsStream.ReadBytes(bytes, 0, toRead, state);
+								Span<byte> bytes = new byte[toRead];
+		        				localFieldsStream.ReadBytes(bytes, state);
 		        				fieldsData = System.Text.Encoding.GetEncoding("UTF-8").GetString(bytes);
 		        			}
 		        			else
@@ -583,7 +583,7 @@ namespace Lucene.Net.Index
 		        }
 		    }
 
-		    public override byte[] GetBinaryValue(byte[] result, IState state)
+		    public override Memory<byte> GetBinaryValue(Memory<byte> result, IState state)
 			{
 				Enclosing_Instance.EnsureOpen();
 				
@@ -592,8 +592,8 @@ namespace Lucene.Net.Index
 					if (fieldsData == null)
 					{
 						// Allocate new buffer if result is null or too small
-						byte[] b;
-						if (result == null || result.Length < toRead)
+						Memory<byte> b;
+						if (result.IsEmpty || result.Length < toRead)
 							b = new byte[toRead];
 						else
 							b = result;
@@ -605,8 +605,8 @@ namespace Lucene.Net.Index
 						try
 						{
 							localFieldsStream.Seek(pointer, state);
-							localFieldsStream.ReadBytes(b, 0, toRead, state);
-							fieldsData = isCompressed ? Enclosing_Instance.Uncompress(b) : b;
+							localFieldsStream.ReadBytes(b.Span.Slice(0, toRead), state);
+							fieldsData = isCompressed ? Enclosing_Instance.Uncompress(b.Span) : b;
 						}
 						catch (IOException e)
 						{
@@ -617,13 +617,13 @@ namespace Lucene.Net.Index
 						internalBinaryLength = toRead;
 					}
 					
-					return (byte[]) fieldsData;
+					return (Memory<byte>) fieldsData;
 				}
 		    	return null;
 			}
 		}
 		
-		private byte[] Uncompress(byte[] b)
+		private Memory<byte> Uncompress(Span<byte> b)
 		{
 			try
 			{

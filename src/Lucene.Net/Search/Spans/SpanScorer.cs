@@ -29,7 +29,7 @@ namespace Lucene.Net.Search.Spans
 	{
 		protected internal Spans spans;
 		protected internal Weight weight;
-		protected internal byte[] norms;
+		protected internal Memory<byte> norms;
 		protected internal float value_Renamed;
 		
 		protected internal bool more = true;
@@ -37,7 +37,7 @@ namespace Lucene.Net.Search.Spans
 		protected internal int doc;
 		protected internal float freq;
 		
-		protected internal SpanScorer(Spans spans, Weight weight, Similarity similarity, byte[] norms, IState state):base(similarity)
+		protected internal SpanScorer(Spans spans, Weight weight, Similarity similarity, Memory<byte> norms, IState state):base(similarity)
 		{
 			this.spans = spans;
 			this.norms = norms;
@@ -107,7 +107,7 @@ namespace Lucene.Net.Search.Spans
 		public override float Score(IState state)
 		{
 			float raw = Similarity.Tf(freq) * value_Renamed; // raw score
-			return norms == null?raw:raw * Similarity.DecodeNorm(norms[doc]); // normalize
+			return norms.IsEmpty ? raw:raw * Similarity.DecodeNorm(norms.Span[doc]); // normalize
 		}
 		
         /// <summary>

@@ -247,11 +247,11 @@ namespace Lucene.Net.Store
 				}
 			}
 			
-			public override void  ReadBytes(byte[] b, int offset, int len, IState state)
+			public override void  ReadBytes(Span<byte> b, IState state)
 			{
 				try
 				{
-					buffer.Read(b, offset, len);
+					buffer.Read(b);
 				}
 				catch (ObjectDisposedException)
 				{
@@ -394,11 +394,13 @@ namespace Lucene.Net.Store
 				return (byte) curBuf.ReadByte();
 			}
 			
-			public override void  ReadBytes(byte[] b, int offset, int len, IState state)
+			public override void  ReadBytes(Span<byte> b, IState state)
 			{
+				var len = b.Length;
+				var offset = 0;
 				while (len > curAvail)
 				{
-					curBuf.Read(b, offset, curAvail);
+					curBuf.Read(b.Slice(offset, curAvail));
 					len -= curAvail;
 					offset += curAvail;
 					curBufIndex++;
@@ -408,7 +410,7 @@ namespace Lucene.Net.Store
 					curBuf.Seek(0, System.IO.SeekOrigin.Begin);
 					curAvail = bufSizes[curBufIndex];
 				}
-				curBuf.Read(b, offset, len);
+				curBuf.Read(b.Slice(offset, len));
 				curAvail -= len;
 			}
 

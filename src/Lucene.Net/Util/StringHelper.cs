@@ -48,9 +48,9 @@ namespace Lucene.Net.Util
 	    /// <param name="len2"></param>
 	    /// <returns> The number of common elements.
 	    /// </returns>
-	    public static int BytesDifference(byte[] bytes1, int len1, byte[] bytes2, int len2)
+	    public static int BytesDifference(Span<byte> bytes1, Span<byte> bytes2)
 		{
-			int len = len1 < len2?len1:len2;
+			int len = bytes1.Length < bytes2.Length ? bytes1.Length : bytes2.Length;
 			for (int i = 0; i < len; i++)
 				if (bytes1[i] != bytes2[i])
 					return i;

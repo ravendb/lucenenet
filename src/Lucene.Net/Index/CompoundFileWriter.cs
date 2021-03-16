@@ -16,6 +16,7 @@
  */
 
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 using Lucene.Net.Store;
 using Directory = Lucene.Net.Store.Directory;
@@ -191,11 +192,18 @@ namespace Lucene.Net.Index
 
                 // Open the files and copy their data into the stream.
                 // Remember the locations of each file's data section.
-                var buffer = new byte[16384];
-                foreach (FileEntry fe in entries)
+                var buffer = ArrayPool<byte>.Shared.Rent(16384);
+                try
                 {
-                    fe.dataOffset = os.FilePointer;
-                    CopyFile(fe, os, buffer, state);
+					foreach (FileEntry fe in entries)
+					{
+						fe.dataOffset = os.FilePointer;
+						CopyFile(fe, os, buffer, state);
+					}
+				}
+                finally
+                {
+					ArrayPool<byte>.Shared.Return(buffer);
                 }
 
                 // Write the data offsets into the directory of the compound stream
@@ -233,7 +241,7 @@ namespace Lucene.Net.Index
 		/// provided output stream. Use the provided buffer for moving data
 		/// to reduce memory allocation.
 		/// </summary>
-		private void  CopyFile(FileEntry source, IndexOutput os, byte[] buffer, IState state)
+		private void  CopyFile(FileEntry source, IndexOutput os, Span<byte> buffer, IState state)
 		{
 			IndexInput isRenamed = null;
 			try
@@ -248,8 +256,8 @@ namespace Lucene.Net.Index
 				while (remainder > 0)
 				{
 					var len = (int) Math.Min(chunk, remainder);
-					isRenamed.ReadBytes(buffer, 0, len, false, state);
-					os.WriteBytes(buffer, len);
+					isRenamed.ReadBytes(buffer.Slice(0, len), false, state);
+					os.WriteBytes(buffer.Slice(0, len));
 					remainder -= len;
 					if (checkAbort != null)
 					// Roughly every 2 MB we will check if

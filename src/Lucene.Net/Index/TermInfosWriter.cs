@@ -16,6 +16,7 @@
  */
 
 using System;
+using System.Buffers;
 using Lucene.Net.Store;
 using Directory = Lucene.Net.Store.Directory;
 using IndexOutput = Lucene.Net.Store.IndexOutput;
@@ -77,7 +78,7 @@ namespace Lucene.Net.Index
 		
 		private long lastIndexPointer;
 		private bool isIndex;
-		private byte[] lastTermBytes = new byte[10];
+		private IMemoryOwner<byte> lastTermBytes = MemoryPool<byte>.Shared.Rent(10);
 		private int lastTermBytesLength = 0;
 		private int lastFieldNumber = - 1;
 		
@@ -113,7 +114,7 @@ namespace Lucene.Net.Index
 		internal void  Add(Term term, TermInfo ti)
 		{
 			UnicodeUtil.UTF16toUTF8(term.Text, 0, term.Text.Length, utf8Result);
-			Add(fieldInfos.FieldNumber(term.Field), utf8Result.result, utf8Result.length, ti);
+			Add(fieldInfos.FieldNumber(term.Field), utf8Result.result.Span.Slice(0, utf8Result.length), ti);
 		}
 		
 		// Currently used only by assert statements
@@ -129,7 +130,7 @@ namespace Lucene.Net.Index
 		}
 		
 		// Currently used only by assert statement
-		private int CompareToLastTerm(int fieldNumber, byte[] termBytes, int termBytesLength)
+		private int CompareToLastTerm(int fieldNumber, Span<byte> termBytes)
 		{
 			
 			if (lastFieldNumber != fieldNumber)
@@ -143,8 +144,8 @@ namespace Lucene.Net.Index
 					return cmp;
 			}
 			
-			UnicodeUtil.UTF8toUTF16(lastTermBytes, 0, lastTermBytesLength, utf16Result1);
-			UnicodeUtil.UTF8toUTF16(termBytes, 0, termBytesLength, utf16Result2);
+			UnicodeUtil.UTF8toUTF16(lastTermBytes.Memory.Span, 0, lastTermBytesLength, utf16Result1);
+			UnicodeUtil.UTF8toUTF16(termBytes, 0, termBytes.Length, utf16Result2);
 			int len;
 			if (utf16Result1.length < utf16Result2.length)
 				len = utf16Result1.length;
@@ -165,22 +166,22 @@ namespace Lucene.Net.Index
 		/// Term must be lexicographically greater than all previous Terms added.
 		/// TermInfo pointers must be positive and greater than all previous.
 		/// </summary>
-		internal void  Add(int fieldNumber, byte[] termBytes, int termBytesLength, TermInfo ti)
+		internal void  Add(int fieldNumber, Span<byte> termBytes, TermInfo ti)
 		{
 			
-			System.Diagnostics.Debug.Assert(CompareToLastTerm(fieldNumber, termBytes, termBytesLength) < 0 ||
-					(isIndex && termBytesLength == 0 && lastTermBytesLength == 0), 
+			System.Diagnostics.Debug.Assert(CompareToLastTerm(fieldNumber, termBytes) < 0 ||
+					(isIndex && termBytes.Length == 0 && lastTermBytesLength == 0), 
 				"Terms are out of order: field=" + fieldInfos.FieldName(fieldNumber) + " (number " + fieldNumber + ")" + 
 			 	" lastField=" + fieldInfos.FieldName(lastFieldNumber) + " (number " + lastFieldNumber + ")" + 
-			 	" text=" + System.Text.Encoding.UTF8.GetString(termBytes, 0, termBytesLength) + " lastText=" + System.Text.Encoding.UTF8.GetString(lastTermBytes, 0, lastTermBytesLength));
+			 	" text=" + System.Text.Encoding.UTF8.GetString(termBytes) + " lastText=" + System.Text.Encoding.UTF8.GetString(lastTermBytes.Memory.Span.Slice(0, lastTermBytesLength)));
 			
 			System.Diagnostics.Debug.Assert(ti.freqPointer >= lastTi.freqPointer, "freqPointer out of order (" + ti.freqPointer + " < " + lastTi.freqPointer + ")");
 			System.Diagnostics.Debug.Assert(ti.proxPointer >= lastTi.proxPointer, "proxPointer out of order (" + ti.proxPointer + " < " + lastTi.proxPointer + ")");
 			
 			if (!isIndex && size % indexInterval == 0)
-				other.Add(lastFieldNumber, lastTermBytes, lastTermBytesLength, lastTi); // add an index term
+				other.Add(lastFieldNumber, lastTermBytes.Memory.Span.Slice(0, lastTermBytesLength), lastTi); // add an index term
 			
-			WriteTerm(fieldNumber, termBytes, termBytesLength); // write term
+			WriteTerm(fieldNumber, termBytes); // write term
 			
 			output.WriteVInt(ti.docFreq); // write doc freq
 			output.WriteVLong(ti.freqPointer - lastTi.freqPointer); // write pointers
@@ -202,16 +203,17 @@ namespace Lucene.Net.Index
 			size++;
 		}
 		
-		private void  WriteTerm(int fieldNumber, byte[] termBytes, int termBytesLength)
+		private void  WriteTerm(int fieldNumber, Span<byte> termBytes)
 		{
 			
 			// TODO: UTF16toUTF8 could tell us this prefix
 			// Compute prefix in common with last term:
 			int start = 0;
+			var termBytesLength = termBytes.Length;
 			int limit = termBytesLength < lastTermBytesLength?termBytesLength:lastTermBytesLength;
 			while (start < limit)
 			{
-				if (termBytes[start] != lastTermBytes[start])
+				if (termBytes[start] != lastTermBytes.Memory.Span[start])
 					break;
 				start++;
 			}
@@ -219,15 +221,16 @@ namespace Lucene.Net.Index
 			int length = termBytesLength - start;
 			output.WriteVInt(start); // write shared prefix length
 			output.WriteVInt(length); // write delta length
-			output.WriteBytes(termBytes, start, length); // write delta bytes
+			output.WriteBytes(termBytes.Slice(start, length)); // write delta bytes
 			output.WriteVInt(fieldNumber); // write field num
-			if (lastTermBytes.Length < termBytesLength)
+			if (lastTermBytes.Memory.Span.Length < termBytesLength)
 			{
-				byte[] newArray = new byte[(int) (termBytesLength * 1.5)];
-				Array.Copy(lastTermBytes, 0, newArray, 0, start);
+				IMemoryOwner<byte> newArray = MemoryPool<byte>.Shared.Rent((int) (termBytesLength * 1.5));
+                lastTermBytes.Memory.Span.Slice(0, start).CopyTo(newArray.Memory.Span);
+				lastTermBytes.Dispose();
 				lastTermBytes = newArray;
 			}
-			Array.Copy(termBytes, start, lastTermBytes, start, length);
+			termBytes.Slice(start, length).CopyTo(lastTermBytes.Memory.Span.Slice(start));
 			lastTermBytesLength = termBytesLength;
 		}
 		
@@ -244,6 +247,8 @@ namespace Lucene.Net.Index
 				output.WriteLong(size);
 			}
 
+			lastTermBytes?.Dispose();
+            lastTermBytes = null;
 			isDisposed = true;
 		}
 	}

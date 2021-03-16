@@ -252,6 +252,18 @@ namespace Lucene.Net.Util
 			else
 				return array;
 		}
+
+        public static Memory<byte> Grow(Memory<byte> array, int minSize)
+        {
+            if (array.Length < minSize)
+            {
+                Memory<byte> newArray = new byte[GetNextSize(minSize)];
+				array.Span.CopyTo(newArray.Span);
+                return newArray;
+            }
+            else
+                return array;
+        }
 		
 		public static byte[] Grow(byte[] array)
 		{

@@ -26,7 +26,7 @@ namespace Lucene.Net.Search
 	sealed class ExactPhraseScorer:PhraseScorer
 	{
 		
-		internal ExactPhraseScorer(Weight weight, TermPositions[] tps, int[] offsets, Similarity similarity, byte[] norms):base(weight, tps, offsets, similarity, norms)
+		internal ExactPhraseScorer(Weight weight, TermPositions[] tps, int[] offsets, Similarity similarity, Memory<byte> norms):base(weight, tps, offsets, similarity, norms)
 		{
 		}
 		

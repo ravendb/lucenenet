@@ -63,10 +63,10 @@ namespace Lucene.Net.Search
 			}
 			internal TermDocs termDocs;
 			internal float score;
-			internal byte[] norms;
+			internal Memory<byte> norms;
 			private int doc = - 1;
 			
-			internal MatchAllScorer(MatchAllDocsQuery enclosingInstance, IndexReader reader, Similarity similarity, Weight w, byte[] norms, IState state) :base(similarity)
+			internal MatchAllScorer(MatchAllDocsQuery enclosingInstance, IndexReader reader, Similarity similarity, Weight w, Memory<byte> norms, IState state) :base(similarity)
 			{
 				InitBlock(enclosingInstance);
 				this.termDocs = reader.TermDocs(null, state);
@@ -86,7 +86,7 @@ namespace Lucene.Net.Search
 			
 			public override float Score(IState state)
 			{
-				return norms == null?score:score * Similarity.DecodeNorm(norms[DocID()]);
+				return norms.IsEmpty ? score:score * Similarity.DecodeNorm(norms.Span[DocID()]);
 			}
 			
 			public override int Advance(int target, IState state)

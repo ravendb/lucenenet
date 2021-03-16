@@ -16,6 +16,7 @@
  */
 
 using System;
+using System.Buffers;
 using Lucene.Net.Util;
 
 namespace Lucene.Net.Store
@@ -30,7 +31,7 @@ namespace Lucene.Net.Store
 		
 		private int _bufferSize = BUFFER_SIZE;
 		
-		protected internal byte[] buffer;
+		protected internal IMemoryOwner<byte> buffer;
 		
 		private long bufferStart = 0; // position in file of buffer
 		private int bufferLength = 0; // end of valid bytes
@@ -40,7 +41,7 @@ namespace Lucene.Net.Store
 		{
 			if (bufferPosition >= bufferLength)
 				Refill(state);
-			return buffer[bufferPosition++];
+			return buffer.Memory.Span[bufferPosition++];
 		}
 
 	    protected BufferedIndexInput()
@@ -57,7 +58,7 @@ namespace Lucene.Net.Store
 		/// <summary>Change the buffer size used by this IndexInput </summary>
 		public virtual void  SetBufferSize(int newSize)
 		{
-			System.Diagnostics.Debug.Assert(buffer == null || _bufferSize == buffer.Length, "buffer=" + buffer + " bufferSize=" + _bufferSize + " buffer.length=" +(buffer != null ? buffer.Length: 0));
+			System.Diagnostics.Debug.Assert(buffer == null || buffer.Memory.Length >= _bufferSize, "buffer=" + buffer + " bufferSize=" + _bufferSize + " buffer.length=" +(buffer != null ? buffer.Memory.Length: 0));
 			if (newSize != _bufferSize)
 			{
 				CheckBufferSize(newSize);
@@ -67,14 +68,15 @@ namespace Lucene.Net.Store
 					// Resize the existing buffer and carefully save as
 					// many bytes as possible starting from the current
 					// bufferPosition
-					byte[] newBuffer = new byte[newSize];
+					IMemoryOwner<byte> newBuffer = MemoryPool<byte>.Shared.Rent(newSize);
 					int leftInBuffer = bufferLength - bufferPosition;
 					int numToCopy;
 					if (leftInBuffer > newSize)
 						numToCopy = newSize;
 					else
 						numToCopy = leftInBuffer;
-					Array.Copy(buffer, bufferPosition, newBuffer, 0, numToCopy);
+
+					buffer.Memory.Span.Slice(bufferPosition, numToCopy).CopyTo(newBuffer.Memory.Span);
 					bufferStart += bufferPosition;
 					bufferPosition = 0;
 					bufferLength = numToCopy;
@@ -83,8 +85,10 @@ namespace Lucene.Net.Store
 			}
 		}
 		
-		protected internal virtual void  NewBuffer(byte[] newBuffer)
+		protected internal virtual void  NewBuffer(IMemoryOwner<byte> newBuffer)
 		{
+			buffer?.Dispose();
+
 			// Subclasses can do something here
 			buffer = newBuffer;
 		}
@@ -102,20 +106,21 @@ namespace Lucene.Net.Store
 				throw new System.ArgumentException("bufferSize must be greater than 0 (got " + bufferSize + ")");
 		}
 		
-		public override void  ReadBytes(byte[] b, int offset, int len, IState state)
+		public override void  ReadBytes(Span<byte> b, IState state)
 		{
-			ReadBytes(b, offset, len, true, state);
+			ReadBytes(b, true, state);
 		}
 		
-		public override void  ReadBytes(byte[] b, int offset, int len, bool useBuffer, IState state)
+		public override void  ReadBytes(Span<byte> b, bool useBuffer, IState state)
 		{
-			
+			var len = b.Length;
+			var offset = 0;
 			if (len <= (bufferLength - bufferPosition))
 			{
 				// the buffer contains enough data to satisfy this request
 				if (len > 0)
 				// to allow b to be null if len is 0...
-					Array.Copy(buffer, bufferPosition, b, offset, len);
+					buffer.Memory.Span.Slice(bufferPosition, len).CopyTo(b.Slice(offset));
 				bufferPosition += len;
 			}
 			else
@@ -124,7 +129,7 @@ namespace Lucene.Net.Store
 				int available = bufferLength - bufferPosition;
 				if (available > 0)
 				{
-					Array.Copy(buffer, bufferPosition, b, offset, available);
+					buffer.Memory.Span.Slice(bufferPosition, available).CopyTo(b.Slice(offset));
 					offset += available;
 					len -= available;
 					bufferPosition += available;
@@ -139,12 +144,12 @@ namespace Lucene.Net.Store
 					if (bufferLength < len)
 					{
 						// Throw an exception when refill() could not read len bytes:
-						Array.Copy(buffer, 0, b, offset, bufferLength);
+						buffer.Memory.Span.Slice(0, bufferLength).CopyTo(b.Slice(offset));
 						throw new System.IO.IOException("read past EOF");
 					}
 					else
 					{
-						Array.Copy(buffer, 0, b, offset, len);
+						buffer.Memory.Span.Slice(0, len).CopyTo(b.Slice(offset));
 						bufferPosition = len;
 					}
 				}
@@ -160,7 +165,7 @@ namespace Lucene.Net.Store
 					long after = bufferStart + bufferPosition + len;
 					if (after > Length(state))
 						throw new System.IO.IOException("read past EOF");
-					ReadInternal(b, offset, len, state);
+					ReadInternal(b.Slice(offset, len), state);
 					bufferStart = after;
 					bufferPosition = 0;
 					bufferLength = 0; // trigger refill() on read
@@ -181,10 +186,10 @@ namespace Lucene.Net.Store
 			
 			if (buffer == null)
 			{
-				NewBuffer(new byte[_bufferSize]); // allocate buffer lazily
+				NewBuffer(MemoryPool<byte>.Shared.Rent(_bufferSize)); // allocate buffer lazily
 				SeekInternal(bufferStart);
 			}
-			ReadInternal(buffer, 0, newLength, state);
+			ReadInternal(buffer.Memory.Span.Slice(0, newLength), state);
 			bufferLength = newLength;
 			bufferStart = start;
 			bufferPosition = 0;
@@ -199,7 +204,7 @@ namespace Lucene.Net.Store
 		/// </param>
 		/// <param name="length">the number of bytes to read
 		/// </param>
-		public abstract void  ReadInternal(byte[] b, int offset, int length, IState state);
+		public abstract void  ReadInternal(Span<byte> b, IState state);
 
 	    public override long FilePointer(IState state)
 	    {

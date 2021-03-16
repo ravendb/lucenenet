@@ -25,8 +25,7 @@ namespace Lucene.Net.Support
     {
         void Reset();
         void Update(int b);
-        void Update(byte[] b);
-        void Update(byte[] b, int offset, int length);
+        void Update(Span<byte> b);
         long Value { get; }
     }
 }

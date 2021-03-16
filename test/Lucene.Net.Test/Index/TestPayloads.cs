@@ -267,7 +267,7 @@ namespace Lucene.Net.Index
 			*/
 		    IndexReader reader = IndexReader.Open(dir, true, null);
 			
-			byte[] verifyPayloadData = new byte[payloadDataLength];
+            Memory<byte> verifyPayloadData = new byte[payloadDataLength];
 			offset = 0;
 			TermPositions[] tps = new TermPositions[numTerms];
 			for (int i = 0; i < numTerms; i++)
@@ -288,7 +288,7 @@ namespace Lucene.Net.Index
 					for (int j = 0; j < numTerms; j++)
 					{
 						tps[j].NextPosition(null);
-						tps[j].GetPayload(verifyPayloadData, offset, null);
+						tps[j].GetPayload(verifyPayloadData.Slice(offset), null);
 						offset += tps[j].PayloadLength;
 					}
 				}
@@ -299,7 +299,7 @@ namespace Lucene.Net.Index
 				tps[i].Close();
 			}
 			
-			AssertByteArrayEquals(payloadData, verifyPayloadData);
+			AssertByteArrayEquals(payloadData, verifyPayloadData.ToArray());
 			
 			/*
 			*  test lazy skipping
@@ -310,16 +310,16 @@ namespace Lucene.Net.Index
 			// now we don't read this payload
 			tp.NextPosition(null);
 			Assert.AreEqual(1, tp.PayloadLength, "Wrong payload length.");
-			byte[] payload = tp.GetPayload(null, 0, null);
-			Assert.AreEqual(payload[0], payloadData[numTerms]);
+            Memory<byte> payload = tp.GetPayload(null, null);
+			Assert.AreEqual(payload.Span[0], payloadData[numTerms]);
 			tp.NextPosition(null);
 			
 			// we don't read this payload and skip to a different document
 			tp.SkipTo(5, null);
 			tp.NextPosition(null);
 			Assert.AreEqual(1, tp.PayloadLength, "Wrong payload length.");
-			payload = tp.GetPayload(null, 0, null);
-			Assert.AreEqual(payload[0], payloadData[5 * numTerms]);
+			payload = tp.GetPayload(null, null);
+			Assert.AreEqual(payload.Span[0], payloadData[5 * numTerms]);
 			
 			
 			/*
@@ -342,11 +342,11 @@ namespace Lucene.Net.Index
 			/*
 			* Test multiple call of getPayload()
 			*/
-			tp.GetPayload(null, 0, null);
+			tp.GetPayload(null, null);
 
 			// it is forbidden to call getPayload() more than once
 			// without calling nextPosition()
-            Assert.Throws<IOException>(() => tp.GetPayload(null, 0, null), "Expected exception not thrown");
+            Assert.Throws<IOException>(() => tp.GetPayload(null, null), "Expected exception not thrown");
 			
 			reader.Close();
 			
@@ -373,11 +373,11 @@ namespace Lucene.Net.Index
 			tp.NextPosition(null);
 			
 			verifyPayloadData = new byte[tp.PayloadLength];
-			tp.GetPayload(verifyPayloadData, 0, null);
+			tp.GetPayload(verifyPayloadData, null);
 			byte[] portion = new byte[1500];
 			Array.Copy(payloadData, 100, portion, 0, 1500);
 			
-			AssertByteArrayEquals(portion, verifyPayloadData);
+			AssertByteArrayEquals(portion, verifyPayloadData.ToArray());
 			reader.Close();
 		}
 		
@@ -556,7 +556,7 @@ namespace Lucene.Net.Index
 					for (int i = 0; i < freq; i++)
 					{
 						tp.NextPosition(null);
-						Assert.AreEqual(pool.BytesToString(tp.GetPayload(new byte[5], 0, null)), terms.Term.Text);
+						Assert.AreEqual(pool.BytesToString(tp.GetPayload(new byte[5], null)), terms.Term.Text);
 					}
 				}
 				tp.Close();
@@ -634,15 +634,15 @@ namespace Lucene.Net.Index
 			
 			private UnicodeUtil.UTF8Result utf8Result = new UnicodeUtil.UTF8Result();
 			
-			internal virtual System.String BytesToString(byte[] bytes)
+			internal virtual System.String BytesToString(Memory<byte> bytes)
 			{
 				lock (this)
 				{
-                    System.String s = System.Text.Encoding.UTF8.GetString(bytes);
+                    System.String s = System.Text.Encoding.UTF8.GetString(bytes.Span);
 					UnicodeUtil.UTF16toUTF8(s, 0, s.Length, utf8Result);
 					try
 					{
-                        return System.Text.Encoding.UTF8.GetString(utf8Result.result, 0, utf8Result.length);
+                        return System.Text.Encoding.UTF8.GetString(utf8Result.result.Span.Slice(0, utf8Result.length));
 					}
 					catch (System.IO.IOException uee)
 					{

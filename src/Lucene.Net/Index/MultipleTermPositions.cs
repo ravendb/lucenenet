@@ -241,7 +241,7 @@ namespace Lucene.Net.Index
 
 	    /// <summary> Not implemented.</summary>
 		/// <throws>  UnsupportedOperationException </throws>
-		public virtual byte[] GetPayload(byte[] data, int offset, IState state)
+		public virtual Memory<byte> GetPayload(Memory<byte> data, IState state)
 		{
 			throw new System.NotSupportedException();
 		}

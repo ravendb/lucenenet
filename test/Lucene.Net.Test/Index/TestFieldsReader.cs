@@ -189,12 +189,12 @@ namespace Lucene.Net.Index
 			Assert.IsTrue(field != null, "field is null and it shouldn't be");
 			Assert.IsTrue(field.StringValue(null) == null, "stringValue isn't null for lazy binary field");
 			
-			byte[] bytes = field.GetBinaryValue(null);
-			Assert.IsTrue(bytes != null, "bytes is null and it shouldn't be");
+			Memory<byte> bytes = field.GetBinaryValue(null);
+			Assert.IsTrue(bytes.IsEmpty == false, "bytes is null and it shouldn't be");
 			Assert.IsTrue(DocHelper.LAZY_FIELD_BINARY_BYTES.Length == bytes.Length, "");
 			for (int i = 0; i < bytes.Length; i++)
 			{
-				Assert.IsTrue(bytes[i] == DocHelper.LAZY_FIELD_BINARY_BYTES[i], "byte[" + i + "] is mismatched");
+				Assert.IsTrue(bytes.Span[i] == DocHelper.LAZY_FIELD_BINARY_BYTES[i], "byte[" + i + "] is mismatched");
 			}
 		}
 		
@@ -335,9 +335,9 @@ namespace Lucene.Net.Index
 			Assert.IsTrue(f1.IsBinary);
 			Assert.IsTrue(!f3.IsBinary);
 			Assert.IsTrue(fb.IsBinary);
-			AssertSizeEquals(2 * DocHelper.FIELD_1_TEXT.Length, f1.GetBinaryValue(null));
+			AssertSizeEquals(2 * DocHelper.FIELD_1_TEXT.Length, f1.GetBinaryValue(null).ToArray());
 			Assert.AreEqual(DocHelper.FIELD_3_TEXT, f3.StringValue(null));
-            AssertSizeEquals(DocHelper.LAZY_FIELD_BINARY_BYTES.Length, fb.GetBinaryValue(null));
+            AssertSizeEquals(DocHelper.LAZY_FIELD_BINARY_BYTES.Length, fb.GetBinaryValue(null).ToArray());
 
             reader.Dispose();
 		}
@@ -426,10 +426,10 @@ namespace Lucene.Net.Index
 					throw new System.IO.IOException("Simulated network outage");
 				}
 			}
-			public override void  ReadInternal(byte[] b, int offset, int length, IState state)
+			public override void  ReadInternal(Span<byte> b, IState state)
 			{
 				SimOutage();
-				delegate_Renamed.ReadBytes(b, offset, length, null);
+				delegate_Renamed.ReadBytes(b,null);
 			}
 
 			public override void  SeekInternal(long pos)

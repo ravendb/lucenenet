@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 
+using System;
 using System.Linq;
 using Lucene.Net.Store;
 using Lucene.Net.Support;
@@ -271,13 +272,14 @@ namespace Lucene.Net.Index
 			/// </param>
 			/// <param name="len">the number of bytes to read
 			/// </param>
-			public override void  ReadInternal(byte[] b, int offset, int len, IState state)
+			public override void  ReadInternal(Span<byte> b, IState state)
 			{
+				var len = b.Length;
 				long start = FilePointer(state);
 				if (start + len > length)
 					throw new System.IO.IOException("read past EOF");
 				base_Renamed.Seek(fileOffset + start, state);
-				base_Renamed.ReadBytes(b, offset, len, false, state);
+				base_Renamed.ReadBytes(b, false, state);
 			}
 			
 			/// <summary>Expert: implements seek.  Sets current position in this file, where

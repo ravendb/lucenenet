@@ -66,8 +66,8 @@ namespace Lucene.Net.Store
 			DenseRAMFile f = new DenseRAMFile();
 			// output part
 			RAMOutputStream out_Renamed = new RAMOutputStream(f);
-            byte[] b1 = new byte[RAMOutputStream.BUFFER_SIZE];
-            byte[] b2 = new byte[RAMOutputStream.BUFFER_SIZE / 3];
+            Span<byte> b1 = new byte[RAMOutputStream.BUFFER_SIZE];
+            Span<byte> b2 = new byte[RAMOutputStream.BUFFER_SIZE / 3];
 			for (int i = 0; i < b1.Length; i++)
 			{
 				b1[i] = (byte) (i & 0x0007F);
@@ -80,7 +80,7 @@ namespace Lucene.Net.Store
 			Assert.AreEqual(n, out_Renamed.Length, "output length must match");
 			while (n <= MAX_VALUE - b1.Length)
 			{
-				out_Renamed.WriteBytes(b1, 0, b1.Length);
+				out_Renamed.WriteBytes(b1.Slice(0, b1.Length));
 				out_Renamed.Flush();
 				n += b1.Length;
 				Assert.AreEqual(n, out_Renamed.Length, "output length must match");
@@ -94,7 +94,7 @@ namespace Lucene.Net.Store
 				{
 					b2[i]++;
 				}
-				out_Renamed.WriteBytes(b2, 0, m);
+				out_Renamed.WriteBytes(b2.Slice(0, m));
 				out_Renamed.Flush();
 				n += m;
 				Assert.AreEqual(n, out_Renamed.Length, "output length must match");

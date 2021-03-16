@@ -192,7 +192,7 @@ namespace Lucene.Net.Search.Payloads
 			private int payloadsSeen;
 			internal Similarity similarity;
 			
-			protected internal PayloadNearSpanScorer(PayloadNearQuery enclosingInstance, Lucene.Net.Search.Spans.Spans spans, Weight weight, Similarity similarity, byte[] norms, IState state) :base(spans, weight, similarity, norms, state)
+			protected internal PayloadNearSpanScorer(PayloadNearQuery enclosingInstance, Lucene.Net.Search.Spans.Spans spans, Weight weight, Similarity similarity, Memory<byte> norms, IState state) :base(spans, weight, similarity, norms, state)
 			{
 				InitBlock(enclosingInstance);
 				this.spans = spans;
@@ -235,11 +235,11 @@ namespace Lucene.Net.Search.Payloads
 			/// </param>
 			/// <seealso cref="Spans">
 			/// </seealso>
-			protected internal virtual void  ProcessPayloads(System.Collections.Generic.ICollection<byte[]> payLoads, int start, int end)
+			protected internal virtual void  ProcessPayloads(System.Collections.Generic.ICollection<Memory<byte>> payLoads, int start, int end)
 			{
-                foreach (byte[] thePayload in payLoads)
+                foreach (Memory<byte> thePayload in payLoads)
                 {
-                    payloadScore = Enclosing_Instance.function.CurrentScore(doc, Enclosing_Instance.fieldName, start, end, payloadsSeen, payloadScore, similarity.ScorePayload(doc, Enclosing_Instance.fieldName, spans.Start(), spans.End(), thePayload, 0, thePayload.Length));
+                    payloadScore = Enclosing_Instance.function.CurrentScore(doc, Enclosing_Instance.fieldName, start, end, payloadsSeen, payloadScore, similarity.ScorePayload(doc, Enclosing_Instance.fieldName, spans.Start(), spans.End(), thePayload.Span));
                     ++payloadsSeen;
                 }
 			}

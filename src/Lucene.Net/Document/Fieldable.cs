@@ -167,7 +167,7 @@ namespace Lucene.Net.Documents
 	    /// returned array belong to the field.
 	    /// </summary>
 	    /// <returns> reference to the Field value as byte[]. </returns>
-	    byte[] GetBinaryValue(IState state);
+	    Memory<byte> GetBinaryValue(IState state);
 
 	    /// <summary> Return the raw byte[] for the binary field.  Note that
         /// you must also call <see cref="BinaryLength" /> and <see cref="BinaryOffset" />
@@ -186,7 +186,7 @@ namespace Lucene.Net.Documents
 		/// </param>
 		/// <returns> reference to the Field value as byte[].
 		/// </returns>
-		byte[] GetBinaryValue(byte[] result, IState state);
+        Memory<byte> GetBinaryValue(Memory<byte> result, IState state);
 
 	    /// Expert:
 	    /// <para>

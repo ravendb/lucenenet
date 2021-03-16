@@ -636,7 +636,7 @@ namespace Lucene.Net.Index
 				{
                     if (reader.HasNorms(fieldName, state))
                     {
-                        reader.Norms(fieldName, b, 0, state);
+                        reader.Norms(fieldName, b, state);
                         ++status.totFields;
                     }
 				}

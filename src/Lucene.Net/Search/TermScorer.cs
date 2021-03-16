@@ -30,7 +30,7 @@ namespace Lucene.Net.Search
 		
 		private Weight weight;
 		private TermDocs termDocs;
-		private byte[] norms;
+		private Memory<byte> norms;
 		private float weightValue;
 		private int doc = - 1;
 		
@@ -54,7 +54,7 @@ namespace Lucene.Net.Search
 		/// </param>
 		/// <param name="norms">The field norms of the document fields for the <c>Term</c>.
 		/// </param>
-		public /*internal*/ TermScorer(Weight weight, TermDocs td, Similarity similarity, byte[] norms):base(similarity)
+		public /*internal*/ TermScorer(Weight weight, TermDocs td, Similarity similarity, Memory<byte> norms):base(similarity)
 		{
 			this.weight = weight;
 			this.termDocs = td;
@@ -136,7 +136,7 @@ namespace Lucene.Net.Search
 			int f = freqs[pointer];
 			float raw = f < SCORE_CACHE_SIZE?scoreCache[f]:Similarity.Tf(f) * weightValue; // cache miss
 			
-			return norms == null?raw:raw * SIM_NORM_DECODER[norms[doc] & 0xFF]; // normalize for field
+			return norms.IsEmpty ?raw:raw * SIM_NORM_DECODER[norms.Span[doc] & 0xFF]; // normalize for field
 		}
 		
 		/// <summary> Advances to the first match beyond the current whose document number is

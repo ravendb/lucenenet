@@ -320,7 +320,7 @@ namespace Lucene.Net.Search
             while (pspans.Next(null))
             {
                 //System.out.println(pspans.doc() + " - " + pspans.start() + " - "+ pspans.end());
-                System.Collections.Generic.ICollection<byte[]> payloads = pspans.GetPayload(null);
+                System.Collections.Generic.ICollection<Memory<byte>> payloads = pspans.GetPayload(null);
                 sawZero |= pspans.Start() == 0;
                 for (System.Collections.IEnumerator it = payloads.GetEnumerator(); it.MoveNext();)
                 {
@@ -349,11 +349,11 @@ namespace Lucene.Net.Search
 
             sawZero = false;
             PayloadSpanUtil psu = new PayloadSpanUtil(is_Renamed.IndexReader);
-            System.Collections.Generic.ICollection<byte[]> pls = psu.GetPayloadsForQuery(snq, null);
+            System.Collections.Generic.ICollection<Memory<byte>> pls = psu.GetPayloadsForQuery(snq, null);
             count = pls.Count;
             for (System.Collections.IEnumerator it = pls.GetEnumerator(); it.MoveNext();)
             {
-                System.String s = new System.String(System.Text.UTF8Encoding.UTF8.GetChars((byte[]) it.Current));
+                System.String s = new System.String(System.Text.UTF8Encoding.UTF8.GetChars(((Memory<byte>) it.Current).Span.ToArray()));
                 //System.out.println(s);
                 sawZero |= s.Equals("pos: 0");
             }

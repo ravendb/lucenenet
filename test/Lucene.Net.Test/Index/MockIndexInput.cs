@@ -27,18 +27,20 @@ namespace Lucene.Net.Index
 
 	public class MockIndexInput:BufferedIndexInput
 	{
-		new private byte[] buffer;
+		private new Memory<byte> buffer;
 		private int pointer = 0;
 		private long length;
 		
-		public MockIndexInput(byte[] bytes)
+		public MockIndexInput(Memory<byte> bytes)
 		{
 			buffer = bytes;
 			length = bytes.Length;
 		}
 		
-		public override void  ReadInternal(byte[] dest, int destOffset, int len, IState state)
-		{
+		public override void  ReadInternal(Span<byte> dest, IState state)
+        {
+            var destOffset = 0;
+            var len = dest.Length;
 			int remainder = len;
 			int start = pointer;
 			while (remainder != 0)
@@ -47,7 +49,7 @@ namespace Lucene.Net.Index
 				int bufferOffset = start % buffer.Length;
 				int bytesInBuffer = buffer.Length - bufferOffset;
 				int bytesToCopy = bytesInBuffer >= remainder?remainder:bytesInBuffer;
-				Array.Copy(buffer, bufferOffset, dest, destOffset, bytesToCopy);
+				buffer.Span.Slice(bufferOffset, bytesToCopy).CopyTo(dest.Slice(destOffset));
 				destOffset += bytesToCopy;
 				start += bytesToCopy;
 				remainder -= bytesToCopy;

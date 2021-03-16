@@ -173,7 +173,7 @@ namespace Lucene.Net.Store
 			}
 		}
 		
-		private byte[] buffer = new byte[10];
+		private Memory<byte> buffer = new byte[10];
 		
 		private void  CheckReadBytes(IndexInput input, int size, int pos)
 		{
@@ -191,11 +191,11 @@ namespace Lucene.Net.Store
 			{
 				size = (int) left;
 			}
-			input.ReadBytes(buffer, offset, size, null);
+			input.ReadBytes(buffer.Span.Slice(offset, size), null);
 			Assert.AreEqual(pos + size, input.FilePointer(null));
 			for (int i = 0; i < size; i++)
 			{
-				Assert.AreEqual(Byten(pos + i), buffer[offset + i], "pos=" + i + " filepos=" + (pos + i));
+				Assert.AreEqual(Byten(pos + i), buffer.Span[offset + i], "pos=" + i + " filepos=" + (pos + i));
 			}
 		}
 		
@@ -243,8 +243,10 @@ namespace Lucene.Net.Store
 			public MyBufferedIndexInput():this(System.Int64.MaxValue)
 			{
 			}
-			public override void  ReadInternal(byte[] b, int offset, int length, IState state)
-			{
+			public override void  ReadInternal(Span<byte> b, IState state)
+            {
+                var offset = 0;
+                var length = b.Length;
 				for (int i = offset; i < offset + length; i++)
 					b[i] = Lucene.Net.Store.TestBufferedIndexInput.Byten(pos++);
 			}

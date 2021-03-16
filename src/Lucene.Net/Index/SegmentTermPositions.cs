@@ -192,17 +192,19 @@ namespace Lucene.Net.Index
 	        get { return payloadLength; }
 	    }
 
-	    public byte[] GetPayload(byte[] data, int offset, IState state)
+	    public Memory<byte> GetPayload(Memory<byte> data, IState state)
 		{
+			var offset = 0;
+
 			if (!needToLoadPayload)
 			{
 				throw new System.IO.IOException("Either no payload exists at this term position or an attempt was made to load it more than once.");
 			}
 			
 			// read payloads lazily
-			byte[] retArray;
+			Memory<byte> retArray;
 			int retOffset;
-			if (data == null || data.Length - offset < payloadLength)
+			if (data.IsEmpty || data.Length - offset < payloadLength)
 			{
 				// the array is too small to store the payload data,
 				// so we allocate a new one
@@ -214,7 +216,7 @@ namespace Lucene.Net.Index
 				retArray = data;
 				retOffset = offset;
 			}
-			proxStream.ReadBytes(retArray, retOffset, payloadLength, state);
+			proxStream.ReadBytes(retArray.Span.Slice(retOffset, payloadLength), state);
 			needToLoadPayload = false;
 			return retArray;
 		}

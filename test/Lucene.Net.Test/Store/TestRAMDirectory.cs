@@ -208,8 +208,8 @@ namespace Lucene.Net.Store
 		{
 			RAMDirectory dir = new RAMDirectory();
 			IndexOutput o = dir.CreateOutput("out", null);
-			byte[] b = new byte[1024];
-			o.WriteBytes(b, 0, 1024);
+			Span<byte> b = new byte[1024];
+			o.WriteBytes(b);
 			o.Close();
 			IndexInput i = dir.OpenInput("out", null);
 			i.Seek(1024, null);

@@ -685,7 +685,7 @@ namespace Lucene.Net.Search
 		/// <returns> An implementation dependent float to be used as a scoring factor
 		/// 
 		/// </returns>
-		public virtual float ScorePayload(int docId, System.String fieldName, int start, int end, byte[] payload, int offset, int length)
+		public virtual float ScorePayload(int docId, System.String fieldName, int start, int end, Span<byte> payload)
 		{
 		    return 1;
 		}

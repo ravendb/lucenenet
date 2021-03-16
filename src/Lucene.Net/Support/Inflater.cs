@@ -27,7 +27,7 @@ namespace Lucene.Net.Support
 
     public class Inflater
     {
-        delegate void SetInputDelegate(byte[] buffer);
+        delegate void SetInputDelegate(Span<byte> buffer);
         delegate bool GetIsFinishedDelegate();
         delegate int InflateDelegate(byte[] buffer);
 
@@ -55,7 +55,7 @@ namespace Lucene.Net.Support
                 type.GetMethod("Inflate", new Type[] { typeof(byte[]) }));
         }
 
-        public void SetInput(byte[] buffer)
+        public void SetInput(Span<byte> buffer)
         {
             setInputMethod(buffer);
         }

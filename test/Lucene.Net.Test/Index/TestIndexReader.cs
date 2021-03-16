@@ -378,11 +378,11 @@ namespace Lucene.Net.Index
 			Assert.AreEqual(1, fields.Length);
 			Field b1 = fields[0];
 			Assert.IsTrue(b1.IsBinary);
-			byte[] data1 = b1.GetBinaryValue(null);
+			Memory<byte> data1 = b1.GetBinaryValue(null);
 			Assert.AreEqual(bin.Length, b1.BinaryLength);
 			for (int i = 0; i < bin.Length; i++)
 			{
-				Assert.AreEqual(bin[i], data1[i + b1.BinaryOffset]);
+				Assert.AreEqual(bin[i], data1.Span[i + b1.BinaryOffset]);
 			}
             var lazyFields = Support.Compatibility.SetFactory.CreateHashSet<string>();
 			lazyFields.Add("bin1");
@@ -398,7 +398,7 @@ namespace Lucene.Net.Index
 			Assert.AreEqual(bin.Length, fb1.BinaryLength);
 			for (int i = 0; i < bin.Length; i++)
 			{
-				Assert.AreEqual(bin[i], data1[i + fb1.BinaryOffset]);
+				Assert.AreEqual(bin[i], data1.Span[i + fb1.BinaryOffset]);
 			}
 			reader.Close();
 			// force optimize
@@ -418,7 +418,7 @@ namespace Lucene.Net.Index
 			Assert.AreEqual(bin.Length, b1.BinaryLength);
 			for (int i = 0; i < bin.Length; i++)
 			{
-				Assert.AreEqual(bin[i], data1[i + b1.BinaryOffset]);
+				Assert.AreEqual(bin[i], data1.Span[i + b1.BinaryOffset]);
 			}
 			reader.Close();
 		}
@@ -1436,19 +1436,19 @@ namespace Lucene.Net.Index
 			while (it1.MoveNext())
 			{
 				System.String curField = (System.String) it1.Current;
-				byte[] norms1 = index1.Norms(curField, null);
-				byte[] norms2 = index2.Norms(curField, null);
-				if (norms1 != null && norms2 != null)
+				Memory<byte> norms1 = index1.Norms(curField, null);
+                Memory<byte> norms2 = index2.Norms(curField, null);
+				if (norms1.IsEmpty == false && norms2.IsEmpty == false)
 				{
 					Assert.AreEqual(norms1.Length, norms2.Length);
 					for (int i = 0; i < norms1.Length; i++)
 					{
-						Assert.AreEqual(norms1[i], norms2[i], "Norm different for doc " + i + " and field '" + curField + "'.");
+						Assert.AreEqual(norms1.Span[i], norms2.Span[i], "Norm different for doc " + i + " and field '" + curField + "'.");
 					}
 				}
 				else
 				{
-					Assert.AreSame(norms1, norms2);
+					Assert.True(norms1.Equals(norms2));
 				}
 			}
 			

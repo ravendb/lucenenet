@@ -16,6 +16,7 @@
  */
 
 using System;
+using System.Buffers;
 using Lucene.Net.Store;
 using Lucene.Net.Util;
 using BufferedIndexInput = Lucene.Net.Store.BufferedIndexInput;
@@ -546,107 +547,115 @@ namespace Lucene.Net.Index
 			int start = 0;
 			int deltaLength = 0;
 			int totalLength = 0;
-			byte[] byteBuffer;
+			IMemoryOwner<byte> byteBuffer = null;
 			char[] charBuffer;
 			bool preUTF8 = format < FORMAT_UTF8_LENGTH_IN_BYTES;
-			
-			// init the buffers
-			if (preUTF8)
-			{
-				charBuffer = new char[10];
-				byteBuffer = null;
-			}
-			else
-			{
-				charBuffer = null;
-				byteBuffer = new byte[20];
-			}
-			
-			for (int i = 0; i < numTerms; i++)
-			{
-				start = tvf.ReadVInt(state);
-				deltaLength = tvf.ReadVInt(state);
-				totalLength = start + deltaLength;
-				
-				System.String term;
-				
-				if (preUTF8)
-				{
-					// Term stored as java chars
-					if (charBuffer.Length < totalLength)
-					{
-						char[] newCharBuffer = new char[(int) (1.5 * totalLength)];
-						Array.Copy(charBuffer, 0, newCharBuffer, 0, start);
-						charBuffer = newCharBuffer;
-					}
-					tvf.ReadChars(charBuffer, start, deltaLength, state);
-					term = new System.String(charBuffer, 0, totalLength);
-				}
-				else
-				{
-					// Term stored as utf8 bytes
-					if (byteBuffer.Length < totalLength)
-					{
-						byte[] newByteBuffer = new byte[(int) (1.5 * totalLength)];
-						Array.Copy(byteBuffer, 0, newByteBuffer, 0, start);
-						byteBuffer = newByteBuffer;
-					}
-					tvf.ReadBytes(byteBuffer, start, deltaLength, state);
-                    term = System.Text.Encoding.UTF8.GetString(byteBuffer, 0, totalLength);
-				}
-				int freq = tvf.ReadVInt(state);
-				int[] positions = null;
-				if (storePositions)
-				{
-					//read in the positions
-					//does the mapper even care about positions?
-					if (mapper.IsIgnoringPositions == false)
-					{
-						positions = new int[freq];
-						int prevPosition = 0;
-						for (int j = 0; j < freq; j++)
-						{
-							positions[j] = prevPosition + tvf.ReadVInt(state);
-							prevPosition = positions[j];
-						}
-					}
-					else
-					{
-						//we need to skip over the positions.  Since these are VInts, I don't believe there is anyway to know for sure how far to skip
-						//
-						for (int j = 0; j < freq; j++)
-						{
-							tvf.ReadVInt(state);
-						}
-					}
-				}
-				TermVectorOffsetInfo[] offsets = null;
-				if (storeOffsets)
-				{
-					//does the mapper even care about offsets?
-					if (mapper.IsIgnoringOffsets == false)
-					{
-						offsets = new TermVectorOffsetInfo[freq];
-						int prevOffset = 0;
-						for (int j = 0; j < freq; j++)
-						{
-							int startOffset = prevOffset + tvf.ReadVInt(state);
-							int endOffset = startOffset + tvf.ReadVInt(state);
-							offsets[j] = new TermVectorOffsetInfo(startOffset, endOffset);
-							prevOffset = endOffset;
-						}
-					}
-					else
-					{
-						for (int j = 0; j < freq; j++)
-						{
-							tvf.ReadVInt(state);
-							tvf.ReadVInt(state);
-						}
-					}
-				}
-				mapper.Map(term, freq, offsets, positions);
-			}
+
+            try
+            {
+				// init the buffers
+			    if (preUTF8)
+			    {
+				    charBuffer = new char[10];
+				    byteBuffer = null;
+			    }
+			    else
+			    {
+				    charBuffer = null;
+                    byteBuffer = MemoryPool<byte>.Shared.Rent(20);
+                }
+			    
+			    for (int i = 0; i < numTerms; i++)
+			    {
+				    start = tvf.ReadVInt(state);
+				    deltaLength = tvf.ReadVInt(state);
+				    totalLength = start + deltaLength;
+				    
+				    System.String term;
+				    
+				    if (preUTF8)
+				    {
+					    // Term stored as java chars
+					    if (charBuffer.Length < totalLength)
+					    {
+						    char[] newCharBuffer = new char[(int) (1.5 * totalLength)];
+						    Array.Copy(charBuffer, 0, newCharBuffer, 0, start);
+						    charBuffer = newCharBuffer;
+					    }
+					    tvf.ReadChars(charBuffer, start, deltaLength, state);
+					    term = new System.String(charBuffer, 0, totalLength);
+				    }
+				    else
+				    {
+					    // Term stored as utf8 bytes
+					    if (byteBuffer.Memory.Length < totalLength)
+                        {
+                            IMemoryOwner<byte> newByteBuffer = MemoryPool<byte>.Shared.Rent((int) (1.5 * totalLength));
+						    byteBuffer.Memory.Span.Slice(0, start).CopyTo(newByteBuffer.Memory.Span);
+						    byteBuffer.Dispose();
+						    byteBuffer = newByteBuffer;
+					    }
+					    tvf.ReadBytes(byteBuffer.Memory.Span.Slice(start, deltaLength), state);
+                        term = System.Text.Encoding.UTF8.GetString(byteBuffer.Memory.Span.Slice(0, totalLength));
+				    }
+				    int freq = tvf.ReadVInt(state);
+				    int[] positions = null;
+				    if (storePositions)
+				    {
+					    //read in the positions
+					    //does the mapper even care about positions?
+					    if (mapper.IsIgnoringPositions == false)
+					    {
+						    positions = new int[freq];
+						    int prevPosition = 0;
+						    for (int j = 0; j < freq; j++)
+						    {
+							    positions[j] = prevPosition + tvf.ReadVInt(state);
+							    prevPosition = positions[j];
+						    }
+					    }
+					    else
+					    {
+						    //we need to skip over the positions.  Since these are VInts, I don't believe there is anyway to know for sure how far to skip
+						    //
+						    for (int j = 0; j < freq; j++)
+						    {
+							    tvf.ReadVInt(state);
+						    }
+					    }
+				    }
+				    TermVectorOffsetInfo[] offsets = null;
+				    if (storeOffsets)
+				    {
+					    //does the mapper even care about offsets?
+					    if (mapper.IsIgnoringOffsets == false)
+					    {
+						    offsets = new TermVectorOffsetInfo[freq];
+						    int prevOffset = 0;
+						    for (int j = 0; j < freq; j++)
+						    {
+							    int startOffset = prevOffset + tvf.ReadVInt(state);
+							    int endOffset = startOffset + tvf.ReadVInt(state);
+							    offsets[j] = new TermVectorOffsetInfo(startOffset, endOffset);
+							    prevOffset = endOffset;
+						    }
+					    }
+					    else
+					    {
+						    for (int j = 0; j < freq; j++)
+						    {
+							    tvf.ReadVInt(state);
+							    tvf.ReadVInt(state);
+						    }
+					    }
+				    }
+				    mapper.Map(term, freq, offsets, positions);
+			    }
+            }
+            finally
+            {
+                byteBuffer?.Dispose();
+            }
 		}
 		
 		public virtual System.Object Clone(IState state)

@@ -59,7 +59,7 @@ namespace Lucene.Net.Documents
 			Assert.IsFalse(binaryFld.IsIndexed);
 			Assert.IsFalse(binaryFld.IsTokenized);
 			
-			System.String binaryTest = new System.String(System.Text.UTF8Encoding.UTF8.GetChars(doc.GetBinaryValue("binary", null)));
+			System.String binaryTest = new System.String(System.Text.UTF8Encoding.UTF8.GetChars(doc.GetBinaryValue("binary", null).ToArray()));
 			Assert.IsTrue(binaryTest.Equals(binaryVal));
 			
 			System.String stringTest = doc.Get("string", null);
@@ -69,12 +69,12 @@ namespace Lucene.Net.Documents
 			
 			Assert.AreEqual(3, doc.fields_ForNUnit.Count);
 			
-			byte[][] binaryTests = doc.GetBinaryValues("binary", null);
+			var binaryTests = doc.GetBinaryValues("binary", null);
 			
-			Assert.AreEqual(2, binaryTests.Length);
+			Assert.AreEqual(2, binaryTests.Count);
 			
-			binaryTest = new System.String(System.Text.UTF8Encoding.UTF8.GetChars(binaryTests[0]));
-			System.String binaryTest2 = new System.String(System.Text.UTF8Encoding.UTF8.GetChars(binaryTests[1]));
+			binaryTest = new System.String(System.Text.UTF8Encoding.UTF8.GetChars(binaryTests[0].ToArray()));
+			System.String binaryTest2 = new System.String(System.Text.UTF8Encoding.UTF8.GetChars(binaryTests[1].ToArray()));
 			
 			Assert.IsFalse(binaryTest.Equals(binaryTest2));
 			

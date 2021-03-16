@@ -449,7 +449,7 @@ namespace Lucene.Net.Index
 			
 			// null until bytes is set
 			private Ref bytesRef;
-			internal /*private*/ byte[] bytes;
+			internal /*private*/ Memory<byte> bytes;
 			internal /*private*/ bool dirty;
 			internal /*private*/ int number;
 			internal /*private*/ bool rollbackDirty;
@@ -513,7 +513,7 @@ namespace Lucene.Net.Index
 							CloseInput();
 						}
 						
-						if (bytes != null)
+						if (bytes.IsEmpty == false)
 						{
 							System.Diagnostics.Debug.Assert(bytesRef != null);
 							bytesRef.DecRef();
@@ -522,7 +522,7 @@ namespace Lucene.Net.Index
 						}
 						else
 						{
-							System.Diagnostics.Debug.Assert(bytesRef == null);
+							// System.Diagnostics.Debug.Assert(bytesRef == null); TODO [ppekrol]
 						}
 					}
 				}
@@ -530,16 +530,16 @@ namespace Lucene.Net.Index
 			
 			// Load bytes but do not cache them if they were not
 			// already cached
-			public void  Bytes(byte[] bytesOut, int offset, int len, IState state)
+			public void  Bytes(Span<byte> bytesOut, IState state)
 			{
 				lock (this)
 				{
 					System.Diagnostics.Debug.Assert(refCount > 0 &&(origNorm == null || origNorm.refCount > 0));
-					if (bytes != null)
+					if (bytes.IsEmpty == false)
 					{
 						// Already cached -- copy from cache:
-						System.Diagnostics.Debug.Assert(len <= Enclosing_Instance.MaxDoc);
-						Array.Copy(bytes, 0, bytesOut, offset, len);
+						System.Diagnostics.Debug.Assert(bytesOut.Length <= Enclosing_Instance.MaxDoc);
+						bytes.Span.Slice(0, bytesOut.Length).CopyTo(bytesOut);
 					}
 					else
 					{
@@ -547,7 +547,7 @@ namespace Lucene.Net.Index
 						if (origNorm != null)
 						{
 							// Ask origNorm to load
-							origNorm.Bytes(bytesOut, offset, len, state);
+							origNorm.Bytes(bytesOut, state);
 						}
 						else
 						{
@@ -555,7 +555,7 @@ namespace Lucene.Net.Index
 							lock (in_Renamed)
 							{
 								in_Renamed.Seek(normSeek, state);
-								in_Renamed.ReadBytes(bytesOut, offset, len, false, state);
+								in_Renamed.ReadBytes(bytesOut, false, state);
 							}
 						}
 					}
@@ -563,12 +563,12 @@ namespace Lucene.Net.Index
 			}
 			
 			// Load & cache full bytes array.  Returns bytes.
-			public byte[] Bytes(IState state)
+			public Memory<byte> Bytes(IState state)
 			{
 				lock (this)
 				{
 					System.Diagnostics.Debug.Assert(refCount > 0 &&(origNorm == null || origNorm.refCount > 0));
-					if (bytes == null)
+					if (bytes.IsEmpty)
 					{
 						// value not yet read
 						System.Diagnostics.Debug.Assert(bytesRef == null);
@@ -600,7 +600,7 @@ namespace Lucene.Net.Index
 							lock (in_Renamed)
 							{
 								in_Renamed.Seek(normSeek, state);
-								in_Renamed.ReadBytes(bytes, 0, count, false, state);
+								in_Renamed.ReadBytes(bytes.Span, false, state);
 							}
 							
 							bytesRef = new Ref();
@@ -620,13 +620,13 @@ namespace Lucene.Net.Index
 			
 			// Called if we intend to change a norm value.  We make a
 			// private copy of bytes if it's shared with others:
-			public byte[] CopyOnWrite(IState state)
+			public Span<byte> CopyOnWrite(IState state)
 			{
 				lock (this)
 				{
 					System.Diagnostics.Debug.Assert(refCount > 0 &&(origNorm == null || origNorm.refCount > 0));
 					Bytes(state);
-					System.Diagnostics.Debug.Assert(bytes != null);
+					System.Diagnostics.Debug.Assert(bytes.IsEmpty == false);
 					System.Diagnostics.Debug.Assert(bytesRef != null);
 					if (bytesRef.RefCount() > 1)
 					{
@@ -640,7 +640,7 @@ namespace Lucene.Net.Index
 						oldRef.DecRef();
 					}
 					dirty = true;
-					return bytes;
+					return bytes.Span;
 				}
 			}
 			
@@ -664,7 +664,7 @@ namespace Lucene.Net.Index
                     }
                     clone.refCount = 1;
 
-                    if (bytes != null)
+                    if (bytes.IsEmpty == false)
                     {
                         System.Diagnostics.Debug.Assert(bytesRef != null);
                         System.Diagnostics.Debug.Assert(origNorm == null);
@@ -704,7 +704,7 @@ namespace Lucene.Net.Index
 				try
 				{
 					try {
-                        @out.WriteBytes(bytes, enclosingInstance.MaxDoc);
+                        @out.WriteBytes(bytes.Span.Slice(0, enclosingInstance.MaxDoc));
                     } finally {
                         @out.Close();
                     }
@@ -816,10 +816,10 @@ namespace Lucene.Net.Index
 		/// </param>
 		/// <returns> New BitVector
 		/// </returns>
-		protected internal virtual byte[] CloneNormBytes(byte[] bytes)
+		protected internal virtual Memory<byte> CloneNormBytes(Memory<byte> bytes)
 		{
-			var cloneBytes = new byte[bytes.Length];
-			Array.Copy(bytes, 0, cloneBytes, 0, bytes.Length);
+			Memory<byte> cloneBytes = new byte[bytes.Length];
+			bytes.CopyTo(cloneBytes);
 			return cloneBytes;
 		}
 		
@@ -1297,7 +1297,7 @@ namespace Lucene.Net.Index
 		}
 		
 		// can return null if norms aren't stored
-		protected internal virtual byte[] GetNorms(System.String field, IState state)
+		protected internal virtual Memory<byte> GetNorms(System.String field, IState state)
 		{
 			lock (this)
 			{
@@ -1309,12 +1309,12 @@ namespace Lucene.Net.Index
 		}
 		
 		// returns fake norms if norms aren't available
-		public override byte[] Norms(System.String field, IState state)
+		public override Memory<byte> Norms(System.String field, IState state)
 		{
 			lock (this)
 			{
 				EnsureOpen();
-				byte[] bytes = GetNorms(field, state);
+				Memory<byte> bytes = GetNorms(field, state);
 				return bytes;
 			}
 		}
@@ -1331,7 +1331,7 @@ namespace Lucene.Net.Index
 		}
 		
 		/// <summary>Read norms into a pre-allocated array. </summary>
-		public override void Norms(System.String field, byte[] bytes, int offset, IState state)
+		public override void Norms(System.String field, Span<byte> bytes, IState state)
 		{
 			lock (this)
 			{
@@ -1340,14 +1340,14 @@ namespace Lucene.Net.Index
 				Norm norm = norms[field];
 				if (norm == null)
 				{
-                    for (int i = offset; i < bytes.Length; i++)
+                    for (int i = 0; i < bytes.Length; i++)
                     {
                         bytes[i] = (byte) DefaultSimilarity.EncodeNorm(1.0f);
                     }
 					return ;
 				}
 				
-				norm.Bytes(bytes, offset, MaxDoc, state);
+				norm.Bytes(bytes.Slice(0, MaxDoc), state);
 			}
 		}
 		

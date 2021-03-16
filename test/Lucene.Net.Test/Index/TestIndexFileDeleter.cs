@@ -222,13 +222,13 @@ namespace Lucene.Net.Index
 		{
 			IndexInput in_Renamed = dir.OpenInput(src, null);
 			IndexOutput out_Renamed = dir.CreateOutput(dest, null);
-			byte[] b = new byte[1024];
+			Span<byte> b = new byte[1024];
 			long remainder = in_Renamed.Length(null);
 			while (remainder > 0)
 			{
 				int len = (int) System.Math.Min(b.Length, remainder);
-				in_Renamed.ReadBytes(b, 0, len, null);
-				out_Renamed.WriteBytes(b, len);
+				in_Renamed.ReadBytes(b.Slice(0, len), null);
+				out_Renamed.WriteBytes(b.Slice(0, len));
 				remainder -= len;
 			}
 			in_Renamed.Close();

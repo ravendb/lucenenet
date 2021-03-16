@@ -241,12 +241,12 @@ namespace Lucene.Net.Index
 			// compression is disabled for the current field
 			if (field.IsBinary)
 			{
-				byte[] data = field.GetBinaryValue(state);
+				Memory<byte> data = field.GetBinaryValue(state);
 				int len = field.BinaryLength;
 				int offset = field.BinaryOffset;
 					
 				fieldsStream.WriteVInt(len);
-				fieldsStream.WriteBytes(data, offset, len);
+				fieldsStream.WriteBytes(data.Span.Slice(offset, len));
 			}
 			else
 			{

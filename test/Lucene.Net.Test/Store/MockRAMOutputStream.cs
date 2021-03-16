@@ -34,7 +34,7 @@ namespace Lucene.Net.Store
 		private bool first = true;
 		private System.String name;
 		
-		internal byte[] singleByte = new byte[1];
+		internal Memory<byte> singleByte = new byte[1];
 		
 		/// <summary>Construct an empty output buffer. </summary>
 		public MockRAMOutputStream(MockRAMDirectory dir, RAMFile f, System.String name):base(f)
@@ -64,12 +64,14 @@ namespace Lucene.Net.Store
 		
 		public override void  WriteByte(byte b)
 		{
-			singleByte[0] = b;
-			WriteBytes(singleByte, 0, 1);
+			singleByte.Span[0] = b;
+			WriteBytes(singleByte.Span);
 		}
 		
-		public override void  WriteBytes(byte[] b, int offset, int len)
-		{
+		public override void  WriteBytes(Span<byte> b)
+        {
+            var offset = 0;
+            var len = b.Length;
 			long freeSpace = dir.maxSize - dir.SizeInBytes();
 			long realUsage = 0;
 			
@@ -92,7 +94,7 @@ namespace Lucene.Net.Store
 				if (freeSpace > 0 && freeSpace < len)
 				{
 					realUsage += freeSpace;
-					base.WriteBytes(b, offset, (int) freeSpace);
+					base.WriteBytes(b.Slice(offset, (int)freeSpace));
 				}
 				if (realUsage > dir.maxUsedSize)
 				{
@@ -102,7 +104,7 @@ namespace Lucene.Net.Store
 			}
 			else
 			{
-				base.WriteBytes(b, offset, len);
+				base.WriteBytes(b.Slice(offset, len));
 			}
 			
 			dir.MaybeThrowDeterministicException();

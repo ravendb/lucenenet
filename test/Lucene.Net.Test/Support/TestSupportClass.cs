@@ -71,12 +71,12 @@ namespace Lucene.Net.Support
         [Test]
         public virtual void TestCRC32()
         {
-            byte[] b = new byte[256];
+            Span<byte> b = new byte[256];
             for (int i = 0; i < b.Length; i++)
                 b[i] = (byte)i;
 
             IChecksum digest = new CRC32();
-            digest.Update(b, 0, b.Length);
+            digest.Update(b);
 
             Int64 expected = 688229491;
             Assert.AreEqual(expected, digest.Value);

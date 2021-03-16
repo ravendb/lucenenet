@@ -66,7 +66,7 @@ namespace Lucene.Net.Index
 		/// <returns> a byte[] array containing the data of this payload
 		/// </returns>
 		/// <throws>  IOException </throws>
-		byte[] GetPayload(byte[] data, int offset, IState state);
+		Memory<byte> GetPayload(Memory<byte> data, IState state);
 
 	    /// <summary> Checks if a payload can be loaded at this position.
 	    /// <p/>

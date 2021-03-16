@@ -31,7 +31,7 @@ namespace Lucene.Net.Search
 		private PhrasePositions[] tmpPos; // for flipping repeating pps.
 		private bool checkedRepeats;
 		
-		internal SloppyPhraseScorer(Weight weight, TermPositions[] tps, int[] offsets, Similarity similarity, int slop, byte[] norms):base(weight, tps, offsets, similarity, norms)
+		internal SloppyPhraseScorer(Weight weight, TermPositions[] tps, int[] offsets, Similarity similarity, int slop, Memory<byte> norms):base(weight, tps, offsets, similarity, norms)
 		{
 			this.slop = slop;
 		}

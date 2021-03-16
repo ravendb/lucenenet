@@ -22,6 +22,7 @@
 // http://www.icsharpcode.net/OpenSource/SharpZipLib/
 
 using System;
+using System.Buffers;
 using Lucene.Net.Support;
 using UnicodeUtil = Lucene.Net.Util.UnicodeUtil;
 
@@ -46,47 +47,42 @@ namespace Lucene.Net.Documents
 		/// specified compressionLevel (constants are defined in
 		/// java.util.zip.Deflater). 
 		/// </summary>
-		public static byte[] Compress(byte[] value_Renamed, int offset, int length, int compressionLevel)
+		public static byte[] Compress(Span<byte> value_Renamed, int compressionLevel)
 		{
 			/* Create an expandable byte array to hold the compressed data.
 			* You cannot use an array that's the same size as the orginal because
 			* there is no guarantee that the compressed data will be smaller than
 			* the uncompressed data. */
-			System.IO.MemoryStream bos = new System.IO.MemoryStream(length);
+			System.IO.MemoryStream bos = new System.IO.MemoryStream(value_Renamed.Length);
 
             Deflater compressor = SharpZipLib.CreateDeflater();
-			
-			try
-			{
-				compressor.SetLevel(compressionLevel);
-				compressor.SetInput(value_Renamed, offset, length);
-				compressor.Finish();
+
+			compressor.SetLevel(compressionLevel);
+			compressor.SetInput(value_Renamed);
+			compressor.Finish();
 				
-				// Compress the data
-				byte[] buf = new byte[1024];
+			// Compress the data
+			byte[] buf = ArrayPool<byte>.Shared.Rent(1024);
+            try
+            {
 				while (!compressor.IsFinished)
 				{
 					int count = compressor.Deflate(buf);
 					bos.Write(buf, 0, count);
 				}
 			}
-			finally
-			{
-			}
+            finally
+            {
+				ArrayPool<byte>.Shared.Return(buf);
+            }
 			
 			return bos.ToArray();
 		}
 		
-		/// <summary>Compresses the specified byte range, with default BEST_COMPRESSION level </summary>
-		public static byte[] Compress(byte[] value_Renamed, int offset, int length)
-        {
-			return Compress(value_Renamed, offset, length, Deflater.BEST_COMPRESSION);
-		}
-		
 		/// <summary>Compresses all bytes in the array, with default BEST_COMPRESSION level </summary>
-		public static byte[] Compress(byte[] value_Renamed)
+		public static byte[] Compress(Span<byte> value_Renamed)
 		{
-            return Compress(value_Renamed, 0, value_Renamed.Length, Deflater.BEST_COMPRESSION);
+            return Compress(value_Renamed, Deflater.BEST_COMPRESSION);
 		}
 		
 		/// <summary>Compresses the String value, with default BEST_COMPRESSION level </summary>
@@ -103,34 +99,35 @@ namespace Lucene.Net.Documents
 		{
 			UnicodeUtil.UTF8Result result = new UnicodeUtil.UTF8Result();
 			UnicodeUtil.UTF16toUTF8(value_Renamed, 0, value_Renamed.Length, result);
-			return Compress(result.result, 0, result.length, compressionLevel);
+			return Compress(result.result.Span.Slice(0, result.length), compressionLevel);
 		}
 		
 		/// <summary>Decompress the byte array previously returned by
 		/// compress 
 		/// </summary>
-		public static byte[] Decompress(byte[] value_Renamed)
+		public static Memory<byte> Decompress(Span<byte> value_Renamed)
 		{
 			// Create an expandable byte array to hold the decompressed data
 			System.IO.MemoryStream bos = new System.IO.MemoryStream(value_Renamed.Length);
 			
 			Inflater decompressor = SharpZipLib.CreateInflater();
 			
-			try
-			{
-				decompressor.SetInput(value_Renamed);
+			decompressor.SetInput(value_Renamed);
 				
-				// Decompress the data
-				byte[] buf = new byte[1024];
+			// Decompress the data
+			byte[] buf = ArrayPool<byte>.Shared.Rent(1024);
+			try
+            {
 				while (!decompressor.IsFinished)
 				{
 					int count = decompressor.Inflate(buf);
 					bos.Write(buf, 0, count);
 				}
 			}
-			finally
-			{
-			}
+            finally
+            {
+				ArrayPool<byte>.Shared.Return(buf);
+            }
 			
 			return bos.ToArray();
 		}
@@ -138,11 +135,11 @@ namespace Lucene.Net.Documents
 		/// <summary>Decompress the byte array previously returned by
 		/// compressString back into a String 
 		/// </summary>
-		public static System.String DecompressString(byte[] value_Renamed)
+		public static System.String DecompressString(Span<byte> value_Renamed)
 		{
 			UnicodeUtil.UTF16Result result = new UnicodeUtil.UTF16Result();
-			byte[] bytes = Decompress(value_Renamed);
-			UnicodeUtil.UTF8toUTF16(bytes, 0, bytes.Length, result);
+			Memory<byte> bytes = Decompress(value_Renamed);
+			UnicodeUtil.UTF8toUTF16(bytes.Span, 0, bytes.Length, result);
 			return new System.String(result.result, 0, result.length);
 		}
 	}

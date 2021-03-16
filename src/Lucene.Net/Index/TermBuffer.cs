@@ -90,16 +90,16 @@ namespace Lucene.Net.Index
 					// Fully convert all bytes since bytes is dirty
 					UnicodeUtil.UTF16toUTF8(text.result, 0, text.length, bytes);
 					bytes.SetLength(totalLength);
-					input.ReadBytes(bytes.result, start, length, state);
-					UnicodeUtil.UTF8toUTF16(bytes.result, 0, totalLength, text);
+					input.ReadBytes(bytes.result.Span.Slice(start, length), state);
+					UnicodeUtil.UTF8toUTF16(bytes.result.Span, 0, totalLength, text);
 					dirty = false;
 				}
 				else
 				{
 					// Incrementally convert only the UTF8 bytes that are new:
 					bytes.SetLength(totalLength);
-					input.ReadBytes(bytes.result, start, length, state);
-					UnicodeUtil.UTF8toUTF16(bytes.result, start, length, text);
+					input.ReadBytes(bytes.result.Span.Slice(start, length), state);
+					UnicodeUtil.UTF8toUTF16(bytes.result.Span, start, length, text);
 				}
 			}
 			this.field = fieldInfos.FieldName(input.ReadVInt(state));

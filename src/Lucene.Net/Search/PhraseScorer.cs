@@ -35,7 +35,7 @@ namespace Lucene.Net.Search
 	abstract class PhraseScorer:Scorer
 	{
 		private Weight weight;
-		protected internal byte[] norms;
+		protected internal Memory<byte> norms;
 		protected internal float value_Renamed;
 		
 		private bool firstTime = true;
@@ -45,7 +45,7 @@ namespace Lucene.Net.Search
 		
 		private float freq; //prhase frequency in current doc as computed by phraseFreq().
 		
-		internal PhraseScorer(Weight weight, TermPositions[] tps, int[] offsets, Similarity similarity, byte[] norms):base(similarity)
+		internal PhraseScorer(Weight weight, TermPositions[] tps, int[] offsets, Similarity similarity, Memory<byte> norms):base(similarity)
 		{
 			this.norms = norms;
 			this.weight = weight;
@@ -129,7 +129,7 @@ namespace Lucene.Net.Search
 		{
 			//System.out.println("scoring " + first.doc);
 			float raw = Similarity.Tf(freq) * value_Renamed; // raw score
-			return norms == null?raw:raw * Similarity.DecodeNorm(norms[first.doc]); // normalize
+			return norms.IsEmpty ? raw:raw * Similarity.DecodeNorm(norms.Span[first.doc]); // normalize
 		}
 		
 		public override int Advance(int target, IState state)

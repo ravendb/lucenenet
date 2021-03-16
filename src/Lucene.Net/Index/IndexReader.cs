@@ -802,7 +802,7 @@ namespace Lucene.Net.Index
 			// backward compatible implementation.
 			// SegmentReader has an efficient implementation.
 			EnsureOpen();
-			return Norms(field, state) != null;
+			return Norms(field, state).IsEmpty == false;
 		}
 
 		/// <summary>
@@ -810,14 +810,14 @@ namespace Lucene.Net.Index
 		/// every document.  This is used by the search code to score documents.
 		/// </summary>
         /// <seealso cref="Lucene.Net.Documents.AbstractField.Boost" />
-		public abstract byte[] Norms(System.String field, IState state);
+		public abstract Memory<byte> Norms(System.String field, IState state);
 		
 		/// <summary>
 		/// Reads the byte-encoded normalization factor for the named field of every
 		/// document.  This is used by the search code to score documents.
 		/// </summary>
 		/// <seealso cref="Lucene.Net.Documents.AbstractField.Boost" />
-		public abstract void  Norms(System.String field, byte[] bytes, int offset, IState state);
+		public abstract void  Norms(System.String field, Span<byte> bytes, IState state);
 		
 		/// <summary>Expert: Resets the normalization factor for the named field of the named
 		/// document.  The norm represents the product of the field's <see cref="IFieldable.Boost">boost</see>

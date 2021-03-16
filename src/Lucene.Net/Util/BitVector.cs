@@ -37,7 +37,7 @@ namespace Lucene.Net.Util
 	public sealed class BitVector : ICloneable
 	{
 		
-		private byte[] bits;
+		private Memory<byte> bits;
 		private int size;
 		private int count;
 		
@@ -49,7 +49,7 @@ namespace Lucene.Net.Util
             count = 0;
 		}
 		
-		internal BitVector(byte[] bits, int size)
+		internal BitVector(Memory<byte> bits, int size)
 		{
 			this.bits = bits;
 			this.size = size;
@@ -58,8 +58,8 @@ namespace Lucene.Net.Util
 		
 		public System.Object Clone()
 		{
-			byte[] copyBits = new byte[bits.Length];
-			Array.Copy(bits, 0, copyBits, 0, bits.Length);
+			Memory<byte> copyBits = new byte[bits.Length];
+			bits.Span.CopyTo(copyBits.Span);
             BitVector clone = new BitVector(copyBits, size);
             clone.count = count;
             return clone;
@@ -72,7 +72,7 @@ namespace Lucene.Net.Util
 			{
 				throw new System. IndexOutOfRangeException("Index of bound " + bit);
 			}
-			bits[bit >> 3] |= (byte) (1 << (bit & 7));
+			bits.Span[bit >> 3] |= (byte) (1 << (bit & 7));
 			count = - 1;
 		}
 		
@@ -86,13 +86,13 @@ namespace Lucene.Net.Util
 				throw new System. IndexOutOfRangeException("Index of bound " + bit);
 			}
 			int pos = bit >> 3;
-			int v = bits[pos];
+			int v = bits.Span[pos];
 			int flag = 1 << (bit & 7);
 			if ((flag & v) != 0)
 				return true;
 			else
 			{
-				bits[pos] = (byte) (v | flag);
+				bits.Span[pos] = (byte) (v | flag);
 				if (count != - 1)
 					count++;
 				return false;
@@ -106,7 +106,7 @@ namespace Lucene.Net.Util
 			{
 				throw new System.IndexOutOfRangeException("Index of bound " + bit);
 			}
-			bits[bit >> 3] &= (byte) (~ (1 << (bit & 7)));
+			bits.Span[bit >> 3] &= (byte) (~ (1 << (bit & 7)));
 			count = - 1;
 		}
 		
@@ -116,7 +116,7 @@ namespace Lucene.Net.Util
 		public bool Get(int bit)
 		{
 			System.Diagnostics.Debug.Assert(bit >= 0 && bit < size, "bit " + bit + " is out of bounds 0.." +(size - 1));
-			return (bits[bit >> 3] & (1 << (bit & 7))) != 0;
+			return (bits.Span[bit >> 3] & (1 << (bit & 7))) != 0;
 		}
 		
 		/// <summary>Returns the number of bits in this vector.  This is also one greater than
@@ -139,7 +139,7 @@ namespace Lucene.Net.Util
 				int c = 0;
 				int end = bits.Length;
 				for (int i = 0; i < end; i++)
-					c += BYTE_COUNTS[bits[i] & 0xFF]; // sum bits per byte
+					c += BYTE_COUNTS[bits.Span[i] & 0xFF]; // sum bits per byte
 				count = c;
 			}
 			return count;
@@ -154,7 +154,7 @@ namespace Lucene.Net.Util
             int c = 0;
             int end = bits.Length;
             for (int i = 0; i < end; i++)
-                c += BYTE_COUNTS[bits[i] & 0xFF];	  // sum bits per byte
+                c += BYTE_COUNTS[bits.Span[i] & 0xFF];	  // sum bits per byte
             return c;
         }
 		
@@ -190,7 +190,7 @@ namespace Lucene.Net.Util
 		{
 			output.WriteInt(Size()); // write size
 			output.WriteInt(Count()); // write count
-			output.WriteBytes(bits, bits.Length);
+			output.WriteBytes(bits.Span);
 		}
 		
 		/// <summary>Write as a d-gaps list </summary>
@@ -204,12 +204,12 @@ namespace Lucene.Net.Util
 			int m = bits.Length;
 			for (int i = 0; i < m && n > 0; i++)
 			{
-				if (bits[i] != 0)
+				if (bits.Span[i] != 0)
 				{
 					output.WriteVInt(i - last);
-					output.WriteByte(bits[i]);
+					output.WriteByte(bits.Span[i]);
 					last = i;
-					n -= BYTE_COUNTS[bits[i] & 0xFF];
+					n -= BYTE_COUNTS[bits.Span[i] & 0xFF];
 				}
 			}
 		}
@@ -265,7 +265,7 @@ namespace Lucene.Net.Util
 		{
 			count = input.ReadInt(state); // read count
 			bits = new byte[(size >> 3) + 1]; // allocate bits
-			input.ReadBytes(bits, 0, bits.Length, state);
+			input.ReadBytes(bits.Span, state);
 		}
 		
 		/// <summary>read as a d-gaps list </summary>
@@ -279,8 +279,8 @@ namespace Lucene.Net.Util
 			while (n > 0)
 			{
 				last += input.ReadVInt(state);
-				bits[last] = input.ReadByte(state);
-				n -= BYTE_COUNTS[bits[last] & 0xFF];
+				bits.Span[last] = input.ReadByte(state);
+				n -= BYTE_COUNTS[bits.Span[last] & 0xFF];
 			}
 		}
 		
@@ -304,8 +304,8 @@ namespace Lucene.Net.Util
 			int s = Number.URShift(start, 3);
 			for (int i = 0; i < bits.Length; i++)
 			{
-				int cur = 0xFF & this.bits[i + s];
-				int next = i + s + 1 >= this.bits.Length?0:0xFF & this.bits[i + s + 1];
+				int cur = 0xFF & this.bits.Span[i + s];
+				int next = i + s + 1 >= this.bits.Length?0:0xFF & this.bits.Span[i + s + 1];
 				bits[i] = (byte) ((Number.URShift(cur, (start & 7))) | ((next << (8 - (start & 7)))));
 			}
 			int bitsToClear = (bits.Length * 8 - (end - start)) % 8;

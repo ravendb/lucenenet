@@ -115,9 +115,9 @@ namespace Lucene.Net.Index
 		        get { return ((TermPositions) this.in_Renamed).PayloadLength; }
 		    }
 
-		    public virtual byte[] GetPayload(byte[] data, int offset, IState state)
+		    public virtual Memory<byte> GetPayload(Memory<byte> data, IState state)
 			{
-				return ((TermPositions) this.in_Renamed).GetPayload(data, offset, state);
+				return ((TermPositions) this.in_Renamed).GetPayload(data, state);
 			}
 			
 			
@@ -254,16 +254,16 @@ namespace Lucene.Net.Index
 			return in_Renamed.HasNorms(field, state);
 		}
 		
-		public override byte[] Norms(System.String f, IState state)
+		public override Memory<byte> Norms(System.String f, IState state)
 		{
 			EnsureOpen();
 			return in_Renamed.Norms(f, state);
 		}
 		
-		public override void  Norms(System.String f, byte[] bytes, int offset, IState state)
+		public override void  Norms(System.String f, Span<byte> bytes, IState state)
 		{
 			EnsureOpen();
-			in_Renamed.Norms(f, bytes, offset, state);
+			in_Renamed.Norms(f, bytes, state);
 		}
 		
 		protected internal override void  DoSetNorm(int d, System.String f, byte b, IState state)

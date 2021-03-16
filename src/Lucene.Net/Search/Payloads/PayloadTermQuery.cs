@@ -110,12 +110,12 @@ namespace Lucene.Net.Search.Payloads
 					
 				}
 				// TODO: is this the best way to allocate this?
-				protected internal byte[] payload = new byte[256];
+				protected internal Memory<byte> payload = new byte[256];
 				protected internal TermPositions positions;
 				protected internal float payloadScore;
 				protected internal int payloadsSeen;
 				
-				public PayloadTermSpanScorer(PayloadTermWeight enclosingInstance, TermSpans spans, Weight weight, Similarity similarity, byte[] norms, IState state) :base(spans, weight, similarity, norms, state)
+				public PayloadTermSpanScorer(PayloadTermWeight enclosingInstance, TermSpans spans, Weight weight, Similarity similarity, Memory<byte> norms, IState state) :base(spans, weight, similarity, norms, state)
 				{
 					InitBlock(enclosingInstance);
 					positions = spans.Positions;
@@ -149,8 +149,8 @@ namespace Lucene.Net.Search.Payloads
 				{
 					if (positions.IsPayloadAvailable)
 					{
-						payload = positions.GetPayload(payload, 0, state);
-						payloadScore = Enclosing_Instance.Enclosing_Instance.function.CurrentScore(doc, Enclosing_Instance.Enclosing_Instance.internalTerm.Field, spans.Start(), spans.End(), payloadsSeen, payloadScore, similarity.ScorePayload(doc, Enclosing_Instance.Enclosing_Instance.internalTerm.Field, spans.Start(), spans.End(), payload, 0, positions.PayloadLength));
+						payload = positions.GetPayload(payload, state);
+						payloadScore = Enclosing_Instance.Enclosing_Instance.function.CurrentScore(doc, Enclosing_Instance.Enclosing_Instance.internalTerm.Field, spans.Start(), spans.End(), payloadsSeen, payloadScore, similarity.ScorePayload(doc, Enclosing_Instance.Enclosing_Instance.internalTerm.Field, spans.Start(), spans.End(), payload.Span.Slice(0, positions.PayloadLength)));
 						payloadsSeen++;
 					}
 					else

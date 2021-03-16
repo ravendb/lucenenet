@@ -242,7 +242,7 @@ namespace Lucene.Net.Index
             Assert.Throws<LockObtainFailedException>(() => reader3C.SetNorm(1, "field1", 0.99f, null), "did not hit expected exception");
 			
 			// norm values should be different 
-			Assert.IsTrue(Similarity.DecodeNorm(segmentReader3C.Norms("field1", null)[5]) != Similarity.DecodeNorm(segmentReader4C.Norms("field1", null)[5]));
+			Assert.IsTrue(Similarity.DecodeNorm(segmentReader3C.Norms("field1", null).Span[5]) != Similarity.DecodeNorm(segmentReader4C.Norms("field1", null).Span[5]));
 			Norm reader4CCNorm = segmentReader4C.norms_ForNUnit["field1"];
 			Assert.AreEqual(3, reader3CCNorm.BytesRef().RefCount());
 			Assert.AreEqual(1, reader4CCNorm.BytesRef().RefCount());
@@ -312,12 +312,12 @@ namespace Lucene.Net.Index
 			for (int i = 0; i < NUM_FIELDS; i++)
 			{
 				System.String field = "f" + i;
-				byte[] b = ir.Norms(field, null);
+				Memory<byte> b = ir.Norms(field, null);
 				Assert.AreEqual(numDocNorms, b.Length, "number of norms mismatches");
 				System.Collections.ArrayList storedNorms = (i == 1?modifiedNorms:norms);
 				for (int j = 0; j < b.Length; j++)
 				{
-					float norm = Similarity.DecodeNorm(b[j]);
+					float norm = Similarity.DecodeNorm(b.Span[j]);
 					float norm1 = (float) storedNorms[j];
 					Assert.AreEqual(norm, norm1, 0.000001, "stored norm value of " + field + " for doc " + j + " is " + norm + " - a mismatch!");
 				}

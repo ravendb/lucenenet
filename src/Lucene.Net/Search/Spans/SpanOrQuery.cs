@@ -140,9 +140,9 @@ namespace Lucene.Net.Search.Spans
 				return Top().End();
 			}
 
-		    public override ICollection<byte[]> GetPayload(IState state)
+		    public override ICollection<Memory<byte>> GetPayload(IState state)
 		    {
-		        System.Collections.Generic.ICollection<byte[]> result = null;
+		        System.Collections.Generic.ICollection<Memory<byte>> result = null;
 		        Spans theTop = Top();
 		        if (theTop != null && theTop.IsPayloadAvailable())
 		        {

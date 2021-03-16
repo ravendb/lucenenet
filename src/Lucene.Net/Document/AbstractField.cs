@@ -170,15 +170,15 @@ namespace Lucene.Net.Documents
 	    /// returned array belong to the field.
 	    /// </summary>
 	    /// <returns> reference to the Field value as byte[]. </returns>
-	    public virtual byte[] GetBinaryValue(IState state)
+	    public virtual Memory<byte> GetBinaryValue(IState state)
 	    {
 	        return GetBinaryValue(null, state);
 	    }
 
-	    public virtual byte[] GetBinaryValue(byte[] result, IState state)
+	    public virtual Memory<byte> GetBinaryValue(Memory<byte> result, IState state)
 		{
-			if (internalIsBinary || fieldsData is byte[])
-				return (byte[]) fieldsData;
+			if (internalIsBinary || fieldsData is Memory<byte>)
+				return (Memory<byte>) fieldsData;
 			else
 				return null;
 		}
@@ -195,7 +195,7 @@ namespace Lucene.Net.Documents
 	            {
 	                return internalBinaryLength;
 	            }
-	            return fieldsData is byte[] ? ((byte[]) fieldsData).Length : 0;
+	            return fieldsData is Memory<byte> ? ((Memory<byte>) fieldsData).Length : 0;
 	        }
 	    }
 

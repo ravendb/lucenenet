@@ -144,8 +144,10 @@ namespace Lucene.Net.Store
             }
 
 		    /// <summary>IndexInput methods </summary>
-			public override void  ReadInternal(byte[] b, int offset, int len, IState state)
+			public override void  ReadInternal(Span<byte> b, IState state)
 			{
+				var len = b.Length;
+				var offset = 0;
 				lock (file)
 				{
 					long position = FilePointer(state);
@@ -170,7 +172,7 @@ namespace Lucene.Net.Store
 								// LUCENE-1566 - work around JVM Bug by breaking very large reads into chunks
 								readLength = chunkSize;
 							}
-							int i = file.Read(b, offset + total, readLength);
+							int i = file.Read(b.Slice(offset + total, readLength));
 							if (i == - 1)
 							{
 								throw new System.IO.IOException("read past EOF");
@@ -249,25 +251,25 @@ namespace Lucene.Net.Store
 				file = new System.IO.FileStream(path.FullName, System.IO.FileMode.OpenOrCreate, System.IO.FileAccess.ReadWrite);
 				isOpen = true;
 			}
-			
+
 			/// <summary>output methods: </summary>
-			public override void  FlushBuffer(byte[] b, int offset, int size)
+			public override void FlushBuffer(Span<byte> b)
 			{
-				file.Write(b, offset, size);
-                // {{dougsale-2.4.0}}
-                // FSIndexOutput.Flush
-                // When writing frequently with small amounts of data, the data isn't flushed to disk.
-                // Thus, attempting to read the data soon after this method is invoked leads to
-                // BufferedIndexInput.Refill() throwing an IOException for reading past EOF.
-                // Test\Index\TestDoc.cs demonstrates such a situation.
-                // Forcing a flush here prevents said issue.
-                // {{DIGY 2.9.0}}
-                // This code is not available in Lucene.Java 2.9.X.
-                // Can there be a indexing-performance problem?
-                file.Flush();
+				file.Write(b);
+				// {{dougsale-2.4.0}}
+				// FSIndexOutput.Flush
+				// When writing frequently with small amounts of data, the data isn't flushed to disk.
+				// Thus, attempting to read the data soon after this method is invoked leads to
+				// BufferedIndexInput.Refill() throwing an IOException for reading past EOF.
+				// Test\Index\TestDoc.cs demonstrates such a situation.
+				// Forcing a flush here prevents said issue.
+				// {{DIGY 2.9.0}}
+				// This code is not available in Lucene.Java 2.9.X.
+				// Can there be a indexing-performance problem?
+				file.Flush();
 			}
 
-            protected override void Dispose(bool disposing)
+			protected override void Dispose(bool disposing)
             {
                 // only close the file if it has not been closed yet
                 if (isOpen)
@@ -314,6 +316,6 @@ namespace Lucene.Net.Store
 			{
 				file.SetLength(length);
 			}
-		}
+        }
 	}
 }

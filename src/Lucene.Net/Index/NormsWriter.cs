@@ -106,7 +106,7 @@ namespace Lucene.Net.Index
 			
 			try
 			{
-				normsOut.WriteBytes(SegmentMerger.NORMS_HEADER, 0, SegmentMerger.NORMS_HEADER.Length);
+				normsOut.WriteBytes(SegmentMerger.NORMS_HEADER.Span);
 				
 				int numField = fieldInfos.Size();
 				

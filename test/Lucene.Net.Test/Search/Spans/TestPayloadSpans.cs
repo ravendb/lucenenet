@@ -280,11 +280,11 @@ namespace Lucene.Net.Search.Spans
 			{
 				while (spans.Next(null))
 				{
-					System.Collections.Generic.ICollection<byte[]> payloads = spans.GetPayload(null);
+					System.Collections.Generic.ICollection<Memory<byte>> payloads = spans.GetPayload(null);
 					
 					for (System.Collections.IEnumerator it = payloads.GetEnumerator(); it.MoveNext(); )
 					{
-						CollectionsHelper.AddIfNotContains(payloadSet, new System.String(System.Text.UTF8Encoding.UTF8.GetChars((byte[]) it.Current)));
+						CollectionsHelper.AddIfNotContains(payloadSet, new System.String(System.Text.UTF8Encoding.UTF8.GetChars(((Memory<byte>) it.Current).Span.ToArray())));
 					}
 				}
 			}
@@ -317,10 +317,10 @@ namespace Lucene.Net.Search.Spans
 			{
 				while (spans.Next(null))
 				{
-					System.Collections.Generic.ICollection<byte[]> payloads = spans.GetPayload(null);
+					System.Collections.Generic.ICollection<Memory<byte>> payloads = spans.GetPayload(null);
 					for (System.Collections.IEnumerator it = payloads.GetEnumerator(); it.MoveNext(); )
 					{
-						CollectionsHelper.AddIfNotContains(payloadSet, new System.String(System.Text.UTF8Encoding.UTF8.GetChars((byte[]) it.Current)));
+						CollectionsHelper.AddIfNotContains(payloadSet, new System.String(System.Text.UTF8Encoding.UTF8.GetChars(((Memory<byte>) it.Current).Span.ToArray())));
 					}
 				}
 			}
@@ -353,11 +353,11 @@ namespace Lucene.Net.Search.Spans
 			{
 				while (spans.Next(null))
 				{
-					System.Collections.Generic.ICollection<byte[]> payloads = spans.GetPayload(null);
+					System.Collections.Generic.ICollection<Memory<byte>> payloads = spans.GetPayload(null);
 					
 					for (System.Collections.IEnumerator it = payloads.GetEnumerator(); it.MoveNext(); )
 					{
-						CollectionsHelper.AddIfNotContains(payloadSet, new System.String(System.Text.UTF8Encoding.UTF8.GetChars((byte[]) it.Current)));
+						CollectionsHelper.AddIfNotContains(payloadSet, new System.String(System.Text.UTF8Encoding.UTF8.GetChars(((Memory<byte>) it.Current).Span.ToArray())));
 					}
 				}
 			}
@@ -392,15 +392,15 @@ namespace Lucene.Net.Search.Spans
 			IndexReader reader = searcher.IndexReader;
 			PayloadSpanUtil psu = new PayloadSpanUtil(reader);
 			
-			System.Collections.Generic.ICollection<byte[]> payloads = psu.GetPayloadsForQuery(new TermQuery(new Term(PayloadHelper.FIELD, "rr")), null);
+			System.Collections.Generic.ICollection<Memory<byte>> payloads = psu.GetPayloadsForQuery(new TermQuery(new Term(PayloadHelper.FIELD, "rr")), null);
 			if (DEBUG)
 				System.Console.Out.WriteLine("Num payloads:" + payloads.Count);
 			System.Collections.IEnumerator it = payloads.GetEnumerator();
 			while (it.MoveNext())
 			{
-				byte[] bytes = (byte[]) it.Current;
+				Memory<byte> bytes = (Memory<byte>) it.Current;
 				if (DEBUG)
-					System.Console.Out.WriteLine(new System.String(System.Text.UTF8Encoding.UTF8.GetChars(bytes)));
+					System.Console.Out.WriteLine(new System.String(System.Text.UTF8Encoding.UTF8.GetChars(bytes.Span.ToArray())));
 			}
 		}
 		
@@ -424,13 +424,13 @@ namespace Lucene.Net.Search.Spans
 				//See payload helper, for the PayloadHelper.FIELD field, there is a single byte payload at every token
 				if (spans.IsPayloadAvailable())
 				{
-					System.Collections.Generic.ICollection<byte[]> payload = spans.GetPayload(null);
+					System.Collections.Generic.ICollection<Memory<byte>> payload = spans.GetPayload(null);
 					Assert.IsTrue(payload.Count == expectedNumPayloads, "payload Size: " + payload.Count + " is not: " + expectedNumPayloads);
 					for (System.Collections.IEnumerator iterator = payload.GetEnumerator(); iterator.MoveNext(); )
 					{
-						byte[] thePayload = (byte[]) iterator.Current;
+						Memory<byte> thePayload = (Memory<byte>) iterator.Current;
 						Assert.IsTrue(thePayload.Length == expectedPayloadLength, "payload[0] Size: " + thePayload.Length + " is not: " + expectedPayloadLength);
-						Assert.IsTrue(thePayload[0] == expectedFirstByte, thePayload[0] + " does not equal: " + expectedFirstByte);
+						Assert.IsTrue(thePayload.Span[0] == expectedFirstByte, thePayload.Span[0] + " does not equal: " + expectedFirstByte);
 					}
 				}
 				seen++;
@@ -472,15 +472,15 @@ namespace Lucene.Net.Search.Spans
 					System.Console.Out.WriteLine("\nSpans Dump --");
 				if (spans.IsPayloadAvailable())
 				{
-					System.Collections.Generic.ICollection<byte[]> payload = spans.GetPayload(null);
+					System.Collections.Generic.ICollection<Memory<byte>> payload = spans.GetPayload(null);
 					if (DEBUG)
 						System.Console.Out.WriteLine("payloads for span:" + payload.Count);
 					System.Collections.IEnumerator it = payload.GetEnumerator();
 					while (it.MoveNext())
 					{
-						byte[] bytes = (byte[]) it.Current;
+                        Memory<byte> bytes = (Memory<byte>) it.Current;
 						if (DEBUG)
-							System.Console.Out.WriteLine("doc:" + spans.Doc() + " s:" + spans.Start() + " e:" + spans.End() + " " + new System.String(System.Text.UTF8Encoding.UTF8.GetChars(bytes)));
+							System.Console.Out.WriteLine("doc:" + spans.Doc() + " s:" + spans.Start() + " e:" + spans.End() + " " + new System.String(System.Text.UTF8Encoding.UTF8.GetChars(bytes.Span.ToArray())));
 					}
 					
 					Assert.AreEqual(numPayloads[cnt], payload.Count);

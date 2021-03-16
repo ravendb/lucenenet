@@ -53,7 +53,7 @@ namespace Lucene.Net.Index
 		internal int lastPosition;
 		
 		/// <summary>Add a new position &amp; payload </summary>
-		internal override void  AddPosition(int position, byte[] payload, int payloadOffset, int payloadLength)
+		internal override void  AddPosition(int position, Span<byte> payload)
 		{
 			System.Diagnostics.Debug.Assert(!omitTermFreqAndPositions, "omitTermFreqAndPositions is true");
 			System.Diagnostics.Debug.Assert(out_Renamed != null);
@@ -63,16 +63,16 @@ namespace Lucene.Net.Index
 			
 			if (storePayloads)
 			{
-				if (payloadLength != lastPayloadLength)
+				if (payload.Length != lastPayloadLength)
 				{
-					lastPayloadLength = payloadLength;
+					lastPayloadLength = payload.Length;
 					out_Renamed.WriteVInt((delta << 1) | 1);
-					out_Renamed.WriteVInt(payloadLength);
+					out_Renamed.WriteVInt(payload.Length);
 				}
 				else
 					out_Renamed.WriteVInt(delta << 1);
-				if (payloadLength > 0)
-					out_Renamed.WriteBytes(payload, payloadLength);
+				if (payload.Length > 0)
+					out_Renamed.WriteBytes(payload);
 			}
 			else
 				out_Renamed.WriteVInt(delta);

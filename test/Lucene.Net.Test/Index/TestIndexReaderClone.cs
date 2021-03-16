@@ -296,13 +296,13 @@ namespace Lucene.Net.Index
 		/// <throws>  Exception </throws>
 		private void  PerformDefaultTests(IndexReader r1)
 		{
-			float norm1 = Similarity.DecodeNorm(r1.Norms("field1", null)[4]);
+			float norm1 = Similarity.DecodeNorm(r1.Norms("field1", null).Span[4]);
 			
 			IndexReader pr1Clone = (IndexReader) r1.Clone(null);
 			pr1Clone.DeleteDocument(10, null);
 			pr1Clone.SetNorm(4, "field1", 0.5f, null);
-			Assert.IsTrue(Similarity.DecodeNorm(r1.Norms("field1", null)[4]) == norm1);
-			Assert.IsTrue(Similarity.DecodeNorm(pr1Clone.Norms("field1", null)[4]) != norm1);
+			Assert.IsTrue(Similarity.DecodeNorm(r1.Norms("field1", null).Span[4]) == norm1);
+			Assert.IsTrue(Similarity.DecodeNorm(pr1Clone.Norms("field1", null).Span[4]) != norm1);
 			
 			Assert.IsTrue(!r1.IsDeleted(10));
 			Assert.IsTrue(pr1Clone.IsDeleted(10));
@@ -452,7 +452,7 @@ namespace Lucene.Net.Index
 			IndexReader orig = IndexReader.Open(dir1, false, null);
 			orig.SetNorm(1, "field1", 17.0f, null);
 			byte encoded = Similarity.EncodeNorm(17.0f);
-			Assert.AreEqual(encoded, orig.Norms("field1", null)[1]);
+			Assert.AreEqual(encoded, orig.Norms("field1", null).Span[1]);
 			
 			// the cloned segmentreader should have 2 references, 1 to itself, and 1 to
 			// the original segmentreader
@@ -461,7 +461,7 @@ namespace Lucene.Net.Index
 			clonedReader.Close();
 			
 			IndexReader r = IndexReader.Open(dir1, false, null);
-			Assert.AreEqual(encoded, r.Norms("field1", null)[1]);
+			Assert.AreEqual(encoded, r.Norms("field1", null).Span[1]);
 			r.Close();
 			dir1.Close();
 		}

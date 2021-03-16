@@ -395,19 +395,19 @@ namespace Lucene.Net.Index
 		    return reader != null && reader.HasNorms(field, state);
 		}
 		
-		public override byte[] Norms(System.String field, IState state)
+		public override Memory<byte> Norms(System.String field, IState state)
 		{
 			EnsureOpen();
 			IndexReader reader = fieldToReader[field];
 			return reader == null?null:reader.Norms(field, state);
 		}
 		
-		public override void  Norms(System.String field, byte[] result, int offset, IState state)
+		public override void  Norms(System.String field, Span<byte> result, IState state)
 		{
 			EnsureOpen();
 			IndexReader reader = fieldToReader[field];
 			if (reader != null)
-				reader.Norms(field, result, offset, state);
+				reader.Norms(field, result, state);
 		}
 		
 		protected internal override void  DoSetNorm(int n, System.String field, byte value_Renamed, IState state)
@@ -807,9 +807,9 @@ namespace Lucene.Net.Index
 		        get { return ((TermPositions) termDocs).PayloadLength; }
 		    }
 
-		    public virtual byte[] GetPayload(byte[] data, int offset, IState state)
+		    public virtual Memory<byte> GetPayload(Memory<byte> data, IState state)
 			{
-				return ((TermPositions) termDocs).GetPayload(data, offset, state);
+				return ((TermPositions) termDocs).GetPayload(data, state);
 			}
 			
 			

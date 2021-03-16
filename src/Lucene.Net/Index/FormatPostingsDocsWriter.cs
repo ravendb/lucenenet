@@ -118,7 +118,7 @@ namespace Lucene.Net.Index
 			
 			if (df > 0)
 			{
-				parent.termsOut.Add(fieldInfo.number, utf8.result, utf8.length, termInfo);
+				parent.termsOut.Add(fieldInfo.number, utf8.result.Span.Slice(0, utf8.length), termInfo);
 			}
 			
 			lastDocID = 0;

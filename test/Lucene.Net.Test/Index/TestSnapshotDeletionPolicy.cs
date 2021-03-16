@@ -259,7 +259,7 @@ namespace Lucene.Net.Index
 			}
 		}
 		
-		internal byte[] buffer = new byte[4096];
+		internal Memory<byte> buffer = new byte[4096];
 		
 		private void  ReadFile(Directory dir, System.String name)
 		{
@@ -275,7 +275,7 @@ namespace Lucene.Net.Index
 						numToRead = (int) bytesLeft;
 					else
 						numToRead = buffer.Length;
-					input.ReadBytes(buffer, 0, numToRead, false, null);
+					input.ReadBytes(buffer.Span.Slice(0, numToRead), false, null);
 					bytesLeft -= numToRead;
 				}
 				// Don't do this in your real backups!  This is just

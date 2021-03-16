@@ -44,10 +44,10 @@ namespace Lucene.Net.Store
 			return b;
 		}
 		
-		public override void  ReadBytes(byte[] b, int offset, int len, IState state)
+		public override void  ReadBytes(Span<byte> b, IState state)
 		{
-			main.ReadBytes(b, offset, len, state);
-			digest.Update(b, offset, len);
+			main.ReadBytes(b, state);
+			digest.Update(b);
 		}
 
 	    public virtual long Checksum

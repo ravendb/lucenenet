@@ -195,14 +195,14 @@ namespace Lucene.Net.Index
 					if (!reader.HasNorms(f.Name, null))
 					{
 						// test for fake norms of 1.0 or null depending on the flag
-						byte[] norms = reader.Norms(f.Name, null);
+                        Memory<byte> norms = reader.Norms(f.Name, null);
 						byte norm1 = DefaultSimilarity.EncodeNorm(1.0f);
-						Assert.IsNull(norms);
+						Assert.True(norms.IsEmpty);
 						norms = new byte[reader.MaxDoc];
-						reader.Norms(f.Name, norms, 0, null);
+						reader.Norms(f.Name, norms.Span, null);
 						for (int j = 0; j < reader.MaxDoc; j++)
 						{
-							Assert.AreEqual(norms[j], norm1);
+							Assert.AreEqual(norms.Span[j], norm1);
 						}
 					}
 				}

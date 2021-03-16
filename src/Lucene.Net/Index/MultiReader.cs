@@ -38,7 +38,7 @@ namespace Lucene.Net.Index
         protected internal IndexReader[] subReaders;
         private int[] starts; // 1st docno for each segment
         private bool[] decrefOnClose; // remember which subreaders to decRef on close
-        private HashMap<string, byte[]> normsCache = new HashMap<string,byte[]>();
+        private HashMap<string, Memory<byte>> normsCache = new HashMap<string, Memory<byte>>();
         private int maxDoc = 0;
         private int numDocs = - 1;
         private bool hasDeletions = false;
@@ -336,53 +336,54 @@ namespace Lucene.Net.Index
             return false;
         }
         
-        public override byte[] Norms(System.String field, IState state)
+        public override Memory<byte> Norms(System.String field, IState state)
         {
             lock (this)
             {
                 EnsureOpen();
-                byte[] bytes = normsCache[field];
-                if (bytes != null)
+                Memory<byte> bytes = normsCache[field];
+                if (bytes.IsEmpty == false)
                     return bytes; // cache hit
                 if (!HasNorms(field, state))
                     return null;
                 
                 bytes = new byte[MaxDoc];
                 for (int i = 0; i < subReaders.Length; i++)
-                    subReaders[i].Norms(field, bytes, starts[i], state);
+                    subReaders[i].Norms(field, bytes.Span.Slice(starts[i]), state);
                 normsCache[field] = bytes; // update cache
                 return bytes;
             }
         }
         
-        public override void  Norms(System.String field, byte[] result, int offset, IState state)
+        public override void  Norms(System.String field, Span<byte> result, IState state)
         {
+            var offset = 0;
             lock (this)
             {
                 EnsureOpen();
-                byte[] bytes = normsCache[field];
+                Memory<byte> bytes = normsCache[field];
                 for (int i = 0; i < subReaders.Length; i++)
                 // read from segments
-                    subReaders[i].Norms(field, result, offset + starts[i], state);
+                    subReaders[i].Norms(field, result.Slice(starts[i]), state);
                 
-                if (bytes == null && !HasNorms(field, state))
+                if (bytes.IsEmpty && !HasNorms(field, state))
                 {
-                    for (int i = offset; i < result.Length; i++)
+                    for (int i = 0; i < result.Length; i++)
                     {
                         result[i] = (byte) DefaultSimilarity.EncodeNorm(1.0f);
                     }
                 }
-                else if (bytes != null)
+                else if (bytes.IsEmpty == false)
                 {
                     // cache hit
-                    Array.Copy(bytes, 0, result, offset, MaxDoc);
+                    bytes.Span.Slice(0, MaxDoc).CopyTo(result.Slice(offset));
                 }
                 else
                 {
                     for (int i = 0; i < subReaders.Length; i++)
                     {
                         // read from segments
-                        subReaders[i].Norms(field, result, offset + starts[i], state);
+                        subReaders[i].Norms(field, result.Slice(starts[i]), state);
                     }
                 }
             }

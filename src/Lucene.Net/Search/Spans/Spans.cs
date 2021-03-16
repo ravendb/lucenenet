@@ -79,7 +79,7 @@ namespace Lucene.Net.Search.Spans
 	    /// <throws>  java.io.IOException </throws>
 	    // TODO: Remove warning after API has been finalized
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1024:UsePropertiesWhereAppropriate")]
-        public abstract ICollection<byte[]> GetPayload(IState state);
+        public abstract ICollection<Memory<byte>> GetPayload(IState state);
 
 	    /// <summary> Checks if a payload can be loaded at this position.
 	    /// <p/>
