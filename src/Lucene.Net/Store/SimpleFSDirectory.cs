@@ -267,7 +267,13 @@ namespace Lucene.Net.Store
                 file.Flush();
 			}
 
-            protected override void Dispose(bool disposing)
+			public override void FlushBuffer(Span<byte> b)
+			{
+				file.Write(b);
+				file.Flush();
+			}
+
+			protected override void Dispose(bool disposing)
             {
                 // only close the file if it has not been closed yet
                 if (isOpen)
@@ -314,6 +320,6 @@ namespace Lucene.Net.Store
 			{
 				file.SetLength(length);
 			}
-		}
+        }
 	}
 }

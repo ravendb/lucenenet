@@ -123,8 +123,8 @@ namespace Lucene.Net.Store
                         int numBuffers = file.NumBuffers();
                         for (int i = 0; i < numBuffers; i++)
                         {
-                            byte[] buffer = file.GetBuffer(i);
-                            Array.Clear(buffer,0,buffer.Length);
+                            var buffer = file.GetBuffer(i, RAMOutputStream.BUFFER_SIZE);
+                            buffer.Span.Clear();
                         }
                     }
                     else if (count % 3 == 2)

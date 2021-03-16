@@ -35,7 +35,9 @@ namespace Lucene.Net.Store
 		/// <seealso cref="IndexInput.ReadByte()">
 		/// </seealso>
 		public abstract void  WriteByte(byte b);
-		
+
+		public abstract void WriteBytes(Span<byte> b);
+
 		/// <summary>Writes an array of bytes.</summary>
 		/// <param name="b">the bytes to write
 		/// </param>

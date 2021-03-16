@@ -75,6 +75,16 @@ namespace Lucene.Net.Support
             crc = ~c;
         }
 
+        public void Update(Span<byte> buf)
+        {
+            var len = buf.Length;
+            var off = 0;
+            UInt32 c = ~crc;
+            while (--len >= 0)
+                c = crcTable[(c ^ buf[off++]) & 0xff] ^ (c >> 8);
+            crc = ~c;
+        }
+
         public void Update(byte[] buf)
         {
             Update(buf, 0, buf.Length);

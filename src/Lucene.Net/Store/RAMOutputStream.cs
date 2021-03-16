@@ -29,7 +29,7 @@ namespace Lucene.Net.Store
 		
 		private RAMFile file;
 		
-		private byte[] currentBuffer;
+		private Memory<byte> currentBuffer;
 		private int currentBufferIndex;
 
 	    private bool isDisposed;
@@ -69,7 +69,7 @@ namespace Lucene.Net.Store
 					// at the last buffer
 					length = (int) (end - pos);
 				}
-				out_Renamed.WriteBytes(file.GetBuffer(buffer++), length);
+				out_Renamed.WriteBytes(file.GetBuffer(buffer++, length).Span);
 				pos = nextPos;
 			}
 		}
@@ -124,7 +124,7 @@ namespace Lucene.Net.Store
 				currentBufferIndex++;
 				SwitchCurrentBuffer();
 			}
-			currentBuffer[bufferPosition++] = b;
+			currentBuffer.Span[bufferPosition++] = b;
 		}
 		
 		public override void  WriteBytes(byte[] b, int offset, int len)
@@ -140,13 +140,40 @@ namespace Lucene.Net.Store
 				
 				int remainInBuffer = currentBuffer.Length - bufferPosition;
 				int bytesToCopy = len < remainInBuffer?len:remainInBuffer;
-				Array.Copy(b, offset, currentBuffer, bufferPosition, bytesToCopy);
+
+				new Span<byte>(b, offset, bytesToCopy).CopyTo(currentBuffer.Span.Slice(bufferPosition));
+
 				offset += bytesToCopy;
 				len -= bytesToCopy;
 				bufferPosition += bytesToCopy;
 			}
 		}
-		
+
+		public override void WriteBytes(Span<byte> b)
+		{
+			System.Diagnostics.Debug.Assert(b != null);
+
+			var len = b.Length;
+			var offset = 0;
+			while (len > 0)
+			{
+				if (bufferPosition == bufferLength)
+				{
+					currentBufferIndex++;
+					SwitchCurrentBuffer();
+				}
+
+				int remainInBuffer = currentBuffer.Length - bufferPosition;
+				int bytesToCopy = len < remainInBuffer ? len : remainInBuffer;
+
+				b.Slice(offset, bytesToCopy).CopyTo(currentBuffer.Span.Slice(bufferPosition));
+
+				offset += bytesToCopy;
+				len -= bytesToCopy;
+				bufferPosition += bytesToCopy;
+			}
+		}
+
 		private void  SwitchCurrentBuffer()
 		{
 			if (currentBufferIndex == file.NumBuffers())
@@ -155,7 +182,7 @@ namespace Lucene.Net.Store
 			}
 			else
 			{
-				currentBuffer = file.GetBuffer(currentBufferIndex);
+				currentBuffer = file.GetBuffer(currentBufferIndex, BUFFER_SIZE);
 			}
 			bufferPosition = 0;
 			bufferStart = (long) BUFFER_SIZE * (long) currentBufferIndex;
@@ -187,5 +214,5 @@ namespace Lucene.Net.Store
 		{
 			return file.NumBuffers() * BUFFER_SIZE;
 		}
-	}
+    }
 }

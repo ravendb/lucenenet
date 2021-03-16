@@ -30,7 +30,7 @@ namespace Lucene.Net.Store
 		private RAMFile file;
 		private long length;
 		
-		private byte[] currentBuffer;
+		private Memory<byte> currentBuffer;
 		private int currentBufferIndex;
 		
 		private int bufferPosition;
@@ -69,7 +69,7 @@ namespace Lucene.Net.Store
 				currentBufferIndex++;
 				SwitchCurrentBuffer(true);
 			}
-			return currentBuffer[bufferPosition++];
+			return currentBuffer.Span[bufferPosition++];
 		}
 		
 		public override void  ReadBytes(byte[] b, int offset, int len, IState state)
@@ -84,7 +84,9 @@ namespace Lucene.Net.Store
 				
 				int remainInBuffer = bufferLength - bufferPosition;
 				int bytesToCopy = len < remainInBuffer?len:remainInBuffer;
-				Array.Copy(currentBuffer, bufferPosition, b, offset, bytesToCopy);
+
+				currentBuffer.Span.Slice(bufferPosition, bytesToCopy).CopyTo(new Span<byte>(b).Slice(offset));
+
 				offset += bytesToCopy;
 				len -= bytesToCopy;
 				bufferPosition += bytesToCopy;
@@ -107,7 +109,7 @@ namespace Lucene.Net.Store
 			}
 			else
 			{
-				currentBuffer = file.GetBuffer(currentBufferIndex);
+				currentBuffer = file.GetBuffer(currentBufferIndex, BUFFER_SIZE);
 				bufferPosition = 0;
 				bufferStart = (long) BUFFER_SIZE * (long) currentBufferIndex;
 				long buflen = length - bufferStart;
@@ -122,7 +124,7 @@ namespace Lucene.Net.Store
 
 	    public override void  Seek(long pos, IState state)
 		{
-			if (currentBuffer == null || pos < bufferStart || pos >= bufferStart + BUFFER_SIZE)
+			if (currentBuffer.IsEmpty || pos < bufferStart || pos >= bufferStart + BUFFER_SIZE)
 			{
 				currentBufferIndex = (int) (pos / BUFFER_SIZE);
 				SwitchCurrentBuffer(false);

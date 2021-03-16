@@ -95,7 +95,58 @@ namespace Lucene.Net.Store
 				}
 			}
 		}
-		
+
+		public override void WriteBytes(Span<byte> b)
+		{
+			var length = b.Length;
+			var offset = 0;
+			int bytesLeft = BUFFER_SIZE - bufferPosition;
+			// is there enough space in the buffer?
+			if (bytesLeft >= length)
+			{
+				// we add the data to the end of the buffer
+				b.Slice(offset, length).CopyTo(new Span<byte>(buffer).Slice(bufferPosition));
+				bufferPosition += length;
+				// if the buffer is full, flush it
+				if (BUFFER_SIZE - bufferPosition == 0)
+					Flush();
+			}
+			else
+			{
+				// is data larger then buffer?
+				if (length > BUFFER_SIZE)
+				{
+					// we flush the buffer
+					if (bufferPosition > 0)
+						Flush();
+					// and write data at once
+					FlushBuffer(b.Slice(offset, length));
+					bufferStart += length;
+				}
+				else
+				{
+					// we fill/flush the buffer (until the input is written)
+					int pos = 0; // position in the input data
+					int pieceLength;
+					while (pos < length)
+					{
+						pieceLength = (length - pos < bytesLeft) ? length - pos : bytesLeft;
+
+						b.Slice(pos + offset, pieceLength).CopyTo(new Span<byte>(buffer).Slice(bufferPosition));
+						pos += pieceLength;
+						bufferPosition += pieceLength;
+						// if the buffer is full, flush it
+						bytesLeft = BUFFER_SIZE - bufferPosition;
+						if (bytesLeft == 0)
+						{
+							Flush();
+							bytesLeft = BUFFER_SIZE;
+						}
+					}
+				}
+			}
+		}
+
 		/// <summary>Forces any buffered output to be written. </summary>
 		public override void  Flush()
 		{
@@ -126,9 +177,11 @@ namespace Lucene.Net.Store
 		/// <param name="len">the number of bytes to write
 		/// </param>
 		public abstract void  FlushBuffer(byte[] b, int offset, int len);
-		
+
+		public abstract void FlushBuffer(Span<byte> b);
+
 		/// <summary>Closes this stream to further operations. </summary>
-        protected override void Dispose(bool disposing)
+		protected override void Dispose(bool disposing)
         {
             if (isDisposed) return;
 
