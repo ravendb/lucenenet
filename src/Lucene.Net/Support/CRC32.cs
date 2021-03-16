@@ -69,10 +69,7 @@ namespace Lucene.Net.Support
 
         public void Update(byte[] buf, int off, int len)
         {
-            UInt32 c = ~crc;
-            while (--len >= 0)
-                c = crcTable[(c ^ buf[off++]) & 0xff] ^ (c >> 8);
-            crc = ~c;
+            Update(new Span<byte>(buf, off, len));
         }
 
         public void Update(Span<byte> buf)

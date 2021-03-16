@@ -263,7 +263,8 @@ namespace Lucene.Net.Store
             get { return isOpen; }
         }
 
-        [NonSerialized]
-        internal ArrayPool<byte> ByteBlockPool = ArrayPool<byte>.Create();
-    }
+        internal static readonly ArrayPool<byte> ByteBlockPool = ArrayPool<byte>.Create();
+
+		internal static readonly ArrayPool<byte> PerDocByteBlockPool = ArrayPool<byte>.Create();
+	}
 }

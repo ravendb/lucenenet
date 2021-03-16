@@ -50,50 +50,7 @@ namespace Lucene.Net.Store
 		/// </seealso>
 		public override void  WriteBytes(byte[] b, int offset, int length)
 		{
-			int bytesLeft = BUFFER_SIZE - bufferPosition;
-			// is there enough space in the buffer?
-			if (bytesLeft >= length)
-			{
-				// we add the data to the end of the buffer
-				Array.Copy(b, offset, buffer, bufferPosition, length);
-				bufferPosition += length;
-				// if the buffer is full, flush it
-				if (BUFFER_SIZE - bufferPosition == 0)
-					Flush();
-			}
-			else
-			{
-				// is data larger then buffer?
-				if (length > BUFFER_SIZE)
-				{
-					// we flush the buffer
-					if (bufferPosition > 0)
-						Flush();
-					// and write data at once
-					FlushBuffer(b, offset, length);
-					bufferStart += length;
-				}
-				else
-				{
-					// we fill/flush the buffer (until the input is written)
-					int pos = 0; // position in the input data
-					int pieceLength;
-					while (pos < length)
-					{
-						pieceLength = (length - pos < bytesLeft)?length - pos:bytesLeft;
-						Array.Copy(b, pos + offset, buffer, bufferPosition, pieceLength);
-						pos += pieceLength;
-						bufferPosition += pieceLength;
-						// if the buffer is full, flush it
-						bytesLeft = BUFFER_SIZE - bufferPosition;
-						if (bytesLeft == 0)
-						{
-							Flush();
-							bytesLeft = BUFFER_SIZE;
-						}
-					}
-				}
-			}
+			WriteBytes(new Span<byte>(b, offset, length));
 		}
 
 		public override void WriteBytes(Span<byte> b)
@@ -176,7 +133,10 @@ namespace Lucene.Net.Store
 		/// </param>
 		/// <param name="len">the number of bytes to write
 		/// </param>
-		public abstract void  FlushBuffer(byte[] b, int offset, int len);
+		public void  FlushBuffer(byte[] b, int offset, int len)
+        {
+			FlushBuffer(new Span<byte>(b, offset, len));
+        }
 
 		public abstract void FlushBuffer(Span<byte> b);
 

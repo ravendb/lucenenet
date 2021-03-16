@@ -46,8 +46,7 @@ namespace Lucene.Net.Store
 		
 		public override void  WriteBytes(byte[] b, int offset, int length)
 		{
-			digest.Update(b, offset, length);
-			main.WriteBytes(b, offset, length);
+			WriteBytes(new Span<byte>(b, offset, length));
 		}
 
 		public override void WriteBytes(Span<byte> b)

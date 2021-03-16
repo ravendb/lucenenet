@@ -150,8 +150,8 @@ namespace Lucene.Net.Index
 			freeLevel = (long) (IndexWriter.DEFAULT_RAM_BUFFER_SIZE_MB * 1024 * 1024 * 0.95);
 			maxBufferedDocs = IndexWriter.DEFAULT_MAX_BUFFERED_DOCS;
 			skipDocWriter = new SkipDocWriter();
-            byteBlockAllocator = new ArrayPoolByteBlockAllocator(this, this.directory.ByteBlockPool, DocumentsWriter.BYTE_BLOCK_SIZE);
-            perDocAllocator = new ArrayPoolByteBlockAllocator(this, this.directory.ByteBlockPool,DocumentsWriter.PER_DOC_BLOCK_SIZE);
+            byteBlockAllocator = new ArrayPoolByteBlockAllocator(this, Directory.ByteBlockPool, DocumentsWriter.BYTE_BLOCK_SIZE);
+            perDocAllocator = new ArrayPoolByteBlockAllocator(this, Directory.PerDocByteBlockPool,DocumentsWriter.PER_DOC_BLOCK_SIZE);
 			waitQueue = new WaitQueue(this);
 		}
 		

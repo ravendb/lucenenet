@@ -129,24 +129,7 @@ namespace Lucene.Net.Store
 		
 		public override void  WriteBytes(byte[] b, int offset, int len)
 		{
-			System.Diagnostics.Debug.Assert(b != null);
-			while (len > 0)
-			{
-				if (bufferPosition == bufferLength)
-				{
-					currentBufferIndex++;
-					SwitchCurrentBuffer();
-				}
-				
-				int remainInBuffer = currentBuffer.Length - bufferPosition;
-				int bytesToCopy = len < remainInBuffer?len:remainInBuffer;
-
-				new Span<byte>(b, offset, bytesToCopy).CopyTo(currentBuffer.Span.Slice(bufferPosition));
-
-				offset += bytesToCopy;
-				len -= bytesToCopy;
-				bufferPosition += bytesToCopy;
-			}
+			WriteBytes(new Span<byte>(b, offset, len));
 		}
 
 		public override void WriteBytes(Span<byte> b)
