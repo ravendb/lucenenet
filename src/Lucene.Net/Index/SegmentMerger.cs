@@ -26,6 +26,7 @@ using MergeAbortedException = Lucene.Net.Index.MergePolicy.MergeAbortedException
 using Directory = Lucene.Net.Store.Directory;
 using IndexInput = Lucene.Net.Store.IndexInput;
 using IndexOutput = Lucene.Net.Store.IndexOutput;
+using System.Buffers;
 
 namespace Lucene.Net.Index
 {
@@ -773,7 +774,6 @@ namespace Lucene.Net.Index
 			}
 		}
 		
-		private byte[] payloadBuffer;
 		private int[][] docMaps;
 		internal int[][] GetDocMaps()
 		{
@@ -825,19 +825,34 @@ namespace Lucene.Net.Index
 					
 					if (!omitTermFreqAndPositions)
 					{
-						for (int j = 0; j < freq; j++)
-						{
-							int position = postings.NextPosition(state);
-							int payloadLength = postings.PayloadLength;
-							if (payloadLength > 0)
+						byte[] payloadBuffer = null;
+						try
+                        {
+							for (int j = 0; j < freq; j++)
 							{
-								if (payloadBuffer == null || payloadBuffer.Length < payloadLength)
-									payloadBuffer = new byte[payloadLength];
-								postings.GetPayload(payloadBuffer, 0, state);
+								int position = postings.NextPosition(state);
+								int payloadLength = postings.PayloadLength;
+								if (payloadLength > 0)
+								{
+									if (payloadBuffer == null)
+										payloadBuffer = ArrayPool<byte>.Shared.Rent(payloadLength);
+									else if (payloadBuffer.Length < payloadLength)
+                                    {
+										ArrayPool<byte>.Shared.Return(payloadBuffer);
+										payloadBuffer = ArrayPool<byte>.Shared.Rent(payloadLength);
+									}
+
+									postings.GetPayload(payloadBuffer, 0, state);
+								}
+								posConsumer.AddPosition(position, payloadBuffer, 0, payloadLength);
 							}
-							posConsumer.AddPosition(position, payloadBuffer, 0, payloadLength);
+							posConsumer.Finish();
 						}
-						posConsumer.Finish();
+                        finally
+                        {
+							if (payloadBuffer != null)
+								ArrayPool<byte>.Shared.Return(payloadBuffer);
+                        }
 					}
 				}
 			}

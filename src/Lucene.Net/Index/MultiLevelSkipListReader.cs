@@ -16,6 +16,7 @@
  */
 
 using System;
+using System.Buffers;
 using Lucene.Net.Store;
 using BufferedIndexInput = Lucene.Net.Store.BufferedIndexInput;
 using IndexInput = Lucene.Net.Store.IndexInput;
@@ -283,22 +284,25 @@ namespace Lucene.Net.Index
 		{
 			private byte[] data;
 			private readonly long pointer;
-			private int pos;
+            private readonly int length;
+            private int pos;
 
 		    private bool isDisposed;
 			
 			internal SkipBuffer(IndexInput input, int length, IState state)
 			{
-				data = new byte[length];
+				data = ArrayPool<byte>.Shared.Rent(length);
 				pointer = input.FilePointer(state);
 				input.ReadBytes(data, 0, length, state);
-			}
+                this.length = length;
+            }
 
             protected override void Dispose(bool disposing)
             {
                 if (isDisposed) return;
                 if (disposing)
                 {
+					ArrayPool<byte>.Shared.Return(data);
                     data = null;
                 }
 
@@ -312,7 +316,7 @@ namespace Lucene.Net.Index
 
 		    public override long Length(IState state)
 			{
-				return data.Length;
+				return length;
 			}
 			
 			public override byte ReadByte(IState state)

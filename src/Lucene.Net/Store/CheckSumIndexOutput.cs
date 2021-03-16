@@ -46,11 +46,16 @@ namespace Lucene.Net.Store
 		
 		public override void  WriteBytes(byte[] b, int offset, int length)
 		{
-			digest.Update(b, offset, length);
-			main.WriteBytes(b, offset, length);
+			WriteBytes(new Span<byte>(b, offset, length));
 		}
 
-	    public virtual long Checksum
+		public override void WriteBytes(Span<byte> b)
+		{
+			digest.Update(b);
+			main.WriteBytes(b);
+		}
+
+		public virtual long Checksum
 	    {
 	        get { return digest.Value; }
 	    }
@@ -107,7 +112,7 @@ namespace Lucene.Net.Store
 			main.WriteLong(Checksum);
 		}
 
-	    public override long Length
+        public override long Length
 	    {
 	        get { return main.Length; }
 	    }

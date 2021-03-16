@@ -22,6 +22,7 @@
 // http://www.icsharpcode.net/OpenSource/SharpZipLib/
 
 using System;
+using System.Buffers;
 using Lucene.Net.Support;
 using UnicodeUtil = Lucene.Net.Util.UnicodeUtil;
 
@@ -55,24 +56,25 @@ namespace Lucene.Net.Documents
 			System.IO.MemoryStream bos = new System.IO.MemoryStream(length);
 
             Deflater compressor = SharpZipLib.CreateDeflater();
-			
-			try
-			{
-				compressor.SetLevel(compressionLevel);
-				compressor.SetInput(value_Renamed, offset, length);
-				compressor.Finish();
+
+			compressor.SetLevel(compressionLevel);
+			compressor.SetInput(value_Renamed, offset, length);
+			compressor.Finish();
 				
-				// Compress the data
-				byte[] buf = new byte[1024];
+			// Compress the data
+			byte[] buf = ArrayPool<byte>.Shared.Rent(1024);
+            try
+            {
 				while (!compressor.IsFinished)
 				{
 					int count = compressor.Deflate(buf);
 					bos.Write(buf, 0, count);
 				}
 			}
-			finally
-			{
-			}
+            finally
+            {
+				ArrayPool<byte>.Shared.Return(buf);
+            }
 			
 			return bos.ToArray();
 		}
@@ -116,21 +118,22 @@ namespace Lucene.Net.Documents
 			
 			Inflater decompressor = SharpZipLib.CreateInflater();
 			
-			try
-			{
-				decompressor.SetInput(value_Renamed);
+			decompressor.SetInput(value_Renamed);
 				
-				// Decompress the data
-				byte[] buf = new byte[1024];
+			// Decompress the data
+			byte[] buf = ArrayPool<byte>.Shared.Rent(1024);
+			try
+            {
 				while (!decompressor.IsFinished)
 				{
 					int count = decompressor.Inflate(buf);
 					bos.Write(buf, 0, count);
 				}
 			}
-			finally
-			{
-			}
+            finally
+            {
+				ArrayPool<byte>.Shared.Return(buf);
+            }
 			
 			return bos.ToArray();
 		}

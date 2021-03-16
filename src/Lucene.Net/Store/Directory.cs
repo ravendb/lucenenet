@@ -206,47 +206,55 @@ namespace Lucene.Net.Store
 			
 			IndexFileNameFilter filter = IndexFileNameFilter.Filter;
 			
-			byte[] buf = new byte[BufferedIndexOutput.BUFFER_SIZE];
-			for (int i = 0; i < files.Length; i++)
-			{
-				
-				if (!filter.Accept(null, files[i]))
-					continue;
-				
-				IndexOutput os = null;
-				IndexInput is_Renamed = null;
-				try
+			byte[] buf = ArrayPool<byte>.Shared.Rent(BufferedIndexOutput.BUFFER_SIZE);
+            try
+            {
+				for (int i = 0; i < files.Length; i++)
 				{
-					// create file in dest directory
-					os = dest.CreateOutput(files[i], state);
-					// read current file
-					is_Renamed = src.OpenInput(files[i], state);
-					// and copy to dest directory
-					long len = is_Renamed.Length(state);
-					long readCount = 0;
-					while (readCount < len)
-					{
-						int toRead = readCount + BufferedIndexOutput.BUFFER_SIZE > len?(int) (len - readCount):BufferedIndexOutput.BUFFER_SIZE;
-						is_Renamed.ReadBytes(buf, 0, toRead, state);
-						os.WriteBytes(buf, toRead);
-						readCount += toRead;
-					}
-				}
-				finally
-				{
-					// graceful cleanup
+
+					if (!filter.Accept(null, files[i]))
+						continue;
+
+					IndexOutput os = null;
+					IndexInput is_Renamed = null;
 					try
 					{
-						if (os != null)
-							os.Close();
+						// create file in dest directory
+						os = dest.CreateOutput(files[i], state);
+						// read current file
+						is_Renamed = src.OpenInput(files[i], state);
+						// and copy to dest directory
+						long len = is_Renamed.Length(state);
+						long readCount = 0;
+						while (readCount < len)
+						{
+							int toRead = readCount + BufferedIndexOutput.BUFFER_SIZE > len ? (int)(len - readCount) : BufferedIndexOutput.BUFFER_SIZE;
+							is_Renamed.ReadBytes(buf, 0, toRead, state);
+							os.WriteBytes(buf, toRead);
+							readCount += toRead;
+						}
 					}
 					finally
 					{
-						if (is_Renamed != null)
-							is_Renamed.Close();
+						// graceful cleanup
+						try
+						{
+							if (os != null)
+								os.Close();
+						}
+						finally
+						{
+							if (is_Renamed != null)
+								is_Renamed.Close();
+						}
 					}
 				}
 			}
+            finally
+            {
+				ArrayPool<byte>.Shared.Return(buf);
+            }
+
 			if (closeDirSrc)
 				src.Close();
 		}
@@ -263,7 +271,8 @@ namespace Lucene.Net.Store
             get { return isOpen; }
         }
 
-        [NonSerialized]
-        internal ArrayPool<byte> ByteBlockPool = ArrayPool<byte>.Create();
-    }
+        internal static readonly ArrayPool<byte> ByteBlockPool = ArrayPool<byte>.Create();
+
+		internal static readonly ArrayPool<byte> PerDocByteBlockPool = ArrayPool<byte>.Create();
+	}
 }

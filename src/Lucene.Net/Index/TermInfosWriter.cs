@@ -16,6 +16,7 @@
  */
 
 using System;
+using System.Buffers;
 using Lucene.Net.Store;
 using Directory = Lucene.Net.Store.Directory;
 using IndexOutput = Lucene.Net.Store.IndexOutput;
@@ -77,7 +78,7 @@ namespace Lucene.Net.Index
 		
 		private long lastIndexPointer;
 		private bool isIndex;
-		private byte[] lastTermBytes = new byte[10];
+		private byte[] lastTermBytes = ArrayPool<byte>.Shared.Rent(10);
 		private int lastTermBytesLength = 0;
 		private int lastFieldNumber = - 1;
 		
@@ -223,8 +224,9 @@ namespace Lucene.Net.Index
 			output.WriteVInt(fieldNumber); // write field num
 			if (lastTermBytes.Length < termBytesLength)
 			{
-				byte[] newArray = new byte[(int) (termBytesLength * 1.5)];
+				byte[] newArray = ArrayPool<byte>.Shared.Rent((int) (termBytesLength * 1.5));
 				Array.Copy(lastTermBytes, 0, newArray, 0, start);
+				ArrayPool<byte>.Shared.Return(lastTermBytes);
 				lastTermBytes = newArray;
 			}
 			Array.Copy(termBytes, start, lastTermBytes, start, length);
@@ -244,6 +246,7 @@ namespace Lucene.Net.Index
 				output.WriteLong(size);
 			}
 
+			ArrayPool<byte>.Shared.Return(lastTermBytes);
 			isDisposed = true;
 		}
 	}

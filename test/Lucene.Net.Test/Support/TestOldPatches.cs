@@ -77,6 +77,7 @@ namespace Lucene.Net.Support
 
         //-------------------------------------------
         [Test]
+        [Ignore("RAMDirectory is no longer serializable")]
         [Description("LUCENENET-174")]
         public void Test_Store_RAMDirectory()
         {

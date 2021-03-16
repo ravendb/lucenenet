@@ -27,7 +27,7 @@ namespace Lucene.Net.Store
 		
 		private const long serialVersionUID = 1L;
 		
-		protected System.Collections.Generic.List<byte[]> buffers = new System.Collections.Generic.List<byte[]>();
+		protected System.Collections.Generic.List<Memory<byte>> buffers = new System.Collections.Generic.List<Memory<byte>>();
 		internal long length;
 		internal RAMDirectory directory;
 		internal long sizeInBytes; 
@@ -85,31 +85,38 @@ namespace Lucene.Net.Store
 	        }
 	    }
 
-	    internal byte[] AddBuffer(int size)
+	    internal Memory<byte> AddBuffer(int size)
 		{
-            byte[] buffer = NewBuffer(size);
+            Memory<byte> buffer = NewBuffer(size);
             lock (this)
             {
                 buffers.Add(buffer);
-                sizeInBytes += size;
+                sizeInBytes += buffer.Length;
             }
 
             if (directory != null)
             {
                 lock (directory) //{{DIGY}} what if directory gets null in the mean time?
                 {
-                    directory.internalSizeInBytes += size;
+                    directory.internalSizeInBytes += buffer.Length;
                 }
             }
 
-            return buffer;
+			if (buffer.Length == size)
+				return buffer;
+
+			return buffer.Slice(0, size);
 		}
 		
-		public /*internal*/ byte[] GetBuffer(int index)
+		public /*internal*/ Memory<byte> GetBuffer(int index, int size)
 		{
 			lock (this)
 			{
-				return buffers[index];
+				var buffer = buffers[index];
+				if (buffer.Length == size)
+					return buffer;
+
+				return buffer.Slice(0, size);
 			}
 		}
 		
