@@ -25,7 +25,7 @@ namespace Lucene.Net.Store
 	{
 		internal const int BUFFER_SIZE = 16384;
 		
-		private byte[] buffer = new byte[BUFFER_SIZE];
+		private Memory<byte> buffer = new byte[BUFFER_SIZE];
 		private long bufferStart = 0; // position in file of buffer
 		private int bufferPosition = 0; // position in buffer
 
@@ -38,7 +38,7 @@ namespace Lucene.Net.Store
 		{
 			if (bufferPosition >= BUFFER_SIZE)
 				Flush();
-			buffer[bufferPosition++] = b;
+			buffer.Span[bufferPosition++] = b;
 		}
 		
 		/// <summary>Writes an array of bytes.</summary>
@@ -62,7 +62,7 @@ namespace Lucene.Net.Store
 			if (bytesLeft >= length)
 			{
 				// we add the data to the end of the buffer
-				b.Slice(offset, length).CopyTo(new Span<byte>(buffer).Slice(bufferPosition));
+				b.Slice(offset, length).CopyTo(buffer.Span.Slice(bufferPosition));
 				bufferPosition += length;
 				// if the buffer is full, flush it
 				if (BUFFER_SIZE - bufferPosition == 0)
@@ -89,7 +89,7 @@ namespace Lucene.Net.Store
 					{
 						pieceLength = (length - pos < bytesLeft) ? length - pos : bytesLeft;
 
-						b.Slice(pos + offset, pieceLength).CopyTo(new Span<byte>(buffer).Slice(bufferPosition));
+						b.Slice(pos + offset, pieceLength).CopyTo(buffer.Span.Slice(bufferPosition));
 						pos += pieceLength;
 						bufferPosition += pieceLength;
 						// if the buffer is full, flush it
@@ -107,7 +107,7 @@ namespace Lucene.Net.Store
 		/// <summary>Forces any buffered output to be written. </summary>
 		public override void  Flush()
 		{
-			FlushBuffer(buffer, bufferPosition);
+			FlushBuffer(buffer.Span.Slice(0, bufferPosition));
 			bufferStart += bufferPosition;
 			bufferPosition = 0;
 		}
