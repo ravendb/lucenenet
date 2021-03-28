@@ -125,6 +125,9 @@ namespace Lucene.Net.Util
 			
 			//base.TearDown();  // {{Aroush-2.9}}
             this.seed = null;
+
+            GC.Collect(GC.MaxGeneration);
+            GC.WaitForPendingFinalizers();
 		}
 		
 		/// <summary> Asserts that FieldCacheSanityChecker does not detect any 

@@ -259,6 +259,7 @@ namespace Lucene.Net.Store
             protected override void Dispose(bool disposing)
             {
                 // Do nothing
+                base.Dispose(disposing);
             }
 			
 			public override long Length(IState state)

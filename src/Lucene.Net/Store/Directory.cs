@@ -18,6 +18,7 @@
 using System;
 using System.Buffers;
 using System.Runtime.Serialization;
+using Lucene.Net.Memory;
 using IndexFileNameFilter = Lucene.Net.Index.IndexFileNameFilter;
 
 namespace Lucene.Net.Store
@@ -206,7 +207,7 @@ namespace Lucene.Net.Store
 			
 			IndexFileNameFilter filter = IndexFileNameFilter.Filter;
 			
-			IMemoryOwner<byte> buf = MemoryPool<byte>.Shared.Rent(BufferedIndexOutput.BUFFER_SIZE);
+			IMemoryOwner<byte> buf = LuceneMemoryPool.Instance.RentBytes(BufferedIndexOutput.BUFFER_SIZE);
             try
             {
 				for (int i = 0; i < files.Length; i++)

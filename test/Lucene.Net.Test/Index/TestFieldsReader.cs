@@ -455,6 +455,7 @@ namespace Lucene.Net.Index
                 }
 
                 delegate_Renamed = null;
+                base.Dispose(disposing);
                 isDisposed = true;
             }
 

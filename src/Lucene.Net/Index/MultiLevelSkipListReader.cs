@@ -17,6 +17,7 @@
 
 using System;
 using System.Buffers;
+using Lucene.Net.Memory;
 using Lucene.Net.Store;
 using BufferedIndexInput = Lucene.Net.Store.BufferedIndexInput;
 using IndexInput = Lucene.Net.Store.IndexInput;
@@ -291,7 +292,7 @@ namespace Lucene.Net.Index
 			
 			internal SkipBuffer(IndexInput input, int length, IState state)
 			{
-				data = MemoryPool<byte>.Shared.Rent(length);
+				data = LuceneMemoryPool.Instance.RentBytes(length);
 				pointer = input.FilePointer(state);
 				input.ReadBytes(data.Memory.Span.Slice(0, length), state);
                 this.length = length;

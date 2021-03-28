@@ -17,6 +17,7 @@
 
 using System;
 using System.Buffers;
+using Lucene.Net.Memory;
 using Lucene.Net.Util;
 
 namespace Lucene.Net.Store
@@ -44,12 +45,15 @@ namespace Lucene.Net.Store
 			return buffer.Memory.Span[bufferPosition++];
 		}
 
+        private string _stackTrace;
+
 	    protected BufferedIndexInput()
-		{
-		}
+        {
+            _stackTrace = Environment.StackTrace;
+        }
 		
 		/// <summary>Inits BufferedIndexInput with a specific bufferSize </summary>
-		protected BufferedIndexInput(int bufferSize)
+		protected BufferedIndexInput(int bufferSize) : this()
 		{
 			CheckBufferSize(bufferSize);
 			this._bufferSize = bufferSize;
@@ -68,7 +72,7 @@ namespace Lucene.Net.Store
 					// Resize the existing buffer and carefully save as
 					// many bytes as possible starting from the current
 					// bufferPosition
-					IMemoryOwner<byte> newBuffer = MemoryPool<byte>.Shared.Rent(newSize);
+					IMemoryOwner<byte> newBuffer = LuceneMemoryPool.Instance.RentBytes(newSize);
 					int leftInBuffer = bufferLength - bufferPosition;
 					int numToCopy;
 					if (leftInBuffer > newSize)
@@ -186,7 +190,7 @@ namespace Lucene.Net.Store
 			
 			if (buffer == null)
 			{
-				NewBuffer(MemoryPool<byte>.Shared.Rent(_bufferSize)); // allocate buffer lazily
+				NewBuffer(LuceneMemoryPool.Instance.RentBytes(_bufferSize, _stackTrace)); // allocate buffer lazily
 				SeekInternal(bufferStart);
 			}
 			ReadInternal(buffer.Memory.Span.Slice(0, newLength), state);
@@ -243,5 +247,10 @@ namespace Lucene.Net.Store
 			
 			return clone;
 		}
-	}
+
+        protected override void Dispose(bool disposing)
+        {
+			buffer?.Dispose();
+        }
+    }
 }

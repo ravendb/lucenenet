@@ -18,6 +18,7 @@
 using System;
 using System.Buffers;
 using System.Collections.Generic;
+using Lucene.Net.Memory;
 using Lucene.Net.Store;
 using UnicodeUtil = Lucene.Net.Util.UnicodeUtil;
 
@@ -248,11 +249,11 @@ namespace Lucene.Net.Index
 									payloadLength = prox.ReadVInt(state);
 
 									if (payloadBuffer == null)
-										payloadBuffer = MemoryPool<byte>.Shared.Rent(payloadLength);
+										payloadBuffer = LuceneMemoryPool.Instance.RentBytes(payloadLength);
 									else if (payloadBuffer.Memory.Length < payloadLength)
 									{
 										payloadBuffer.Dispose();
-										payloadBuffer = MemoryPool<byte>.Shared.Rent(payloadLength);
+										payloadBuffer = LuceneMemoryPool.Instance.RentBytes(payloadLength);
 									}
 
 									prox.ReadBytes(payloadBuffer.Memory.Span.Slice(0, payloadLength), state);

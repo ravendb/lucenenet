@@ -205,6 +205,7 @@ namespace Lucene.Net.Store
                     }
                 }
 
+                base.Dispose(disposing);
                 isDisposed = true;
             }
 

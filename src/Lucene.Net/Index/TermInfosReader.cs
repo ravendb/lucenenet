@@ -215,6 +215,10 @@ namespace Lucene.Net.Index
             // Move to protected method if class becomes unsealed
             if (origEnum != null)
                 origEnum.Dispose();
+
+			foreach (var threadResource in threadResources.Values)
+				threadResource?.termEnum?.Dispose();
+
             threadResources.Dispose();
             _holder?.Dispose();
 

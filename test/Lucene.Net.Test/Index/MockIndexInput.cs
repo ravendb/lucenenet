@@ -60,6 +60,7 @@ namespace Lucene.Net.Index
         protected override void Dispose(bool disposing)
         {
             //ignore
+            base.Dispose(disposing);
         }
 		
 		public override void  SeekInternal(long pos)

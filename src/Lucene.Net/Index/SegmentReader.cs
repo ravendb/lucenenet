@@ -1053,7 +1053,14 @@ namespace Lucene.Net.Index
 		
 		protected internal override void  DoClose(IState state)
 		{
+            foreach (var termVectorsReader in termVectorsLocal.Values)
+				termVectorsReader?.Dispose();
+
 			termVectorsLocal.Dispose();
+
+            foreach (var fieldsReader in fieldsReaderLocal.Values)
+				fieldsReader?.Dispose();
+
 			fieldsReaderLocal.Dispose();
 			
 			if (deletedDocs != null)

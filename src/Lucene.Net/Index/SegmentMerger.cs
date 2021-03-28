@@ -27,6 +27,7 @@ using Directory = Lucene.Net.Store.Directory;
 using IndexInput = Lucene.Net.Store.IndexInput;
 using IndexOutput = Lucene.Net.Store.IndexOutput;
 using System.Buffers;
+using Lucene.Net.Memory;
 
 namespace Lucene.Net.Index
 {
@@ -835,11 +836,11 @@ namespace Lucene.Net.Index
 								if (payloadLength > 0)
 								{
 									if (payloadBuffer == null)
-										payloadBuffer = MemoryPool<byte>.Shared.Rent(payloadLength);
+										payloadBuffer = LuceneMemoryPool.Instance.RentBytes(payloadLength);
 									else if (payloadBuffer.Memory.Length < payloadLength)
                                     {
 										payloadBuffer.Dispose();
-										payloadBuffer = MemoryPool<byte>.Shared.Rent(payloadLength);
+										payloadBuffer = LuceneMemoryPool.Instance.RentBytes(payloadLength);
 									}
 
 									postings.GetPayload(payloadBuffer.Memory, state);
@@ -887,13 +888,13 @@ namespace Lucene.Net.Index
 							int maxDoc = reader.MaxDoc;
                             if (normBuffer == null)
                             {
-                                normBuffer = MemoryPool<byte>.Shared.Rent(maxDoc);
+                                normBuffer = LuceneMemoryPool.Instance.RentBytes(maxDoc);
                             } 
                             else if (normBuffer.Memory.Length < maxDoc)
                             {
                                 // the buffer is too small for the current segment
 								normBuffer.Dispose();
-								normBuffer = MemoryPool<byte>.Shared.Rent(maxDoc);
+								normBuffer = LuceneMemoryPool.Instance.RentBytes(maxDoc);
                             }
 
 							reader.Norms(fi.name, normBuffer.Memory.Span, state);

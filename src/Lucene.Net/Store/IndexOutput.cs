@@ -17,6 +17,7 @@
 
 using System;
 using System.Buffers;
+using Lucene.Net.Memory;
 using Lucene.Net.Support;
 using UnicodeUtil = Lucene.Net.Util.UnicodeUtil;
 
@@ -178,7 +179,7 @@ namespace Lucene.Net.Store
 		{
 			System.Diagnostics.Debug.Assert(numBytes >= 0, "numBytes=" + numBytes);
 			long left = numBytes;
-			using(var copyBuffer = MemoryPool<byte>.Shared.Rent(COPY_BUFFER_SIZE))
+			using(var copyBuffer = LuceneMemoryPool.Instance.RentBytes(COPY_BUFFER_SIZE))
             {
 				while (left > 0)
 				{

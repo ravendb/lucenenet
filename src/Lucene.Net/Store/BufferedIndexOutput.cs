@@ -18,6 +18,7 @@
 using System;
 using System.Buffers;
 using System.Runtime.InteropServices;
+using Lucene.Net.Memory;
 
 namespace Lucene.Net.Store
 {
@@ -27,7 +28,7 @@ namespace Lucene.Net.Store
 	{
 		internal const int BUFFER_SIZE = 16384;
 		
-		private IMemoryOwner<byte> buffer = MemoryPool<byte>.Shared.Rent(BUFFER_SIZE);
+		private IMemoryOwner<byte> buffer = LuceneMemoryPool.Instance.RentBytes(BUFFER_SIZE);
 		private long bufferStart = 0; // position in file of buffer
 		private int bufferPosition = 0; // position in buffer
 

@@ -303,6 +303,7 @@ namespace Lucene.Net.Index
                     }
                 }
                 
+				base.Dispose(disposing);
                 isDisposed = true;
             }
 			

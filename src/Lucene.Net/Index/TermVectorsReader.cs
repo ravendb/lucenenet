@@ -17,6 +17,7 @@
 
 using System;
 using System.Buffers;
+using Lucene.Net.Memory;
 using Lucene.Net.Store;
 using Lucene.Net.Util;
 using BufferedIndexInput = Lucene.Net.Store.BufferedIndexInput;
@@ -562,7 +563,7 @@ namespace Lucene.Net.Index
 			    else
 			    {
 				    charBuffer = null;
-                    byteBuffer = MemoryPool<byte>.Shared.Rent(20);
+                    byteBuffer = LuceneMemoryPool.Instance.RentBytes(20);
                 }
 			    
 			    for (int i = 0; i < numTerms; i++)
@@ -590,7 +591,7 @@ namespace Lucene.Net.Index
 					    // Term stored as utf8 bytes
 					    if (byteBuffer.Memory.Length < totalLength)
                         {
-                            IMemoryOwner<byte> newByteBuffer = MemoryPool<byte>.Shared.Rent((int) (1.5 * totalLength));
+                            IMemoryOwner<byte> newByteBuffer = LuceneMemoryPool.Instance.RentBytes((int) (1.5 * totalLength));
 						    byteBuffer.Memory.Span.Slice(0, start).CopyTo(newByteBuffer.Memory.Span);
 						    byteBuffer.Dispose();
 						    byteBuffer = newByteBuffer;
