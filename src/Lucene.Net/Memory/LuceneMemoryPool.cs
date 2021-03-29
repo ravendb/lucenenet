@@ -26,6 +26,9 @@ namespace Lucene.Net.Memory
 
         private readonly string _additionalStackTrace;
         private readonly string _stackTrace;
+        private string _disposeStackTrace;
+
+        private bool _disposed;
 
         public TrackingMemoryOwner(IMemoryOwner<T> memoryOwner, string additionalStackTrace)
         {
@@ -38,11 +41,29 @@ namespace Lucene.Net.Memory
         {
             GC.SuppressFinalize(this);
 
+            if (_disposed)
+            {
+
+            }
+
             _memoryOwner?.Dispose();
             _memoryOwner = null;
+            _disposed = true;
+            _disposeStackTrace = Environment.StackTrace;
         }
 
-        public Memory<T> Memory => _memoryOwner.Memory;
+        public Memory<T> Memory
+        {
+            get
+            {
+                if (_disposed)
+                {
+
+                }
+                
+                return _memoryOwner.Memory;
+            }
+        }
 
         ~TrackingMemoryOwner()
         {

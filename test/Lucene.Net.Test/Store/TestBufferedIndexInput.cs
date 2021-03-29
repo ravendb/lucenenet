@@ -73,12 +73,14 @@ namespace Lucene.Net.Store
 		[Test]
 		public virtual void  TestReadByte()
 		{
-			MyBufferedIndexInput input = new MyBufferedIndexInput();
-			for (int i = 0; i < BufferedIndexInput.BUFFER_SIZE * 10; i++)
-			{
-				Assert.AreEqual(input.ReadByte(null), Byten(i));
-			}
-		}
+            using (MyBufferedIndexInput input = new MyBufferedIndexInput())
+            {
+                for (int i = 0; i < BufferedIndexInput.BUFFER_SIZE * 10; i++)
+                {
+                    Assert.AreEqual(input.ReadByte(null), Byten(i));
+                }
+            }
+        }
 		
 		// Call readBytes() repeatedly, with various chunk sizes (from 1 byte to
 		// larger than the buffer size), and see that it returns the bytes we expect.
@@ -88,35 +90,42 @@ namespace Lucene.Net.Store
 		public virtual void  TestReadBytes()
 		{
 			System.Random r = NewRandom();
-			
-			MyBufferedIndexInput input = new MyBufferedIndexInput();
-			RunReadBytes(input, BufferedIndexInput.BUFFER_SIZE, r);
-			
-			// This tests the workaround code for LUCENE-1566 where readBytesInternal
-			// provides a workaround for a JVM Bug that incorrectly raises a OOM Error
-			// when a large byte buffer is passed to a file read.
-			// NOTE: this does only test the chunked reads and NOT if the Bug is triggered.
-			//final int tmpFileSize = 1024 * 1024 * 5;
-			int inputBufferSize = 128;
-			
-            System.String tempDirectory = System.IO.Path.GetTempPath();
 
-			System.IO.FileInfo tmpInputFile = new System.IO.FileInfo(System.IO.Path.Combine(tempDirectory, "IndexInput.tmpFile"));
-			System.IO.File.Delete(tmpInputFile.FullName);
-			WriteBytes(tmpInputFile, TEST_FILE_LENGTH);
-			
-			// run test with chunk size of 10 bytes
-			RunReadBytesAndClose(new SimpleFSIndexInput(tmpInputFile, inputBufferSize, 10), inputBufferSize, r);
-			// run test with chunk size of 100 MB - default
-			RunReadBytesAndClose(new SimpleFSIndexInput(tmpInputFile, inputBufferSize, FSDirectory.DEFAULT_READ_CHUNK_SIZE), inputBufferSize, r);
-            Assert.Pass("Supressing Sub-Tests on NIOFSIndexInput classes");
-			// run test with chunk size of 10 bytes
-			//RunReadBytesAndClose(new NIOFSIndexInput(tmpInputFile, inputBufferSize, 10), inputBufferSize, r);    // {{Aroush-2.9}} suppressing this test since NIOFSIndexInput isn't ported
-            System.Console.Out.WriteLine("Suppressing sub-test: 'RunReadBytesAndClose(new NIOFSIndexInput(tmpInputFile, inputBufferSize, 10), inputBufferSize, r);' since NIOFSIndexInput isn't ported");
-			// run test with chunk size of 100 MB - default
-			//RunReadBytesAndClose(new NIOFSIndexInput(tmpInputFile, inputBufferSize), inputBufferSize, r);     // {{Aroush-2.9}} suppressing this test since NIOFSIndexInput isn't ported
-            System.Console.Out.WriteLine("Suppressing sub-test: 'RunReadBytesAndClose(new NIOFSIndexInput(tmpInputFile, inputBufferSize), inputBufferSize, r);' since NIOFSIndexInput isn't ported");
-		}
+            using (MyBufferedIndexInput input = new MyBufferedIndexInput())
+            {
+                RunReadBytes(input, BufferedIndexInput.BUFFER_SIZE, r);
+
+                // This tests the workaround code for LUCENE-1566 where readBytesInternal
+                // provides a workaround for a JVM Bug that incorrectly raises a OOM Error
+                // when a large byte buffer is passed to a file read.
+                // NOTE: this does only test the chunked reads and NOT if the Bug is triggered.
+                //final int tmpFileSize = 1024 * 1024 * 5;
+                int inputBufferSize = 128;
+
+                System.String tempDirectory = System.IO.Path.GetTempPath();
+
+                System.IO.FileInfo tmpInputFile =
+                    new System.IO.FileInfo(System.IO.Path.Combine(tempDirectory, "IndexInput.tmpFile"));
+                System.IO.File.Delete(tmpInputFile.FullName);
+                WriteBytes(tmpInputFile, TEST_FILE_LENGTH);
+
+                // run test with chunk size of 10 bytes
+                RunReadBytesAndClose(new SimpleFSIndexInput(tmpInputFile, inputBufferSize, 10), inputBufferSize, r);
+                // run test with chunk size of 100 MB - default
+                RunReadBytesAndClose(
+                    new SimpleFSIndexInput(tmpInputFile, inputBufferSize, FSDirectory.DEFAULT_READ_CHUNK_SIZE),
+                    inputBufferSize, r);
+                Assert.Pass("Supressing Sub-Tests on NIOFSIndexInput classes");
+                // run test with chunk size of 10 bytes
+                //RunReadBytesAndClose(new NIOFSIndexInput(tmpInputFile, inputBufferSize, 10), inputBufferSize, r);    // {{Aroush-2.9}} suppressing this test since NIOFSIndexInput isn't ported
+                System.Console.Out.WriteLine(
+                    "Suppressing sub-test: 'RunReadBytesAndClose(new NIOFSIndexInput(tmpInputFile, inputBufferSize, 10), inputBufferSize, r);' since NIOFSIndexInput isn't ported");
+                // run test with chunk size of 100 MB - default
+                //RunReadBytesAndClose(new NIOFSIndexInput(tmpInputFile, inputBufferSize), inputBufferSize, r);     // {{Aroush-2.9}} suppressing this test since NIOFSIndexInput isn't ported
+                System.Console.Out.WriteLine(
+                    "Suppressing sub-test: 'RunReadBytesAndClose(new NIOFSIndexInput(tmpInputFile, inputBufferSize), inputBufferSize, r);' since NIOFSIndexInput isn't ported");
+            }
+        }
 		
 		private void  RunReadBytesAndClose(IndexInput input, int bufferSize, System.Random r)
 		{
@@ -205,25 +214,30 @@ namespace Lucene.Net.Store
 		[Test]
 		public virtual void  TestEOF()
 		{
-			MyBufferedIndexInput input = new MyBufferedIndexInput(1024);
-			// see that we can read all the bytes at one go:
-			CheckReadBytes(input, (int) input.Length(null), 0);
-			// go back and see that we can't read more than that, for small and
-			// large overflows:
-			int pos = (int) input.Length(null) - 10;
+            using (MyBufferedIndexInput input = new MyBufferedIndexInput(1024))
+            {
+                // see that we can read all the bytes at one go:
+                CheckReadBytes(input, (int) input.Length(null), 0);
+                // go back and see that we can't read more than that, for small and
+                // large overflows:
+                int pos = (int) input.Length(null) - 10;
 
-			input.Seek(pos, null);
-			CheckReadBytes(input, 10, pos);
+                input.Seek(pos, null);
+                CheckReadBytes(input, 10, pos);
 
-			input.Seek(pos, null);
-            Assert.Throws<System.IO.IOException>(() => CheckReadBytes(input, 11, pos), "Block read past end of file");
+                input.Seek(pos, null);
+                Assert.Throws<System.IO.IOException>(() => CheckReadBytes(input, 11, pos),
+                    "Block read past end of file");
 
-			input.Seek(pos, null);
-            Assert.Throws<System.IO.IOException>(() => CheckReadBytes(input, 50, pos), "Block read past end of file");
+                input.Seek(pos, null);
+                Assert.Throws<System.IO.IOException>(() => CheckReadBytes(input, 50, pos),
+                    "Block read past end of file");
 
-			input.Seek(pos, null);
-            Assert.Throws<System.IO.IOException>(() => CheckReadBytes(input, 100000, pos), "Block read past end of file");
-		}
+                input.Seek(pos, null);
+                Assert.Throws<System.IO.IOException>(() => CheckReadBytes(input, 100000, pos),
+                    "Block read past end of file");
+            }
+        }
 		
 		// byten emulates a file - byten(n) returns the n'th byte in that file.
 		// MyBufferedIndexInput reads this "file".
@@ -349,6 +363,9 @@ namespace Lucene.Net.Store
 				while (it.MoveNext())
 				{
 					BufferedIndexInput bii = (BufferedIndexInput) it.Current;
+					if (bii.IsDisposed)
+						continue;
+
 					int bufferSize = 1024 + (int) System.Math.Abs(rand.Next() % 32768);
 					bii.SetBufferSize(bufferSize);
 					//count++;

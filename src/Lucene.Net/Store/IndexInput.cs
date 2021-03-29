@@ -30,6 +30,8 @@ namespace Lucene.Net.Store
 	/// </seealso>
 	public abstract class IndexInput : ILuceneCloneable, IDisposable
 	{
+		public bool IsDisposed { get; private set; }
+
 		private bool preUTF8Strings; // true if we are reading old (modified UTF8) string format
 		
 		/// <summary>Reads and returns a single byte.</summary>
@@ -230,6 +232,7 @@ namespace Lucene.Net.Store
 	    public void Dispose()
         {
             Dispose(true);
+            IsDisposed = true;
         }
 
 	    protected abstract void Dispose(bool disposing);
