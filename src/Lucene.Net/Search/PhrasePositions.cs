@@ -24,7 +24,7 @@ namespace Lucene.Net.Search
 {
 	
 	/// <summary> Position of a term in a document that takes into account the term offset within the phrase. </summary>
-	sealed class PhrasePositions
+	sealed class PhrasePositions : IDisposable
 	{
 		internal int doc; // current doc
 		internal int position; // position in doc
@@ -90,5 +90,10 @@ namespace Lucene.Net.Search
 			else
 				return false;
 		}
-	}
+
+        public void Dispose()
+        {
+            tp?.Dispose();
+        }
+    }
 }

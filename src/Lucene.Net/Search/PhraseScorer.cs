@@ -223,6 +223,11 @@ namespace Lucene.Net.Search
 
         public override void Dispose()
         {
+			if (first == null)
+				return;
+
+            for (var pp = first; pp != null; pp = pp.next) 
+                pp.Dispose();
         }
     }
 }
