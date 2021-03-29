@@ -191,6 +191,8 @@ namespace Lucene.Net.Index
 
             if (disposing)
             {
+				skipStream[0]?.Dispose(); // initial skip stream
+
                 for (int i = 1; i < skipStream.Length; i++)
                 {
                     if (skipStream[i] != null)

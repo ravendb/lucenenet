@@ -1364,19 +1364,21 @@ namespace Lucene.Net.Index
 					Query query = (Query) entry.Key;
 					int limit = (int)entry.Value;
 					Weight weight = query.Weight(searcher, state);
-					Scorer scorer = weight.Scorer(reader, true, false, state);
-					if (scorer != null)
-					{
-						while (true)
-						{
-							int doc = scorer.NextDoc(state);
-							if (((long) docIDStart) + doc >= limit)
-								break;
-							reader.DeleteDocument(doc, state);
-							any = true;
-						}
-					}
-				}
+                    using (Scorer scorer = weight.Scorer(reader, true, false, state))
+                    {
+                        if (scorer != null)
+                        {
+                            while (true)
+                            {
+                                int doc = scorer.NextDoc(state);
+                                if (((long) docIDStart) + doc >= limit)
+                                    break;
+                                reader.DeleteDocument(doc, state);
+                                any = true;
+                            }
+                        }
+                    }
+                }
 				searcher.Close();
 				return any;
 			}

@@ -192,7 +192,7 @@ namespace Lucene.Net.Index
 			}
 		}
 		
-        public void CloseWithoutCommit()
+        public void CloseWithoutCommit(IState state)
         {
             lock (this)
             {
@@ -202,7 +202,7 @@ namespace Lucene.Net.Index
                     EnsureOpen();
                     if (refCount == 1)
                     {
-                        DoClose(null);
+                        DoClose(state);
                         closed = true;
                     }
                     refCount--;

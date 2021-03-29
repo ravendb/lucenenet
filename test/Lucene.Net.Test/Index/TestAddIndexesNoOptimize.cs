@@ -491,14 +491,15 @@ namespace Lucene.Net.Index
 		
 		private void  VerifyTermDocs(Directory dir, Term term, int numDocs)
 		{
-			IndexReader reader = IndexReader.Open(dir, true, null);
-			TermDocs termDocs = reader.TermDocs(term, null);
-			int count = 0;
-			while (termDocs.Next(null))
-				count++;
-			Assert.AreEqual(numDocs, count);
-			reader.Close();
-		}
+			using (IndexReader reader = IndexReader.Open(dir, true, null))
+            using (TermDocs termDocs = reader.TermDocs(term, null))
+            {
+                int count = 0;
+                while (termDocs.Next(null))
+                    count++;
+                Assert.AreEqual(numDocs, count);
+            }
+        }
 		
 		private void  SetUpDirs(Directory dir, Directory aux)
 		{

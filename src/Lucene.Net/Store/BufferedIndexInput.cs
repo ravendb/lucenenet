@@ -17,6 +17,7 @@
 
 using System;
 using System.Buffers;
+using System.Threading;
 using Lucene.Net.Memory;
 using Lucene.Net.Util;
 
@@ -47,9 +48,17 @@ namespace Lucene.Net.Store
 
         private string _stackTrace;
 
+        private static int _counter;
+
 	    protected BufferedIndexInput()
         {
-            _stackTrace = Environment.StackTrace;
+            var counter = Interlocked.Increment(ref _counter);
+			if (counter == 31)
+            {
+
+            }
+
+            _stackTrace = counter + Environment.StackTrace;
         }
 		
 		/// <summary>Inits BufferedIndexInput with a specific bufferSize </summary>

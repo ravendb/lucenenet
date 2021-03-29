@@ -502,7 +502,7 @@ namespace Lucene.Net.Index
 		    /// </param>
 		    /// <param name="drop"></param>
 		    /// <throws>  IOException </throws>
-		    public virtual void  Release(SegmentReader sr, bool drop, IState state)
+		    public void  Release(SegmentReader sr, bool drop, IState state)
 			{
 				lock (this)
 				{
@@ -528,7 +528,7 @@ namespace Lucene.Net.Index
                         // after a successful merge.
                         if (drop)
                         {
-                            sr.CloseWithoutCommit();
+                            sr.CloseWithoutCommit(state);
                             readerMap.Remove(sr.SegmentInfo);
 							return;
                         }
