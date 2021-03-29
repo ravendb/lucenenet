@@ -193,7 +193,6 @@ namespace Lucene.Net.Search
 
             public override void Dispose()
             {
-                throw new NotImplementedException(); // TODO [ppekrol]
             }
 
             public override int Advance(int target, IState state)

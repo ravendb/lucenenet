@@ -391,7 +391,11 @@ namespace Lucene.Net.Search
 
         public override void Dispose()
         {
-            throw new NotImplementedException(); // TODO [ppekrol]
+            if (scorers == null)
+                return;
+
+            for (var sub = scorers; sub != null; sub = sub.next)
+				sub.scorer?.Dispose();
         }
 
         public override void  Score(Collector collector, IState state)
