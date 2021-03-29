@@ -16,6 +16,7 @@
  */
 
 using System;
+using System.Collections.Generic;
 using Lucene.Net.Store;
 
 namespace Lucene.Net.Search
@@ -252,7 +253,12 @@ namespace Lucene.Net.Search
 				return lastDocScore;
 			}
 
-			public override int DocID()
+            public override void Dispose()
+            {
+                throw new NotImplementedException(); // TODO [ppekrol]
+            }
+
+            public override int DocID()
 			{
 				return scorer.DocID();
 			}
@@ -405,8 +411,24 @@ namespace Lucene.Net.Search
 			float sum = countingSumScorer.Score(state);
 			return sum * coordinator.coordFactors[coordinator.nrMatchers];
 		}
-		
-		public override int Advance(int target, IState state)
+
+        public override void Dispose()
+        {
+            DisposeScorers(optionalScorers);
+			DisposeScorers(prohibitedScorers);
+			DisposeScorers(requiredScorers);
+
+            static void DisposeScorers(List<Scorer> scorers)
+            {
+                if (scorers == null || scorers.Count == 0)
+                    return;
+
+                foreach (var scorer in scorers)
+					scorer?.Dispose();
+            }
+        }
+
+        public override int Advance(int target, IState state)
 		{
 			return doc = countingSumScorer.Advance(target, state);
 		}

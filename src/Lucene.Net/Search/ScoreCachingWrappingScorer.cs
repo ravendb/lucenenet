@@ -65,8 +65,13 @@ namespace Lucene.Net.Search
 			
 			return curScore;
 		}
-		
-		public override int DocID()
+
+        public override void Dispose()
+        {
+            scorer?.Dispose();
+        }
+
+        public override int DocID()
 		{
 			return scorer.DocID();
 		}

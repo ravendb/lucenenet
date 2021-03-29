@@ -144,5 +144,14 @@ namespace Lucene.Net.Search
 			}
 			return sum * coord;
 		}
-	}
+
+        public override void Dispose()
+        {
+            if (scorers != null)
+            {
+                foreach (var scorer in scorers)
+					scorer?.Dispose();
+            }
+        }
+    }
 }

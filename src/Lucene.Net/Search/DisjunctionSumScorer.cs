@@ -239,8 +239,17 @@ namespace Lucene.Net.Search
 		{
 			return currentScore;
 		}
-		
-		public override int DocID()
+
+        public override void Dispose()
+        {
+            if (subScorers == null || subScorers.Count == 0)
+				return;
+
+            foreach (var subScorer in subScorers)
+				subScorer?.Dispose();
+        }
+
+        public override int DocID()
 		{
 			return currentDoc;
 		}

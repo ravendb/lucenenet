@@ -199,6 +199,11 @@ namespace Lucene.Net.Search.Function
             {
                 return qWeight * vals.FloatVal(termDocs.Doc);
             }
+
+            public override void Dispose()
+            {
+                throw new NotImplementedException();
+            }
         }
 
 		public override Weight CreateWeight(Searcher searcher, IState state)

@@ -224,11 +224,10 @@ namespace Lucene.Net.Search
 				{
 					// search each subreader
 					collector.SetNextReader(subReaders[i], docStarts[i], state);
-					Scorer scorer = weight.Scorer(subReaders[i], !collector.AcceptsDocsOutOfOrder, true, state);
-					if (scorer != null)
-					{
-						scorer.Score(collector, state);
-					}
+                    using (Scorer scorer = weight.Scorer(subReaders[i], !collector.AcceptsDocsOutOfOrder, true, state))
+                    {
+                        scorer?.Score(collector, state);
+                    }
 				}
 			}
 			else

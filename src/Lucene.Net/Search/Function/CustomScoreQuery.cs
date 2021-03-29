@@ -16,6 +16,7 @@
  */
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using Lucene.Net.Index;
 using Lucene.Net.Store;
@@ -528,8 +529,23 @@ namespace Lucene.Net.Search.Function
 				}
                 return qWeight * provider.CustomScore(subQueryScorer.DocID(), subQueryScorer.Score(state), vScores);
 			}
-			
-			public override int Advance(int target, IState state)
+
+            public override void Dispose()
+            {
+				DisposeScorers(this.valSrcScorers);
+				subQueryScorer?.Dispose();
+
+                static void DisposeScorers(IEnumerable<Scorer> scorers)
+                {
+					if (scorers == null)
+						return;
+
+                    foreach (var scorer in scorers)
+                        scorer?.Dispose();
+                }
+            }
+
+            public override int Advance(int target, IState state)
 			{
 				int doc = subQueryScorer.Advance(target, state);
 				if (doc != NO_MORE_DOCS)

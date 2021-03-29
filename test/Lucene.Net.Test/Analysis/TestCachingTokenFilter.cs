@@ -121,11 +121,16 @@ namespace Lucene.Net.Analysis
 			Assert.IsTrue(termPositions.Next(null));
 			Assert.AreEqual(1, termPositions.Freq);
 			Assert.AreEqual(2, termPositions.NextPosition(null));
+			termPositions.Dispose();
 			reader.Close();
 			
 			// 3) reset stream and consume tokens again
 			stream.Reset();
 			checkTokens(stream);
+
+			stream.Dispose();
+			writer.Dispose();
+			dir.Dispose();
 		}
 		
 		private void  checkTokens(TokenStream stream)

@@ -190,8 +190,13 @@ namespace Lucene.Net.Search
 			{
 				return theScore;
 			}
-			
-			public override int Advance(int target, IState state)
+
+            public override void Dispose()
+            {
+                throw new NotImplementedException(); // TODO [ppekrol]
+            }
+
+            public override int Advance(int target, IState state)
 			{
 				return docIdSetIterator.Advance(target, state);
 			}

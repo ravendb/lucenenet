@@ -60,7 +60,16 @@ namespace Lucene.Net.Analysis
 			
 			searcher = new IndexSearcher(directory, true, null);
 		}
-		
+
+		[TearDown]
+        public override void TearDown()
+        {
+			searcher.Dispose();
+			directory.Dispose();
+
+            base.TearDown();
+        }
+
         [Test]
 		public virtual void  TestPerFieldAnalyzer()
 		{
@@ -87,12 +96,14 @@ namespace Lucene.Net.Analysis
 			doc.Add(new Field("partnum", "Q37", Field.Store.YES, Field.Index.ANALYZED));
 			writer.AddDocument(doc, null);
 			writer.Close();
-			
-			IndexReader reader = IndexReader.Open((Directory) dir, true, null);
-			TermDocs td = reader.TermDocs(new Term("partnum", "Q36"), null);
-			Assert.IsTrue(td.Next(null));
-			td = reader.TermDocs(new Term("partnum", "Q37"), null);
-			Assert.IsTrue(td.Next(null));
+
+            using (IndexReader reader = IndexReader.Open((Directory) dir, true, null))
+            using (TermDocs td = reader.TermDocs(new Term("partnum", "Q36"), null))
+            {
+                Assert.IsTrue(td.Next(null));
+                using (var innerTd = reader.TermDocs(new Term("partnum", "Q37"), null))
+                    Assert.IsTrue(innerTd.Next(null));
+            }
 		}
 		
 		// LUCENE-1441

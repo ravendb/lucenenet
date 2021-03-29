@@ -84,5 +84,11 @@ namespace Lucene.Net.Search
 			
 			return optScorerDoc == curDoc?reqScore + optScorer.Score(state):reqScore;
 		}
-	}
+
+        public override void Dispose()
+        {
+            optScorer?.Dispose();
+			reqScorer?.Dispose();
+        }
+    }
 }

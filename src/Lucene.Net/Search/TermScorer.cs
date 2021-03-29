@@ -138,8 +138,13 @@ namespace Lucene.Net.Search
 			
 			return norms.IsEmpty ?raw:raw * SIM_NORM_DECODER[norms.Span[doc] & 0xFF]; // normalize for field
 		}
-		
-		/// <summary> Advances to the first match beyond the current whose document number is
+
+        public override void Dispose()
+        {
+            termDocs?.Dispose();
+        }
+
+        /// <summary> Advances to the first match beyond the current whose document number is
 		/// greater than or equal to a given target. <br/>
 		/// The implementation uses <see cref="TermDocs.SkipTo(int)" />.
 		/// 

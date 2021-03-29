@@ -220,5 +220,9 @@ namespace Lucene.Net.Search
 		{
 			return "scorer(" + weight + ")";
 		}
-	}
+
+        public override void Dispose()
+        {
+        }
+    }
 }

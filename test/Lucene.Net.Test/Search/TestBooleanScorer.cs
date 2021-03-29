@@ -58,7 +58,12 @@ namespace Lucene.Net.Search
 			{
 				return 0;
 			}
-			public override int DocID()
+
+            public override void Dispose()
+            {
+            }
+
+            public override int DocID()
 			{
 				return doc;
 			}

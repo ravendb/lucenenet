@@ -110,7 +110,12 @@ namespace Lucene.Net.Search
 				{
 					return Enclosing_Instance.Enclosing_Instance.Boost * scorer.Score(state);
 				}
-			}
+
+                public override void Dispose()
+                {
+                    scorer?.Dispose();
+                }
+            }
 			private void  InitBlock(Lucene.Net.Search.Weight weight, Lucene.Net.Search.Similarity similarity, FilteredQuery enclosingInstance)
 			{
 				this.weight = weight;

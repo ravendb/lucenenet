@@ -109,7 +109,11 @@ namespace Lucene.Net.Search.Spans
 			float raw = Similarity.Tf(freq) * value_Renamed; // raw score
 			return norms.IsEmpty ? raw:raw * Similarity.DecodeNorm(norms.Span[doc]); // normalize
 		}
-		
+
+        public override void Dispose()
+        {
+        }
+
         /// <summary>
         /// This method is no longer an official member of <see cref="Scorer"/>
         /// but it is needed by SpanWeight to build an explanation.

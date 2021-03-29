@@ -119,8 +119,13 @@ namespace Lucene.Net.Search
 		{
 			return reqScorer.Score(state); // reqScorer may be null when next() or skipTo() already return false
 		}
-		
-		public override int Advance(int target, IState state)
+
+        public override void Dispose()
+        {
+            reqScorer?.Dispose();
+        }
+
+        public override int Advance(int target, IState state)
 		{
 			if (reqScorer == null)
 			{

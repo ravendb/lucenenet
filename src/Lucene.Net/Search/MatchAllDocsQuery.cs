@@ -88,8 +88,13 @@ namespace Lucene.Net.Search
 			{
 				return norms.IsEmpty ? score:score * Similarity.DecodeNorm(norms.Span[DocID()]);
 			}
-			
-			public override int Advance(int target, IState state)
+
+            public override void Dispose()
+            {
+                termDocs?.Dispose();
+            }
+
+            public override int Advance(int target, IState state)
 			{
 				return doc = termDocs.SkipTo(target, state)?termDocs.Doc:NO_MORE_DOCS;
 			}

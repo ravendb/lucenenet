@@ -173,7 +173,11 @@ namespace Lucene.Net.Spatial.Util
 				return score > float.NegativeInfinity ? score : -float.MaxValue;
 			}
 
-			public /*override*/ Explanation Explain(int doc)
+            public override void Dispose()
+            {
+            }
+
+            public /*override*/ Explanation Explain(int doc)
 			{
 				float sc = qWeight * vals.FloatVal(doc);
 

@@ -150,7 +150,12 @@ namespace Lucene.Net.Search
 			{
 				return score;
 			}
-		}
+
+            public override void Dispose()
+            {
+                // nothing to release
+            }
+        }
 		
 		internal sealed class Bucket
 		{
@@ -383,8 +388,13 @@ namespace Lucene.Net.Search
 		{
 			return current.score * coordFactors[current.coord];
 		}
-		
-		public override void  Score(Collector collector, IState state)
+
+        public override void Dispose()
+        {
+            throw new NotImplementedException(); // TODO [ppekrol]
+        }
+
+        public override void  Score(Collector collector, IState state)
 		{
 			Score(collector, System.Int32.MaxValue, NextDoc(state), state);
 		}

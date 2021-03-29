@@ -103,8 +103,17 @@ namespace Lucene.Net.Search
 			ScoreAll(2, size, doc, sum, max, state);
 			return max[0] + (sum[0] - max[0]) * tieBreakerMultiplier;
 		}
-		
-		// Recursively iterate all subScorers that generated last doc computing sum and max
+
+        public override void Dispose()
+        {
+            if (subScorers == null || subScorers.Length == 0)
+				return;
+
+            foreach (var subScorer in subScorers)
+                subScorer?.Dispose();
+        }
+
+        // Recursively iterate all subScorers that generated last doc computing sum and max
 		private void  ScoreAll(int root, int size, int doc, float[] sum, float[] max, IState state)
 		{
 			if (root < size && subScorers[root].DocID() == doc)

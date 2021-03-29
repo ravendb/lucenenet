@@ -40,8 +40,12 @@ namespace Lucene.Net.Search
 			{
 			    return idx == scores.Length ? float.NaN : scores[idx];
 			}
-			
-			public override int DocID()
+
+            public override void Dispose()
+            {
+            }
+
+            public override int DocID()
 			{
 				return idx;
 			}
