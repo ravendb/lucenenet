@@ -1300,7 +1300,22 @@ namespace Lucene.Net.Index
             {
                 if (disposing)
                 {
+                    while (true)
+                    {
+                        var smi = queue.Pop();
+                        if (smi == null)
+                            break;
+
+                        smi.Dispose();
+                    }
+
                     queue.Dispose();
+
+                    if (matchingSegments != null)
+                    {
+                        foreach (var segmentMergeInfo in matchingSegments)
+                            segmentMergeInfo?.Dispose();
+                    }
                 }
             }
         }

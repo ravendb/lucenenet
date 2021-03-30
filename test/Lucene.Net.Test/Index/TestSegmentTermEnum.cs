@@ -82,6 +82,9 @@ namespace Lucene.Net.Index
 			Assert.AreEqual("bbb", termEnum.Term.Text);
 			Assert.IsFalse(termEnum.Next(null));
 			Assert.AreEqual("bbb", termEnum.Prev().Text);
+
+			reader.Close();
+			termEnum.Close();
 		}
 		
 		private void  VerifyDocFreq()
@@ -117,6 +120,7 @@ namespace Lucene.Net.Index
 			Assert.AreEqual(100, termEnum.DocFreq());
 			
 			termEnum.Close();
+			reader.Close();
 		}
 		
 		private void  AddDoc(IndexWriter writer, System.String value_Renamed)
