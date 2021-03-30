@@ -348,6 +348,7 @@ namespace Lucene.Net.Index
 			// without calling nextPosition()
             Assert.Throws<IOException>(() => tp.GetPayload(null, null), "Expected exception not thrown");
 			
+			tp.Close();
 			reader.Close();
 			
 			// test long payload
@@ -367,7 +368,7 @@ namespace Lucene.Net.Index
 			// flush
 			writer.Close();
 
-		    reader = IndexReader.Open(dir, true, null);
+            reader = IndexReader.Open(dir, true, null);
 			tp = reader.TermPositions(new Term(fieldName, singleTerm), null);
 			tp.Next(null);
 			tp.NextPosition(null);
@@ -378,6 +379,8 @@ namespace Lucene.Net.Index
 			Array.Copy(payloadData, 100, portion, 0, 1500);
 			
 			AssertByteArrayEquals(portion, verifyPayloadData.ToArray());
+
+			tp.Close();
 			reader.Close();
 		}
 		

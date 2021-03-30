@@ -76,15 +76,17 @@ namespace Lucene.Net.Index
 		{
 			Directory dir1 = GetDir1();
 			Directory dir2 = GetDir2();
-			ParallelReader pr = new ParallelReader();
-            pr.Add(IndexReader.Open(dir1, false, null));
-            pr.Add(IndexReader.Open(dir2, false, null));
-            System.Collections.Generic.ICollection<string> fieldNames = pr.GetFieldNames(IndexReader.FieldOption.ALL);
-			Assert.AreEqual(4, fieldNames.Count);
-			Assert.IsTrue(CollectionsHelper.Contains(fieldNames, "f1"));
-			Assert.IsTrue(CollectionsHelper.Contains(fieldNames, "f2"));
-			Assert.IsTrue(CollectionsHelper.Contains(fieldNames, "f3"));
-			Assert.IsTrue(CollectionsHelper.Contains(fieldNames, "f4"));
+			using (ParallelReader pr = new ParallelReader())
+            {
+                pr.Add(IndexReader.Open(dir1, false, null));
+                pr.Add(IndexReader.Open(dir2, false, null));
+                System.Collections.Generic.ICollection<string> fieldNames = pr.GetFieldNames(IndexReader.FieldOption.ALL);
+			    Assert.AreEqual(4, fieldNames.Count);
+			    Assert.IsTrue(CollectionsHelper.Contains(fieldNames, "f1"));
+			    Assert.IsTrue(CollectionsHelper.Contains(fieldNames, "f2"));
+			    Assert.IsTrue(CollectionsHelper.Contains(fieldNames, "f3"));
+			    Assert.IsTrue(CollectionsHelper.Contains(fieldNames, "f4"));
+			}
 		}
 		
 		[Test]
@@ -92,23 +94,25 @@ namespace Lucene.Net.Index
 		{
 			Directory dir1 = GetDir1();
 			Directory dir2 = GetDir2();
-			ParallelReader pr = new ParallelReader();
-            pr.Add(IndexReader.Open(dir1, false, null));
-            pr.Add(IndexReader.Open(dir2, false, null));
-			
-			Document doc11 = pr.Document(0, new MapFieldSelector(new System.String[]{"f1"}), null);
-			Document doc24 = pr.Document(1, new MapFieldSelector(new System.String[]{"f4"}), null);
-			Document doc223 = pr.Document(1, new MapFieldSelector(new System.String[]{"f2", "f3"}), null);
-			
-			Assert.AreEqual(1, doc11.GetFields().Count);
-			Assert.AreEqual(1, doc24.GetFields().Count);
-			Assert.AreEqual(2, doc223.GetFields().Count);
-			
-			Assert.AreEqual("v1", doc11.Get("f1", null));
-			Assert.AreEqual("v2", doc24.Get("f4", null));
-			Assert.AreEqual("v2", doc223.Get("f2", null));
-			Assert.AreEqual("v2", doc223.Get("f3", null));
-		}
+            using (ParallelReader pr = new ParallelReader())
+            {
+                pr.Add(IndexReader.Open(dir1, false, null));
+                pr.Add(IndexReader.Open(dir2, false, null));
+
+                Document doc11 = pr.Document(0, new MapFieldSelector(new System.String[] {"f1"}), null);
+                Document doc24 = pr.Document(1, new MapFieldSelector(new System.String[] {"f4"}), null);
+                Document doc223 = pr.Document(1, new MapFieldSelector(new System.String[] {"f2", "f3"}), null);
+
+                Assert.AreEqual(1, doc11.GetFields().Count);
+                Assert.AreEqual(1, doc24.GetFields().Count);
+                Assert.AreEqual(2, doc223.GetFields().Count);
+
+                Assert.AreEqual("v1", doc11.Get("f1", null));
+                Assert.AreEqual("v2", doc24.Get("f4", null));
+                Assert.AreEqual("v2", doc223.Get("f2", null));
+                Assert.AreEqual("v2", doc223.Get("f3", null));
+            }
+        }
 		
 		[Test]
 		public virtual void  TestIncompatibleIndexes()
@@ -124,11 +128,27 @@ namespace Lucene.Net.Index
 			w2.AddDocument(d3, null);
 			w2.Close();
 			
-			ParallelReader pr = new ParallelReader();
-            pr.Add(IndexReader.Open(dir1, false, null));
+			using (ParallelReader pr = new ParallelReader())
+            {
+                pr.Add(IndexReader.Open(dir1, false, null));
 
-			Assert.Throws<ArgumentException>(() => pr.Add(IndexReader.Open(dir2, false, null)),
-			                                    "didn't get exptected exception: indexes don't have same number of documents");
+                var r = IndexReader.Open(dir2, false, null);
+
+                try
+                {
+                    Assert.Throws<ArgumentException>(() => pr.Add(r),
+                        "didn't get exptected exception: indexes don't have same number of documents");
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e);
+                    throw;
+                }
+                finally
+                {
+					r.Close();
+                }
+			}
 		}
 		
 		[Test]
@@ -136,26 +156,28 @@ namespace Lucene.Net.Index
 		{
 			Directory dir1 = GetDir1();
 			Directory dir2 = GetDir2();
-			ParallelReader pr = new ParallelReader();
-			pr.Add(IndexReader.Open(dir1, false, null));
-            pr.Add(IndexReader.Open(dir2, false, null));
-			
-			Assert.IsTrue(pr.IsCurrent(null));
-            IndexReader modifier = IndexReader.Open(dir1, false, null);
-			modifier.SetNorm(0, "f1", 100, null);
-			modifier.Close();
-			
-			// one of the two IndexReaders which ParallelReader is using
-			// is not current anymore
-			Assert.IsFalse(pr.IsCurrent(null));
+            using (ParallelReader pr = new ParallelReader())
+            {
+                pr.Add(IndexReader.Open(dir1, false, null));
+                pr.Add(IndexReader.Open(dir2, false, null));
 
-            modifier = IndexReader.Open(dir2, false, null);
-			modifier.SetNorm(0, "f3", 100, null);
-			modifier.Close();
-			
-			// now both are not current anymore
-			Assert.IsFalse(pr.IsCurrent(null));
-		}
+                Assert.IsTrue(pr.IsCurrent(null));
+                IndexReader modifier = IndexReader.Open(dir1, false, null);
+                modifier.SetNorm(0, "f1", 100, null);
+                modifier.Close();
+
+                // one of the two IndexReaders which ParallelReader is using
+                // is not current anymore
+                Assert.IsFalse(pr.IsCurrent(null));
+
+                modifier = IndexReader.Open(dir2, false, null);
+                modifier.SetNorm(0, "f3", 100, null);
+                modifier.Close();
+
+                // now both are not current anymore
+                Assert.IsFalse(pr.IsCurrent(null));
+            }
+        }
 		
 		[Test]
 		public virtual void  TestIsOptimized()
