@@ -52,6 +52,8 @@ namespace Lucene.Net.Index
 			
 			Assert.AreEqual("\u0000", is_Renamed.ReadString(null));
 			Assert.AreEqual("Lu\u0000ce\u0000ne", is_Renamed.ReadString(null));
+
+            is_Renamed.Close();
 		}
 		
 		/// <summary> Expert
@@ -88,6 +90,7 @@ namespace Lucene.Net.Index
 			is_Renamed.ReadChars(chars, 0, charsToRead, null);
 			tmpStr = new System.String(chars);
 			Assert.IsTrue(tmpStr.Equals(utf8Str.Substring(1)) == true, tmpStr + " is not equal to " + utf8Str.Substring(1));
+			is_Renamed.Close();
 		}
 	}
 }

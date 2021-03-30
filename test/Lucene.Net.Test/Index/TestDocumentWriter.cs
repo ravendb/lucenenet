@@ -237,45 +237,47 @@ namespace Lucene.Net.Index
 			SegmentInfo info = writer.NewestSegment();
 			writer.Close();
 			//After adding the document, we should be able to read it back in
-            SegmentReader reader = SegmentReader.Get(true, info, IndexReader.DEFAULT_TERMS_INDEX_DIVISOR, null);
-			Assert.IsTrue(reader != null);
-			Document doc = reader.Document(0, null);
-			Assert.IsTrue(doc != null);
-			
-			//System.out.println("Document: " + doc);
-			IFieldable[] fields = doc.GetFields("textField2");
-			Assert.IsTrue(fields != null && fields.Length == 1);
-			Assert.IsTrue(fields[0].StringValue(null).Equals(DocHelper.FIELD_2_TEXT));
-			Assert.IsTrue(fields[0].IsTermVectorStored);
-			
-			fields = doc.GetFields("textField1");
-			Assert.IsTrue(fields != null && fields.Length == 1);
-			Assert.IsTrue(fields[0].StringValue(null).Equals(DocHelper.FIELD_1_TEXT));
-			Assert.IsFalse(fields[0].IsTermVectorStored);
-			
-			fields = doc.GetFields("keyField");
-			Assert.IsTrue(fields != null && fields.Length == 1);
-			Assert.IsTrue(fields[0].StringValue(null).Equals(DocHelper.KEYWORD_TEXT));
-			
-			fields = doc.GetFields(DocHelper.NO_NORMS_KEY);
-			Assert.IsTrue(fields != null && fields.Length == 1);
-			Assert.IsTrue(fields[0].StringValue(null).Equals(DocHelper.NO_NORMS_TEXT));
-			
-			fields = doc.GetFields(DocHelper.TEXT_FIELD_3_KEY);
-			Assert.IsTrue(fields != null && fields.Length == 1);
-			Assert.IsTrue(fields[0].StringValue(null).Equals(DocHelper.FIELD_3_TEXT));
-			
-			// test that the norms are not present in the segment if
-			// omitNorms is true
-			for (int i = 0; i < reader.core_ForNUnit.fieldInfos_ForNUnit.Size(); i++)
-			{
-				FieldInfo fi = reader.core_ForNUnit.fieldInfos_ForNUnit.FieldInfo(i);
-				if (fi.isIndexed_ForNUnit)
-				{
-					Assert.IsTrue(fi.omitNorms_ForNUnit == !reader.HasNorms(fi.name_ForNUnit, null));
-				}
-			}
-		}
+            using (SegmentReader reader = SegmentReader.Get(true, info, IndexReader.DEFAULT_TERMS_INDEX_DIVISOR, null))
+            {
+                Assert.IsTrue(reader != null);
+                Document doc = reader.Document(0, null);
+                Assert.IsTrue(doc != null);
+
+                //System.out.println("Document: " + doc);
+                IFieldable[] fields = doc.GetFields("textField2");
+                Assert.IsTrue(fields != null && fields.Length == 1);
+                Assert.IsTrue(fields[0].StringValue(null).Equals(DocHelper.FIELD_2_TEXT));
+                Assert.IsTrue(fields[0].IsTermVectorStored);
+
+                fields = doc.GetFields("textField1");
+                Assert.IsTrue(fields != null && fields.Length == 1);
+                Assert.IsTrue(fields[0].StringValue(null).Equals(DocHelper.FIELD_1_TEXT));
+                Assert.IsFalse(fields[0].IsTermVectorStored);
+
+                fields = doc.GetFields("keyField");
+                Assert.IsTrue(fields != null && fields.Length == 1);
+                Assert.IsTrue(fields[0].StringValue(null).Equals(DocHelper.KEYWORD_TEXT));
+
+                fields = doc.GetFields(DocHelper.NO_NORMS_KEY);
+                Assert.IsTrue(fields != null && fields.Length == 1);
+                Assert.IsTrue(fields[0].StringValue(null).Equals(DocHelper.NO_NORMS_TEXT));
+
+                fields = doc.GetFields(DocHelper.TEXT_FIELD_3_KEY);
+                Assert.IsTrue(fields != null && fields.Length == 1);
+                Assert.IsTrue(fields[0].StringValue(null).Equals(DocHelper.FIELD_3_TEXT));
+
+                // test that the norms are not present in the segment if
+                // omitNorms is true
+                for (int i = 0; i < reader.core_ForNUnit.fieldInfos_ForNUnit.Size(); i++)
+                {
+                    FieldInfo fi = reader.core_ForNUnit.fieldInfos_ForNUnit.FieldInfo(i);
+                    if (fi.isIndexed_ForNUnit)
+                    {
+                        Assert.IsTrue(fi.omitNorms_ForNUnit == !reader.HasNorms(fi.name_ForNUnit, null));
+                    }
+                }
+            }
+        }
 		
 		[Test]
 		public virtual void  TestPositionIncrementGap()
@@ -292,15 +294,18 @@ namespace Lucene.Net.Index
 			writer.Commit(null);
 			SegmentInfo info = writer.NewestSegment();
 			writer.Close();
-            SegmentReader reader = SegmentReader.Get(true, info, IndexReader.DEFAULT_TERMS_INDEX_DIVISOR, null);
-			
-			TermPositions termPositions = reader.TermPositions(new Term("repeated", "repeated"), null);
-			Assert.IsTrue(termPositions.Next(null));
-			int freq = termPositions.Freq;
-			Assert.AreEqual(2, freq);
-			Assert.AreEqual(0, termPositions.NextPosition(null));
-			Assert.AreEqual(502, termPositions.NextPosition(null));
-		}
+            using (SegmentReader reader = SegmentReader.Get(true, info, IndexReader.DEFAULT_TERMS_INDEX_DIVISOR, null))
+            {
+                using (TermPositions termPositions = reader.TermPositions(new Term("repeated", "repeated"), null))
+                {
+                    Assert.IsTrue(termPositions.Next(null));
+                    int freq = termPositions.Freq;
+                    Assert.AreEqual(2, freq);
+                    Assert.AreEqual(0, termPositions.NextPosition(null));
+                    Assert.AreEqual(502, termPositions.NextPosition(null));
+                }
+            }
+        }
 		
 		[Test]
 		public virtual void  TestTokenReuse()
@@ -316,19 +321,22 @@ namespace Lucene.Net.Index
 			writer.Commit(null);
 			SegmentInfo info = writer.NewestSegment();
 			writer.Close();
-            SegmentReader reader = SegmentReader.Get(true, info, IndexReader.DEFAULT_TERMS_INDEX_DIVISOR, null);
-			
-			TermPositions termPositions = reader.TermPositions(new Term("f1", "a"), null);
-			Assert.IsTrue(termPositions.Next(null));
-			int freq = termPositions.Freq;
-			Assert.AreEqual(3, freq);
-			Assert.AreEqual(0, termPositions.NextPosition(null));
-			Assert.AreEqual(true, termPositions.IsPayloadAvailable);
-			Assert.AreEqual(6, termPositions.NextPosition(null));
-			Assert.AreEqual(false, termPositions.IsPayloadAvailable);
-			Assert.AreEqual(7, termPositions.NextPosition(null));
-			Assert.AreEqual(false, termPositions.IsPayloadAvailable);
-		}
+            using (SegmentReader reader = SegmentReader.Get(true, info, IndexReader.DEFAULT_TERMS_INDEX_DIVISOR, null))
+            {
+                using (TermPositions termPositions = reader.TermPositions(new Term("f1", "a"), null))
+                {
+                    Assert.IsTrue(termPositions.Next(null));
+                    int freq = termPositions.Freq;
+                    Assert.AreEqual(3, freq);
+                    Assert.AreEqual(0, termPositions.NextPosition(null));
+                    Assert.AreEqual(true, termPositions.IsPayloadAvailable);
+                    Assert.AreEqual(6, termPositions.NextPosition(null));
+                    Assert.AreEqual(false, termPositions.IsPayloadAvailable);
+                    Assert.AreEqual(7, termPositions.NextPosition(null));
+                    Assert.AreEqual(false, termPositions.IsPayloadAvailable);
+                }
+            }
+        }
 		
 		
 		[Test]
@@ -343,24 +351,27 @@ namespace Lucene.Net.Index
 			writer.Commit(null);
 			SegmentInfo info = writer.NewestSegment();
 			writer.Close();
-            SegmentReader reader = SegmentReader.Get(true, info, IndexReader.DEFAULT_TERMS_INDEX_DIVISOR, null);
-			
-			TermPositions termPositions = reader.TermPositions(new Term("preanalyzed", "term1"), null);
-			Assert.IsTrue(termPositions.Next(null));
-			Assert.AreEqual(1, termPositions.Freq);
-			Assert.AreEqual(0, termPositions.NextPosition(null));
-			
-			termPositions.Seek(new Term("preanalyzed", "term2"), null);
-			Assert.IsTrue(termPositions.Next(null));
-			Assert.AreEqual(2, termPositions.Freq);
-			Assert.AreEqual(1, termPositions.NextPosition(null));
-			Assert.AreEqual(3, termPositions.NextPosition(null));
-			
-			termPositions.Seek(new Term("preanalyzed", "term3"), null);
-			Assert.IsTrue(termPositions.Next(null));
-			Assert.AreEqual(1, termPositions.Freq);
-			Assert.AreEqual(2, termPositions.NextPosition(null));
-		}
+            using (SegmentReader reader = SegmentReader.Get(true, info, IndexReader.DEFAULT_TERMS_INDEX_DIVISOR, null))
+            {
+                using (TermPositions termPositions = reader.TermPositions(new Term("preanalyzed", "term1"), null))
+                {
+                    Assert.IsTrue(termPositions.Next(null));
+                    Assert.AreEqual(1, termPositions.Freq);
+                    Assert.AreEqual(0, termPositions.NextPosition(null));
+
+                    termPositions.Seek(new Term("preanalyzed", "term2"), null);
+                    Assert.IsTrue(termPositions.Next(null));
+                    Assert.AreEqual(2, termPositions.Freq);
+                    Assert.AreEqual(1, termPositions.NextPosition(null));
+                    Assert.AreEqual(3, termPositions.NextPosition(null));
+
+                    termPositions.Seek(new Term("preanalyzed", "term3"), null);
+                    Assert.IsTrue(termPositions.Next(null));
+                    Assert.AreEqual(1, termPositions.Freq);
+                    Assert.AreEqual(2, termPositions.NextPosition(null));
+                }
+            }
+        }
 		
 		/// <summary> Test adding two fields with the same name, but 
 		/// with different term vector setting (LUCENE-766).
@@ -382,17 +393,19 @@ namespace Lucene.Net.Index
 			writer.Close();
 			
 			_TestUtil.CheckIndex(dir);
-			
-			IndexReader reader = IndexReader.Open((Directory) dir, true, null);
-			// f1
-			ITermFreqVector tfv1 = reader.GetTermFreqVector(0, "f1", null);
-			Assert.IsNotNull(tfv1);
-			Assert.AreEqual(2, tfv1.GetTerms().Length, "the 'with_tv' setting should rule!");
-			// f2
-			ITermFreqVector tfv2 = reader.GetTermFreqVector(0, "f2", null);
-			Assert.IsNotNull(tfv2);
-			Assert.AreEqual(2, tfv2.GetTerms().Length, "the 'with_tv' setting should rule!");
-		}
+
+            using (IndexReader reader = IndexReader.Open((Directory) dir, true, null))
+            {
+                // f1
+                ITermFreqVector tfv1 = reader.GetTermFreqVector(0, "f1", null);
+                Assert.IsNotNull(tfv1);
+                Assert.AreEqual(2, tfv1.GetTerms().Length, "the 'with_tv' setting should rule!");
+                // f2
+                ITermFreqVector tfv2 = reader.GetTermFreqVector(0, "f2", null);
+                Assert.IsNotNull(tfv2);
+                Assert.AreEqual(2, tfv2.GetTerms().Length, "the 'with_tv' setting should rule!");
+            }
+        }
 		
 		/// <summary> Test adding two fields with the same name, one indexed
 		/// the other stored only. The omitNorms and omitTermFreqAndPositions setting
@@ -418,14 +431,16 @@ namespace Lucene.Net.Index
 			
 			_TestUtil.CheckIndex(dir);
 			
-			SegmentReader reader = SegmentReader.GetOnlySegmentReader(dir, null);
-			FieldInfos fi = reader.FieldInfos();
-			// f1
-			Assert.IsFalse(reader.HasNorms("f1", null), "f1 should have no norms");
-			Assert.IsFalse(fi.FieldInfo("f1").omitTermFreqAndPositions_ForNUnit, "omitTermFreqAndPositions field bit should not be set for f1");
-			// f2
-			Assert.IsTrue(reader.HasNorms("f2", null), "f2 should have norms");
-			Assert.IsTrue(fi.FieldInfo("f2").omitTermFreqAndPositions_ForNUnit, "omitTermFreqAndPositions field bit should be set for f2");
+			using (SegmentReader reader = SegmentReader.GetOnlySegmentReader(dir, null))
+            {
+			    FieldInfos fi = reader.FieldInfos();
+			    // f1
+			    Assert.IsFalse(reader.HasNorms("f1", null), "f1 should have no norms");
+			    Assert.IsFalse(fi.FieldInfo("f1").omitTermFreqAndPositions_ForNUnit, "omitTermFreqAndPositions field bit should not be set for f1");
+			    // f2
+			    Assert.IsTrue(reader.HasNorms("f2", null), "f2 should have norms");
+			    Assert.IsTrue(fi.FieldInfo("f2").omitTermFreqAndPositions_ForNUnit, "omitTermFreqAndPositions field bit should be set for f2");
+			}
 		}
 	}
 }

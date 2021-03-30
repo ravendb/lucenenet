@@ -138,6 +138,8 @@ namespace Lucene.Net.Index
 			{
 				Assert.IsTrue((positions.Doc % 2) == 1);
 			}
+
+			positions.Close();
 			
 			int NUM_DOCS = 3;
 
