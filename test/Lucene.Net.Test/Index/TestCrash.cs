@@ -71,9 +71,11 @@ namespace Lucene.Net.Index
 			IndexWriter writer = InitIndex();
 			MockRAMDirectory dir = (MockRAMDirectory) writer.Directory;
 			Crash(writer);
-			IndexReader reader = IndexReader.Open((Directory) dir, true, null);
-			Assert.IsTrue(reader.NumDocs() < 157);
-		}
+            using (IndexReader reader = IndexReader.Open((Directory) dir, true, null))
+            {
+                Assert.IsTrue(reader.NumDocs() < 157);
+            }
+        }
 		
 		[Test]
 		public virtual void  TestWriterAfterCrash()
@@ -84,9 +86,11 @@ namespace Lucene.Net.Index
 			Crash(writer);
 			writer = InitIndex(dir);
 			writer.Close();
-			
-			IndexReader reader = IndexReader.Open((Directory) dir, false, null);
-			Assert.IsTrue(reader.NumDocs() < 314);
+
+            using (IndexReader reader = IndexReader.Open((Directory) dir, false, null))
+            {
+                Assert.IsTrue(reader.NumDocs() < 314);
+            }
 		}
 		
 		[Test]

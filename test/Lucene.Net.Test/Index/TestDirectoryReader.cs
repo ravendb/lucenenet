@@ -86,55 +86,65 @@ namespace Lucene.Net.Index
 		public virtual void  DoTestDocument()
 		{
 			sis.Read(dir, null);
-			IndexReader reader = OpenReader();
-			Assert.IsTrue(reader != null);
-			Document newDoc1 = reader.Document(0, null);
-			Assert.IsTrue(newDoc1 != null);
-			Assert.IsTrue(DocHelper.NumFields(newDoc1) == DocHelper.NumFields(doc1) - DocHelper.unstored.Count);
-			Document newDoc2 = reader.Document(1, null);
-			Assert.IsTrue(newDoc2 != null);
-			Assert.IsTrue(DocHelper.NumFields(newDoc2) == DocHelper.NumFields(doc2) - DocHelper.unstored.Count);
-			ITermFreqVector vector = reader.GetTermFreqVector(0, DocHelper.TEXT_FIELD_2_KEY, null);
-			Assert.IsTrue(vector != null);
-			TestSegmentReader.CheckNorms(reader);
-		}
+            using (IndexReader reader = OpenReader())
+            {
+                Assert.IsTrue(reader != null);
+                Document newDoc1 = reader.Document(0, null);
+                Assert.IsTrue(newDoc1 != null);
+                Assert.IsTrue(DocHelper.NumFields(newDoc1) == DocHelper.NumFields(doc1) - DocHelper.unstored.Count);
+                Document newDoc2 = reader.Document(1, null);
+                Assert.IsTrue(newDoc2 != null);
+                Assert.IsTrue(DocHelper.NumFields(newDoc2) == DocHelper.NumFields(doc2) - DocHelper.unstored.Count);
+                ITermFreqVector vector = reader.GetTermFreqVector(0, DocHelper.TEXT_FIELD_2_KEY, null);
+                Assert.IsTrue(vector != null);
+                TestSegmentReader.CheckNorms(reader);
+            }
+        }
 		
 		public virtual void  DoTestUndeleteAll()
 		{
 			sis.Read(dir, null);
-			IndexReader reader = OpenReader();
-			Assert.IsTrue(reader != null);
-			Assert.AreEqual(2, reader.NumDocs());
-			reader.DeleteDocument(0, null);
-			Assert.AreEqual(1, reader.NumDocs());
-			reader.UndeleteAll(null);
-			Assert.AreEqual(2, reader.NumDocs());
-			
-			// Ensure undeleteAll survives commit/close/reopen:
-			reader.Commit(null);
-			reader.Close();
-			
-			if (reader is MultiReader)
-			// MultiReader does not "own" the directory so it does
-			// not write the changes to sis on commit:
-				sis.Commit(dir, null);
-			
-			sis.Read(dir, null);
-			reader = OpenReader();
-			Assert.AreEqual(2, reader.NumDocs());
-			
-			reader.DeleteDocument(0, null);
-			Assert.AreEqual(1, reader.NumDocs());
-			reader.Commit(null);
-			reader.Close();
-			if (reader is MultiReader)
-			// MultiReader does not "own" the directory so it does
-			// not write the changes to sis on commit:
-				sis.Commit(dir, null);
-			sis.Read(dir, null);
-			reader = OpenReader();
-			Assert.AreEqual(1, reader.NumDocs());
-		}
+            using (IndexReader reader = OpenReader())
+            {
+                Assert.IsTrue(reader != null);
+                Assert.AreEqual(2, reader.NumDocs());
+                reader.DeleteDocument(0, null);
+                Assert.AreEqual(1, reader.NumDocs());
+                reader.UndeleteAll(null);
+                Assert.AreEqual(2, reader.NumDocs());
+
+                // Ensure undeleteAll survives commit/close/reopen:
+                reader.Commit(null);
+                reader.Close();
+
+                if (reader is MultiReader)
+                    // MultiReader does not "own" the directory so it does
+                    // not write the changes to sis on commit:
+                    sis.Commit(dir, null);
+
+                sis.Read(dir, null);
+            }
+
+            using (var reader = OpenReader())
+            {
+                Assert.AreEqual(2, reader.NumDocs());
+
+                reader.DeleteDocument(0, null);
+                Assert.AreEqual(1, reader.NumDocs());
+                reader.Commit(null);
+                reader.Close();
+                if (reader is MultiReader)
+                    // MultiReader does not "own" the directory so it does
+                    // not write the changes to sis on commit:
+                    sis.Commit(dir, null);
+                sis.Read(dir, null);
+            }
+
+			using (var reader = OpenReader())
+            {
+                Assert.AreEqual(1, reader.NumDocs());
+            }
+        }
 		
 		
 		public virtual void  _testTermVectors()
@@ -161,7 +171,7 @@ namespace Lucene.Net.Index
 
 			Assert.Throws<NotSupportedException>(() => { var ver = mr.Version; });
 			mr.Close();
-		}
+        }
 		
         [Test]
 		public virtual void  TestMultiTermDocs()
@@ -190,6 +200,9 @@ namespace Lucene.Net.Index
 				ret += td2.Doc;
 			td2.Close();
 			te3.Close();
+
+			mr2.Dispose();
+			mr3.Dispose();
 			
 			// really a dummy assert to ensure that we got some docs and to ensure that
 			// nothing is optimized out.
