@@ -53,7 +53,7 @@ namespace Lucene.Net.Store
 	    protected BufferedIndexInput()
         {
             var counter = Interlocked.Increment(ref _counter);
-			if (counter == 2)
+			if (counter == 6)
             {
 
             }

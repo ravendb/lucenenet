@@ -263,18 +263,20 @@ namespace Lucene.Net.Index
 				writer.AddDocument(doc, null);
 			}
 			writer.Close();
-			IndexReader reader = IndexReader.Open((Directory) d, false, null);
-			FieldSortedTermVectorMapper mapper = new FieldSortedTermVectorMapper(new TermVectorEntryFreqSortedComparator());
-			reader.GetTermFreqVector(0, mapper, null);
-			var map = mapper.FieldToTerms;
-			Assert.IsTrue(map != null, "map is null and it shouldn't be");
-			Assert.IsTrue(map.Count == 4, "map Size: " + map.Count + " is not: " + 4);
-            var set_Renamed = map["termvector"];
-            foreach (var item in set_Renamed)
-			{
-                TermVectorEntry entry =  (TermVectorEntry)item;
-				Assert.IsTrue(entry != null, "entry is null and it shouldn't be");
-				System.Console.Out.WriteLine("Entry: " + entry);
+			using (IndexReader reader = IndexReader.Open((Directory) d, false, null))
+            {
+			    FieldSortedTermVectorMapper mapper = new FieldSortedTermVectorMapper(new TermVectorEntryFreqSortedComparator());
+			    reader.GetTermFreqVector(0, mapper, null);
+			    var map = mapper.FieldToTerms;
+			    Assert.IsTrue(map != null, "map is null and it shouldn't be");
+			    Assert.IsTrue(map.Count == 4, "map Size: " + map.Count + " is not: " + 4);
+                var set_Renamed = map["termvector"];
+                foreach (var item in set_Renamed)
+			    {
+                    TermVectorEntry entry =  (TermVectorEntry)item;
+				    Assert.IsTrue(entry != null, "entry is null and it shouldn't be");
+				    System.Console.Out.WriteLine("Entry: " + entry);
+			    }
 			}
 		}
 		

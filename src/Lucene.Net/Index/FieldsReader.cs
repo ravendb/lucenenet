@@ -197,7 +197,11 @@ namespace Lucene.Net.Index
                 {
                     indexStream.Close();
                 }
+
+                foreach (var fs in fieldsStreamTL.Values)
+                    fs?.Dispose();
                 fieldsStreamTL.Dispose();
+
                 closed = true;
             }
         }
