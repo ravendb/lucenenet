@@ -192,6 +192,8 @@ namespace Lucene.Net.Index
 			VerifyIndex(irc3);
 			irc3.Flush(null);
 			irc3.Close();
+			irc.Close();
+			ir.Close();
 		}
 		
         [Test]
