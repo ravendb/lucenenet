@@ -672,79 +672,80 @@ namespace Lucene.Net.Index
 				using (TermPositions termPositions = reader.TermPositions(state))
                 {
 				    // Used only to count up # deleted docs for this term
-				    var myTermDocs = new MySegmentTermDocs(reader, state);
-				    
-				    int maxDoc = reader.MaxDoc;
-				    
-				    while (termEnum.Next(state))
-				    {
-					    status.termCount++;
-					    Term term = termEnum.Term;
-					    int docFreq = termEnum.DocFreq();
-					    termPositions.Seek(term, state);
-					    int lastDoc = - 1;
-					    int freq0 = 0;
-					    status.totFreq += docFreq;
-					    while (termPositions.Next(state))
-					    {
-						    freq0++;
-						    int doc = termPositions.Doc;
-						    int freq = termPositions.Freq;
-						    if (doc <= lastDoc)
-						    {
-							    throw new System.SystemException("term " + term + ": doc " + doc + " <= lastDoc " + lastDoc);
-						    }
-						    if (doc >= maxDoc)
-						    {
-							    throw new System.SystemException("term " + term + ": doc " + doc + " >= maxDoc " + maxDoc);
-						    }
-						    
-						    lastDoc = doc;
-						    if (freq <= 0)
-						    {
-							    throw new System.SystemException("term " + term + ": doc " + doc + ": freq " + freq + " is out of bounds");
-						    }
-						    
-						    int lastPos = - 1;
-						    status.totPos += freq;
-						    for (int j = 0; j < freq; j++)
-						    {
-							    int pos = termPositions.NextPosition(state);
-							    if (pos < - 1)
-							    {
-								    throw new System.SystemException("term " + term + ": doc " + doc + ": pos " + pos + " is out of bounds");
-							    }
-							    if (pos < lastPos)
-							    {
-								    throw new System.SystemException("term " + term + ": doc " + doc + ": pos " + pos + " < lastPos " + lastPos);
-							    }
-						        lastPos = pos;
-						    }
-					    }
-					    
-					    // Now count how many deleted docs occurred in
-					    // this term:
-					    int delCount;
-					    if (reader.HasDeletions)
-					    {
-						    myTermDocs.Seek(term, state);
-						    while (myTermDocs.Next(state))
-						    {
-						    }
-						    delCount = myTermDocs.delCount;
-					    }
-					    else
-					    {
-						    delCount = 0;
-					    }
-					    
-					    if (freq0 + delCount != docFreq)
-					    {
-						    throw new System.SystemException("term " + term + " docFreq=" + docFreq + " != num docs seen " + freq0 + " + num docs deleted " + delCount);
-					    }
-				    }
-				    
-				    Msg("OK [" + status.termCount + " terms; " + status.totFreq + " terms/docs pairs; " + status.totPos + " tokens]");
+				    using (var myTermDocs = new MySegmentTermDocs(reader, state))
+                    {
+				        int maxDoc = reader.MaxDoc;
+				        
+				        while (termEnum.Next(state))
+				        {
+					        status.termCount++;
+					        Term term = termEnum.Term;
+					        int docFreq = termEnum.DocFreq();
+					        termPositions.Seek(term, state);
+					        int lastDoc = - 1;
+					        int freq0 = 0;
+					        status.totFreq += docFreq;
+					        while (termPositions.Next(state))
+					        {
+						        freq0++;
+						        int doc = termPositions.Doc;
+						        int freq = termPositions.Freq;
+						        if (doc <= lastDoc)
+						        {
+							        throw new System.SystemException("term " + term + ": doc " + doc + " <= lastDoc " + lastDoc);
+						        }
+						        if (doc >= maxDoc)
+						        {
+							        throw new System.SystemException("term " + term + ": doc " + doc + " >= maxDoc " + maxDoc);
+						        }
+						        
+						        lastDoc = doc;
+						        if (freq <= 0)
+						        {
+							        throw new System.SystemException("term " + term + ": doc " + doc + ": freq " + freq + " is out of bounds");
+						        }
+						        
+						        int lastPos = - 1;
+						        status.totPos += freq;
+						        for (int j = 0; j < freq; j++)
+						        {
+							        int pos = termPositions.NextPosition(state);
+							        if (pos < - 1)
+							        {
+								        throw new System.SystemException("term " + term + ": doc " + doc + ": pos " + pos + " is out of bounds");
+							        }
+							        if (pos < lastPos)
+							        {
+								        throw new System.SystemException("term " + term + ": doc " + doc + ": pos " + pos + " < lastPos " + lastPos);
+							        }
+						            lastPos = pos;
+						        }
+					        }
+					        
+					        // Now count how many deleted docs occurred in
+					        // this term:
+					        int delCount;
+					        if (reader.HasDeletions)
+					        {
+						        myTermDocs.Seek(term, state);
+						        while (myTermDocs.Next(state))
+						        {
+						        }
+						        delCount = myTermDocs.delCount;
+					        }
+					        else
+					        {
+						        delCount = 0;
+					        }
+					        
+					        if (freq0 + delCount != docFreq)
+					        {
+						        throw new System.SystemException("term " + term + " docFreq=" + docFreq + " != num docs seen " + freq0 + " + num docs deleted " + delCount);
+					        }
+				        }
+				        
+				        Msg("OK [" + status.termCount + " terms; " + status.totFreq + " terms/docs pairs; " + status.totPos + " tokens]");
+					}
 				}
 			}
 			catch (System.Exception e)

@@ -309,9 +309,11 @@ namespace Lucene.Net.Index
 
             modifier.Commit(null);
 
-            IndexReader reader = IndexReader.Open(dir, true, null);
-            Assert.AreEqual(5, reader.NumDocs());
-            modifier.Close();
+            using (IndexReader reader = IndexReader.Open(dir, true, null))
+            {
+                Assert.AreEqual(5, reader.NumDocs());
+                modifier.Close();
+            }
         }
 
         // test that batched delete terms are flushed together
