@@ -217,6 +217,7 @@ namespace Lucene.Net.Index
 			haveSkipped = false;
 			for (int i = 1; i < numberOfSkipLevels; i++)
 			{
+				skipStream[i]?.Dispose();
 				skipStream[i] = null;
 			}
 		}
@@ -244,12 +245,14 @@ namespace Lucene.Net.Index
 				if (toBuffer > 0)
 				{
 					// buffer this level
+					skipStream[i]?.Dispose();
 					skipStream[i] = new SkipBuffer(skipStream[0], (int) length, state);
 					toBuffer--;
 				}
 				else
 				{
 					// clone this stream, it is already at the start of the current level
+					skipStream[i]?.Dispose();
 					skipStream[i] = (IndexInput) skipStream[0].Clone(state);
 					if (inputIsBuffered && length < BufferedIndexInput.BUFFER_SIZE)
 					{

@@ -165,21 +165,23 @@ namespace Lucene.Net.Index
 			}
 			
 			writer.Close();
-		    IndexReader reader = IndexReader.Open(directory, true, null);
-			TermPositions tp = reader.TermPositions(null);
-			tp.Seek(new Term(this.field, "b"), null);
-			for (int i = 0; i < 10; i++)
-			{
-				tp.Next(null);
-				Assert.AreEqual(tp.Doc, i);
-				Assert.AreEqual(tp.NextPosition(null), 1);
-			}
-			tp.Seek(new Term(this.field, "a"), null);
-			for (int i = 0; i < 10; i++)
-			{
-				tp.Next(null);
-				Assert.AreEqual(tp.Doc, i);
-				Assert.AreEqual(tp.NextPosition(null), 0);
+		    using (IndexReader reader = IndexReader.Open(directory, true, null))
+			using (TermPositions tp = reader.TermPositions(null))
+            {
+			    tp.Seek(new Term(this.field, "b"), null);
+			    for (int i = 0; i < 10; i++)
+			    {
+				    tp.Next(null);
+				    Assert.AreEqual(tp.Doc, i);
+				    Assert.AreEqual(tp.NextPosition(null), 1);
+			    }
+			    tp.Seek(new Term(this.field, "a"), null);
+			    for (int i = 0; i < 10; i++)
+			    {
+				    tp.Next(null);
+				    Assert.AreEqual(tp.Doc, i);
+				    Assert.AreEqual(tp.NextPosition(null), 0);
+			    }
 			}
 		}
 		

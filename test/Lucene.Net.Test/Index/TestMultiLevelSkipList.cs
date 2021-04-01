@@ -62,24 +62,26 @@ namespace Lucene.Net.Index
 			writer.Optimize(null);
 			writer.Close();
 			
-			IndexReader reader = SegmentReader.GetOnlySegmentReader(dir, null);
-			SegmentTermPositions tp = (SegmentTermPositions) reader.TermPositions(null);
-            tp.freqStream = new CountingStream(this, tp.freqStream);
-			
-			for (int i = 0; i < 2; i++)
-			{
-				counter = 0;
-				tp.Seek(term, null);
-				
-				CheckSkipTo(tp, 14, 185); // no skips
-				CheckSkipTo(tp, 17, 190); // one skip on level 0
-				CheckSkipTo(tp, 287, 200); // one skip on level 1, two on level 0
-				
-				// this test would fail if we had only one skip level,
-				// because than more bytes would be read from the freqStream
-				CheckSkipTo(tp, 4800, 250); // one skip on level 2
-			}
-		}
+			using (IndexReader reader = SegmentReader.GetOnlySegmentReader(dir, null))
+            using (SegmentTermPositions tp = (SegmentTermPositions) reader.TermPositions(null))
+            {
+                tp.freqStream = new CountingStream(this, tp.freqStream);
+
+                for (int i = 0; i < 2; i++)
+                {
+                    counter = 0;
+                    tp.Seek(term, null);
+
+                    CheckSkipTo(tp, 14, 185); // no skips
+                    CheckSkipTo(tp, 17, 190); // one skip on level 0
+                    CheckSkipTo(tp, 287, 200); // one skip on level 1, two on level 0
+
+                    // this test would fail if we had only one skip level,
+                    // because than more bytes would be read from the freqStream
+                    CheckSkipTo(tp, 4800, 250); // one skip on level 2
+                }
+            }
+        }
 		
 		public virtual void  CheckSkipTo(TermPositions tp, int target, int maxCounter)
 		{
