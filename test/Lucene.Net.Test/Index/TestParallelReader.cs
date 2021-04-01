@@ -52,8 +52,16 @@ namespace Lucene.Net.Index
 			single = Single();
 			parallel = Parallel();
 		}
-		
-		[Test]
+
+		[TearDown]
+        public override void TearDown()
+        {
+            base.TearDown();
+			single?.Dispose();
+			parallel?.Dispose();
+        }
+
+        [Test]
 		public virtual void  TestQueries()
 		{
 			QueryTest(new TermQuery(new Term("f1", "v1")));

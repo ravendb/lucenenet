@@ -214,19 +214,21 @@ namespace Lucene.Net.Index
 		
 		private void  VerifyIndex(Directory dir)
 		{
-		    IndexReader ir = IndexReader.Open(dir, false, null);
-			for (int i = 0; i < NUM_FIELDS; i++)
-			{
-				System.String field = "f" + i;
-                Memory<byte> b = ir.Norms(field, null);
-				Assert.AreEqual(numDocNorms, b.Length, "number of norms mismatches");
-				System.Collections.ArrayList storedNorms = (i == 1?modifiedNorms:norms);
-				for (int j = 0; j < b.Length; j++)
-				{
-					float norm = Similarity.DecodeNorm(b.Span[j]);
-					float norm1 = (float)storedNorms[j];
-					Assert.AreEqual(norm, norm1, 0.000001, "stored norm value of " + field + " for doc " + j + " is " + norm + " - a mismatch!");
-				}
+		    using (IndexReader ir = IndexReader.Open(dir, false, null))
+            {
+			    for (int i = 0; i < NUM_FIELDS; i++)
+			    {
+				    System.String field = "f" + i;
+                    Memory<byte> b = ir.Norms(field, null);
+				    Assert.AreEqual(numDocNorms, b.Length, "number of norms mismatches");
+				    System.Collections.ArrayList storedNorms = (i == 1?modifiedNorms:norms);
+				    for (int j = 0; j < b.Length; j++)
+				    {
+					    float norm = Similarity.DecodeNorm(b.Span[j]);
+					    float norm1 = (float)storedNorms[j];
+					    Assert.AreEqual(norm, norm1, 0.000001, "stored norm value of " + field + " for doc " + j + " is " + norm + " - a mismatch!");
+				    }
+			    }
 			}
 		}
 		

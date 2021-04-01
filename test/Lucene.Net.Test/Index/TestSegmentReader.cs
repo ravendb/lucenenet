@@ -57,6 +57,7 @@ namespace Lucene.Net.Index
         {
             dir = new RAMDirectory();
 		    testDoc = new Document();
+			reader?.Dispose();
         }
 		
 		[Test]
@@ -92,13 +93,15 @@ namespace Lucene.Net.Index
 			Document docToDelete = new Document();
 			DocHelper.SetupDoc(docToDelete);
 			SegmentInfo info = DocHelper.WriteDoc(dir, docToDelete);
-            SegmentReader deleteReader = SegmentReader.Get(false, info, IndexReader.DEFAULT_TERMS_INDEX_DIVISOR, null);
-			Assert.IsTrue(deleteReader != null);
-			Assert.IsTrue(deleteReader.NumDocs() == 1);
-			deleteReader.DeleteDocument(0, null);
-			Assert.IsTrue(deleteReader.IsDeleted(0) == true);
-			Assert.IsTrue(deleteReader.HasDeletions == true);
-			Assert.IsTrue(deleteReader.NumDocs() == 0);
+            using (SegmentReader deleteReader = SegmentReader.Get(false, info, IndexReader.DEFAULT_TERMS_INDEX_DIVISOR, null))
+            {
+			    Assert.IsTrue(deleteReader != null);
+			    Assert.IsTrue(deleteReader.NumDocs() == 1);
+			    deleteReader.DeleteDocument(0, null);
+			    Assert.IsTrue(deleteReader.IsDeleted(0) == true);
+			    Assert.IsTrue(deleteReader.HasDeletions == true);
+			    Assert.IsTrue(deleteReader.NumDocs() == 0);
+			}
 		}
 		
 		[Test]
