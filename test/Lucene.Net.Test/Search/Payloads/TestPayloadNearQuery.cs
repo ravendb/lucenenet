@@ -172,7 +172,15 @@ namespace Lucene.Net.Search.Payloads
 			searcher = new IndexSearcher(directory, true, null);
 			searcher.Similarity = similarity;
 		}
-		
+
+		[TearDown]
+        public override void TearDown()
+        {
+            base.TearDown();
+
+			searcher?.Dispose();
+        }
+
         [Test]
 		public virtual void  Test()
 		{

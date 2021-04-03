@@ -279,6 +279,6 @@ namespace Lucene.Net.Search.Payloads
 				result.Description = "bnq, product of:";
 				return result;
 			}
-		}
+        }
 	}
 }

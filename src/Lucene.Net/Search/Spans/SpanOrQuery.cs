@@ -157,7 +157,12 @@ namespace Lucene.Net.Search.Spans
 		        return top != null && top.IsPayloadAvailable();
 		    }
 
-		    public override System.String ToString()
+            public override void Dispose()
+            {
+                throw new NotImplementedException();
+            }
+
+            public override System.String ToString()
 			{
 				return "spans(" + Enclosing_Instance + ")@" + ((queue == null)?"START":(queue.Size() > 0?(Doc() + ":" + Start() + "-" + End()):"END"));
 			}

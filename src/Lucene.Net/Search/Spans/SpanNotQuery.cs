@@ -142,7 +142,12 @@ namespace Lucene.Net.Search.Spans
 		        return includeSpans.IsPayloadAvailable();
 		    }
 
-		    public override System.String ToString()
+            public override void Dispose()
+            {
+                throw new NotImplementedException();
+            }
+
+            public override System.String ToString()
 			{
 				return "spans(" + Enclosing_Instance.ToString() + ")";
 			}

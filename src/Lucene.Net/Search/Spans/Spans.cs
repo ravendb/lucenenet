@@ -27,7 +27,7 @@ namespace Lucene.Net.Search.Spans
 	/// are enumerated in order, by increasing document number, within that by
 	/// increasing start position and finally by increasing end position. 
 	/// </summary>
-	public abstract class Spans
+	public abstract class Spans : IDisposable
 	{
 		/// <summary>Move to the next match, returning true iff any such exists. </summary>
 		public abstract bool Next(IState state);
@@ -89,5 +89,7 @@ namespace Lucene.Net.Search.Spans
 	    /// </summary>
 	    /// <returns> true if there is a payload available at this position that can be loaded </returns>
 	    public abstract bool IsPayloadAvailable();
-	}
+
+        public abstract void Dispose();
+    }
 }

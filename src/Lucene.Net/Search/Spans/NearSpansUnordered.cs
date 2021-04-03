@@ -168,7 +168,12 @@ namespace Lucene.Net.Search.Spans
 		        return spans.IsPayloadAvailable();
 		    }
 
-		    public override System.String ToString()
+            public override void Dispose()
+            {
+                throw new NotImplementedException();
+            }
+
+            public override System.String ToString()
 			{
 				return spans.ToString() + "#" + index;
 			}
@@ -350,7 +355,12 @@ namespace Lucene.Net.Search.Spans
 	        return false;
 	    }
 
-	    public override System.String ToString()
+        public override void Dispose()
+        {
+            throw new NotImplementedException();
+        }
+
+        public override System.String ToString()
 		{
 			return GetType().FullName + "(" + query.ToString() + ")@" + (firstTime?"START":(more?(Doc() + ":" + Start() + "-" + End()):"END"));
 		}

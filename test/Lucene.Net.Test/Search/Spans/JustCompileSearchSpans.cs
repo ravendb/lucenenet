@@ -75,7 +75,12 @@ namespace Lucene.Net.Search.Spans
 		    {
 		        throw new System.NotSupportedException(Lucene.Net.Search.Spans.JustCompileSearchSpans.UNSUPPORTED_MSG);
 		    }
-		}
+
+            public override void Dispose()
+            {
+                throw new NotImplementedException();
+            }
+        }
 		
 		[Serializable]
 		internal sealed class JustCompileSpanQuery:SpanQuery
@@ -108,7 +113,12 @@ namespace Lucene.Net.Search.Spans
 		        throw new System.NotSupportedException(Lucene.Net.Search.Spans.JustCompileSearchSpans.UNSUPPORTED_MSG);
 		    }
 
-		    public override int Doc()
+            public override void Dispose()
+            {
+                throw new NotImplementedException();
+            }
+
+            public override int Doc()
 			{
 				throw new System.NotSupportedException(Lucene.Net.Search.Spans.JustCompileSearchSpans.UNSUPPORTED_MSG);
 			}

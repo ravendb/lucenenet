@@ -194,19 +194,20 @@ namespace Lucene.Net.Search.Payloads
 		
 		private void  GetPayloads(ICollection<Memory<byte>> payloads, SpanQuery query, IState state)
 		{
-			Spans.Spans spans = query.GetSpans(reader, state);
-			
-			while (spans.Next(state) == true)
-			{
-				if (spans.IsPayloadAvailable())
-				{
-                    ICollection<Memory<byte>> payload = spans.GetPayload(state);
-                    foreach (Memory<byte> bytes in payload)
+            using (Spans.Spans spans = query.GetSpans(reader, state))
+            {
+                while (spans.Next(state) == true)
+                {
+                    if (spans.IsPayloadAvailable())
                     {
-                        payloads.Add(bytes);
+                        ICollection<Memory<byte>> payload = spans.GetPayload(state);
+                        foreach (Memory<byte> bytes in payload)
+                        {
+                            payloads.Add(bytes);
+                        }
                     }
-				}
-			}
-		}
+                }
+            }
+        }
 	}
 }

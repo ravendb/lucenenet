@@ -159,7 +159,21 @@ namespace Lucene.Net.Search.Spans
 	        return (matchPayload.Count == 0) == false;
 	    }
 
-	    // inherit javadocs
+        public override void Dispose()
+        {
+			DisposeSpans(subSpans);
+
+            static void DisposeSpans(Spans[] spans)
+            {
+				if (spans == null || spans.Length == 0)
+					return;
+
+                foreach (var span in spans)
+                    span?.Dispose();
+            }
+        }
+
+        // inherit javadocs
 		public override bool Next(IState state)
 		{
 			if (firstTime)

@@ -112,6 +112,7 @@ namespace Lucene.Net.Search.Spans
 
         public override void Dispose()
         {
+			spans.Dispose();
         }
 
         /// <summary>

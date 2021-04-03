@@ -114,7 +114,12 @@ namespace Lucene.Net.Search.Spans
 	        return internalPositions.IsPayloadAvailable;
 	    }
 
-	    public override System.String ToString()
+        public override void Dispose()
+        {
+            internalPositions?.Dispose();
+        }
+
+        public override System.String ToString()
 		{
 			return "spans(" + term.ToString() + ")@" + (internalDoc == - 1?"START":((internalDoc == System.Int32.MaxValue)?"END":internalDoc + "-" + position));
 		}
