@@ -88,20 +88,22 @@ namespace Lucene.Net.Search.Function
 		// Test that FieldScoreQuery returns docs in expected order.
 		private void  DoTestRank(System.String field, FieldScoreQuery.Type tp)
 		{
-			IndexSearcher s = new IndexSearcher(dir, true, null);
-			Query q = new FieldScoreQuery(field, tp);
-			Log("test: " + q);
-			QueryUtils.Check(q, s);
-			ScoreDoc[] h = s.Search(q, null, 1000, null).ScoreDocs;
-			Assert.AreEqual(N_DOCS, h.Length, "All docs should be matched!");
-			System.String prevID = "ID" + (N_DOCS + 1); // greater than all ids of docs in this test
-			for (int i = 0; i < h.Length; i++)
-			{
-				System.String resID = s.Doc(h[i].Doc, null).Get(ID_FIELD, null);
-				Log(i + ".   score=" + h[i].Score + "  -  " + resID);
-				Log(s.Explain(q, h[i].Doc, null));
-				Assert.IsTrue(String.CompareOrdinal(resID, prevID) < 0, "res id " + resID + " should be < prev res id " + prevID);
-				prevID = resID;
+			using (IndexSearcher s = new IndexSearcher(dir, true, null))
+            {
+			    Query q = new FieldScoreQuery(field, tp);
+			    Log("test: " + q);
+			    QueryUtils.Check(q, s);
+			    ScoreDoc[] h = s.Search(q, null, 1000, null).ScoreDocs;
+			    Assert.AreEqual(N_DOCS, h.Length, "All docs should be matched!");
+			    System.String prevID = "ID" + (N_DOCS + 1); // greater than all ids of docs in this test
+			    for (int i = 0; i < h.Length; i++)
+			    {
+				    System.String resID = s.Doc(h[i].Doc, null).Get(ID_FIELD, null);
+				    Log(i + ".   score=" + h[i].Score + "  -  " + resID);
+				    Log(s.Explain(q, h[i].Doc, null));
+				    Assert.IsTrue(String.CompareOrdinal(resID, prevID) < 0, "res id " + resID + " should be < prev res id " + prevID);
+				    prevID = resID;
+			    }
 			}
 		}
 		
@@ -141,18 +143,20 @@ namespace Lucene.Net.Search.Function
 		// Test that FieldScoreQuery returns docs with expected score.
 		private void  DoTestExactScore(System.String field, FieldScoreQuery.Type tp)
 		{
-			IndexSearcher s = new IndexSearcher(dir, true, null);
-			Query q = new FieldScoreQuery(field, tp);
-			TopDocs td = s.Search(q, null, 1000, null);
-			Assert.AreEqual(N_DOCS, td.TotalHits, "All docs should be matched!");
-			ScoreDoc[] sd = td.ScoreDocs;
-			for (int i = 0; i < sd.Length; i++)
-			{
-				float score = sd[i].Score;
-				Log(s.Explain(q, sd[i].Doc, null));
-				System.String id = s.IndexReader.Document(sd[i].Doc, null).Get(ID_FIELD, null);
-				float expectedScore = ExpectedFieldScore(id); // "ID7" --> 7.0
-				Assert.AreEqual(expectedScore, score, TEST_SCORE_TOLERANCE_DELTA, "score of " + id + " shuould be " + expectedScore + " != " + score);
+			using (IndexSearcher s = new IndexSearcher(dir, true, null))
+            {
+			    Query q = new FieldScoreQuery(field, tp);
+			    TopDocs td = s.Search(q, null, 1000, null);
+			    Assert.AreEqual(N_DOCS, td.TotalHits, "All docs should be matched!");
+			    ScoreDoc[] sd = td.ScoreDocs;
+			    for (int i = 0; i < sd.Length; i++)
+			    {
+				    float score = sd[i].Score;
+				    Log(s.Explain(q, sd[i].Doc, null));
+				    System.String id = s.IndexReader.Document(sd[i].Doc, null).Get(ID_FIELD, null);
+				    float expectedScore = ExpectedFieldScore(id); // "ID7" --> 7.0
+				    Assert.AreEqual(expectedScore, score, TEST_SCORE_TOLERANCE_DELTA, "score of " + id + " shuould be " + expectedScore + " != " + score);
+			    }
 			}
 		}
 		
@@ -236,6 +240,8 @@ namespace Lucene.Net.Search.Function
 					}
 				}
 			}
+
+			s.Close();
 			
 			// verify new values are reloaded (not reused) for a new reader
 			s = new IndexSearcher(dir, true, null);
@@ -260,6 +266,8 @@ namespace Lucene.Net.Search.Function
 					}
 				}
 			}
+
+			s.Close();
 		}
 		
 		private System.String TestName()

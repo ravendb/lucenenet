@@ -102,6 +102,7 @@ namespace Lucene.Net.Search.Function
 				}
 				prevID = resID;
 			}
+			s.Close();
 		}
 		
 		/// <summary>Test exact score for OrdFieldSource </summary>
@@ -147,6 +148,7 @@ namespace Lucene.Net.Search.Function
 				System.String expectedId = inOrder?Id2String(N_DOCS - i):Id2String(i + 1); // reverse  ==> smaller values first 
 				Assert.IsTrue(expectedId.Equals(id), "id of result " + i + " shuould be " + expectedId + " != " + score);
 			}
+			s.Close();
 		}
 		
 		/// <summary>Test caching OrdFieldSource </summary>
@@ -251,6 +253,7 @@ namespace Lucene.Net.Search.Function
 				}
 			}
 			
+			s.Close();
 			// verify new values are reloaded (not reused) for a new reader
 			s = new IndexSearcher(dir, true, null);
 			if (inOrder)
@@ -283,6 +286,7 @@ namespace Lucene.Net.Search.Function
 					}
 				}
 			}
+			s.Close();
 		}
 		
 		private System.String TestName()
