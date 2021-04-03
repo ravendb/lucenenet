@@ -16,6 +16,7 @@
  */
 
 using System;
+using System.Collections.Generic;
 using Lucene.Net.Index;
 using Lucene.Net.Store;
 using NUnit.Framework;
@@ -181,12 +182,14 @@ namespace Lucene.Net.Search
 					for (int i = lastDoc[0] + 1; i <= doc; i++)
 					{
 						Weight w = q.Weight(s, null);
-						Scorer scorer = w.Scorer(reader, true, false, null);
-						Assert.IsTrue(scorer.Advance(i, null) != DocIdSetIterator.NO_MORE_DOCS, "query collected " + doc + " but skipTo(" + i + ") says no more docs!");
-						Assert.AreEqual(doc, scorer.DocID(), "query collected " + doc + " but skipTo(" + i + ") got to " + scorer.DocID());
-						float skipToScore = scorer.Score(null);
-						Assert.AreEqual(skipToScore, scorer.Score(null), maxDiff, "unstable skipTo(" + i + ") score!");
-						Assert.AreEqual(score, skipToScore, maxDiff, "query assigned doc " + doc + " a score of <" + score + "> but skipTo(" + i + ") has <" + skipToScore + ">!");
+						using (Scorer scorer = w.Scorer(reader, true, false, null))
+                        {
+						    Assert.IsTrue(scorer.Advance(i, null) != DocIdSetIterator.NO_MORE_DOCS, "query collected " + doc + " but skipTo(" + i + ") says no more docs!");
+						    Assert.AreEqual(doc, scorer.DocID(), "query collected " + doc + " but skipTo(" + i + ") got to " + scorer.DocID());
+						    float skipToScore = scorer.Score(null);
+						    Assert.AreEqual(skipToScore, scorer.Score(null), maxDiff, "unstable skipTo(" + i + ") score!");
+						    Assert.AreEqual(score, skipToScore, maxDiff, "query assigned doc " + doc + " a score of <" + score + "> but skipTo(" + i + ") has <" + skipToScore + ">!");
+						}
 					}
 					lastDoc[0] = doc;
 				}
@@ -203,12 +206,14 @@ namespace Lucene.Net.Search
                 {
                     IndexReader previousReader = lastReader[0];
                     Weight w = q.Weight(new IndexSearcher(previousReader), null);
-                    Scorer scorer = w.Scorer(previousReader, true, false, null);
-                    if (scorer != null)
+                    using (Scorer scorer = w.Scorer(previousReader, true, false, null))
                     {
-                        bool more = scorer.Advance(lastDoc[0] + 1, null) != DocIdSetIterator.NO_MORE_DOCS;
-                        Assert.IsFalse(more, "query's last doc was " + lastDoc[0] + " but skipTo(" + (lastDoc[0] + 1) + ") got to " + scorer.DocID());
-                    }
+                        if (scorer != null)
+                        {
+                            bool more = scorer.Advance(lastDoc[0] + 1, null) != DocIdSetIterator.NO_MORE_DOCS;
+                            Assert.IsFalse(more, "query's last doc was " + lastDoc[0] + " but skipTo(" + (lastDoc[0] + 1) + ") got to " + scorer.DocID());
+                        }
+					}
                 }
 
                 this.reader = lastReader[0] = reader;
@@ -287,7 +292,7 @@ namespace Lucene.Net.Search
 			Check(q1, s, true);
 		}
 		private static void  Check(Query q1, Searcher s, bool wrap)
-		{
+        {
 			try
 			{
 				Check(q1);
@@ -299,17 +304,27 @@ namespace Lucene.Net.Search
 						CheckFirstSkipTo(q1, is_Renamed);
 						CheckSkipTo(q1, is_Renamed);
 						if (wrap)
-						{
-							Check(q1, WrapUnderlyingReader(is_Renamed, - 1), false);
-							Check(q1, WrapUnderlyingReader(is_Renamed, 0), false);
-							Check(q1, WrapUnderlyingReader(is_Renamed, + 1), false);
+                        {
+                            using (var ws = WrapUnderlyingReader(is_Renamed, -1))
+                                Check(q1, ws, false);
+
+                            using (var ws = WrapUnderlyingReader(is_Renamed, 0))
+							    Check(q1, ws, false);
+
+                            using (var ws = WrapUnderlyingReader(is_Renamed, +1))
+							    Check(q1, ws, false);
 						}
 					}
 					if (wrap)
-					{
-						Check(q1, WrapSearcher(s, - 1), false);
-						Check(q1, WrapSearcher(s, 0), false);
-						Check(q1, WrapSearcher(s, + 1), false);
+                    {
+                        using (var ws = WrapSearcher(s, -1))
+						    Check(q1, ws, false);
+
+                        using (var ws = WrapSearcher(s, 0))
+						    Check(q1, ws, false);
+
+                        using (var ws = WrapSearcher(s, +1))
+						    Check(q1, ws, false);
 					}
 					CheckExplanations(q1, s);
 					CheckSerialization(q1, s);
@@ -322,7 +337,7 @@ namespace Lucene.Net.Search
 			{
 				throw new System.SystemException("", e);
 			}
-		}
+        }
 		
 		/// <summary> Given an IndexSearcher, returns a new IndexSearcher whose IndexReader 
 		/// is a MultiReader containing the Reader of the original IndexSearcher, 
@@ -337,7 +352,7 @@ namespace Lucene.Net.Search
 		public static IndexSearcher WrapUnderlyingReader(IndexSearcher s, int edge)
 		{
 			
-			IndexReader r = s.IndexReader;
+			IndexReader r = (IndexReader)s.IndexReader.Clone(null);
 			
 			// we can't put deleted docs before the nested reader, because
 			// it will throw off the docIds
@@ -360,7 +375,7 @@ namespace Lucene.Net.Search
 		                                                            0 < edge ? r : IndexReader.Open((Directory) MakeEmptyIndex(0), true, null)
 		                                                        })
 		                                };
-			IndexSearcher out_Renamed = new IndexSearcher(new MultiReader(readers));
+			IndexSearcher out_Renamed = new IndexSearcher(new MultiReader(readers), closeReader: true);
 			out_Renamed.Similarity = s.Similarity;
 			return out_Renamed;
 		}
@@ -517,12 +532,13 @@ namespace Lucene.Net.Search
                 // previous reader, hits NO_MORE_DOCS
                 IndexReader previousReader = lastReader[0];
                 Weight w = q.Weight(new IndexSearcher(previousReader), null);
-                Scorer scorer = w.Scorer(previousReader, true, false, null);
-
-				if (scorer != null)
-				{
-					bool more = scorer.Advance(lastDoc[0] + 1, null) != DocIdSetIterator.NO_MORE_DOCS;					
-					Assert.IsFalse(more, "query's last doc was " + lastDoc[0] + " but skipTo(" + (lastDoc[0] + 1) + ") got to " + scorer.DocID());
+                using (Scorer scorer = w.Scorer(previousReader, true, false, null))
+                {
+				    if (scorer != null)
+				    {
+					    bool more = scorer.Advance(lastDoc[0] + 1, null) != DocIdSetIterator.NO_MORE_DOCS;					
+					    Assert.IsFalse(more, "query's last doc was " + lastDoc[0] + " but skipTo(" + (lastDoc[0] + 1) + ") got to " + scorer.DocID());
+				    }
 				}
 			}
 		}

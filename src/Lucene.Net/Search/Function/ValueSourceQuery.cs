@@ -202,7 +202,7 @@ namespace Lucene.Net.Search.Function
 
             public override void Dispose()
             {
-                throw new NotImplementedException();
+                termDocs?.Dispose();
             }
         }
 

@@ -242,59 +242,62 @@ namespace Lucene.Net.Search.Function
 		private void  DoTestCustomScore(System.String field, FieldScoreQuery.Type tp, double dboost)
 		{
 			float boost = (float) dboost;
-			IndexSearcher s = new IndexSearcher(dir, true, null);
-			FieldScoreQuery qValSrc = new FieldScoreQuery(field, tp); // a query that would score by the field
-			QueryParser qp = new QueryParser(Util.Version.LUCENE_CURRENT, TEXT_FIELD, anlzr);
-			System.String qtxt = "first aid text"; // from the doc texts in FunctionQuerySetup.
-			
-			// regular (boolean) query.
-			Query q1 = qp.Parse(qtxt);
-			Log(q1);
-			
-			// custom query, that should score the same as q1.
-			CustomScoreQuery q2CustomNeutral = new CustomScoreQuery(q1);
-			q2CustomNeutral.Boost = boost;
-			Log(q2CustomNeutral);
-			
-			// custom query, that should (by default) multiply the scores of q1 by that of the field
-			CustomScoreQuery q3CustomMul = new CustomScoreQuery(q1, qValSrc);
-			q3CustomMul.SetStrict(true);
-			q3CustomMul.Boost = boost;
-			Log(q3CustomMul);
-			
-			// custom query, that should add the scores of q1 to that of the field
-			CustomScoreQuery q4CustomAdd = new CustomAddQuery(q1, qValSrc);
-			q4CustomAdd.SetStrict(true);
-			q4CustomAdd.Boost = boost;
-			Log(q4CustomAdd);
-			
-			// custom query, that multiplies and adds the field score to that of q1
-			CustomScoreQuery q5CustomMulAdd = new CustomMulAddQuery(q1, qValSrc, qValSrc);
-			q5CustomMulAdd.SetStrict(true);
-			q5CustomMulAdd.Boost = boost;
-			Log(q5CustomMulAdd);
-			
-			// do al the searches 
-			TopDocs td1 = s.Search(q1, null, 1000, null);
-			TopDocs td2CustomNeutral = s.Search(q2CustomNeutral, null, 1000, null);
-			TopDocs td3CustomMul = s.Search(q3CustomMul, null, 1000, null);
-			TopDocs td4CustomAdd = s.Search(q4CustomAdd, null, 1000, null);
-			TopDocs td5CustomMulAdd = s.Search(q5CustomMulAdd, null, 1000, null);
-			
-			// put results in map so we can verify the scores although they have changed
-			System.Collections.Hashtable h1 = TopDocsToMap(td1);
-			System.Collections.Hashtable h2CustomNeutral = TopDocsToMap(td2CustomNeutral);
-			System.Collections.Hashtable h3CustomMul = TopDocsToMap(td3CustomMul);
-			System.Collections.Hashtable h4CustomAdd = TopDocsToMap(td4CustomAdd);
-			System.Collections.Hashtable h5CustomMulAdd = TopDocsToMap(td5CustomMulAdd);
-			
-			VerifyResults(boost, s, h1, h2CustomNeutral, h3CustomMul, h4CustomAdd, h5CustomMulAdd, q1, q2CustomNeutral, q3CustomMul, q4CustomAdd, q5CustomMulAdd);
-		}
+            using (var r = IndexReader.Open(dir, true, null))
+            using (IndexSearcher s = new IndexSearcher(r))
+            {
+                FieldScoreQuery qValSrc = new FieldScoreQuery(field, tp); // a query that would score by the field
+                QueryParser qp = new QueryParser(Util.Version.LUCENE_CURRENT, TEXT_FIELD, anlzr);
+                System.String qtxt = "first aid text"; // from the doc texts in FunctionQuerySetup.
+
+                // regular (boolean) query.
+                Query q1 = qp.Parse(qtxt);
+                Log(q1);
+
+                // custom query, that should score the same as q1.
+                CustomScoreQuery q2CustomNeutral = new CustomScoreQuery(q1);
+                q2CustomNeutral.Boost = boost;
+                Log(q2CustomNeutral);
+
+                // custom query, that should (by default) multiply the scores of q1 by that of the field
+                CustomScoreQuery q3CustomMul = new CustomScoreQuery(q1, qValSrc);
+                q3CustomMul.SetStrict(true);
+                q3CustomMul.Boost = boost;
+                Log(q3CustomMul);
+
+                // custom query, that should add the scores of q1 to that of the field
+                CustomScoreQuery q4CustomAdd = new CustomAddQuery(q1, qValSrc);
+                q4CustomAdd.SetStrict(true);
+                q4CustomAdd.Boost = boost;
+                Log(q4CustomAdd);
+
+                // custom query, that multiplies and adds the field score to that of q1
+                CustomScoreQuery q5CustomMulAdd = new CustomMulAddQuery(q1, qValSrc, qValSrc);
+                q5CustomMulAdd.SetStrict(true);
+                q5CustomMulAdd.Boost = boost;
+                Log(q5CustomMulAdd);
+
+                // do al the searches 
+                TopDocs td1 = s.Search(q1, null, 1000, null);
+                TopDocs td2CustomNeutral = s.Search(q2CustomNeutral, null, 1000, null);
+                TopDocs td3CustomMul = s.Search(q3CustomMul, null, 1000, null);
+                TopDocs td4CustomAdd = s.Search(q4CustomAdd, null, 1000, null);
+                TopDocs td5CustomMulAdd = s.Search(q5CustomMulAdd, null, 1000, null);
+
+                // put results in map so we can verify the scores although they have changed
+                System.Collections.Hashtable h1 = TopDocsToMap(td1);
+                System.Collections.Hashtable h2CustomNeutral = TopDocsToMap(td2CustomNeutral);
+                System.Collections.Hashtable h3CustomMul = TopDocsToMap(td3CustomMul);
+                System.Collections.Hashtable h4CustomAdd = TopDocsToMap(td4CustomAdd);
+                System.Collections.Hashtable h5CustomMulAdd = TopDocsToMap(td5CustomMulAdd);
+
+                VerifyResults(boost, s, h1, h2CustomNeutral, h3CustomMul, h4CustomAdd, h5CustomMulAdd, q1,
+                    q2CustomNeutral, q3CustomMul, q4CustomAdd, q5CustomMulAdd);
+            }
+        }
 		
 		// verify results are as expected.
 		private void  VerifyResults(float boost, IndexSearcher s, System.Collections.Hashtable h1, System.Collections.Hashtable h2customNeutral, System.Collections.Hashtable h3CustomMul, System.Collections.Hashtable h4CustomAdd, System.Collections.Hashtable h5CustomMulAdd, Query q1, Query q2, Query q3, Query q4, Query q5)
 		{
-			
 			// verify numbers of matches
 			Log("#hits = " + h1.Count);
 			Assert.AreEqual(h1.Count, h2customNeutral.Count, "queries should have same #hits");
@@ -333,7 +336,7 @@ namespace Lucene.Net.Search.Function
 				LogResult("score5=", s, q5, doc, score5);
 				Assert.AreEqual(boost * fieldScore * (score1 + fieldScore), score5, TEST_SCORE_TOLERANCE_DELTA, "new score for custom mul add");
 			}
-		}
+        }
 		
 		private void  LogResult(System.String msg, IndexSearcher s, Query q, int doc, float score1)
 		{

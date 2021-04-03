@@ -111,7 +111,7 @@ namespace Lucene.Net.Search
             this.closeReader = false;
         }
 
-		private IndexSearcher(IndexReader r, bool closeReader)
+		internal IndexSearcher(IndexReader r, bool closeReader)
 		{
 			reader = r;
 			this.closeReader = closeReader;
