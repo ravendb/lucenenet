@@ -61,45 +61,67 @@ namespace Lucene.Net.Search.Spans
 			searcher = helper.SetUp(similarity, 1000);
 			indexReader = searcher.IndexReader;
 		}
-		
-		[Test]
+
+		[TearDown]
+        public override void TearDown()
+        {
+            base.TearDown();
+
+			searcher?.Dispose();
+            searcher = null;
+        }
+
+        [Test]
 		public virtual void  TestSpanTermQuery()
 		{
 			SpanTermQuery stq;
 			Spans spans;
 			stq = new SpanTermQuery(new Term(PayloadHelper.FIELD, "seventy"));
-			spans = stq.GetSpans(indexReader, null);
-			Assert.IsTrue(spans != null, "spans is null and it shouldn't be");
-			CheckSpans(spans, 100, 1, 1, 1);
-			
-			stq = new SpanTermQuery(new Term(PayloadHelper.NO_PAYLOAD_FIELD, "seventy"));
-			spans = stq.GetSpans(indexReader, null);
-			Assert.IsTrue(spans != null, "spans is null and it shouldn't be");
-			CheckSpans(spans, 100, 0, 0, 0);
-		}
+            using (spans = stq.GetSpans(indexReader, null))
+            {
+                Assert.IsTrue(spans != null, "spans is null and it shouldn't be");
+                CheckSpans(spans, 100, 1, 1, 1);
+            }
+
+            stq = new SpanTermQuery(new Term(PayloadHelper.NO_PAYLOAD_FIELD, "seventy"));
+            using (spans = stq.GetSpans(indexReader, null))
+            {
+                Assert.IsTrue(spans != null, "spans is null and it shouldn't be");
+                CheckSpans(spans, 100, 0, 0, 0);
+            }
+        }
 		
 		[Test]
 		public virtual void  TestSpanFirst()
 		{
-			
 			SpanQuery match;
 			SpanFirstQuery sfq;
 			match = new SpanTermQuery(new Term(PayloadHelper.FIELD, "one"));
 			sfq = new SpanFirstQuery(match, 2);
-			Spans spans = sfq.GetSpans(indexReader, null);
-			CheckSpans(spans, 109, 1, 1, 1);
-			//Test more complicated subclause
+            using (Spans spans = sfq.GetSpans(indexReader, null))
+            {
+                CheckSpans(spans, 109, 1, 1, 1);
+            }
+
+            //Test more complicated subclause
 			SpanQuery[] clauses = new SpanQuery[2];
 			clauses[0] = new SpanTermQuery(new Term(PayloadHelper.FIELD, "one"));
 			clauses[1] = new SpanTermQuery(new Term(PayloadHelper.FIELD, "hundred"));
 			match = new SpanNearQuery(clauses, 0, true);
 			sfq = new SpanFirstQuery(match, 2);
-			CheckSpans(sfq.GetSpans(indexReader, null), 100, 2, 1, 1);
-			
-			match = new SpanNearQuery(clauses, 0, false);
+            using (Spans spans = sfq.GetSpans(indexReader, null))
+            {
+                CheckSpans(spans, 100, 2, 1, 1);
+            }
+
+            match = new SpanNearQuery(clauses, 0, false);
 			sfq = new SpanFirstQuery(match, 2);
-			CheckSpans(sfq.GetSpans(indexReader, null), 100, 2, 1, 1);
-		}
+
+            using (Spans spans = sfq.GetSpans(indexReader, null))
+            {
+                CheckSpans(spans, 100, 2, 1, 1);
+            }
+        }
 		
 		[Test]
 		public virtual void  TestSpanNot()
@@ -109,8 +131,13 @@ namespace Lucene.Net.Search.Spans
 			clauses[1] = new SpanTermQuery(new Term(PayloadHelper.FIELD, "three"));
 			SpanQuery spq = new SpanNearQuery(clauses, 5, true);
 			SpanNotQuery snq = new SpanNotQuery(spq, new SpanTermQuery(new Term(PayloadHelper.FIELD, "two")));
-			CheckSpans(snq.GetSpans(GetSpanNotSearcher().IndexReader, null), 1, new int[]{2});
-		}
+
+			using (var searcher = GetSpanNotSearcher())
+            using (Spans spans = snq.GetSpans(searcher.IndexReader, null))
+            {
+                CheckSpans(spans, 1, new int[] {2});
+            }
+        }
 		
 		public virtual IndexSearcher GetSpanNotSearcher()
 		{
@@ -137,34 +164,38 @@ namespace Lucene.Net.Search.Spans
 			Spans spans;
 			IndexSearcher searcher = GetSearcher();
 			stq = new SpanTermQuery(new Term(PayloadHelper.FIELD, "mark"));
-			spans = stq.GetSpans(searcher.IndexReader, null);
-			Assert.IsTrue(spans != null, "spans is null and it shouldn't be");
-			CheckSpans(spans, 0, null);
-			
-			
-			SpanQuery[] clauses = new SpanQuery[3];
+            using (spans = stq.GetSpans(searcher.IndexReader, null))
+            {
+                Assert.IsTrue(spans != null, "spans is null and it shouldn't be");
+                CheckSpans(spans, 0, null);
+            }
+
+            SpanQuery[] clauses = new SpanQuery[3];
 			clauses[0] = new SpanTermQuery(new Term(PayloadHelper.FIELD, "rr"));
 			clauses[1] = new SpanTermQuery(new Term(PayloadHelper.FIELD, "yy"));
 			clauses[2] = new SpanTermQuery(new Term(PayloadHelper.FIELD, "xx"));
 			SpanNearQuery spanNearQuery = new SpanNearQuery(clauses, 12, false);
-			
-			spans = spanNearQuery.GetSpans(searcher.IndexReader, null);
-			Assert.IsTrue(spans != null, "spans is null and it shouldn't be");
-			CheckSpans(spans, 2, new int[]{3, 3});
-			
-			
-			clauses[0] = new SpanTermQuery(new Term(PayloadHelper.FIELD, "xx"));
+
+            using (spans = spanNearQuery.GetSpans(searcher.IndexReader, null))
+            {
+                Assert.IsTrue(spans != null, "spans is null and it shouldn't be");
+                CheckSpans(spans, 2, new int[] {3, 3});
+            }
+
+            clauses[0] = new SpanTermQuery(new Term(PayloadHelper.FIELD, "xx"));
 			clauses[1] = new SpanTermQuery(new Term(PayloadHelper.FIELD, "rr"));
 			clauses[2] = new SpanTermQuery(new Term(PayloadHelper.FIELD, "yy"));
 			
 			spanNearQuery = new SpanNearQuery(clauses, 6, true);
-			
-			
-			spans = spanNearQuery.GetSpans(searcher.IndexReader, null);
-			Assert.IsTrue(spans != null, "spans is null and it shouldn't be");
-			CheckSpans(spans, 1, new int[]{3});
-			
-			clauses = new SpanQuery[2];
+
+
+            using (spans = spanNearQuery.GetSpans(searcher.IndexReader, null))
+            {
+                Assert.IsTrue(spans != null, "spans is null and it shouldn't be");
+                CheckSpans(spans, 1, new int[] {3});
+            }
+
+            clauses = new SpanQuery[2];
 			
 			clauses[0] = new SpanTermQuery(new Term(PayloadHelper.FIELD, "xx"));
 			clauses[1] = new SpanTermQuery(new Term(PayloadHelper.FIELD, "rr"));
@@ -181,11 +212,15 @@ namespace Lucene.Net.Search.Spans
 			SpanNearQuery nestedSpanNearQuery = new SpanNearQuery(clauses2, 6, false);
 			
 			// yy within 6 of xx within 6 of rr
-			
-			spans = nestedSpanNearQuery.GetSpans(searcher.IndexReader, null);
-			Assert.IsTrue(spans != null, "spans is null and it shouldn't be");
-			CheckSpans(spans, 2, new int[]{3, 3});
-		}
+
+            using (spans = nestedSpanNearQuery.GetSpans(searcher.IndexReader, null))
+            {
+                Assert.IsTrue(spans != null, "spans is null and it shouldn't be");
+                CheckSpans(spans, 2, new int[] {3, 3});
+            }
+
+			searcher.Close();
+        }
 		
 		[Test]
 		public virtual void  TestFirstClauseWithoutPayload()
@@ -213,10 +248,14 @@ namespace Lucene.Net.Search.Spans
 			clauses3[1] = snq;
 			
 			SpanNearQuery nestedSpanNearQuery = new SpanNearQuery(clauses3, 6, false);
-			
-			spans = nestedSpanNearQuery.GetSpans(searcher.IndexReader, null);
-			Assert.IsTrue(spans != null, "spans is null and it shouldn't be");
-			CheckSpans(spans, 1, new int[]{3});
+
+            using (spans = nestedSpanNearQuery.GetSpans(searcher.IndexReader, null))
+            {
+                Assert.IsTrue(spans != null, "spans is null and it shouldn't be");
+                CheckSpans(spans, 1, new int[] {3});
+            }
+
+            searcher.Close();
 		}
 		
 		[Test]
@@ -250,10 +289,14 @@ namespace Lucene.Net.Search.Spans
 			clauses3[2] = spanNearQuery3;
 			
 			SpanNearQuery nestedSpanNearQuery = new SpanNearQuery(clauses3, 6, false);
-			
-			spans = nestedSpanNearQuery.GetSpans(searcher.IndexReader, null);
-			Assert.IsTrue(spans != null, "spans is null and it shouldn't be");
-			CheckSpans(spans, 2, new int[]{8, 8});
+
+            using (spans = nestedSpanNearQuery.GetSpans(searcher.IndexReader, null))
+            {
+                Assert.IsTrue(spans != null, "spans is null and it shouldn't be");
+                CheckSpans(spans, 2, new int[] {8, 8});
+            }
+
+            searcher.Close();
 		}
 		
 		[Test]
@@ -272,25 +315,29 @@ namespace Lucene.Net.Search.Spans
 			SpanTermQuery stq2 = new SpanTermQuery(new Term("content", "k"));
 			SpanQuery[] sqs = new SpanQuery[]{stq1, stq2};
 			SpanNearQuery snq = new SpanNearQuery(sqs, 1, true);
-			Spans spans = snq.GetSpans(is_Renamed.IndexReader, null);
-			
-			TopDocs topDocs = is_Renamed.Search(snq, 1, null);
-			System.Collections.Hashtable payloadSet = new System.Collections.Hashtable();
-			for (int i = 0; i < topDocs.ScoreDocs.Length; i++)
-			{
-				while (spans.Next(null))
-				{
-					System.Collections.Generic.ICollection<Memory<byte>> payloads = spans.GetPayload(null);
-					
-					for (System.Collections.IEnumerator it = payloads.GetEnumerator(); it.MoveNext(); )
-					{
-						CollectionsHelper.AddIfNotContains(payloadSet, new System.String(System.Text.UTF8Encoding.UTF8.GetChars(((Memory<byte>) it.Current).Span.ToArray())));
-					}
-				}
+			using (Spans spans = snq.GetSpans(is_Renamed.IndexReader, null))
+            {
+			    TopDocs topDocs = is_Renamed.Search(snq, 1, null);
+			    System.Collections.Hashtable payloadSet = new System.Collections.Hashtable();
+			    for (int i = 0; i < topDocs.ScoreDocs.Length; i++)
+			    {
+				    while (spans.Next(null))
+				    {
+					    System.Collections.Generic.ICollection<Memory<byte>> payloads = spans.GetPayload(null);
+					    
+					    for (System.Collections.IEnumerator it = payloads.GetEnumerator(); it.MoveNext(); )
+					    {
+						    CollectionsHelper.AddIfNotContains(payloadSet, new System.String(System.Text.UTF8Encoding.UTF8.GetChars(((Memory<byte>) it.Current).Span.ToArray())));
+					    }
+				    }
+			    }
+
+                Assert.AreEqual(2, payloadSet.Count);
+                Assert.IsTrue(payloadSet.Contains("a:Noise:10"));
+                Assert.IsTrue(payloadSet.Contains("k:Noise:11"));
 			}
-			Assert.AreEqual(2, payloadSet.Count);
-			Assert.IsTrue(payloadSet.Contains("a:Noise:10"));
-			Assert.IsTrue(payloadSet.Contains("k:Noise:11"));
+
+			is_Renamed.Close();
 		}
 		
 		[Test]
@@ -309,24 +356,27 @@ namespace Lucene.Net.Search.Spans
 			SpanTermQuery stq2 = new SpanTermQuery(new Term("content", "k"));
 			SpanQuery[] sqs = new SpanQuery[]{stq1, stq2};
 			SpanNearQuery snq = new SpanNearQuery(sqs, 0, true);
-			Spans spans = snq.GetSpans(is_Renamed.IndexReader, null);
-			
-			TopDocs topDocs = is_Renamed.Search(snq, 1, null);
-			System.Collections.Hashtable payloadSet = new System.Collections.Hashtable();
-			for (int i = 0; i < topDocs.ScoreDocs.Length; i++)
-			{
-				while (spans.Next(null))
-				{
-					System.Collections.Generic.ICollection<Memory<byte>> payloads = spans.GetPayload(null);
-					for (System.Collections.IEnumerator it = payloads.GetEnumerator(); it.MoveNext(); )
-					{
-						CollectionsHelper.AddIfNotContains(payloadSet, new System.String(System.Text.UTF8Encoding.UTF8.GetChars(((Memory<byte>) it.Current).Span.ToArray())));
-					}
-				}
+			using (Spans spans = snq.GetSpans(is_Renamed.IndexReader, null))
+            {
+			    TopDocs topDocs = is_Renamed.Search(snq, 1, null);
+			    System.Collections.Hashtable payloadSet = new System.Collections.Hashtable();
+			    for (int i = 0; i < topDocs.ScoreDocs.Length; i++)
+			    {
+				    while (spans.Next(null))
+				    {
+					    System.Collections.Generic.ICollection<Memory<byte>> payloads = spans.GetPayload(null);
+					    for (System.Collections.IEnumerator it = payloads.GetEnumerator(); it.MoveNext(); )
+					    {
+						    CollectionsHelper.AddIfNotContains(payloadSet, new System.String(System.Text.UTF8Encoding.UTF8.GetChars(((Memory<byte>) it.Current).Span.ToArray())));
+					    }
+				    }
+			    }
+			    Assert.AreEqual(2, payloadSet.Count);
+			    Assert.IsTrue(payloadSet.Contains("a:Noise:10"));
+			    Assert.IsTrue(payloadSet.Contains("k:Noise:11"));
 			}
-			Assert.AreEqual(2, payloadSet.Count);
-			Assert.IsTrue(payloadSet.Contains("a:Noise:10"));
-			Assert.IsTrue(payloadSet.Contains("k:Noise:11"));
+
+			is_Renamed.Close();
 		}
 
         [Test]
@@ -345,33 +395,37 @@ namespace Lucene.Net.Search.Spans
 			SpanTermQuery stq2 = new SpanTermQuery(new Term("content", "k"));
 			SpanQuery[] sqs = new SpanQuery[]{stq1, stq2};
 			SpanNearQuery snq = new SpanNearQuery(sqs, 0, true);
-			Spans spans = snq.GetSpans(is_Renamed.IndexReader, null);
-			
-			TopDocs topDocs = is_Renamed.Search(snq, 1, null);
-			System.Collections.Hashtable payloadSet = new System.Collections.Hashtable();
-			for (int i = 0; i < topDocs.ScoreDocs.Length; i++)
-			{
-				while (spans.Next(null))
-				{
-					System.Collections.Generic.ICollection<Memory<byte>> payloads = spans.GetPayload(null);
-					
-					for (System.Collections.IEnumerator it = payloads.GetEnumerator(); it.MoveNext(); )
-					{
-						CollectionsHelper.AddIfNotContains(payloadSet, new System.String(System.Text.UTF8Encoding.UTF8.GetChars(((Memory<byte>) it.Current).Span.ToArray())));
-					}
-				}
+			using (Spans spans = snq.GetSpans(is_Renamed.IndexReader, null))
+            {
+			    TopDocs topDocs = is_Renamed.Search(snq, 1, null);
+			    System.Collections.Hashtable payloadSet = new System.Collections.Hashtable();
+			    for (int i = 0; i < topDocs.ScoreDocs.Length; i++)
+			    {
+				    while (spans.Next(null))
+				    {
+					    System.Collections.Generic.ICollection<Memory<byte>> payloads = spans.GetPayload(null);
+					    
+					    for (System.Collections.IEnumerator it = payloads.GetEnumerator(); it.MoveNext(); )
+					    {
+						    CollectionsHelper.AddIfNotContains(payloadSet, new System.String(System.Text.UTF8Encoding.UTF8.GetChars(((Memory<byte>) it.Current).Span.ToArray())));
+					    }
+				    }
+			    }
+			    
+			    Assert.AreEqual(2, payloadSet.Count);
+			    if (DEBUG)
+			    {
+				    System.Collections.IEnumerator pit = payloadSet.GetEnumerator();
+				    while (pit.MoveNext())
+				    {
+					    System.Console.Out.WriteLine("match:" + pit.Current);
+				    }
+			    }
+			    Assert.IsTrue(payloadSet.Contains("a:Noise:10"));
+			    Assert.IsTrue(payloadSet.Contains("k:Noise:11"));
 			}
-			Assert.AreEqual(2, payloadSet.Count);
-			if (DEBUG)
-			{
-				System.Collections.IEnumerator pit = payloadSet.GetEnumerator();
-				while (pit.MoveNext())
-				{
-					System.Console.Out.WriteLine("match:" + pit.Current);
-				}
-			}
-			Assert.IsTrue(payloadSet.Contains("a:Noise:10"));
-			Assert.IsTrue(payloadSet.Contains("k:Noise:11"));
+
+			is_Renamed.Close();
 		}
 		
 		[Test]
@@ -402,6 +456,8 @@ namespace Lucene.Net.Search.Spans
 				if (DEBUG)
 					System.Console.Out.WriteLine(new System.String(System.Text.UTF8Encoding.UTF8.GetChars(bytes.Span.ToArray())));
 			}
+
+			searcher.Close();
 		}
 		
 		private void  CheckSpans(Spans spans, int expectedNumSpans, int expectedNumPayloads, int expectedPayloadLength, int expectedFirstByte)

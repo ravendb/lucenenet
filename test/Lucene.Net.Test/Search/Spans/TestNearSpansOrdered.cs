@@ -49,7 +49,8 @@ namespace Lucene.Net.Search.Spans
 		{
 			base.TearDown();
 			searcher.Close();
-		}
+            searcher = null;
+        }
 		
 		[SetUp]
 		public override void  SetUp()
@@ -98,13 +99,15 @@ namespace Lucene.Net.Search.Spans
 		public virtual void  TestNearSpansNext()
 		{
 			SpanNearQuery q = MakeQuery();
-			Spans span = q.GetSpans(searcher.IndexReader, null);
-			Assert.AreEqual(true, span.Next(null));
-			Assert.AreEqual(S(0, 0, 3), S(span));
-			Assert.AreEqual(true, span.Next(null));
-			Assert.AreEqual(S(1, 0, 4), S(span));
-			Assert.AreEqual(false, span.Next(null));
-		}
+            using (Spans span = q.GetSpans(searcher.IndexReader, null))
+            {
+                Assert.AreEqual(true, span.Next(null));
+                Assert.AreEqual(S(0, 0, 3), S(span));
+                Assert.AreEqual(true, span.Next(null));
+                Assert.AreEqual(S(1, 0, 4), S(span));
+                Assert.AreEqual(false, span.Next(null));
+            }
+        }
 		
 		/// <summary> test does not imply that skipTo(doc+1) should work exactly the
 		/// same as next -- it's only applicable in this case since we know doc
@@ -114,61 +117,73 @@ namespace Lucene.Net.Search.Spans
 		public virtual void  TestNearSpansSkipToLikeNext()
 		{
 			SpanNearQuery q = MakeQuery();
-			Spans span = q.GetSpans(searcher.IndexReader, null);
-			Assert.AreEqual(true, span.SkipTo(0, null));
-			Assert.AreEqual(S(0, 0, 3), S(span));
-			Assert.AreEqual(true, span.SkipTo(1, null));
-			Assert.AreEqual(S(1, 0, 4), S(span));
-			Assert.AreEqual(false, span.SkipTo(2, null));
-		}
+            using (Spans span = q.GetSpans(searcher.IndexReader, null))
+            {
+                Assert.AreEqual(true, span.SkipTo(0, null));
+                Assert.AreEqual(S(0, 0, 3), S(span));
+                Assert.AreEqual(true, span.SkipTo(1, null));
+                Assert.AreEqual(S(1, 0, 4), S(span));
+                Assert.AreEqual(false, span.SkipTo(2, null));
+            }
+        }
 		
 		[Test]
 		public virtual void  TestNearSpansNextThenSkipTo()
 		{
 			SpanNearQuery q = MakeQuery();
-			Spans span = q.GetSpans(searcher.IndexReader, null);
-			Assert.AreEqual(true, span.Next(null));
-			Assert.AreEqual(S(0, 0, 3), S(span));
-			Assert.AreEqual(true, span.SkipTo(1, null));
-			Assert.AreEqual(S(1, 0, 4), S(span));
-			Assert.AreEqual(false, span.Next(null));
-		}
+            using (Spans span = q.GetSpans(searcher.IndexReader, null))
+            {
+                Assert.AreEqual(true, span.Next(null));
+                Assert.AreEqual(S(0, 0, 3), S(span));
+                Assert.AreEqual(true, span.SkipTo(1, null));
+                Assert.AreEqual(S(1, 0, 4), S(span));
+                Assert.AreEqual(false, span.Next(null));
+            }
+        }
 		
 		[Test]
 		public virtual void  TestNearSpansNextThenSkipPast()
 		{
 			SpanNearQuery q = MakeQuery();
-			Spans span = q.GetSpans(searcher.IndexReader, null);
-			Assert.AreEqual(true, span.Next(null));
-			Assert.AreEqual(S(0, 0, 3), S(span));
-			Assert.AreEqual(false, span.SkipTo(2, null));
-		}
+            using (Spans span = q.GetSpans(searcher.IndexReader, null))
+            {
+                Assert.AreEqual(true, span.Next(null));
+                Assert.AreEqual(S(0, 0, 3), S(span));
+                Assert.AreEqual(false, span.SkipTo(2, null));
+            }
+        }
 		
 		[Test]
 		public virtual void  TestNearSpansSkipPast()
 		{
 			SpanNearQuery q = MakeQuery();
-			Spans span = q.GetSpans(searcher.IndexReader, null);
-			Assert.AreEqual(false, span.SkipTo(2, null));
-		}
+            using (Spans span = q.GetSpans(searcher.IndexReader, null))
+            {
+                Assert.AreEqual(false, span.SkipTo(2, null));
+            }
+        }
 		
 		[Test]
 		public virtual void  TestNearSpansSkipTo0()
 		{
 			SpanNearQuery q = MakeQuery();
-			Spans span = q.GetSpans(searcher.IndexReader, null);
-			Assert.AreEqual(true, span.SkipTo(0, null));
-			Assert.AreEqual(S(0, 0, 3), S(span));
-		}
+            using (Spans span = q.GetSpans(searcher.IndexReader, null))
+            {
+                Assert.AreEqual(true, span.SkipTo(0, null));
+                Assert.AreEqual(S(0, 0, 3), S(span));
+            }
+        }
 		
 		[Test]
 		public virtual void  TestNearSpansSkipTo1()
 		{
 			SpanNearQuery q = MakeQuery();
-			Spans span = q.GetSpans(searcher.IndexReader, null);
-			Assert.AreEqual(true, span.SkipTo(1, null));
-			Assert.AreEqual(S(1, 0, 4), S(span));
-		}
+            using (Spans span = q.GetSpans(searcher.IndexReader, null))
+            {
+                Assert.AreEqual(true, span.SkipTo(1, null));
+                Assert.AreEqual(S(1, 0, 4), S(span));
+            }
+        }
 		
 		/// <summary> not a direct test of NearSpans, but a demonstration of how/when
 		/// this causes problems
@@ -178,9 +193,11 @@ namespace Lucene.Net.Search.Spans
 		{
 			SpanNearQuery q = MakeQuery();
 			Weight w = q.Weight(searcher, null);
-			Scorer s = w.Scorer(searcher.IndexReader, true, false, null);
-			Assert.AreEqual(1, s.Advance(1, null));
-		}
+            using (Scorer s = w.Scorer(searcher.IndexReader, true, false, null))
+            {
+                Assert.AreEqual(1, s.Advance(1, null));
+            }
+        }
 		/// <summary> not a direct test of NearSpans, but a demonstration of how/when
 		/// this causes problems
 		/// </summary>
