@@ -349,22 +349,22 @@ namespace Lucene.Net.Search.Spans
 		{
 			SpanTermQuery t1 = new SpanTermQuery(new Term("field", "seventy"));
 			SpanTermQuery t2 = new SpanTermQuery(new Term("field", "seventy"));
-			Spans s1 = t1.GetSpans(searcher.IndexReader, null);
-			Spans s2 = t2.GetSpans(searcher.IndexReader, null);
-			
-			Assert.IsTrue(s1.Next(null));
-			Assert.IsTrue(s2.Next(null));
-			
-			bool hasMore = true;
-			
-			do 
-			{
-				hasMore = SkipToAccoringToJavaDocs(s1, s1.Doc());
-				Assert.AreEqual(hasMore, s2.SkipTo(s2.Doc(), null));
-				Assert.AreEqual(s1.Doc(), s2.Doc());
-			}
-			while (hasMore);
-		}
+			using (Spans s1 = t1.GetSpans(searcher.IndexReader, null))
+            using (Spans s2 = t2.GetSpans(searcher.IndexReader, null))
+            {
+                Assert.IsTrue(s1.Next(null));
+                Assert.IsTrue(s2.Next(null));
+
+                bool hasMore = true;
+
+                do
+                {
+                    hasMore = SkipToAccoringToJavaDocs(s1, s1.Doc());
+                    Assert.AreEqual(hasMore, s2.SkipTo(s2.Doc(), null));
+                    Assert.AreEqual(s1.Doc(), s2.Doc());
+                } while (hasMore);
+            }
+        }
 		
 		/// <summary>Skips to the first match beyond the current, whose document number is
 		/// greater than or equal to <i>target</i>. <p/>Returns true iff there is such
