@@ -117,8 +117,17 @@ namespace Lucene.Net.Search.Spans
 			writer.Close();
 			searcher = new IndexSearcher(directory, true, null);
 		}
-		
-		private System.String[] docFields = new System.String[]{"w1 w2 w3 w4 w5", "w1 w3 w2 w3", "w1 xx w2 yy w3", "w1 w3 xx w2 yy w3", "u2 u2 u1", "u2 xx u2 u1", "u2 u2 xx u1", "u2 xx u2 yy u1", "u2 xx u1 u2", "u2 u1 xx u2", "u1 u2 xx u2", "t1 t2 t1 t3 t2 t3"};
+
+		[TearDown]
+        public override void TearDown()
+        {
+            base.TearDown();
+
+			searcher?.Dispose();
+            searcher = null;
+        }
+
+        private System.String[] docFields = new System.String[]{"w1 w2 w3 w4 w5", "w1 w3 w2 w3", "w1 xx w2 yy w3", "w1 w3 xx w2 yy w3", "u2 u2 u1", "u2 xx u2 u1", "u2 u2 xx u1", "u2 xx u2 yy u1", "u2 xx u1 u2", "u2 u1 xx u2", "u1 u2 xx u2", "t1 t2 t1 t3 t2 t3"};
 		
 		public virtual SpanTermQuery MakeSpanTermQuery(System.String text)
 		{
@@ -242,20 +251,21 @@ namespace Lucene.Net.Search.Spans
 			bool ordered = true;
 			int slop = 1;
 			SpanNearQuery snq = new SpanNearQuery(new SpanQuery[]{MakeSpanTermQuery("t1"), MakeSpanTermQuery("t2"), MakeSpanTermQuery("t3")}, slop, ordered);
-			Spans spans = snq.GetSpans(searcher.IndexReader, null);
-			
-			Assert.IsTrue(spans.Next(null), "first range");
-			Assert.AreEqual(11, spans.Doc(), "first doc");
-			Assert.AreEqual(0, spans.Start(), "first start");
-			Assert.AreEqual(4, spans.End(), "first end");
-			
-			Assert.IsTrue(spans.Next(null), "second range");
-			Assert.AreEqual(11, spans.Doc(), "second doc");
-			Assert.AreEqual(2, spans.Start(), "second start");
-			Assert.AreEqual(6, spans.End(), "second end");
-			
-			Assert.IsFalse(spans.Next(null), "third range");
-		}
+            using (Spans spans = snq.GetSpans(searcher.IndexReader, null))
+            {
+                Assert.IsTrue(spans.Next(null), "first range");
+                Assert.AreEqual(11, spans.Doc(), "first doc");
+                Assert.AreEqual(0, spans.Start(), "first start");
+                Assert.AreEqual(4, spans.End(), "first end");
+
+                Assert.IsTrue(spans.Next(null), "second range");
+                Assert.AreEqual(11, spans.Doc(), "second doc");
+                Assert.AreEqual(2, spans.Start(), "second start");
+                Assert.AreEqual(6, spans.End(), "second end");
+
+                Assert.IsFalse(spans.Next(null), "third range");
+            }
+        }
 		
 		
 		[Test]
@@ -265,85 +275,89 @@ namespace Lucene.Net.Search.Spans
 			//See http://www.gossamer-threads.com/lists/lucene/java-dev/52270 for discussion about this test
 			SpanNearQuery snq;
 			snq = new SpanNearQuery(new SpanQuery[]{MakeSpanTermQuery("u1"), MakeSpanTermQuery("u2")}, 0, false);
-			Spans spans = snq.GetSpans(searcher.IndexReader, null);
-			Assert.IsTrue(spans.Next(null), "Does not have next and it should");
-			Assert.AreEqual(4, spans.Doc(), "doc");
-			Assert.AreEqual(1, spans.Start(), "start");
-			Assert.AreEqual(3, spans.End(), "end");
-			
-			Assert.IsTrue(spans.Next(null), "Does not have next and it should");
-			Assert.AreEqual(5, spans.Doc(), "doc");
-			Assert.AreEqual(2, spans.Start(), "start");
-			Assert.AreEqual(4, spans.End(), "end");
-			
-			Assert.IsTrue(spans.Next(null), "Does not have next and it should");
-			Assert.AreEqual(8, spans.Doc(), "doc");
-			Assert.AreEqual(2, spans.Start(), "start");
-			Assert.AreEqual(4, spans.End(), "end");
-			
-			Assert.IsTrue(spans.Next(null), "Does not have next and it should");
-			Assert.AreEqual(9, spans.Doc(), "doc");
-			Assert.AreEqual(0, spans.Start(), "start");
-			Assert.AreEqual(2, spans.End(), "end");
-			
-			Assert.IsTrue(spans.Next(null), "Does not have next and it should");
-			Assert.AreEqual(10, spans.Doc(), "doc");
-			Assert.AreEqual(0, spans.Start(), "start");
-			Assert.AreEqual(2, spans.End(), "end");
-			Assert.IsTrue(spans.Next(null) == false, "Has next and it shouldn't: " + spans.Doc());
-			
-			SpanNearQuery u1u2 = new SpanNearQuery(new SpanQuery[]{MakeSpanTermQuery("u1"), MakeSpanTermQuery("u2")}, 0, false);
+            using (Spans spans = snq.GetSpans(searcher.IndexReader, null))
+            {
+                Assert.IsTrue(spans.Next(null), "Does not have next and it should");
+                Assert.AreEqual(4, spans.Doc(), "doc");
+                Assert.AreEqual(1, spans.Start(), "start");
+                Assert.AreEqual(3, spans.End(), "end");
+
+                Assert.IsTrue(spans.Next(null), "Does not have next and it should");
+                Assert.AreEqual(5, spans.Doc(), "doc");
+                Assert.AreEqual(2, spans.Start(), "start");
+                Assert.AreEqual(4, spans.End(), "end");
+
+                Assert.IsTrue(spans.Next(null), "Does not have next and it should");
+                Assert.AreEqual(8, spans.Doc(), "doc");
+                Assert.AreEqual(2, spans.Start(), "start");
+                Assert.AreEqual(4, spans.End(), "end");
+
+                Assert.IsTrue(spans.Next(null), "Does not have next and it should");
+                Assert.AreEqual(9, spans.Doc(), "doc");
+                Assert.AreEqual(0, spans.Start(), "start");
+                Assert.AreEqual(2, spans.End(), "end");
+
+                Assert.IsTrue(spans.Next(null), "Does not have next and it should");
+                Assert.AreEqual(10, spans.Doc(), "doc");
+                Assert.AreEqual(0, spans.Start(), "start");
+                Assert.AreEqual(2, spans.End(), "end");
+                Assert.IsTrue(spans.Next(null) == false, "Has next and it shouldn't: " + spans.Doc());
+            }
+
+            SpanNearQuery u1u2 = new SpanNearQuery(new SpanQuery[]{MakeSpanTermQuery("u1"), MakeSpanTermQuery("u2")}, 0, false);
 			snq = new SpanNearQuery(new SpanQuery[]{u1u2, MakeSpanTermQuery("u2")}, 1, false);
-			spans = snq.GetSpans(searcher.IndexReader, null);
-			Assert.IsTrue(spans.Next(null), "Does not have next and it should");
-			Assert.AreEqual(4, spans.Doc(), "doc");
-			Assert.AreEqual(0, spans.Start(), "start");
-			Assert.AreEqual(3, spans.End(), "end");
-			
-			Assert.IsTrue(spans.Next(null), "Does not have next and it should");
-			//unordered spans can be subsets
-			Assert.AreEqual(4, spans.Doc(), "doc");
-			Assert.AreEqual(1, spans.Start(), "start");
-			Assert.AreEqual(3, spans.End(), "end");
-			
-			Assert.IsTrue(spans.Next(null), "Does not have next and it should");
-			Assert.AreEqual(5, spans.Doc(), "doc");
-			Assert.AreEqual(0, spans.Start(), "start");
-			Assert.AreEqual(4, spans.End(), "end");
-			
-			Assert.IsTrue(spans.Next(null), "Does not have next and it should");
-			Assert.AreEqual(5, spans.Doc(), "doc");
-			Assert.AreEqual(2, spans.Start(), "start");
-			Assert.AreEqual(4, spans.End(), "end");
-			
-			Assert.IsTrue(spans.Next(null), "Does not have next and it should");
-			Assert.AreEqual(8, spans.Doc(), "doc");
-			Assert.AreEqual(0, spans.Start(), "start");
-			Assert.AreEqual(4, spans.End(), "end");
-			
-			
-			Assert.IsTrue(spans.Next(null), "Does not have next and it should");
-			Assert.AreEqual(8, spans.Doc(), "doc");
-			Assert.AreEqual(2, spans.Start(), "start");
-			Assert.AreEqual(4, spans.End(), "end");
-			
-			Assert.IsTrue(spans.Next(null), "Does not have next and it should");
-			Assert.AreEqual(9, spans.Doc(), "doc");
-			Assert.AreEqual(0, spans.Start(), "start");
-			Assert.AreEqual(2, spans.End(), "end");
-			
-			Assert.IsTrue(spans.Next(null), "Does not have next and it should");
-			Assert.AreEqual(9, spans.Doc(), "doc");
-			Assert.AreEqual(0, spans.Start(), "start");
-			Assert.AreEqual(4, spans.End(), "end");
-			
-			Assert.IsTrue(spans.Next(null), "Does not have next and it should");
-			Assert.AreEqual(10, spans.Doc(), "doc");
-			Assert.AreEqual(0, spans.Start(), "start");
-			Assert.AreEqual(2, spans.End(), "end");
-			
-			Assert.IsTrue(spans.Next(null) == false, "Has next and it shouldn't");
-		}
+            using (var spans = snq.GetSpans(searcher.IndexReader, null))
+            {
+                Assert.IsTrue(spans.Next(null), "Does not have next and it should");
+                Assert.AreEqual(4, spans.Doc(), "doc");
+                Assert.AreEqual(0, spans.Start(), "start");
+                Assert.AreEqual(3, spans.End(), "end");
+
+                Assert.IsTrue(spans.Next(null), "Does not have next and it should");
+                //unordered spans can be subsets
+                Assert.AreEqual(4, spans.Doc(), "doc");
+                Assert.AreEqual(1, spans.Start(), "start");
+                Assert.AreEqual(3, spans.End(), "end");
+
+                Assert.IsTrue(spans.Next(null), "Does not have next and it should");
+                Assert.AreEqual(5, spans.Doc(), "doc");
+                Assert.AreEqual(0, spans.Start(), "start");
+                Assert.AreEqual(4, spans.End(), "end");
+
+                Assert.IsTrue(spans.Next(null), "Does not have next and it should");
+                Assert.AreEqual(5, spans.Doc(), "doc");
+                Assert.AreEqual(2, spans.Start(), "start");
+                Assert.AreEqual(4, spans.End(), "end");
+
+                Assert.IsTrue(spans.Next(null), "Does not have next and it should");
+                Assert.AreEqual(8, spans.Doc(), "doc");
+                Assert.AreEqual(0, spans.Start(), "start");
+                Assert.AreEqual(4, spans.End(), "end");
+
+
+                Assert.IsTrue(spans.Next(null), "Does not have next and it should");
+                Assert.AreEqual(8, spans.Doc(), "doc");
+                Assert.AreEqual(2, spans.Start(), "start");
+                Assert.AreEqual(4, spans.End(), "end");
+
+                Assert.IsTrue(spans.Next(null), "Does not have next and it should");
+                Assert.AreEqual(9, spans.Doc(), "doc");
+                Assert.AreEqual(0, spans.Start(), "start");
+                Assert.AreEqual(2, spans.End(), "end");
+
+                Assert.IsTrue(spans.Next(null), "Does not have next and it should");
+                Assert.AreEqual(9, spans.Doc(), "doc");
+                Assert.AreEqual(0, spans.Start(), "start");
+                Assert.AreEqual(4, spans.End(), "end");
+
+                Assert.IsTrue(spans.Next(null), "Does not have next and it should");
+                Assert.AreEqual(10, spans.Doc(), "doc");
+                Assert.AreEqual(0, spans.Start(), "start");
+                Assert.AreEqual(2, spans.End(), "end");
+
+                Assert.IsTrue(spans.Next(null) == false, "Has next and it shouldn't");
+            }
+        }
 		
 		
 		
@@ -368,86 +382,100 @@ namespace Lucene.Net.Search.Spans
 		[Test]
 		public virtual void  TestSpanOrEmpty()
 		{
-			Spans spans = OrSpans(new System.String[0]);
-			Assert.IsFalse(spans.Next(null), "empty next");
-			
-			SpanOrQuery a = new SpanOrQuery(new SpanQuery[0]);
-			SpanOrQuery b = new SpanOrQuery(new SpanQuery[0]);
-			Assert.IsTrue(a.Equals(b), "empty should equal");
-		}
+            using (Spans spans = OrSpans(new System.String[0]))
+            {
+                Assert.IsFalse(spans.Next(null), "empty next");
+
+                SpanOrQuery a = new SpanOrQuery(new SpanQuery[0]);
+                SpanOrQuery b = new SpanOrQuery(new SpanQuery[0]);
+                Assert.IsTrue(a.Equals(b), "empty should equal");
+            }
+        }
 		
 		[Test]
 		public virtual void  TestSpanOrSingle()
 		{
-			Spans spans = OrSpans(new System.String[]{"w5"});
-			TstNextSpans(spans, 0, 4, 5);
-			Assert.IsFalse(spans.Next(null), "final next");
-		}
+            using (Spans spans = OrSpans(new System.String[] {"w5"}))
+            {
+                TstNextSpans(spans, 0, 4, 5);
+                Assert.IsFalse(spans.Next(null), "final next");
+            }
+        }
 		
 		[Test]
 		public virtual void  TestSpanOrMovesForward()
 		{
-			Spans spans = OrSpans(new System.String[]{"w1", "xx"});
-			
-			spans.Next(null);
-			int doc = spans.Doc();
-			Assert.AreEqual(0, doc);
-			
-			spans.SkipTo(0, null);
-			doc = spans.Doc();
-			
-			// LUCENE-1583:
-			// according to Spans, a skipTo to the same doc or less
-			// should still call next() on the underlying Spans
-			Assert.AreEqual(1, doc);
-		}
+            using (Spans spans = OrSpans(new System.String[] {"w1", "xx"}))
+            {
+
+                spans.Next(null);
+                int doc = spans.Doc();
+                Assert.AreEqual(0, doc);
+
+                spans.SkipTo(0, null);
+                doc = spans.Doc();
+
+                // LUCENE-1583:
+                // according to Spans, a skipTo to the same doc or less
+                // should still call next() on the underlying Spans
+                Assert.AreEqual(1, doc);
+            }
+        }
 		
 		[Test]
 		public virtual void  TestSpanOrDouble()
 		{
-			Spans spans = OrSpans(new System.String[]{"w5", "yy"});
-			TstNextSpans(spans, 0, 4, 5);
-			TstNextSpans(spans, 2, 3, 4);
-			TstNextSpans(spans, 3, 4, 5);
-			TstNextSpans(spans, 7, 3, 4);
-			Assert.IsFalse(spans.Next(null), "final next");
-		}
+            using (Spans spans = OrSpans(new System.String[] {"w5", "yy"}))
+            {
+                TstNextSpans(spans, 0, 4, 5);
+                TstNextSpans(spans, 2, 3, 4);
+                TstNextSpans(spans, 3, 4, 5);
+                TstNextSpans(spans, 7, 3, 4);
+                Assert.IsFalse(spans.Next(null), "final next");
+            }
+        }
 		
 		[Test]
 		public virtual void  TestSpanOrDoubleSkip()
 		{
-			Spans spans = OrSpans(new System.String[]{"w5", "yy"});
-			Assert.IsTrue(spans.SkipTo(3, null), "initial skipTo");
-			Assert.AreEqual(3, spans.Doc(), "doc");
-			Assert.AreEqual(4, spans.Start(), "start");
-			Assert.AreEqual(5, spans.End(), "end");
-			TstNextSpans(spans, 7, 3, 4);
-			Assert.IsFalse(spans.Next(null), "final next");
-		}
+            using (Spans spans = OrSpans(new System.String[] {"w5", "yy"}))
+            {
+                Assert.IsTrue(spans.SkipTo(3, null), "initial skipTo");
+                Assert.AreEqual(3, spans.Doc(), "doc");
+                Assert.AreEqual(4, spans.Start(), "start");
+                Assert.AreEqual(5, spans.End(), "end");
+                TstNextSpans(spans, 7, 3, 4);
+                Assert.IsFalse(spans.Next(null), "final next");
+            }
+        }
 		
 		[Test]
 		public virtual void  TestSpanOrUnused()
 		{
-			Spans spans = OrSpans(new System.String[]{"w5", "unusedTerm", "yy"});
-			TstNextSpans(spans, 0, 4, 5);
-			TstNextSpans(spans, 2, 3, 4);
-			TstNextSpans(spans, 3, 4, 5);
-			TstNextSpans(spans, 7, 3, 4);
-			Assert.IsFalse(spans.Next(null), "final next");
-		}
+            using (Spans spans = OrSpans(new System.String[] {"w5", "unusedTerm", "yy"}))
+            {
+                TstNextSpans(spans, 0, 4, 5);
+                TstNextSpans(spans, 2, 3, 4);
+                TstNextSpans(spans, 3, 4, 5);
+                TstNextSpans(spans, 7, 3, 4);
+                Assert.IsFalse(spans.Next(null), "final next");
+            }
+        }
 		
 		[Test]
 		public virtual void  TestSpanOrTripleSameDoc()
 		{
-			Spans spans = OrSpans(new System.String[]{"t1", "t2", "t3"});
-			TstNextSpans(spans, 11, 0, 1);
-			TstNextSpans(spans, 11, 1, 2);
-			TstNextSpans(spans, 11, 2, 3);
-			TstNextSpans(spans, 11, 3, 4);
-			TstNextSpans(spans, 11, 4, 5);
-			TstNextSpans(spans, 11, 5, 6);
-			Assert.IsFalse(spans.Next(null), "final next");
-		}
+            using (Spans spans = OrSpans(new System.String[] {"t1", "t2", "t3"}))
+            {
+                TstNextSpans(spans, 11, 0, 1);
+                TstNextSpans(spans, 11, 1, 2);
+                TstNextSpans(spans, 11, 2, 3);
+                TstNextSpans(spans, 11, 3, 4);
+                TstNextSpans(spans, 11, 4, 5);
+                TstNextSpans(spans, 11, 5, 6);
+                Assert.IsFalse(spans.Next(null), "final next");
+            }
+        }
 		
 		[Test]
 		public virtual void  TestSpanScorerZeroSloppyFreq()
@@ -458,15 +486,16 @@ namespace Lucene.Net.Search.Spans
 			Similarity sim = new AnonymousClassDefaultSimilarity(this);
 			
 			SpanNearQuery snq = new AnonymousClassSpanNearQuery(sim, this, new SpanQuery[]{MakeSpanTermQuery("t1"), MakeSpanTermQuery("t2")}, slop, ordered);
-			
-			Scorer spanScorer = snq.Weight(searcher, null).Scorer(searcher.IndexReader, true, false, null);
-			
-			Assert.IsTrue(spanScorer.NextDoc(null) != DocIdSetIterator.NO_MORE_DOCS, "first doc");
-			Assert.AreEqual(spanScorer.DocID(), 11, "first doc number");
-			float score = spanScorer.Score(null);
-			Assert.IsTrue(score == 0.0f, "first doc score should be zero, " + score);
-			Assert.IsTrue(spanScorer.NextDoc(null) == DocIdSetIterator.NO_MORE_DOCS, "no second doc");
-		}
+
+            using (Scorer spanScorer = snq.Weight(searcher, null).Scorer(searcher.IndexReader, true, false, null))
+            {
+                Assert.IsTrue(spanScorer.NextDoc(null) != DocIdSetIterator.NO_MORE_DOCS, "first doc");
+                Assert.AreEqual(spanScorer.DocID(), 11, "first doc number");
+                float score = spanScorer.Score(null);
+                Assert.IsTrue(score == 0.0f, "first doc score should be zero, " + score);
+                Assert.IsTrue(spanScorer.NextDoc(null) == DocIdSetIterator.NO_MORE_DOCS, "no second doc");
+            }
+        }
 		
 		// LUCENE-1404
 		private void  AddDoc(IndexWriter writer, System.String id, System.String text)

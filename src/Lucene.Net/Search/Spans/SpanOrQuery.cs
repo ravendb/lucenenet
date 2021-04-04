@@ -66,6 +66,10 @@ namespace Lucene.Net.Search.Spans
 					{
 						queue.Add(spans);
 					}
+                    else
+                    {
+						spans.Dispose();
+                    }
 				}
 				return queue.Size() != 0;
 			}
