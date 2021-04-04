@@ -106,8 +106,12 @@ namespace Lucene.Net.Search
 			for (int i = - 1; i < 2; i++)
 			{
 				actual.Clear();
-				QueryUtils.WrapSearcher(searcher, i).Search(query, c, null);
-				Assert.AreEqual(correct, actual, "Wrap Searcher " + i + ": " + query.ToString(defaultFieldName));
+
+                using (var ws = QueryUtils.WrapSearcher(searcher, i))
+                {
+                    ws.Search(query, c, null);
+                    Assert.AreEqual(correct, actual, "Wrap Searcher " + i + ": " + query.ToString(defaultFieldName));
+                }
 			}
 			
 			if (!(searcher is IndexSearcher))
@@ -116,8 +120,11 @@ namespace Lucene.Net.Search
 			for (int i = - 1; i < 2; i++)
 			{
 				actual.Clear();
-				QueryUtils.WrapUnderlyingReader((IndexSearcher) searcher, i).Search(query, c, null);
-				Assert.AreEqual(correct, actual, "Wrap Reader " + i + ": " + query.ToString(defaultFieldName));
+                using (var ws = QueryUtils.WrapUnderlyingReader((IndexSearcher) searcher, i))
+                {
+                    ws.Search(query, c, null);
+                    Assert.AreEqual(correct, actual, "Wrap Reader " + i + ": " + query.ToString(defaultFieldName));
+                }
 			}
 		}
 		

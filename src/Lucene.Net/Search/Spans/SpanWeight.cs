@@ -108,32 +108,35 @@ namespace Lucene.Net.Search.Spans
 			// explain field weight
 			ComplexExplanation fieldExpl = new ComplexExplanation();
 			fieldExpl.Description = "fieldWeight(" + field + ":" + internalQuery.ToString(field) + " in " + doc + "), product of:";
-			
-			Explanation tfExpl = ((SpanScorer)Scorer(reader, true, false, state)).Explain(doc, state);
-			fieldExpl.AddDetail(tfExpl);
-			fieldExpl.AddDetail(idfExpl);
-			
-			Explanation fieldNormExpl = new Explanation();
-			Memory<byte> fieldNorms = reader.Norms(field, state);
-			float fieldNorm = fieldNorms.IsEmpty == false ? Similarity.DecodeNorm(fieldNorms.Span[doc]):1.0f;
-			fieldNormExpl.Value = fieldNorm;
-			fieldNormExpl.Description = "fieldNorm(field=" + field + ", doc=" + doc + ")";
-			fieldExpl.AddDetail(fieldNormExpl);
-			
-			fieldExpl.Match = tfExpl.IsMatch;
-			fieldExpl.Value = tfExpl.Value * idfExpl.Value * fieldNormExpl.Value;
-			
-			result.AddDetail(fieldExpl);
-			System.Boolean? tempAux = fieldExpl.Match;
-			result.Match = tempAux;
-			
-			// combine them
-			result.Value = queryExpl.Value * fieldExpl.Value;
-			
-			if (queryExpl.Value == 1.0f)
-				return fieldExpl;
-			
-			return result;
+
+            using (var scorer = (SpanScorer) Scorer(reader, true, false, state))
+            {
+                Explanation tfExpl = scorer.Explain(doc, state);
+                fieldExpl.AddDetail(tfExpl);
+                fieldExpl.AddDetail(idfExpl);
+            
+                Explanation fieldNormExpl = new Explanation();
+			    Memory<byte> fieldNorms = reader.Norms(field, state);
+			    float fieldNorm = fieldNorms.IsEmpty == false ? Similarity.DecodeNorm(fieldNorms.Span[doc]):1.0f;
+			    fieldNormExpl.Value = fieldNorm;
+			    fieldNormExpl.Description = "fieldNorm(field=" + field + ", doc=" + doc + ")";
+			    fieldExpl.AddDetail(fieldNormExpl);
+			    
+			    fieldExpl.Match = tfExpl.IsMatch;
+			    fieldExpl.Value = tfExpl.Value * idfExpl.Value * fieldNormExpl.Value;
+			    
+			    result.AddDetail(fieldExpl);
+			    System.Boolean? tempAux = fieldExpl.Match;
+			    result.Match = tempAux;
+			    
+			    // combine them
+			    result.Value = queryExpl.Value * fieldExpl.Value;
+			    
+			    if (queryExpl.Value == 1.0f)
+				    return fieldExpl;
+			    
+			    return result;
+            }
 		}
 	}
 }

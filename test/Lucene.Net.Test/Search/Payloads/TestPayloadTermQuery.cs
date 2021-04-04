@@ -180,7 +180,16 @@ namespace Lucene.Net.Search.Payloads
 			searcher = new IndexSearcher(directory, true, null);
 			searcher.Similarity = similarity;
 		}
-		
+
+		[TearDown]
+        public override void TearDown()
+        {
+            base.TearDown();
+
+			searcher?.Dispose();
+            searcher = null;
+        }
+
         [Test]
 		public virtual void  Test()
 		{
@@ -199,14 +208,16 @@ namespace Lucene.Net.Search.Payloads
 				Assert.IsTrue(doc.Score == 1, doc.Score + " does not equal: " + 1);
 			}
 			CheckHits.CheckExplanations(query, PayloadHelper.FIELD, searcher, true);
-			Lucene.Net.Search.Spans.Spans spans = query.GetSpans(searcher.IndexReader, null);
-			Assert.IsTrue(spans != null, "spans is null and it shouldn't be");
-			Assert.IsTrue(spans is TermSpans, "spans is not an instanceof " + typeof(TermSpans));
-            /*float score = hits.score(0);
-            for (int i =1; i < hits.length(); i++)
+            using (Lucene.Net.Search.Spans.Spans spans = query.GetSpans(searcher.IndexReader, null))
             {
-            Assert.IsTrue(score == hits.score(i), "scores are not equal and they should be");
-            }*/
+                Assert.IsTrue(spans != null, "spans is null and it shouldn't be");
+                Assert.IsTrue(spans is TermSpans, "spans is not an instanceof " + typeof(TermSpans));
+                /*float score = hits.score(0);
+                for (int i =1; i < hits.length(); i++)
+                {
+                Assert.IsTrue(score == hits.score(i), "scores are not equal and they should be");
+                }*/
+            }
         }
 		
         [Test]
@@ -255,18 +266,21 @@ namespace Lucene.Net.Search.Payloads
 			}
 			Assert.IsTrue(numTens == 10, numTens + " does not equal: " + 10);
 			CheckHits.CheckExplanations(query, "field", searcher, true);
-			Lucene.Net.Search.Spans.Spans spans = query.GetSpans(searcher.IndexReader, null);
-			Assert.IsTrue(spans != null, "spans is null and it shouldn't be");
-			Assert.IsTrue(spans is TermSpans, "spans is not an instanceof " + typeof(TermSpans));
-			//should be two matches per document
-			int count = 0;
-			//100 hits times 2 matches per hit, we should have 200 in count
-			while (spans.Next(null))
-			{
-				count++;
-			}
-			Assert.IsTrue(count == 200, count + " does not equal: " + 200);
-		}
+            using (Lucene.Net.Search.Spans.Spans spans = query.GetSpans(searcher.IndexReader, null))
+            {
+                Assert.IsTrue(spans != null, "spans is null and it shouldn't be");
+                Assert.IsTrue(spans is TermSpans, "spans is not an instanceof " + typeof(TermSpans));
+                //should be two matches per document
+                int count = 0;
+                //100 hits times 2 matches per hit, we should have 200 in count
+                while (spans.Next(null))
+                {
+                    count++;
+                }
+
+                Assert.IsTrue(count == 200, count + " does not equal: " + 200);
+            }
+        }
 		
 		//Set includeSpanScore to false, in which case just the payload score comes through.
         [Test]
@@ -303,17 +317,21 @@ namespace Lucene.Net.Search.Payloads
 			}
 			Assert.IsTrue(numTens == 10, numTens + " does not equal: " + 10);
 			CheckHits.CheckExplanations(query, "field", searcher, true);
-			Lucene.Net.Search.Spans.Spans spans = query.GetSpans(searcher.IndexReader, null);
-			Assert.IsTrue(spans != null, "spans is null and it shouldn't be");
-			Assert.IsTrue(spans is TermSpans, "spans is not an instanceof " + typeof(TermSpans));
-			//should be two matches per document
-			int count = 0;
-			//100 hits times 2 matches per hit, we should have 200 in count
-			while (spans.Next(null))
-			{
-				count++;
-			}
-		}
+            using (Lucene.Net.Search.Spans.Spans spans = query.GetSpans(searcher.IndexReader, null))
+            {
+                Assert.IsTrue(spans != null, "spans is null and it shouldn't be");
+                Assert.IsTrue(spans is TermSpans, "spans is not an instanceof " + typeof(TermSpans));
+                //should be two matches per document
+                int count = 0;
+                //100 hits times 2 matches per hit, we should have 200 in count
+                while (spans.Next(null))
+                {
+                    count++;
+                }
+            }
+
+            theSearcher.Dispose();
+        }
 		
         [Test]
 		public virtual void  TestNoMatch()

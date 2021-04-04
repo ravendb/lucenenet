@@ -297,37 +297,40 @@ namespace Lucene.Net.Search
                     cIter.MoveNext();
                     Weight w = wIter.Current;
 					BooleanClause c = cIter.Current;
-					if (w.Scorer(reader, true, true, state) == null)
-					{
-						continue;
-					}
-					Explanation e = w.Explain(reader, doc, state);
-                    if (!c.IsProhibited)
-						maxCoord++;
-					if (e.IsMatch)
-					{
+					using (var scorer = w.Scorer(reader, true, true, state))
+                    {
+					    if (scorer == null)
+					    {
+						    continue;
+					    }
+					    Explanation e = w.Explain(reader, doc, state);
                         if (!c.IsProhibited)
-						{
-							sumExpl.AddDetail(e);
-							sum += e.Value;
-							coord++;
-						}
-						else
-						{
-                            Explanation r = new Explanation(0.0f, "match on prohibited clause (" + c.Query.ToString() + ")");
-							r.AddDetail(e);
-							sumExpl.AddDetail(r);
-							fail = true;
-						}
-						if (c.Occur == Occur.SHOULD)
-							shouldMatchCount++;
-					}
-                    else if (c.IsRequired)
-					{
-                        Explanation r = new Explanation(0.0f, "no match on required clause (" + c.Query.ToString() + ")");
-						r.AddDetail(e);
-						sumExpl.AddDetail(r);
-						fail = true;
+						    maxCoord++;
+					    if (e.IsMatch)
+					    {
+                            if (!c.IsProhibited)
+						    {
+							    sumExpl.AddDetail(e);
+							    sum += e.Value;
+							    coord++;
+						    }
+						    else
+						    {
+                                Explanation r = new Explanation(0.0f, "match on prohibited clause (" + c.Query.ToString() + ")");
+							    r.AddDetail(e);
+							    sumExpl.AddDetail(r);
+							    fail = true;
+						    }
+						    if (c.Occur == Occur.SHOULD)
+							    shouldMatchCount++;
+					    }
+                        else if (c.IsRequired)
+					    {
+                            Explanation r = new Explanation(0.0f, "no match on required clause (" + c.Query.ToString() + ")");
+						    r.AddDetail(e);
+						    sumExpl.AddDetail(r);
+						    fail = true;
+					    }
 					}
 				}
 				if (fail)

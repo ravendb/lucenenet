@@ -43,7 +43,7 @@ namespace Lucene.Net.Search
 			}
 		}
 
-		private class AnonymousClassCollector:Collector
+		private class AnonymousClassCollector:Collector, IDisposable
 		{
 			public AnonymousClassCollector(int[] order, int[] opidx, int skip_op, IndexReader[] lastReader, float maxDiff, Query q, IndexSearcher s, int[] lastDoc)
 			{
@@ -81,14 +81,14 @@ namespace Lucene.Net.Search
 			
 			public override void  Collect(int doc, IState state)
 			{
-				float score = sc.Score(null);
+				float score = sc.Score(state);
 			    lastDoc[0] = doc;
 				try
 				{
                     if (scorer == null)
                     {
-                        Weight w = q.Weight(s, null);
-                        scorer = w.Scorer(reader, true, false, null);
+                        Weight w = q.Weight(s, state);
+                        scorer = w.Scorer(reader, true, false, state);
                     }
 					int op = order[(opidx[0]++) % order.Length];
 					// System.out.println(op==skip_op ?
@@ -97,8 +97,8 @@ namespace Lucene.Net.Search
 				                    ? scorer.Advance(scorer.DocID() + 1, null) != DocIdSetIterator.NO_MORE_DOCS
 				                    : scorer.NextDoc(null) != DocIdSetIterator.NO_MORE_DOCS;
 					int scorerDoc = scorer.DocID();
-					float scorerScore = scorer.Score(null);
-					float scorerScore2 = scorer.Score(null);
+					float scorerScore = scorer.Score(state);
+					float scorerScore2 = scorer.Score(state);
 					float scoreDiff = System.Math.Abs(score - scorerScore);
 					float scorerDiff = System.Math.Abs(scorerScore2 - scorerScore);
 					if (!more || doc != scorerDoc || scoreDiff > maxDiff || scorerDiff > maxDiff)
@@ -130,13 +130,17 @@ namespace Lucene.Net.Search
                 if (lastReader[0] != null) {
                   IndexReader previousReader = lastReader[0];
                   Weight w = q.Weight(new IndexSearcher(previousReader), null);
-                  Scorer scorer = w.Scorer(previousReader, true, false, null);
-                  if (scorer != null) {
-                    bool more = scorer.Advance(lastDoc[0] + 1, null) != DocIdSetIterator.NO_MORE_DOCS;
-                    Assert.IsFalse(more, "query's last doc was "+ lastDoc[0] +" but skipTo("+(lastDoc[0]+1)+") got to "+scorer.DocID());
-                  }
+                  using (Scorer scorer = w.Scorer(previousReader, true, false, null))
+                  {
+                      if (scorer != null)
+                      {
+                          bool more = scorer.Advance(lastDoc[0] + 1, null) != DocIdSetIterator.NO_MORE_DOCS;
+                          Assert.IsFalse(more, "query's last doc was "+ lastDoc[0] +" but skipTo("+(lastDoc[0]+1)+") got to "+scorer.DocID());
+                      }
+				  }
                 }
                 this.reader = reader;
+				this.scorer?.Dispose();
                 this.scorer = null;
                 lastDoc[0] = -1;
 			}
@@ -145,7 +149,13 @@ namespace Lucene.Net.Search
 		    {
 		        get { return true; }
 		    }
-		}
+
+            public void Dispose()
+            {
+                scorer?.Dispose();
+                scorer = null;
+            }
+        }
 		private class AnonymousClassCollector1:Collector
 		{
 			public AnonymousClassCollector1(int[] lastDoc, Lucene.Net.Search.Query q, Lucene.Net.Search.IndexSearcher s, float maxDiff, IndexReader[] lastReader)
@@ -498,7 +508,8 @@ namespace Lucene.Net.Search
 				float maxDiff = 1e-5f;
 			    IndexReader[] lastReader = new IndexReader[] {null};
 
-				s.Search(q, new AnonymousClassCollector(order, opidx, skip_op, lastReader, maxDiff, q, s, lastDoc), null);
+				using (var collector = new AnonymousClassCollector(order, opidx, skip_op, lastReader, maxDiff, q, s, lastDoc))
+				    s.Search(q, collector, null);
 
                 if (lastReader[0] != null)
                 {
@@ -506,12 +517,14 @@ namespace Lucene.Net.Search
                     // previous reader, hits NO_MORE_DOCS
                     IndexReader previousReader = lastReader[0];
                     Weight w = q.Weight(new IndexSearcher(previousReader), null);
-                    Scorer scorer = w.Scorer(previousReader, true, false, null);
-                    if (scorer != null)
+                    using (Scorer scorer = w.Scorer(previousReader, true, false, null))
                     {
-                        bool more = scorer.Advance(lastDoc[0] + 1, null) != DocIdSetIterator.NO_MORE_DOCS;
-                        Assert.IsFalse(more, "query's last doc was " + lastDoc[0] + " but skipTo(" + (lastDoc[0] + 1) + ") got to " + scorer.DocID());
-                    }
+                        if (scorer != null)
+                        {
+                            bool more = scorer.Advance(lastDoc[0] + 1, null) != DocIdSetIterator.NO_MORE_DOCS;
+                            Assert.IsFalse(more, "query's last doc was " + lastDoc[0] + " but skipTo(" + (lastDoc[0] + 1) + ") got to " + scorer.DocID());
+                        }
+					}
                 }
 			}
 		}

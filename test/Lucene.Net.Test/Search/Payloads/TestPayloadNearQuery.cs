@@ -179,6 +179,7 @@ namespace Lucene.Net.Search.Payloads
             base.TearDown();
 
 			searcher?.Dispose();
+            searcher = null;
         }
 
         [Test]
