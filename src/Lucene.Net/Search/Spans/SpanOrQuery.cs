@@ -90,7 +90,7 @@ namespace Lucene.Net.Search.Spans
 					return true;
 				}
 				
-				queue.Pop(); // exhausted a clause
+				queue.Pop().Dispose(); // exhausted a clause
 				return queue.Size() != 0;
 			}
 			
@@ -115,7 +115,7 @@ namespace Lucene.Net.Search.Spans
 					}
 					else
 					{
-						queue.Pop();
+						queue.Pop().Dispose();
 					}
 					skipCalled = true;
 				}
@@ -143,10 +143,10 @@ namespace Lucene.Net.Search.Spans
 		    public override ICollection<Memory<byte>> GetPayload(IState state)
 		    {
 		        System.Collections.Generic.ICollection<Memory<byte>> result = null;
-		        Spans theTop = Top();
-		        if (theTop != null && theTop.IsPayloadAvailable())
+		        Spans top = Top();
+		        if (top != null && top.IsPayloadAvailable())
 		        {
-		            result = theTop.GetPayload(state);
+		            result = top.GetPayload(state);
 		        }
 		        return result;
 		    }
@@ -159,7 +159,11 @@ namespace Lucene.Net.Search.Spans
 
             public override void Dispose()
             {
-                throw new NotImplementedException();
+                if (queue == null)
+                    return;
+
+                while (queue.Size() > 0)
+                    queue.Pop().Dispose();
             }
 
             public override System.String ToString()

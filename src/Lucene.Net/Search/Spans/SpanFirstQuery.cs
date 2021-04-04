@@ -108,7 +108,8 @@ namespace Lucene.Net.Search.Spans
 
             public override void Dispose()
             {
-                throw new NotImplementedException();
+				spans?.Dispose();
+                spans = null;
             }
 
             public override System.String ToString()

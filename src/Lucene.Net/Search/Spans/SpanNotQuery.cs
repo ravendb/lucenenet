@@ -144,7 +144,11 @@ namespace Lucene.Net.Search.Spans
 
             public override void Dispose()
             {
-                throw new NotImplementedException();
+                excludeSpans?.Dispose();
+                excludeSpans = null;
+
+				includeSpans?.Dispose();
+                includeSpans = null;
             }
 
             public override System.String ToString()

@@ -244,40 +244,43 @@ namespace Lucene.Net.Search
 				// explain field weight
 				Explanation fieldExpl = new Explanation();
 				fieldExpl.Description = "fieldWeight(" + Enclosing_Instance.field + ":" + query + " in " + doc + "), product of:";
-				
-				PhraseScorer scorer = (PhraseScorer)Scorer(reader, true, false, state);
-				if (scorer == null)
-				{
-					return new Explanation(0.0f, "no matching docs");
-				}
-                Explanation tfExplanation = new Explanation();
-                int d = scorer.Advance(doc, state);
-                float phraseFreq = (d == doc) ? scorer.CurrentFreq() : 0.0f;
-                tfExplanation.Value = similarity.Tf(phraseFreq);
-                tfExplanation.Description = "tf(phraseFreq=" + phraseFreq + ")";
 
-                fieldExpl.AddDetail(tfExplanation);
-				fieldExpl.AddDetail(idfExpl);
-				
-				Explanation fieldNormExpl = new Explanation();
-				Memory<byte> fieldNorms = reader.Norms(Enclosing_Instance.field, state);
-				float fieldNorm = fieldNorms.IsEmpty == false ? Similarity.DecodeNorm(fieldNorms.Span[doc]):1.0f;
-				fieldNormExpl.Value = fieldNorm;
-				fieldNormExpl.Description = "fieldNorm(field=" + Enclosing_Instance.field + ", doc=" + doc + ")";
-				fieldExpl.AddDetail(fieldNormExpl);
+                using (PhraseScorer scorer = (PhraseScorer) Scorer(reader, true, false, state))
+                {
+                    if (scorer == null)
+                    {
+                        return new Explanation(0.0f, "no matching docs");
+                    }
 
-                fieldExpl.Value = tfExplanation.Value * idfExpl.Value * fieldNormExpl.Value;
-				
-				result.AddDetail(fieldExpl);
-				
-				// combine them
-				result.Value = queryExpl.Value * fieldExpl.Value;
-				
-				if (queryExpl.Value == 1.0f)
-					return fieldExpl;
-				
-				return result;
-			}
+                    Explanation tfExplanation = new Explanation();
+                    int d = scorer.Advance(doc, state);
+                    float phraseFreq = (d == doc) ? scorer.CurrentFreq() : 0.0f;
+                    tfExplanation.Value = similarity.Tf(phraseFreq);
+                    tfExplanation.Description = "tf(phraseFreq=" + phraseFreq + ")";
+
+                    fieldExpl.AddDetail(tfExplanation);
+                    fieldExpl.AddDetail(idfExpl);
+
+                    Explanation fieldNormExpl = new Explanation();
+                    Memory<byte> fieldNorms = reader.Norms(Enclosing_Instance.field, state);
+                    float fieldNorm = fieldNorms.IsEmpty == false ? Similarity.DecodeNorm(fieldNorms.Span[doc]) : 1.0f;
+                    fieldNormExpl.Value = fieldNorm;
+                    fieldNormExpl.Description = "fieldNorm(field=" + Enclosing_Instance.field + ", doc=" + doc + ")";
+                    fieldExpl.AddDetail(fieldNormExpl);
+
+                    fieldExpl.Value = tfExplanation.Value * idfExpl.Value * fieldNormExpl.Value;
+
+                    result.AddDetail(fieldExpl);
+
+                    // combine them
+                    result.Value = queryExpl.Value * fieldExpl.Value;
+
+                    if (queryExpl.Value == 1.0f)
+                        return fieldExpl;
+
+                    return result;
+                }
+            }
 		}
 		
 		public override Weight CreateWeight(Searcher searcher, IState state)

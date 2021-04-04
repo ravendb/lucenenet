@@ -73,8 +73,17 @@ namespace Lucene.Net.Search.Spans
 			
 			searcher = new IndexSearcher(directory, true, null);
 		}
-		
-		[Test]
+
+		[TearDown]
+        public override void TearDown()
+        {
+            base.TearDown();
+
+			searcher?.Dispose();
+            searcher = null;
+        }
+
+        [Test]
 		public virtual void  TestTerm()
 		{
 			Query query = new TermQuery(new Term("field", "seventy"));
