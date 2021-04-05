@@ -210,11 +210,13 @@ namespace Lucene.Net.Search
 		{
 			if (numScorers == 1)
 			{
+				subScorers[0]?.Dispose();
 				subScorers[0] = null;
 				numScorers = 0;
 			}
 			else
 			{
+				subScorers[0]?.Dispose();
 				subScorers[0] = subScorers[numScorers - 1];
 				subScorers[numScorers - 1] = null;
 				--numScorers;

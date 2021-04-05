@@ -187,6 +187,10 @@ namespace Lucene.Net.Search
 					{
 						scorers[idx++] = subScorer;
 					}
+                    else
+                    {
+						subScorer?.Dispose();
+                    }
 				}
 				if (idx == 0)
 					return null; // all scorers did not have documents

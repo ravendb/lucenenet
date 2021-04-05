@@ -184,6 +184,7 @@ namespace Lucene.Net.Search
             writer.AddDocument(doc, null);
 
             reader = RefreshReader(reader);
+            searcher.Dispose();
             searcher = new IndexSearcher(reader);
 
             TopDocs docs = searcher.Search(new MatchAllDocsQuery(), 1, null);
@@ -204,6 +205,7 @@ namespace Lucene.Net.Search
             writer.DeleteDocuments(new Term("id", "1"), null);
 
             reader = RefreshReader(reader);
+            searcher.Dispose();
             searcher = new IndexSearcher(reader);
 
             docs = searcher.Search(new MatchAllDocsQuery(), filter, 1, null);
@@ -218,6 +220,7 @@ namespace Lucene.Net.Search
 
             writer.AddDocument(doc, null);
             reader = RefreshReader(reader);
+            searcher.Dispose();
             searcher = new IndexSearcher(reader);
 
             docs = searcher.Search(new MatchAllDocsQuery(), filter, 1, null);
@@ -232,6 +235,7 @@ namespace Lucene.Net.Search
             IndexReader newReader = RefreshReader(reader);
             Assert.IsTrue(reader != newReader);
             reader = newReader;
+            searcher.Dispose();
             searcher = new IndexSearcher(reader);
             int missCount = filter.missCount;
             docs = searcher.Search(constantScore, 1, null);
@@ -257,6 +261,7 @@ namespace Lucene.Net.Search
 
             writer.AddDocument(doc, null);
             reader = RefreshReader(reader);
+            searcher.Dispose();
             searcher = new IndexSearcher(reader);
 
             docs = searcher.Search(new MatchAllDocsQuery(), filter, 1, null);
@@ -269,6 +274,7 @@ namespace Lucene.Net.Search
             writer.DeleteDocuments(new Term("id", "1"), null);
 
             reader = RefreshReader(reader);
+            searcher.Dispose();
             searcher = new IndexSearcher(reader);
 
             docs = searcher.Search(new MatchAllDocsQuery(), filter, 1, null);
@@ -280,6 +286,10 @@ namespace Lucene.Net.Search
 
             // doesn't count as a miss
             Assert.AreEqual(missCount, filter.missCount);
+
+            searcher.Dispose();
+            reader.Dispose();
+            writer.Dispose();
         }
 
         private static IndexReader RefreshReader(IndexReader reader)
