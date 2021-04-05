@@ -321,6 +321,8 @@ namespace Lucene.Net.Search
 			query = new FuzzyQuery(new Term("field", "sdfsdfsdfsdf"), 0.9f);
 			hits = searcher.Search(query, null, 1000, null).ScoreDocs;
 			Assert.AreEqual(0, hits.Length);
+
+			searcher.Dispose();
 		}
 		
 		[Test]

@@ -83,10 +83,11 @@ namespace Lucene.Net.Search
                 booleanQuery.Add(new TermQuery(new Term(FIELD, "36")), Occur.SHOULD);
 
 
-                IndexSearcher indexSearcher = new IndexSearcher(directory, null);
-                ScoreDoc[] hits = indexSearcher.Search(booleanQuery, filter, 1000, null).ScoreDocs;
-                Assert.AreEqual(1, hits.Length, "Number of matched documents");
-
+                using (IndexSearcher indexSearcher = new IndexSearcher(directory, null))
+                {
+                    ScoreDoc[] hits = indexSearcher.Search(booleanQuery, filter, 1000, null).ScoreDocs;
+                    Assert.AreEqual(1, hits.Length, "Number of matched documents");
+                }
             }
             catch (System.IO.IOException e)
             {

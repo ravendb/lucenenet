@@ -69,17 +69,18 @@ namespace Lucene.Net.Search
 			
 			// this TermEnum gives "piccadilly", "pie" and "pizza".
 			System.String prefix = "pi";
-			TermEnum te = ir.Terms(new Term("body", prefix), null);
-			do 
-			{
-				if (te.Term.Text.StartsWith(prefix))
-				{
-					termsWithPrefix.Add(te.Term);
-				}
-			}
-			while (te.Next(null));
-			
-			query1.Add((Term[]) termsWithPrefix.ToArray(typeof(Term)));
+            using (TermEnum te = ir.Terms(new Term("body", prefix), null))
+            {
+                do
+                {
+                    if (te.Term.Text.StartsWith(prefix))
+                    {
+                        termsWithPrefix.Add(te.Term);
+                    }
+                } while (te.Next(null));
+            }
+
+            query1.Add((Term[]) termsWithPrefix.ToArray(typeof(Term)));
 			Assert.AreEqual("body:\"blueberry (piccadilly pie pizza)\"", query1.ToString());
 			query2.Add((Term[]) termsWithPrefix.ToArray(typeof(Term)));
 			Assert.AreEqual("body:\"strawberry (piccadilly pie pizza)\"", query2.ToString());
@@ -94,16 +95,18 @@ namespace Lucene.Net.Search
 			MultiPhraseQuery query3 = new MultiPhraseQuery();
 			termsWithPrefix.Clear();
 			prefix = "blue";
-			te = ir.Terms(new Term("body", prefix), null);
-			do 
-			{
-				if (te.Term.Text.StartsWith(prefix))
-				{
-					termsWithPrefix.Add(te.Term);
-				}
-			}
-			while (te.Next(null));
-			query3.Add((Term[]) termsWithPrefix.ToArray(typeof(Term)));
+            using (var te = ir.Terms(new Term("body", prefix), null))
+            {
+                do
+                {
+                    if (te.Term.Text.StartsWith(prefix))
+                    {
+                        termsWithPrefix.Add(te.Term);
+                    }
+                } while (te.Next(null));
+            }
+
+            query3.Add((Term[]) termsWithPrefix.ToArray(typeof(Term)));
 			query3.Add(new Term("body", "pizza"));
 			
 			result = searcher.Search(query3, null, 1000, null).ScoreDocs;
@@ -125,6 +128,7 @@ namespace Lucene.Net.Search
 		                                         });
 			
 			searcher.Close();
+			ir.Dispose();
 			indexStore.Close();
 		}
 		
