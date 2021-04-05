@@ -141,8 +141,20 @@ namespace Lucene.Net.Search
 			s = new IndexSearcher(r);
 			s.Similarity = sim;
 		}
-		
-		[Test]
+
+		[TearDown]
+        public override void TearDown()
+        {
+            base.TearDown();
+
+			r?.Dispose();
+            r = null;
+
+            s?.Dispose();
+            s = null;
+        }
+
+        [Test]
 		public virtual void  TestSkipToFirsttimeMiss()
 		{
 			DisjunctionMaxQuery dq = new DisjunctionMaxQuery(0.0f);
@@ -170,10 +182,12 @@ namespace Lucene.Net.Search
 			QueryUtils.Check(dq, s);
 			
 			Weight dw = dq.Weight(s, null);
-			Scorer ds = dw.Scorer(r, true, false, null);
-			Assert.IsTrue(ds.Advance(3, null) != DocIdSetIterator.NO_MORE_DOCS, "firsttime skipTo found no match");
-			Assert.AreEqual("d4", r.Document(ds.DocID(), null).Get("id", null), "found wrong docid");
-		}
+            using (Scorer ds = dw.Scorer(r, true, false, null))
+            {
+                Assert.IsTrue(ds.Advance(3, null) != DocIdSetIterator.NO_MORE_DOCS, "firsttime skipTo found no match");
+                Assert.AreEqual("d4", r.Document(ds.DocID(), null).Get("id", null), "found wrong docid");
+            }
+        }
 		
 		[Test]
 		public virtual void  TestSimpleEqualScores1()

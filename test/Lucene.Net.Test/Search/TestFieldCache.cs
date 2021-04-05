@@ -64,8 +64,17 @@ namespace Lucene.Net.Search
 			writer.Close();
 		    reader = IndexReader.Open((Directory) directory, true, null);
 		}
-		
-		[Test]
+
+		[TearDown]
+        public override void TearDown()
+        {
+            base.TearDown();
+
+			reader?.Dispose();
+            reader = null;
+        }
+
+        [Test]
 		public virtual void  TestInfoStream()
 		{
 			try

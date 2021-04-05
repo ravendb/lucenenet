@@ -134,6 +134,9 @@ namespace Lucene.Net.Search
 			
 			result = Search.Search(q, FieldCacheRangeFilter.NewStringRange("id", medIP, medIP, T, T), numDocs, null).ScoreDocs;
 			Assert.AreEqual(1, result.Length, "med,med,T,T");
+
+			reader.Dispose();
+			Search.Dispose();
 		}
 		
         [Test]
@@ -197,6 +200,9 @@ namespace Lucene.Net.Search
 			Assert.AreEqual(1, result.Length, "max,max,T,T");
 			result = Search.Search(q, FieldCacheRangeFilter.NewStringRange("rand", maxRP, null, T, F), numDocs, null).ScoreDocs;
 			Assert.AreEqual(1, result.Length, "max,nul,T,T");
+
+            reader.Dispose();
+            Search.Dispose();
 		}
 		
 		// byte-ranges cannot be tested, because all ranges are too big for bytes, need an extra range for that
@@ -293,6 +299,9 @@ namespace Lucene.Net.Search
 			Assert.AreEqual(0, result.Length, "overflow special case");
 			result = Search.Search(q, FieldCacheRangeFilter.NewShortRange("id", maxIdO, minIdO, T, T), numDocs, null).ScoreDocs;
 			Assert.AreEqual(0, result.Length, "inverse range");
+
+            reader.Dispose();
+            Search.Dispose();
 		}
 		
         [Test]
@@ -387,6 +396,9 @@ namespace Lucene.Net.Search
 			Assert.AreEqual(0, result.Length, "overflow special case");
 			result = Search.Search(q, FieldCacheRangeFilter.NewIntRange("id", maxIdO, minIdO, T, T), numDocs, null).ScoreDocs;
 			Assert.AreEqual(0, result.Length, "inverse range");
+
+            reader.Dispose();
+            Search.Dispose();
 		}
 		
         [Test]
@@ -481,6 +493,9 @@ namespace Lucene.Net.Search
 			Assert.AreEqual(0, result.Length, "overflow special case");
 			result = Search.Search(q, FieldCacheRangeFilter.NewLongRange("id", maxIdO, minIdO, T, T), numDocs, null).ScoreDocs;
 			Assert.AreEqual(0, result.Length, "inverse range");
+
+            reader.Dispose();
+            Search.Dispose();
 		}
 		
 		// float and double tests are a bit minimalistic, but its complicated, because missing precision
@@ -515,6 +530,9 @@ namespace Lucene.Net.Search
 			System.Single tempAux2 = (float) System.Single.NegativeInfinity;
 			result = Search.Search(q, FieldCacheRangeFilter.NewFloatRange("id", null, tempAux2, F, F), numDocs, null).ScoreDocs;
 			Assert.AreEqual(0, result.Length, "infinity special case");
+
+            reader.Dispose();
+            Search.Dispose();
 		}
 		
         [Test]
@@ -547,53 +565,59 @@ namespace Lucene.Net.Search
 			System.Double tempAux2 = (double) System.Double.NegativeInfinity;
 			result = Search.Search(q, FieldCacheRangeFilter.NewDoubleRange("id", null, tempAux2, F, F), numDocs, null).ScoreDocs;
 			Assert.AreEqual(0, result.Length, "infinity special case");
+
+            reader.Dispose();
+            Search.Dispose();
 		}
 
         [Test]
         // test using a sparse index (with deleted docs). The DocIdSet should be not cacheable, as it uses TermDocs if the range contains 0
-  public void TestSparseIndex()
+        public void TestSparseIndex()
         {
-    RAMDirectory dir = new RAMDirectory();
-    IndexWriter writer = new IndexWriter(dir, new SimpleAnalyzer(), T, IndexWriter.MaxFieldLength.LIMITED, null);
+            RAMDirectory dir = new RAMDirectory();
+            IndexWriter writer = new IndexWriter(dir, new SimpleAnalyzer(), T, IndexWriter.MaxFieldLength.LIMITED, null);
 
-    for (int d = -20; d <= 20; d++) {
-      Document doc = new Document();
-      doc.Add(new Field("id",d.ToString(), Field.Store.NO, Field.Index.NOT_ANALYZED));
-      doc.Add(new Field("body","body", Field.Store.NO, Field.Index.NOT_ANALYZED));
-      writer.AddDocument(doc, null);
-    }
-    
-    writer.Optimize(null);
-    writer.DeleteDocuments(null, new Term("id","0"));
-    writer.Close();
+            for (int d = -20; d <= 20; d++) {
+              Document doc = new Document();
+              doc.Add(new Field("id",d.ToString(), Field.Store.NO, Field.Index.NOT_ANALYZED));
+              doc.Add(new Field("body","body", Field.Store.NO, Field.Index.NOT_ANALYZED));
+              writer.AddDocument(doc, null);
+            }
+            
+            writer.Optimize(null);
+            writer.DeleteDocuments(null, new Term("id","0"));
+            writer.Close();
 
-    IndexReader reader = IndexReader.Open((Directory) dir, true, null);
-    IndexSearcher Search = new IndexSearcher(reader);
-    Assert.True(reader.HasDeletions);
+            IndexReader reader = IndexReader.Open((Directory) dir, true, null);
+            IndexSearcher Search = new IndexSearcher(reader);
+            Assert.True(reader.HasDeletions);
 
-    ScoreDoc[] result;
-    Query q = new TermQuery(new Term("body","body"));
+            ScoreDoc[] result;
+            Query q = new TermQuery(new Term("body","body"));
 
-    FieldCacheRangeFilter<sbyte?> fcrf;
-    result = Search.Search(q, fcrf = FieldCacheRangeFilter.NewByteRange("id", -20, 20, T, T), 100, null).ScoreDocs;
-    Assert.False(fcrf.GetDocIdSet(reader.GetSequentialSubReaders()[0], null).IsCacheable, "DocIdSet must be not cacheable");
-    Assert.AreEqual(40, result.Length, "find all");
+            FieldCacheRangeFilter<sbyte?> fcrf;
+            result = Search.Search(q, fcrf = FieldCacheRangeFilter.NewByteRange("id", -20, 20, T, T), 100, null).ScoreDocs;
+            Assert.False(fcrf.GetDocIdSet(reader.GetSequentialSubReaders()[0], null).IsCacheable, "DocIdSet must be not cacheable");
+            Assert.AreEqual(40, result.Length, "find all");
 
-    result = Search.Search(q, fcrf = FieldCacheRangeFilter.NewByteRange("id", 0, 20, T, T), 100, null).ScoreDocs;
-    Assert.False(fcrf.GetDocIdSet(reader.GetSequentialSubReaders()[0], null).IsCacheable, "DocIdSet must be not cacheable");
-    Assert.AreEqual( 20, result.Length, "find all");
+            result = Search.Search(q, fcrf = FieldCacheRangeFilter.NewByteRange("id", 0, 20, T, T), 100, null).ScoreDocs;
+            Assert.False(fcrf.GetDocIdSet(reader.GetSequentialSubReaders()[0], null).IsCacheable, "DocIdSet must be not cacheable");
+            Assert.AreEqual( 20, result.Length, "find all");
 
-            result = Search.Search(q, fcrf = FieldCacheRangeFilter.NewByteRange("id", -20, 0, T, T), 100, null).ScoreDocs;
-    Assert.False(fcrf.GetDocIdSet(reader.GetSequentialSubReaders()[0], null).IsCacheable, "DocIdSet must be not cacheable");
-    Assert.AreEqual( 20, result.Length, "find all");
+                    result = Search.Search(q, fcrf = FieldCacheRangeFilter.NewByteRange("id", -20, 0, T, T), 100, null).ScoreDocs;
+            Assert.False(fcrf.GetDocIdSet(reader.GetSequentialSubReaders()[0], null).IsCacheable, "DocIdSet must be not cacheable");
+            Assert.AreEqual( 20, result.Length, "find all");
 
-    result = Search.Search(q, fcrf = FieldCacheRangeFilter.NewByteRange("id", 10, 20, T, T), 100, null).ScoreDocs;
-    Assert.True(fcrf.GetDocIdSet(reader.GetSequentialSubReaders()[0], null).IsCacheable, "DocIdSet must be not cacheable");
-    Assert.AreEqual( 11, result.Length, "find all");
+            result = Search.Search(q, fcrf = FieldCacheRangeFilter.NewByteRange("id", 10, 20, T, T), 100, null).ScoreDocs;
+            Assert.True(fcrf.GetDocIdSet(reader.GetSequentialSubReaders()[0], null).IsCacheable, "DocIdSet must be not cacheable");
+            Assert.AreEqual( 11, result.Length, "find all");
 
-    result = Search.Search(q, fcrf = FieldCacheRangeFilter.NewByteRange("id", -20, -10, T, T), 100, null).ScoreDocs;
-    Assert.True(fcrf.GetDocIdSet(reader.GetSequentialSubReaders()[0], null).IsCacheable, "DocIdSet must be not cacheable");
-    Assert.AreEqual( 11, result.Length, "find all");
-  }
-	}
+            result = Search.Search(q, fcrf = FieldCacheRangeFilter.NewByteRange("id", -20, -10, T, T), 100, null).ScoreDocs;
+            Assert.True(fcrf.GetDocIdSet(reader.GetSequentialSubReaders()[0], null).IsCacheable, "DocIdSet must be not cacheable");
+            Assert.AreEqual( 11, result.Length, "find all");
+
+            reader.Dispose();
+            Search.Dispose();
+        }
+    }	
 }

@@ -112,16 +112,19 @@ namespace Lucene.Net.Search
 			writer.Close();
 			
 			float[] scores = new float[4];
+
+            using (var searcher = new IndexSearcher(store, true, null))
+            {
+                searcher.Search(new TermQuery(new Term("field", "word")), new AnonymousClassCollector(scores, this), null);
 			
-			new IndexSearcher(store, true, null).Search(new TermQuery(new Term("field", "word")), new AnonymousClassCollector(scores, this), null);
+                float lastScore = 0.0f;
 			
-			float lastScore = 0.0f;
-			
-			for (int i = 0; i < 4; i++)
-			{
-				Assert.IsTrue(scores[i] > lastScore);
-				lastScore = scores[i];
-			}
+                for (int i = 0; i < 4; i++)
+                {
+                    Assert.IsTrue(scores[i] > lastScore);
+                    lastScore = scores[i];
+                }
+            }
 		}
 	}
 }

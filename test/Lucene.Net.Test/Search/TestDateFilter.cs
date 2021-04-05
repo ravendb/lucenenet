@@ -96,6 +96,8 @@ namespace Lucene.Net.Search
 			
 			result = searcher.Search(query2, df2, 1000, null).ScoreDocs;
 			Assert.AreEqual(0, result.Length);
+
+			searcher.Dispose();
 		}
 		
 		/// <summary> </summary>
@@ -153,6 +155,8 @@ namespace Lucene.Net.Search
 			
 			result = searcher.Search(query2, df2, 1000, null).ScoreDocs;
 			Assert.AreEqual(0, result.Length);
+
+			searcher.Dispose();
 		}
 	}
 }
