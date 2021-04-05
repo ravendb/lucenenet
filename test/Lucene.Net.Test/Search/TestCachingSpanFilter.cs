@@ -48,6 +48,7 @@ namespace Lucene.Net.Search
             writer.AddDocument(doc, null);
 
             reader = RefreshReader(reader);
+            searcher.Dispose();
             searcher = new IndexSearcher(reader);
 
             TopDocs docs = searcher.Search(new MatchAllDocsQuery(), 1, null);
@@ -68,6 +69,7 @@ namespace Lucene.Net.Search
             writer.DeleteDocuments(null, new Term("id", "1"));
 
             reader = RefreshReader(reader);
+            searcher.Dispose();
             searcher = new IndexSearcher(reader);
 
             docs = searcher.Search(new MatchAllDocsQuery(), filter, 1, null);
@@ -82,6 +84,7 @@ namespace Lucene.Net.Search
 
             writer.AddDocument(doc, null);
             reader = RefreshReader(reader);
+            searcher.Dispose();
             searcher = new IndexSearcher(reader);
 
             docs = searcher.Search(new MatchAllDocsQuery(), filter, 1, null);
@@ -96,6 +99,7 @@ namespace Lucene.Net.Search
             IndexReader newReader = RefreshReader(reader);
             Assert.IsTrue(reader != newReader);
             reader = newReader;
+            searcher.Dispose();
             searcher = new IndexSearcher(reader);
             int missCount = filter.missCount;
             docs = searcher.Search(constantScore, 1, null);
@@ -106,6 +110,7 @@ namespace Lucene.Net.Search
             writer.DeleteDocuments(null, new Term("id", "1"));
 
             reader = RefreshReader(reader);
+            searcher.Dispose();
             searcher = new IndexSearcher(reader);
 
             docs = searcher.Search(new MatchAllDocsQuery(), filter, 1, null);
@@ -113,6 +118,10 @@ namespace Lucene.Net.Search
 
             docs = searcher.Search(constantScore, 1, null);
             Assert.AreEqual(0, docs.TotalHits, "[just filter] Should *not* find a hit...");
+
+            searcher.Dispose();
+            reader.Dispose();
+            writer.Dispose();
         }
 
         private static IndexReader RefreshReader(IndexReader reader)

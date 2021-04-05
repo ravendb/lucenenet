@@ -68,24 +68,28 @@ namespace Lucene.Net.Search
 		{
 			
 			OpenBitSet bits = new OpenBitSet(reader.MaxDoc);
-			Lucene.Net.Search.Spans.Spans spans = internalQuery.GetSpans(reader, state);
-			IList<SpanFilterResult.PositionInfo> tmp = new List<SpanFilterResult.PositionInfo>(20);
-			int currentDoc = - 1;
-			SpanFilterResult.PositionInfo currentInfo = null;
-			while (spans.Next(state))
-			{
-				int doc = spans.Doc();
-				bits.Set(doc);
-				if (currentDoc != doc)
-				{
-					currentInfo = new SpanFilterResult.PositionInfo(doc);
-					tmp.Add(currentInfo);
-					currentDoc = doc;
-				}
-				currentInfo.AddPosition(spans.Start(), spans.End());
-			}
-			return new SpanFilterResult(bits, tmp);
-		}
+            using (Lucene.Net.Search.Spans.Spans spans = internalQuery.GetSpans(reader, state))
+            {
+                IList<SpanFilterResult.PositionInfo> tmp = new List<SpanFilterResult.PositionInfo>(20);
+                int currentDoc = -1;
+                SpanFilterResult.PositionInfo currentInfo = null;
+                while (spans.Next(state))
+                {
+                    int doc = spans.Doc();
+                    bits.Set(doc);
+                    if (currentDoc != doc)
+                    {
+                        currentInfo = new SpanFilterResult.PositionInfo(doc);
+                        tmp.Add(currentInfo);
+                        currentDoc = doc;
+                    }
+
+                    currentInfo.AddPosition(spans.Start(), spans.End());
+                }
+
+                return new SpanFilterResult(bits, tmp);
+            }
+        }
 
 
 	    public virtual SpanQuery Query

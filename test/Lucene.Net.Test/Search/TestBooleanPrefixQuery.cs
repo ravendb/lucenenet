@@ -110,6 +110,8 @@ namespace Lucene.Net.Search
 			}
 			
 			Assert.AreEqual(GetCount(reader, rw1), GetCount(reader, rw2), "Number of Clauses Mismatch");
+
+			reader.Close();
 		}
 	}
 }

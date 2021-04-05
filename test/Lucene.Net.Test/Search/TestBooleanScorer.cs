@@ -114,6 +114,8 @@ namespace Lucene.Net.Search
 				IndexSearcher indexSearcher = new IndexSearcher(directory, true, null);
 				ScoreDoc[] hits = indexSearcher.Search(query, null, 1000, null).ScoreDocs;
 				Assert.AreEqual(2, hits.Length, "Number of matched documents");
+
+				indexSearcher.Dispose();
 			}
 			catch (System.IO.IOException e)
 			{

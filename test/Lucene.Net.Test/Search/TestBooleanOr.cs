@@ -158,5 +158,14 @@ namespace Lucene.Net.Search
 			//
 		    searcher = new IndexSearcher(rd, true, null);
 		}
-	}
+
+		[TearDown]
+        public override void TearDown()
+        {
+            base.TearDown();
+
+			searcher?.Dispose();
+            searcher = null;
+        }
+    }
 }

@@ -245,57 +245,63 @@ namespace Lucene.Net.Search
 		{
 			
 			System.Diagnostics.Debug.Assert(filter != null);
-			
-			Scorer scorer = weight.Scorer(reader, true, false, state);
-			if (scorer == null)
-			{
-				return ;
-			}
-			
-			int docID = scorer.DocID();
-			System.Diagnostics.Debug.Assert(docID == - 1 || docID == DocIdSetIterator.NO_MORE_DOCS);
-			
-			// CHECKME: use ConjunctionScorer here?
-			DocIdSet filterDocIdSet = filter.GetDocIdSet(reader, state);
-			if (filterDocIdSet == null)
-			{
-				// this means the filter does not accept any documents.
-				return ;
-			}
-			
-			DocIdSetIterator filterIter = filterDocIdSet.Iterator(state);
-			if (filterIter == null)
-			{
-				// this means the filter does not accept any documents.
-				return ;
-			}
-			int filterDoc = filterIter.NextDoc(state);
-			int scorerDoc = scorer.Advance(filterDoc, state);
-			
-			collector.SetScorer(scorer);
-			while (true)
-			{
-				if (scorerDoc == filterDoc)
-				{
-					// Check if scorer has exhausted, only before collecting.
-					if (scorerDoc == DocIdSetIterator.NO_MORE_DOCS)
-					{
-						break;
-					}
-					collector.Collect(scorerDoc, state);
-					filterDoc = filterIter.NextDoc(state);
-					scorerDoc = scorer.Advance(filterDoc, state);
-				}
-				else if (scorerDoc > filterDoc)
-				{
-					filterDoc = filterIter.Advance(scorerDoc, state);
-				}
-				else
-				{
-					scorerDoc = scorer.Advance(filterDoc, state);
-				}
-			}
-		}
+
+            using (Scorer scorer = weight.Scorer(reader, true, false, state))
+            {
+                if (scorer == null)
+                {
+                    return;
+                }
+
+                int docID = scorer.DocID();
+                System.Diagnostics.Debug.Assert(docID == -1 || docID == DocIdSetIterator.NO_MORE_DOCS);
+
+                // CHECKME: use ConjunctionScorer here?
+                DocIdSet filterDocIdSet = filter.GetDocIdSet(reader, state);
+                if (filterDocIdSet == null)
+                {
+                    // this means the filter does not accept any documents.
+                    return;
+                }
+
+                using (DocIdSetIterator filterIter = filterDocIdSet.Iterator(state))
+                {
+                    if (filterIter == null)
+                    {
+                        // this means the filter does not accept any documents.
+                        return;
+                    }
+
+                    int filterDoc = filterIter.NextDoc(state);
+                    int scorerDoc = scorer.Advance(filterDoc, state);
+
+                    collector.SetScorer(scorer);
+                    while (true)
+                    {
+                        if (scorerDoc == filterDoc)
+                        {
+                            // Check if scorer has exhausted, only before collecting.
+                            if (scorerDoc == DocIdSetIterator.NO_MORE_DOCS)
+                            {
+                                break;
+                            }
+
+                            collector.Collect(scorerDoc, state);
+                            filterDoc = filterIter.NextDoc(state);
+                            scorerDoc = scorer.Advance(filterDoc, state);
+                        }
+                        else if (scorerDoc > filterDoc)
+                        {
+                            filterDoc = filterIter.Advance(scorerDoc, state);
+                        }
+                        else
+                        {
+                            scorerDoc = scorer.Advance(filterDoc, state);
+                        }
+                    }
+                }
+            }
+        }
 		
 		public override Query Rewrite(Query original, IState state)
 		{
