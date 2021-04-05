@@ -215,6 +215,9 @@ namespace Lucene.Net.Search
 			{
 				AssertEquals("score for " + i + " was not the same", score, result[i].Score);
 			}
+
+			search.Dispose();
+			reader.Dispose();
 		}
 		
         [Test]
@@ -270,6 +273,9 @@ namespace Lucene.Net.Search
 			Assert.AreEqual(0, hits[0].Doc);
 			Assert.AreEqual(1, hits[1].Doc);
 			Assert.IsTrue(hits[0].Score > hits[1].Score);
+
+            search.Dispose();
+            reader.Dispose();
 		}
 		
         [Test]
@@ -302,6 +308,9 @@ namespace Lucene.Net.Search
 			{
 				AssertEquals("mismatch in docid for hit#" + i, expected[i].Doc, actual[i].Doc);
 			}
+
+            search.Dispose();
+            reader.Dispose();
 		}
 		
         [Test]
@@ -431,6 +440,9 @@ namespace Lucene.Net.Search
 			
 			result = search.Search(Csrq("id", medIP, medIP, T, T, MultiTermQuery.CONSTANT_SCORE_AUTO_REWRITE_DEFAULT), null, numDocs, null).ScoreDocs;
 			AssertEquals("med,med,T,T", 1, result.Length);
+
+            search.Dispose();
+            reader.Dispose();
 		}
 		
         [Test]
@@ -516,6 +528,9 @@ namespace Lucene.Net.Search
 			
 			result = search.Search(Csrq("id", medIP, medIP, T, T, c), null, numDocs, null).ScoreDocs;
 			AssertEquals("med,med,T,T,c", 1, result.Length);
+
+            search.Dispose();
+            reader.Dispose();
 		}
 		
         [Test]
@@ -579,6 +594,9 @@ namespace Lucene.Net.Search
 			AssertEquals("max,max,T,T", 1, result.Length);
 			result = search.Search(Csrq("rand", maxRP, null, T, F), null, numDocs, null).ScoreDocs;
 			AssertEquals("max,nul,T,T", 1, result.Length);
+
+            search.Dispose();
+            reader.Dispose();
 		}
 		
         [Test]
@@ -645,6 +663,9 @@ namespace Lucene.Net.Search
 			AssertEquals("max,max,T,T,c", 1, result.Length);
 			result = search.Search(Csrq("rand", maxRP, null, T, F, c), null, numDocs, null).ScoreDocs;
 			AssertEquals("max,nul,T,T,c", 1, result.Length);
+
+            search.Dispose();
+            reader.Dispose();
 		}
 		
         [Test]
@@ -680,7 +701,9 @@ namespace Lucene.Net.Search
 			
 			result = search.Search(Csrq("content", "\u0633", "\u0638", T, T, c), null, 1000, null).ScoreDocs;
 			AssertEquals("The index Term should be included.", 1, result.Length);
-			search.Close();
+
+            search.Dispose();
+            reader.Dispose();
 		}
 		
         [Test]
@@ -716,7 +739,9 @@ namespace Lucene.Net.Search
 			
 			result = search.Search(Csrq("content", "H\u00C5T", "MAND", F, F, c), null, 1000, null).ScoreDocs;
 			AssertEquals("The index Term should not be included.", 0, result.Length);
-			search.Close();
+
+            search.Dispose();
+            reader.Dispose();
 		}
 	}
 }

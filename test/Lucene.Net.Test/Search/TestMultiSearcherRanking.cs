@@ -154,8 +154,20 @@ namespace Lucene.Net.Search
 			iw.Close();
             singleSearcher = new IndexSearcher(d, true, null);
 		}
-		
-		private void  AddCollection1(IndexWriter iw)
+
+		[TearDown]
+        public override void TearDown()
+        {
+            base.TearDown();
+
+			multiSearcher.Dispose();
+            multiSearcher = null;
+
+			singleSearcher.Dispose();
+            singleSearcher = null;
+        }
+
+        private void  AddCollection1(IndexWriter iw)
 		{
 			Add("one blah three", iw);
 			Add("one foo three multiOne", iw);

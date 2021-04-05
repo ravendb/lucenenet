@@ -324,6 +324,8 @@ namespace Lucene.Net.Search
 			Assert.IsTrue(value_Renamed != null, "value is null and it shouldn't be");
 			value_Renamed = document.Get("other", null);
 			Assert.IsTrue(value_Renamed == null, "value is not null and it should be");
+
+			searcher.Dispose();
 		}
 		
 		/* uncomment this when the highest score is always normalized to 1.0, even when it was < 1.0
@@ -439,6 +441,8 @@ namespace Lucene.Net.Search
 			// The scores from the IndexSearcher and Multisearcher should be the same
 			// if the same similarity is used.
 			Assert.AreEqual(score1, scoreN, 1e-6, "MultiSearcher score must be equal to single searcher score!");
+
+			msrchr.Dispose();
 		}
 
         public void TestDocFreq()

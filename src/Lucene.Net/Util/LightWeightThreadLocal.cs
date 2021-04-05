@@ -139,7 +139,21 @@ namespace Lucene.Net.Util
                     var copy = liveParent._values;
                     if (copy == null)
                         continue;
-                    copy.TryRemove(SelfReference, out _);
+
+                    if (copy.TryRemove(SelfReference, out var v) == false)
+                        continue;
+
+                    if (v is IDisposable disposable)
+                    {
+                        try
+                        {
+                            disposable.Dispose();
+                        }
+                        catch
+                        {
+                            // nothing that we can do
+                        }
+                    }
                 }
             }
         }

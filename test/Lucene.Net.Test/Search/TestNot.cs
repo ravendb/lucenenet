@@ -53,6 +53,8 @@ namespace Lucene.Net.Search
 			//System.out.println(query);
 			ScoreDoc[] hits = searcher.Search(query, null, 1000, null).ScoreDocs;
 			Assert.AreEqual(0, hits.Length);
+
+			searcher.Dispose();
 		}
 	}
 }
