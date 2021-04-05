@@ -136,18 +136,22 @@ namespace Lucene.Net.Search
 
 
 		    IndexSearcher searcher = new IndexSearcher(store, true, null);
-			
-			TermPositions pos = searcher.IndexReader.TermPositions(new Term("field", "1"), null);
-			pos.Next(null);
-			// first token should be at position 0
-			Assert.AreEqual(0, pos.NextPosition(null));
-			
-			pos = searcher.IndexReader.TermPositions(new Term("field", "2"), null);
-			pos.Next(null);
-			// second token should be at position 2
-			Assert.AreEqual(2, pos.NextPosition(null));
-			
-			PhraseQuery q;
+
+            using (TermPositions pos = searcher.IndexReader.TermPositions(new Term("field", "1"), null))
+            {
+                pos.Next(null);
+                // first token should be at position 0
+                Assert.AreEqual(0, pos.NextPosition(null));
+            }
+
+            using (var pos = searcher.IndexReader.TermPositions(new Term("field", "2"), null))
+            {
+                pos.Next(null);
+                // second token should be at position 2
+                Assert.AreEqual(2, pos.NextPosition(null));
+            }
+
+            PhraseQuery q;
 			ScoreDoc[] hits;
 			
 			q = new PhraseQuery();
@@ -257,6 +261,8 @@ namespace Lucene.Net.Search
 			q = (PhraseQuery) qp.Parse("\"1 stop 2\"");
 			hits = searcher.Search(q, null, 1000, null).ScoreDocs;
 			Assert.AreEqual(1, hits.Length);
+
+			searcher.Dispose();
 		}
 		
 		private class StopWhitespaceAnalyzer:Analyzer
@@ -292,19 +298,21 @@ namespace Lucene.Net.Search
 
             IndexReader r = writer.GetReader(null);
 
-            TermPositions tp = r.TermPositions(new Term("content", "a"), null);
             int count = 0;
-            Assert.IsTrue(tp.Next(null));
-            // "a" occurs 4 times
-            Assert.AreEqual(4, tp.Freq);
-            int expected = 0;
-            Assert.AreEqual(expected, tp.NextPosition(null));
-            Assert.AreEqual(1, tp.NextPosition(null));
-            Assert.AreEqual(3, tp.NextPosition(null));
-            Assert.AreEqual(6, tp.NextPosition(null));
+            using (TermPositions tp = r.TermPositions(new Term("content", "a"), null))
+            {
+                Assert.IsTrue(tp.Next(null));
+                // "a" occurs 4 times
+                Assert.AreEqual(4, tp.Freq);
+                int expected = 0;
+                Assert.AreEqual(expected, tp.NextPosition(null));
+                Assert.AreEqual(1, tp.NextPosition(null));
+                Assert.AreEqual(3, tp.NextPosition(null));
+                Assert.AreEqual(6, tp.NextPosition(null));
 
-            // only one doc has "a"
-            Assert.IsFalse(tp.Next(null));
+                // only one doc has "a"
+                Assert.IsFalse(tp.Next(null));
+            }
 
             IndexSearcher is_Renamed = new IndexSearcher(r);
 
@@ -316,32 +324,38 @@ namespace Lucene.Net.Search
             count = 0;
             bool sawZero = false;
             //System.out.println("\ngetPayloadSpans test");
-            Lucene.Net.Search.Spans.Spans pspans = snq.GetSpans(is_Renamed.IndexReader, null);
-            while (pspans.Next(null))
+            using (Lucene.Net.Search.Spans.Spans pspans = snq.GetSpans(is_Renamed.IndexReader, null))
             {
-                //System.out.println(pspans.doc() + " - " + pspans.start() + " - "+ pspans.end());
-                System.Collections.Generic.ICollection<Memory<byte>> payloads = pspans.GetPayload(null);
-                sawZero |= pspans.Start() == 0;
-                for (System.Collections.IEnumerator it = payloads.GetEnumerator(); it.MoveNext();)
+                while (pspans.Next(null))
                 {
-                    count++;
-                    System.Object generatedAux2 = it.Current;
-                    //System.out.println(new String((byte[]) it.next()));
+                    //System.out.println(pspans.doc() + " - " + pspans.start() + " - "+ pspans.end());
+                    System.Collections.Generic.ICollection<Memory<byte>> payloads = pspans.GetPayload(null);
+                    sawZero |= pspans.Start() == 0;
+                    for (System.Collections.IEnumerator it = payloads.GetEnumerator(); it.MoveNext();)
+                    {
+                        count++;
+                        System.Object generatedAux2 = it.Current;
+                        //System.out.println(new String((byte[]) it.next()));
+                    }
                 }
             }
+
             Assert.AreEqual(5, count);
             Assert.IsTrue(sawZero);
 
             //System.out.println("\ngetSpans test");
-            Lucene.Net.Search.Spans.Spans spans = snq.GetSpans(is_Renamed.IndexReader, null);
-            count = 0;
-            sawZero = false;
-            while (spans.Next(null))
+            using (Lucene.Net.Search.Spans.Spans spans = snq.GetSpans(is_Renamed.IndexReader, null))
             {
-                count++;
-                sawZero |= spans.Start() == 0;
-                //System.out.println(spans.doc() + " - " + spans.start() + " - " + spans.end());
+                count = 0;
+                sawZero = false;
+                while (spans.Next(null))
+                {
+                    count++;
+                    sawZero |= spans.Start() == 0;
+                    //System.out.println(spans.doc() + " - " + spans.start() + " - " + spans.end());
+                }
             }
+
             Assert.AreEqual(4, count);
             Assert.IsTrue(sawZero);
 

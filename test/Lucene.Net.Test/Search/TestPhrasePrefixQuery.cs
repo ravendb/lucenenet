@@ -79,17 +79,18 @@ namespace Lucene.Net.Search
 			
 			// this TermEnum gives "piccadilly", "pie" and "pizza".
 			System.String prefix = "pi";
-			TermEnum te = ir.Terms(new Term("body", prefix + "*"), null);
-			do 
-			{
-				if (te.Term.Text.StartsWith(prefix))
-				{
-					termsWithPrefix.Add(te.Term);
-				}
-			}
-			while (te.Next(null));
-			
-			query1.Add((Term[]) termsWithPrefix.ToArray(typeof(Term)));
+            using (TermEnum te = ir.Terms(new Term("body", prefix + "*"), null))
+            {
+                do
+                {
+                    if (te.Term.Text.StartsWith(prefix))
+                    {
+                        termsWithPrefix.Add(te.Term);
+                    }
+                } while (te.Next(null));
+            }
+
+            query1.Add((Term[]) termsWithPrefix.ToArray(typeof(Term)));
 			query2.Add((Term[]) termsWithPrefix.ToArray(typeof(Term)));
 			
 			ScoreDoc[] result;
@@ -98,6 +99,9 @@ namespace Lucene.Net.Search
 			
 			result = searcher.Search(query2, null, 1000, null).ScoreDocs;
 			Assert.AreEqual(0, result.Length);
+
+			ir.Dispose();
+			searcher.Dispose();
 		}
 	}
 }
