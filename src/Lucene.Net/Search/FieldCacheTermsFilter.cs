@@ -219,7 +219,11 @@ namespace Lucene.Net.Search
 					}
 					return doc;
 				}
-			}
+
+                public override void Dispose()
+                {
+                }
+            }
 		}
 	}
 }

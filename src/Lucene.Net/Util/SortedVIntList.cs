@@ -101,7 +101,11 @@ namespace Lucene.Net.Util
 				}
 				return doc = NO_MORE_DOCS;
 			}
-		}
+
+            public override void Dispose()
+            {
+            }
+        }
 		/// <summary>When a BitSet has fewer than 1 in BITS2VINTLIST_SIZE bits set,
 		/// a SortedVIntList representing the index numbers of the set bits
 		/// will be smaller than that BitSet.

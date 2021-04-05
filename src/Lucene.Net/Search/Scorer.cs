@@ -39,7 +39,7 @@ namespace Lucene.Net.Search
 	///) will not properly collect hits
 	/// with these scores.
 	/// </summary>
-	public abstract class Scorer:DocIdSetIterator, IDisposable
+	public abstract class Scorer:DocIdSetIterator
 	{
 		private Similarity similarity;
 		
@@ -103,7 +103,5 @@ namespace Lucene.Net.Search
 		/// <see cref="Collector.Collect(int)" />.
 		/// </summary>
 		public abstract float Score(IState state);
-
-        public abstract void Dispose();
     }
 }

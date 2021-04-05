@@ -127,8 +127,12 @@ namespace Lucene.Net.Search
         [TearDown]
         public override void TearDown()
         {
+			base.TearDown();
+
             reader.Close();
             dir2.Close();
+			bigSearcher.Dispose();
+            bigSearcher = null;
         }
 		
 		private System.String[] docFields = new System.String[]{"w1 w2 w3 w4 w5", "w1 w3 w2 w3", "w1 xx w2 yy w3", "w1 w3 xx w2 yy w3"};

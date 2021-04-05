@@ -255,7 +255,8 @@ namespace Lucene.Net.Search
 
             public override void Dispose()
             {
-                throw new NotImplementedException(); // TODO [ppekrol]
+                scorer.Dispose();
+                scorer = null;
             }
 
             public override int DocID()
@@ -414,17 +415,24 @@ namespace Lucene.Net.Search
 
         public override void Dispose()
         {
-            DisposeScorers(optionalScorers);
-			DisposeScorers(prohibitedScorers);
-			DisposeScorers(requiredScorers);
+			GC.SuppressFinalize(this);
 
-            static void DisposeScorers(List<Scorer> scorers)
+            DisposeScorers(ref optionalScorers);
+			DisposeScorers(ref prohibitedScorers);
+			DisposeScorers(ref requiredScorers);
+
+			countingSumScorer?.Dispose();
+            countingSumScorer = null;
+
+            static void DisposeScorers(ref List<Scorer> scorers)
             {
                 if (scorers == null || scorers.Count == 0)
                     return;
 
                 foreach (var scorer in scorers)
 					scorer?.Dispose();
+
+                scorers = null;
             }
         }
 

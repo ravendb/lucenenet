@@ -874,7 +874,13 @@ namespace Lucene.Net.Search
 					}
 					return doc;
 				}
-			}
+
+                public override void Dispose()
+                {
+                    termDocs?.Dispose();
+                    termDocs = null;
+                }
+            }
 			private class AnonymousClassDocIdSetIterator1:DocIdSetIterator
 			{
 				public AnonymousClassDocIdSetIterator1(FieldCacheDocIdSet enclosingInstance)
@@ -934,7 +940,11 @@ namespace Lucene.Net.Search
 						return doc = NO_MORE_DOCS;
 					}
 				}
-			}
+
+                public override void Dispose()
+                {
+                }
+            }
 			private IndexReader reader;
 			private bool mayUseTermDocs;
 			

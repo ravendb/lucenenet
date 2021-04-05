@@ -245,6 +245,10 @@ namespace Lucene.Net.Search
 					{
 						scorers = new SubScorer(scorer, false, false, bucketTable.NewCollector(0), scorers);
 					}
+                    else
+                    {
+                        scorer.Dispose();
+                    }
 				}
 			}
 			
@@ -259,6 +263,10 @@ namespace Lucene.Net.Search
 					{
 						scorers = new SubScorer(scorer, false, true, bucketTable.NewCollector(mask), scorers);
 					}
+                    else
+                    {
+						scorer.Dispose();
+                    }
 				}
 			}
 			

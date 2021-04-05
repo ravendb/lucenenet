@@ -40,7 +40,8 @@ namespace Lucene.Net.Search
 		/// <param name="exclDisi">indicates exclusion.
 		/// </param>
 		public ReqExclScorer(Scorer reqScorer, DocIdSetIterator exclDisi):base(null)
-		{ // No similarity used.
+        {
+            // No similarity used.
 			this.reqScorer = reqScorer;
 			this.exclDisi = exclDisi;
 		}
@@ -54,6 +55,7 @@ namespace Lucene.Net.Search
 			doc = reqScorer.NextDoc(state);
 			if (doc == NO_MORE_DOCS)
 			{
+				reqScorer?.Dispose();
 				reqScorer = null; // exhausted, nothing left
 				return doc;
 			}
@@ -91,6 +93,7 @@ namespace Lucene.Net.Search
 					exclDoc = exclDisi.Advance(reqDoc, state);
 					if (exclDoc == NO_MORE_DOCS)
 					{
+						exclDisi?.Dispose();
 						exclDisi = null; // exhausted, no more exclusions
 						return reqDoc;
 					}
@@ -101,6 +104,7 @@ namespace Lucene.Net.Search
 				}
 			}
 			while ((reqDoc = reqScorer.NextDoc(state)) != NO_MORE_DOCS);
+			reqScorer?.Dispose();
 			reqScorer = null; // exhausted, nothing left
 			return NO_MORE_DOCS;
 		}
@@ -123,6 +127,10 @@ namespace Lucene.Net.Search
         public override void Dispose()
         {
             reqScorer?.Dispose();
+            reqScorer = null;
+
+			exclDisi?.Dispose();
+            exclDisi = null;
         }
 
         public override int Advance(int target, IState state)
@@ -137,6 +145,7 @@ namespace Lucene.Net.Search
 			}
 			if (reqScorer.Advance(target, state) == NO_MORE_DOCS)
 			{
+				reqScorer?.Dispose();
 				reqScorer = null;
 				return doc = NO_MORE_DOCS;
 			}

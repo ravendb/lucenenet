@@ -193,7 +193,12 @@ namespace Lucene.Net.Search
 			{
 				throw new System.NotSupportedException(Lucene.Net.Search.JustCompileSearch.UNSUPPORTED_MSG);
 			}
-		}
+
+            public override void Dispose()
+            {
+                throw new System.NotSupportedException(Lucene.Net.Search.JustCompileSearch.UNSUPPORTED_MSG);
+            }
+        }
 		
 		[Serializable]
 		internal sealed class JustCompileExtendedFieldCacheLongParser : Lucene.Net.Search.LongParser
@@ -294,7 +299,12 @@ namespace Lucene.Net.Search
 			{
 				throw new System.NotSupportedException(Lucene.Net.Search.JustCompileSearch.UNSUPPORTED_MSG);
 			}
-		}
+
+            public override void Dispose()
+            {
+                throw new System.NotSupportedException(Lucene.Net.Search.JustCompileSearch.UNSUPPORTED_MSG);
+            }
+        }
 		
 		internal sealed class JustCompileFilteredTermEnum:FilteredTermEnum
 		{

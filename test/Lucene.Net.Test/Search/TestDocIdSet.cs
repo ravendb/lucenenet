@@ -89,7 +89,11 @@ namespace Lucene.Net.Search
 					}
 					return docid;
 				}
-			}
+
+                public override void Dispose()
+                {
+                }
+            }
 			private void  InitBlock(int maxdoc, TestDocIdSet enclosingInstance)
 			{
 				this.maxdoc = maxdoc;

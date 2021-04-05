@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 
+using System;
 using Lucene.Net.Store;
 
 namespace Lucene.Net.Search
@@ -26,7 +27,7 @@ namespace Lucene.Net.Search
 	/// a sentinel object. Implementations of this class are expected to consider
 	/// <see cref="int.MaxValue" /> as an invalid value.
 	/// </summary>
-	public abstract class DocIdSetIterator
+	public abstract class DocIdSetIterator : IDisposable
 	{
 		private int doc = - 1;
 		
@@ -88,5 +89,7 @@ namespace Lucene.Net.Search
 	    /// </summary>
 	    /// <since>2.9</since>
 	    public abstract int Advance(int target, IState state);
-	}
+
+        public abstract void Dispose();
+    }
 }

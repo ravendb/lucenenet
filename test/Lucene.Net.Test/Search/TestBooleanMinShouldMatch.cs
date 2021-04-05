@@ -106,8 +106,20 @@ namespace Lucene.Net.Search
 			
 			//System.out.println("Set up " + getName());
 		}
-		
-		public virtual void  VerifyNrHits(Query q, int expected)
+
+		[TearDown]
+        public override void TearDown()
+        {
+            base.TearDown();
+
+			r.Dispose();
+            r = null;
+
+			s.Dispose();
+            s = null;
+        }
+
+        public virtual void  VerifyNrHits(Query q, int expected)
 		{
 			ScoreDoc[] h = s.Search(q, null, 1000, null).ScoreDocs;
 			if (expected != h.Length)

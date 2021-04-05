@@ -78,6 +78,7 @@ namespace Lucene.Net.Search
 			int optScorerDoc = optScorer.DocID();
 			if (optScorerDoc < curDoc && (optScorerDoc = optScorer.Advance(curDoc, state)) == NO_MORE_DOCS)
 			{
+				optScorer.Dispose();
 				optScorer = null;
 				return reqScore;
 			}
@@ -88,7 +89,10 @@ namespace Lucene.Net.Search
         public override void Dispose()
         {
             optScorer?.Dispose();
+            optScorer = null;
+
 			reqScorer?.Dispose();
+            reqScorer = null;
         }
     }
 }

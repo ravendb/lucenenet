@@ -471,6 +471,10 @@ namespace Lucene.Net.Spatial.Util
 				}
 				return doc;
 			}
-		}
+
+            public override void Dispose()
+            {
+            }
+        }
 	}
 }

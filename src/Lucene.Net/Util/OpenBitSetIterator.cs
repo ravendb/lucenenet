@@ -225,8 +225,12 @@ namespace Lucene.Net.Util
 			// it would only save one cycle in the best circumstances.
 			return curDocId = (i << 6) + bitIndex;
 		}
-		
-		public override int DocID()
+
+        public override void Dispose()
+        {
+        }
+
+        public override int DocID()
 		{
 			return curDocId;
 		}

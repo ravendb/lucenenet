@@ -17,6 +17,7 @@
 
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using Lucene.Net.Index;
 using Lucene.Net.Store;
 using Lucene.Net.Support;
@@ -382,10 +383,14 @@ namespace Lucene.Net.Search
 					if (subScorer == null)
 					{
                         if (c.IsRequired)
-						{
-							return null;
-						}
-					}
+                        {
+                            DisposeScorers(required);
+                            DisposeScorers(prohibited);
+                            DisposeScorers(optional);
+
+                            return null;
+                        }
+                    }
                     else if (c.IsRequired)
 					{
 						required.Add(subScorer);
@@ -408,11 +413,19 @@ namespace Lucene.Net.Search
 				
 				if (required.Count == 0 && optional.Count == 0)
 				{
+                    DisposeScorers(required);
+                    DisposeScorers(prohibited);
+                    DisposeScorers(optional);
+
 					// no required and optional clauses.
 					return null;
 				}
 				else if (optional.Count < Enclosing_Instance.minNrShouldMatch)
-				{
+                {
+                    DisposeScorers(required);
+					DisposeScorers(prohibited);
+					DisposeScorers(optional);
+
 					// either >1 req scorer, or there are 0 req scorers and at least 1
 					// optional scorer. Therefore if there are not enough optional scorers
 					// no documents will be matched by the query
@@ -421,6 +434,17 @@ namespace Lucene.Net.Search
 				
 				// Return a BooleanScorer2
 				return new BooleanScorer2(similarity, Enclosing_Instance.minNrShouldMatch, required, prohibited, optional, state);
+
+                static void DisposeScorers(List<Scorer> scorers)
+                {
+                    if (scorers == null || scorers.Count == 0)
+                        return;
+
+                    foreach (var scorer in scorers)
+                    {
+                        scorer?.Dispose();
+                    }
+                }
 			}
 
 		    public override bool GetScoresDocsOutOfOrder()

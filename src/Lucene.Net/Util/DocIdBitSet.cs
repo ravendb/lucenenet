@@ -83,6 +83,10 @@ namespace Lucene.Net.Util
 				docId = d == - 1?NO_MORE_DOCS:d;
 				return docId;
 			}
-		}
+
+            public override void Dispose()
+            {
+            }
+        }
 	}
 }

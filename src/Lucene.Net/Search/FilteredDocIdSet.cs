@@ -70,7 +70,11 @@ namespace Lucene.Net.Search
 			{
 				return Enclosing_Instance.Match(docid);
 			}
-		}
+
+            public override void Dispose()
+            {
+            }
+        }
 		private DocIdSet _innerSet;
 		
 		/// <summary> Constructor.</summary>
