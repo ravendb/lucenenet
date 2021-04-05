@@ -108,10 +108,12 @@ namespace Lucene.Net.Search
 			// log("Run testFieldSortCustomSearcher");
 			// define the sort criteria
 			Sort custSort = new Sort(new SortField("publicationDate_", SortField.STRING), SortField.FIELD_SCORE);
-			Searcher searcher = new CustomSearcher(this, index, 2);
-			// search and check hits
-			MatchHits(searcher, custSort);
-		}
+            using (Searcher searcher = new CustomSearcher(this, index, 2))
+            {
+                // search and check hits
+                MatchHits(searcher, custSort);
+            }
+        }
 		/// <summary> Run the test using one CustomSearcher wrapped by a MultiSearcher. </summary>
 		[Test]
 		public virtual void  TestFieldSortSingleSearcher()
@@ -119,10 +121,12 @@ namespace Lucene.Net.Search
 			// log("Run testFieldSortSingleSearcher");
 			// define the sort criteria
 			Sort custSort = new Sort(new SortField("publicationDate_", SortField.STRING), SortField.FIELD_SCORE);
-			Searcher searcher = new MultiSearcher(new Searcher[]{new CustomSearcher(this, index, 2)});
-			// search and check hits
-			MatchHits(searcher, custSort);
-		}
+            using (Searcher searcher = new MultiSearcher(new Searcher[] {new CustomSearcher(this, index, 2)}))
+            {
+                // search and check hits
+                MatchHits(searcher, custSort);
+            }
+        }
 		/// <summary> Run the test using two CustomSearcher instances. </summary>
 		[Test]
 		public virtual void  TestFieldSortMultiCustomSearcher()
@@ -130,9 +134,11 @@ namespace Lucene.Net.Search
 			// log("Run testFieldSortMultiCustomSearcher");
 			// define the sort criteria
             Sort custSort = new Sort(new SortField("publicationDate_", SortField.STRING), SortField.FIELD_SCORE);
-			Searcher searcher = new MultiSearcher(new Searchable[]{new CustomSearcher(this, index, 0), new CustomSearcher(this, index, 2)});
-			// search and check hits
-			MatchHits(searcher, custSort);
+            using (Searcher searcher = new MultiSearcher(new Searchable[]{new CustomSearcher(this, index, 0), new CustomSearcher(this, index, 2)}))
+            {
+			    // search and check hits
+			    MatchHits(searcher, custSort);
+			}
 		}
 		
 		
