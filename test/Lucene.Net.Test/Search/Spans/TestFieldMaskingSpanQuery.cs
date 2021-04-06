@@ -290,26 +290,27 @@ namespace Lucene.Net.Search.Spans
 			SpanQuery qB = new SpanTermQuery(new Term("last", "jones"));
 			SpanQuery q = new SpanNearQuery(new SpanQuery[]{new FieldMaskingSpanQuery(qA, "id"), new FieldMaskingSpanQuery(qB, "id")}, - 1, false);
 			Check(q, new int[]{0, 1, 2, 3});
-			
-			Spans span = q.GetSpans(searcher.IndexReader, null);
-			
-			Assert.AreEqual(true, span.Next(null));
-			Assert.AreEqual(S(0, 0, 1), S(span));
-			
-			Assert.AreEqual(true, span.Next(null));
-			Assert.AreEqual(S(1, 1, 2), S(span));
-			
-			Assert.AreEqual(true, span.Next(null));
-			Assert.AreEqual(S(2, 0, 1), S(span));
-			
-			Assert.AreEqual(true, span.Next(null));
-			Assert.AreEqual(S(2, 2, 3), S(span));
-			
-			Assert.AreEqual(true, span.Next(null));
-			Assert.AreEqual(S(3, 0, 1), S(span));
-			
-			Assert.AreEqual(false, span.Next(null));
-		}
+
+            using (Spans span = q.GetSpans(searcher.IndexReader, null))
+            {
+                Assert.AreEqual(true, span.Next(null));
+                Assert.AreEqual(S(0, 0, 1), S(span));
+
+                Assert.AreEqual(true, span.Next(null));
+                Assert.AreEqual(S(1, 1, 2), S(span));
+
+                Assert.AreEqual(true, span.Next(null));
+                Assert.AreEqual(S(2, 0, 1), S(span));
+
+                Assert.AreEqual(true, span.Next(null));
+                Assert.AreEqual(S(2, 2, 3), S(span));
+
+                Assert.AreEqual(true, span.Next(null));
+                Assert.AreEqual(S(3, 0, 1), S(span));
+
+                Assert.AreEqual(false, span.Next(null));
+            }
+        }
 		
 		public virtual System.String S(Spans span)
 		{

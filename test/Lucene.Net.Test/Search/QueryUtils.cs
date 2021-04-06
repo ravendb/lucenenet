@@ -400,18 +400,19 @@ namespace Lucene.Net.Search
 		/// <param name="edge">if negative, s will be the first sub; if 0, s will be in hte middle, if positive s will be the last sub
 		/// </param>
 		public static MultiSearcher WrapSearcher(Searcher s, int edge)
-		{
-			
-			// we can't put deleted docs before the nested reader, because
+        {
+            var nds = new NonDisposableSearcher(s);
+
+            // we can't put deleted docs before the nested reader, because
 			// it will through off the docIds
 		    Searcher[] searchers = new Searcher[]
 		                               {
-		                                   edge < 0 ? s : new IndexSearcher(MakeEmptyIndex(0), true, null),
+		                                   edge < 0 ? nds : new IndexSearcher(MakeEmptyIndex(0), true, null),
 		                                   new MultiSearcher(new Searcher[]
 		                                                         {
 		                                                             new IndexSearcher(MakeEmptyIndex(edge < 0 ? 65 : 0), true, null),
 		                                                             new IndexSearcher(MakeEmptyIndex(0), true, null),
-		                                                             0 == edge ? s : new IndexSearcher(MakeEmptyIndex(0), true, null)
+		                                                             0 == edge ? nds : new IndexSearcher(MakeEmptyIndex(0), true, null)
 		                                                         }),
 		                                   new IndexSearcher(MakeEmptyIndex(0 < edge ? 0 : 3), true, null),
 		                                   new IndexSearcher(MakeEmptyIndex(0), true, null),
@@ -419,7 +420,7 @@ namespace Lucene.Net.Search
 		                                                         {
 		                                                             new IndexSearcher(MakeEmptyIndex(0 < edge ? 0 : 5), true, null),
 		                                                             new IndexSearcher(MakeEmptyIndex(0), true, null),
-		                                                             0 < edge ? s : new IndexSearcher(MakeEmptyIndex(0), true, null)
+		                                                             0 < edge ? nds : new IndexSearcher(MakeEmptyIndex(0), true, null)
 		                                                         })
 		                               };
 			MultiSearcher out_Renamed = new MultiSearcher(searchers);

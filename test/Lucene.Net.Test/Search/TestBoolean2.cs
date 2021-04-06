@@ -130,9 +130,16 @@ namespace Lucene.Net.Search
 			base.TearDown();
 
             reader.Close();
+            reader = null;
+
             dir2.Close();
+            dir2 = null;
+
 			bigSearcher.Dispose();
             bigSearcher = null;
+
+			searcher.Dispose();
+            searcher = null;
         }
 		
 		private System.String[] docFields = new System.String[]{"w1 w2 w3 w4 w5", "w1 w3 w2 w3", "w1 xx w2 yy w3", "w1 w3 xx w2 yy w3"};
