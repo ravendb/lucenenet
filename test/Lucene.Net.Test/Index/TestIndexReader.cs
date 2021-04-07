@@ -1483,26 +1483,28 @@ namespace Lucene.Net.Index
 			}
 			
 			// check dictionary and posting lists
-			TermEnum enum1 = index1.Terms(null);
-			TermEnum enum2 = index2.Terms(null);
-			TermPositions tp1 = index1.TermPositions(null);
-			TermPositions tp2 = index2.TermPositions(null);
-			while (enum1.Next(null))
-			{
-				Assert.IsTrue(enum2.Next(null));
-				Assert.AreEqual(enum1.Term, enum2.Term, "Different term in dictionary.");
-				tp1.Seek(enum1.Term, null);
-				tp2.Seek(enum1.Term, null);
-				while (tp1.Next(null))
-				{
-					Assert.IsTrue(tp2.Next(null));
-					Assert.AreEqual(tp1.Doc, tp2.Doc, "Different doc id in postinglist of term " + enum1.Term + ".");
-					Assert.AreEqual(tp1.Freq, tp2.Freq, "Different term frequence in postinglist of term " + enum1.Term + ".");
-					for (int i = 0; i < tp1.Freq; i++)
-					{
-						Assert.AreEqual(tp1.NextPosition(null), tp2.NextPosition(null), "Different positions in postinglist of term " + enum1.Term + ".");
-					}
-				}
+			using (TermEnum enum1 = index1.Terms(null))
+            using (TermEnum enum2 = index2.Terms(null))
+            using (TermPositions tp1 = index1.TermPositions(null))
+            using (TermPositions tp2 = index2.TermPositions(null))
+            {
+			    while (enum1.Next(null))
+			    {
+				    Assert.IsTrue(enum2.Next(null));
+				    Assert.AreEqual(enum1.Term, enum2.Term, "Different term in dictionary.");
+				    tp1.Seek(enum1.Term, null);
+				    tp2.Seek(enum1.Term, null);
+				    while (tp1.Next(null))
+				    {
+					    Assert.IsTrue(tp2.Next(null));
+					    Assert.AreEqual(tp1.Doc, tp2.Doc, "Different doc id in postinglist of term " + enum1.Term + ".");
+					    Assert.AreEqual(tp1.Freq, tp2.Freq, "Different term frequence in postinglist of term " + enum1.Term + ".");
+					    for (int i = 0; i < tp1.Freq; i++)
+					    {
+						    Assert.AreEqual(tp1.NextPosition(null), tp2.NextPosition(null), "Different positions in postinglist of term " + enum1.Term + ".");
+					    }
+				    }
+			    }
 			}
 		}
 		

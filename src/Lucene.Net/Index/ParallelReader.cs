@@ -707,6 +707,7 @@ namespace Lucene.Net.Index
 		    public virtual void  Seek(Term term, IState state)
 			{
 				IndexReader reader = Enclosing_Instance.fieldToReader[term.Field];
+				termDocs?.Dispose();
 				termDocs = reader != null?reader.TermDocs(term, state):null;
 			}
 			
@@ -793,6 +794,7 @@ namespace Lucene.Net.Index
 			public override void  Seek(Term term, IState state)
 			{
 				IndexReader reader = Enclosing_Instance.fieldToReader[term.Field];
+				termDocs?.Dispose();
 				termDocs = reader != null?reader.TermPositions(term, state):null;
 			}
 			
