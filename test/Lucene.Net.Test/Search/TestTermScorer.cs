@@ -106,8 +106,20 @@ namespace Lucene.Net.Search
 		    indexSearcher = new IndexSearcher(directory, false, null);
 			indexReader = indexSearcher.IndexReader;
 		}
-		
-		[Test]
+
+		[TearDown]
+        public override void TearDown()
+        {
+            base.TearDown();
+
+			indexSearcher?.Dispose();
+            indexSearcher = null;
+
+			indexReader?.Dispose();
+            indexReader = null;
+        }
+
+        [Test]
 		public virtual void  Test()
 		{
 			
@@ -115,38 +127,40 @@ namespace Lucene.Net.Search
 			TermQuery termQuery = new TermQuery(allTerm);
 			
 			Weight weight = termQuery.Weight(indexSearcher, null);
-			
-			TermScorer ts = new TermScorer(weight, indexReader.TermDocs(allTerm, null), indexSearcher.Similarity, indexReader.Norms(FIELD, null));
-			//we have 2 documents with the term all in them, one document for all the other values
-			System.Collections.IList docs = new System.Collections.ArrayList();
-			//must call next first
-			
-			
-			ts.Score(new AnonymousClassCollector(docs, this), null);
-			Assert.IsTrue(docs.Count == 2, "docs Size: " + docs.Count + " is not: " + 2);
-			TestHit doc0 = (TestHit) docs[0];
-			TestHit doc5 = (TestHit) docs[1];
-			//The scores should be the same
-			Assert.IsTrue(doc0.score == doc5.score, doc0.score + " does not equal: " + doc5.score);
-			/*
-			Score should be (based on Default Sim.:
-			All floats are approximate
-			tf = 1
-			numDocs = 6
-			docFreq(all) = 2
-			idf = ln(6/3) + 1 = 1.693147
-			idf ^ 2 = 2.8667
-			boost = 1
-			lengthNorm = 1 //there is 1 term in every document
-			coord = 1
-			sumOfSquaredWeights = (idf * boost) ^ 2 = 1.693147 ^ 2 = 2.8667
-			queryNorm = 1 / (sumOfSquaredWeights)^0.5 = 1 /(1.693147) = 0.590
-			
-			score = 1 * 2.8667 * 1 * 1 * 0.590 = 1.69
-			
-			*/
-			Assert.IsTrue(doc0.score == 1.6931472f, doc0.score + " does not equal: " + 1.6931472f);
-		}
+
+            using (TermScorer ts = new TermScorer(weight, indexReader.TermDocs(allTerm, null), indexSearcher.Similarity, indexReader.Norms(FIELD, null)))
+            {
+                //we have 2 documents with the term all in them, one document for all the other values
+                System.Collections.IList docs = new System.Collections.ArrayList();
+                //must call next first
+
+
+                ts.Score(new AnonymousClassCollector(docs, this), null);
+                Assert.IsTrue(docs.Count == 2, "docs Size: " + docs.Count + " is not: " + 2);
+                TestHit doc0 = (TestHit) docs[0];
+                TestHit doc5 = (TestHit) docs[1];
+                //The scores should be the same
+                Assert.IsTrue(doc0.score == doc5.score, doc0.score + " does not equal: " + doc5.score);
+                /*
+                Score should be (based on Default Sim.:
+                All floats are approximate
+                tf = 1
+                numDocs = 6
+                docFreq(all) = 2
+                idf = ln(6/3) + 1 = 1.693147
+                idf ^ 2 = 2.8667
+                boost = 1
+                lengthNorm = 1 //there is 1 term in every document
+                coord = 1
+                sumOfSquaredWeights = (idf * boost) ^ 2 = 1.693147 ^ 2 = 2.8667
+                queryNorm = 1 / (sumOfSquaredWeights)^0.5 = 1 /(1.693147) = 0.590
+                
+                score = 1 * 2.8667 * 1 * 1 * 0.590 = 1.69
+                
+                */
+                Assert.IsTrue(doc0.score == 1.6931472f, doc0.score + " does not equal: " + 1.6931472f);
+            }
+        }
 		
 		[Test]
 		public virtual void  TestNext()
@@ -157,12 +171,14 @@ namespace Lucene.Net.Search
 			
 			Weight weight = termQuery.Weight(indexSearcher, null);
 			
-			TermScorer ts = new TermScorer(weight, indexReader.TermDocs(allTerm, null), indexSearcher.Similarity, indexReader.Norms(FIELD, null));
-			Assert.IsTrue(ts.NextDoc(null) != DocIdSetIterator.NO_MORE_DOCS, "next did not return a doc");
-			Assert.IsTrue(ts.Score(null) == 1.6931472f, "score is not correct");
-			Assert.IsTrue(ts.NextDoc(null) != DocIdSetIterator.NO_MORE_DOCS, "next did not return a doc");
-			Assert.IsTrue(ts.Score(null) == 1.6931472f, "score is not correct");
-			Assert.IsTrue(ts.NextDoc(null) == DocIdSetIterator.NO_MORE_DOCS, "next returned a doc and it should not have");
+			using (TermScorer ts = new TermScorer(weight, indexReader.TermDocs(allTerm, null), indexSearcher.Similarity, indexReader.Norms(FIELD, null)))
+            {
+			    Assert.IsTrue(ts.NextDoc(null) != DocIdSetIterator.NO_MORE_DOCS, "next did not return a doc");
+			    Assert.IsTrue(ts.Score(null) == 1.6931472f, "score is not correct");
+			    Assert.IsTrue(ts.NextDoc(null) != DocIdSetIterator.NO_MORE_DOCS, "next did not return a doc");
+			    Assert.IsTrue(ts.Score(null) == 1.6931472f, "score is not correct");
+			    Assert.IsTrue(ts.NextDoc(null) == DocIdSetIterator.NO_MORE_DOCS, "next returned a doc and it should not have");
+			}
 		}
 		
 		[Test]
@@ -174,10 +190,12 @@ namespace Lucene.Net.Search
 			
 			Weight weight = termQuery.Weight(indexSearcher, null);
 			
-			TermScorer ts = new TermScorer(weight, indexReader.TermDocs(allTerm, null), indexSearcher.Similarity, indexReader.Norms(FIELD, null));
-			Assert.IsTrue(ts.Advance(3, null) != DocIdSetIterator.NO_MORE_DOCS, "Didn't skip");
-			//The next doc should be doc 5
-			Assert.IsTrue(ts.DocID() == 5, "doc should be number 5");
+			using (TermScorer ts = new TermScorer(weight, indexReader.TermDocs(allTerm, null), indexSearcher.Similarity, indexReader.Norms(FIELD, null)))
+            {
+			    Assert.IsTrue(ts.Advance(3, null) != DocIdSetIterator.NO_MORE_DOCS, "Didn't skip");
+			    //The next doc should be doc 5
+			    Assert.IsTrue(ts.DocID() == 5, "doc should be number 5");
+			}
 		}
 		
 		private class TestHit

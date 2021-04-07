@@ -131,6 +131,9 @@ namespace Lucene.Net.Search
 			
 			result = search.Search(q, new TermRangeFilter("id", medIP, medIP, T, T), numDocs, null).ScoreDocs;
 			Assert.AreEqual(1, result.Length, "med,med,T,T");
+
+			search.Dispose();
+			reader.Dispose();
 		}
 		
         [Test]
@@ -216,6 +219,9 @@ namespace Lucene.Net.Search
 
             numHits = search.Search(q, new TermRangeFilter("id", medIP, medIP, T, T, c), 1000, null).TotalHits;
 			Assert.AreEqual(1, numHits, "med,med,T,T");
+
+            search.Dispose();
+            reader.Dispose();
 		}
 		
         [Test]
@@ -279,6 +285,9 @@ namespace Lucene.Net.Search
 			Assert.AreEqual(1, result.Length, "max,max,T,T");
 			result = search.Search(q, new TermRangeFilter("rand", maxRP, null, T, F), numDocs, null).ScoreDocs;
 			Assert.AreEqual(1, result.Length, "max,nul,T,T");
+
+            search.Dispose();
+            reader.Dispose();
 		}
 		
         [Test]
@@ -344,6 +353,9 @@ namespace Lucene.Net.Search
 			Assert.AreEqual(1, numHits, "max,max,T,T");
             numHits = search.Search(q, new TermRangeFilter("rand", maxRP, null, T, F, c), 1000, null).TotalHits;
 			Assert.AreEqual(1, numHits, "max,nul,T,T");
+
+            search.Dispose();
+            reader.Dispose();
 		}
 		
         [Test]
@@ -379,7 +391,9 @@ namespace Lucene.Net.Search
 
             numHits = search.Search(q, new TermRangeFilter("content", "\u0633", "\u0638", T, T, collator), 1000, null).TotalHits;
             Assert.AreEqual(1, numHits, "The index Term should be included.");
-			search.Close();
+
+            search.Dispose();
+            reader.Dispose();
 		}
 		
         [Test]
@@ -417,7 +431,9 @@ namespace Lucene.Net.Search
 			
 			numHits = search.Search(q, new TermRangeFilter("content", "H\u00C5T", "MAND", F, F, collator), 1000, null).TotalHits;
 			Assert.AreEqual(0, numHits, "The index Term should not be included.");
-			search.Close();
+
+            search.Dispose();
+            reader.Dispose();
 		}
 	}
 }

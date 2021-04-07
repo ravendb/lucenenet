@@ -96,6 +96,8 @@ namespace Lucene.Net.Search
 		    q = searcher.Rewrite(wq, null);
 		    Assert.True(q is ConstantScoreQuery);
 		    Assert.AreEqual(q.Boost, wq.Boost);
+
+			searcher.Dispose();
 		}
 
         /// <summary>
@@ -112,6 +114,8 @@ namespace Lucene.Net.Search
             AssertMatches(searcher, wq, 0);
             BooleanQuery expected = new BooleanQuery(true);
             Assert.AreEqual(searcher.Rewrite(expected, null), searcher.Rewrite(wq, null));
+
+            searcher.Dispose();
         }
 
         /// <summary>
@@ -152,6 +156,8 @@ namespace Lucene.Net.Search
             expected.RewriteMethod = wq.RewriteMethod;
             expected.Boost = wq.Boost;
             Assert.AreEqual(searcher.Rewrite(expected, null), searcher.Rewrite(wq, null));
+
+            searcher.Dispose();
         }
 
 	    /// <summary> Tests Wildcard queries with an asterisk.</summary>
@@ -187,6 +193,8 @@ namespace Lucene.Net.Search
 			AssertMatches(searcher, new WildcardQuery(new Term("body", "*tall")), 0);
 			AssertMatches(searcher, new WildcardQuery(new Term("body", "*tal")), 1);
 			AssertMatches(searcher, new WildcardQuery(new Term("body", "*tal*")), 2);
+
+            searcher.Dispose();
 		}
 		
 
@@ -232,6 +240,8 @@ namespace Lucene.Net.Search
 			AssertMatches(searcher, query4, 3);
 			AssertMatches(searcher, query5, 0);
 			AssertMatches(searcher, query6, 1); // Query: 'meta??' matches 'metals' not 'metal'
+
+            searcher.Dispose();
 		}
 		
 		private RAMDirectory GetIndexStore(System.String field, System.String[] contents)

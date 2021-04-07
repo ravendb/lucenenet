@@ -81,6 +81,8 @@ namespace Lucene.Net.Search
                     Assert.AreEqual(j, sd[j].Doc, "expected doc Id " + j + " found " + sd[j].Doc);
                 }
             }
+
+            searcher.Dispose();
         }
 	}
 }

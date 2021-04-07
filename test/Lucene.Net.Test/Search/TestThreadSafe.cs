@@ -16,6 +16,7 @@
  */
 
 using System;
+using System.Collections.Generic;
 using Lucene.Net.Support;
 using NUnit.Framework;
 
@@ -205,13 +206,22 @@ namespace Lucene.Net.Search
 			dir1 = new RAMDirectory();
 			// test w/ field sizes bigger than the buffer of an index input
 			BuildDir(dir1, 15, 5, 2000);
-			
+
+            var toDispose = new HashSet<IDisposable>();
+
 			// do many small tests so the thread locals go away inbetween
 			for (int i = 0; i < 100; i++)
 			{
 			    ir1 = IndexReader.Open(dir1, false, null);
+                toDispose.Add(ir1);
+
 				DoTest(10, 100);
 			}
+
+            foreach (var disposable in toDispose)
+            {
+                disposable.Dispose();
+            }
 		}
 	}
 }

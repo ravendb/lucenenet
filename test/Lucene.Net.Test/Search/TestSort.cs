@@ -338,10 +338,11 @@ namespace Lucene.Net.Search
             writer.AddDocument(doc, null);
             writer.Close();
 
-            var searcher = new IndexSearcher(indexStore, true, null);
-
-            sort.SetSort(new SortField("string", SortField.STRING), SortField.FIELD_DOC);
-            var result = searcher.Search(new MatchAllDocsQuery(), null, 500, sort, null).ScoreDocs;
+            using (var searcher = new IndexSearcher(indexStore, true, null))
+            {
+                sort.SetSort(new SortField("string", SortField.STRING), SortField.FIELD_DOC);
+                var result = searcher.Search(new MatchAllDocsQuery(), null, 500, sort, null).ScoreDocs;
+            }
         }
 
         [Test]
@@ -362,10 +363,11 @@ namespace Lucene.Net.Search
 
             writer.Close();
 
-            var searcher = new IndexSearcher(indexStore, true, null);
-
-            sort.SetSort(new SortField("string", SortField.STRING), SortField.FIELD_DOC);
-            var result = searcher.Search(new MatchAllDocsQuery(), null, 500, sort, null).ScoreDocs;
+            using (var searcher = new IndexSearcher(indexStore, true, null))
+            {
+                sort.SetSort(new SortField("string", SortField.STRING), SortField.FIELD_DOC);
+                var result = searcher.Search(new MatchAllDocsQuery(), null, 500, sort, null).ScoreDocs;
+            }
         }
 
 		private IndexSearcher GetFullStrings()
@@ -475,8 +477,23 @@ namespace Lucene.Net.Search
 			queryG = new TermQuery(new Term("contents", "g"));
 			sort = new Sort();
 		}
-		
-		// test the sorts by score and document number
+
+		[TearDown]
+        public override void TearDown()
+        {
+            base.TearDown();
+
+			full?.Dispose();
+            full = null;
+
+			searchX?.Dispose();
+            searchX = null;
+
+			searchY?.Dispose();
+            searchY = null;
+        }
+
+        // test the sorts by score and document number
 		[Test]
 		public virtual void  TestBuiltInSorts()
 		{
@@ -582,6 +599,9 @@ namespace Lucene.Net.Search
 					buff.Append(v[j] + "(" + v2[j] + ")(" + result[x].Doc + ") ");
 				}
 			}
+
+			searcher.Dispose();
+
 			if (fail)
 			{
 				System.Console.Out.WriteLine("topn field1(field2)(docID):" + buff);
@@ -1330,7 +1350,11 @@ namespace Lucene.Net.Search
             writer.Close();
             sort.SetSort(new SortField("string", SortField.STRING),SortField.FIELD_DOC);
             // this should not throw AIOOBE or RuntimeEx
-            new IndexSearcher(indexStore, true, null).Search(new MatchAllDocsQuery(), null, 500, sort, null);
+
+            using (var searcher = new IndexSearcher(indexStore, true, null))
+            {
+                searcher.Search(new MatchAllDocsQuery(), null, 500, sort, null);
+            }
         }
 	}
 }

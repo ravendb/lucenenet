@@ -72,8 +72,17 @@ namespace Lucene.Net.Search
 			writer.Close();
 		    searcher = new IndexSearcher(directory, true, null);
 		}
-		
-		[Test]
+
+		[TearDown]
+        public override void TearDown()
+        {
+            base.TearDown();
+
+			searcher?.Dispose();
+            searcher = null;
+        }
+
+        [Test]
 		public virtual void  Test()
 		{
 			Assert.IsTrue(searcher != null);
@@ -134,6 +143,8 @@ namespace Lucene.Net.Search
 					Assert.AreEqual(expectedPositions[j], positions[0]);
 				}
 			}
+
+			reader.Dispose();
 		}
 		
 		[Test]
@@ -308,6 +319,10 @@ namespace Lucene.Net.Search
 					}
 					//System.out.println("--------");
 				}
+
+				termEnum.Dispose();
+				termDocs.Dispose();
+
 				Query query = new TermQuery(new Term("field", "chocolate"));
 				ScoreDoc[] hits = knownSearcher.Search(query, null, 1000, null).ScoreDocs;
 				//doc 3 should be the first hit b/c it is the shortest match
@@ -404,6 +419,7 @@ namespace Lucene.Net.Search
 			}
 			
 			writer.Close();
+			searcher?.Dispose();
 		    searcher = new IndexSearcher(directory, true, null);
 			
 			Query query = new TermQuery(new Term("field", "hundred"));
@@ -433,6 +449,7 @@ namespace Lucene.Net.Search
 			writer.AddDocument(doc, null);
 			writer.Close();
 
+			searcher?.Dispose();
 		    searcher = new IndexSearcher(directory, true, null);
 			
 			Query query = new TermQuery(new Term("field", "one"));
