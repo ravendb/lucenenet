@@ -83,37 +83,45 @@ namespace Lucene.Net.Search
 		[Test]
 		public virtual void  TestPrefixQuery()
 		{
-			IndexSearcher indexSearcher = new IndexSearcher(directory, true, null);
-			Query query = new PrefixQuery(new Term(FIELD, "tang"));
-			Assert.AreEqual(2, indexSearcher.Search(query, null, 1000, null).TotalHits, "Number of matched documents");
+            using (IndexSearcher indexSearcher = new IndexSearcher(directory, true, null))
+            {
+                Query query = new PrefixQuery(new Term(FIELD, "tang"));
+                Assert.AreEqual(2, indexSearcher.Search(query, null, 1000, null).TotalHits, "Number of matched documents");
+            }
 		}
 		
 		[Test]
 		public virtual void  TestTermQuery()
 		{
-			IndexSearcher indexSearcher = new IndexSearcher(directory, true, null);
-			Query query = new TermQuery(new Term(FIELD, "tangfulin"));
-			Assert.AreEqual(2, indexSearcher.Search(query, null, 1000, null).TotalHits, "Number of matched documents");
+            using (IndexSearcher indexSearcher = new IndexSearcher(directory, true, null))
+            {
+			    Query query = new TermQuery(new Term(FIELD, "tangfulin"));
+			    Assert.AreEqual(2, indexSearcher.Search(query, null, 1000, null).TotalHits, "Number of matched documents");
+			}
 		}
 		
 		[Test]
 		public virtual void  TestTermBooleanQuery()
 		{
-			IndexSearcher indexSearcher = new IndexSearcher(directory, true, null);
-			BooleanQuery query = new BooleanQuery();
-			query.Add(new TermQuery(new Term(FIELD, "tangfulin")), Occur.SHOULD);
-			query.Add(new TermQuery(new Term(FIELD, "notexistnames")), Occur.SHOULD);
-			Assert.AreEqual(2, indexSearcher.Search(query, null, 1000, null).TotalHits, "Number of matched documents");
+            using (IndexSearcher indexSearcher = new IndexSearcher(directory, true, null))
+            {
+			    BooleanQuery query = new BooleanQuery();
+			    query.Add(new TermQuery(new Term(FIELD, "tangfulin")), Occur.SHOULD);
+			    query.Add(new TermQuery(new Term(FIELD, "notexistnames")), Occur.SHOULD);
+			    Assert.AreEqual(2, indexSearcher.Search(query, null, 1000, null).TotalHits, "Number of matched documents");
+			}
 		}
 		
 		[Test]
 		public virtual void  TestPrefixBooleanQuery()
 		{
-			IndexSearcher indexSearcher = new IndexSearcher(directory, true, null);
-			BooleanQuery query = new BooleanQuery();
-			query.Add(new PrefixQuery(new Term(FIELD, "tang")), Occur.SHOULD);
-			query.Add(new TermQuery(new Term(FIELD, "notexistnames")), Occur.SHOULD);
-			Assert.AreEqual(2, indexSearcher.Search(query, null, 1000, null).TotalHits, "Number of matched documents");
+            using (IndexSearcher indexSearcher = new IndexSearcher(directory, true, null))
+            {
+			    BooleanQuery query = new BooleanQuery();
+			    query.Add(new PrefixQuery(new Term(FIELD, "tang")), Occur.SHOULD);
+			    query.Add(new TermQuery(new Term(FIELD, "notexistnames")), Occur.SHOULD);
+			    Assert.AreEqual(2, indexSearcher.Search(query, null, 1000, null).TotalHits, "Number of matched documents");
+			}
 		}
 	}
 }

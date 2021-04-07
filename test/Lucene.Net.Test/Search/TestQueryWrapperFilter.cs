@@ -52,26 +52,28 @@ namespace Lucene.Net.Search
 			
 			// should not throw exception with primitive query
 			QueryWrapperFilter qwf = new QueryWrapperFilter(termQuery);
-			
-			IndexSearcher searcher = new IndexSearcher(dir, true, null);
-			TopDocs hits = searcher.Search(new MatchAllDocsQuery(), qwf, 10, null);
-			Assert.AreEqual(1, hits.TotalHits);
-			
-			// should not throw exception with complex primitive query
-			BooleanQuery booleanQuery = new BooleanQuery();
-			booleanQuery.Add(termQuery, Occur.MUST);
-			booleanQuery.Add(new TermQuery(new Term("field", "missing")), Occur.MUST_NOT);
-			qwf = new QueryWrapperFilter(termQuery);
-			
-			hits = searcher.Search(new MatchAllDocsQuery(), qwf, 10, null);
-			Assert.AreEqual(1, hits.TotalHits);
-			
-			// should not throw exception with non primitive Query (doesn't implement
-			// Query#createWeight)
-			qwf = new QueryWrapperFilter(new FuzzyQuery(new Term("field", "valu")));
-			
-			hits = searcher.Search(new MatchAllDocsQuery(), qwf, 10, null);
-			Assert.AreEqual(1, hits.TotalHits);
-		}
+
+            using (IndexSearcher searcher = new IndexSearcher(dir, true, null))
+            {
+                TopDocs hits = searcher.Search(new MatchAllDocsQuery(), qwf, 10, null);
+                Assert.AreEqual(1, hits.TotalHits);
+
+                // should not throw exception with complex primitive query
+                BooleanQuery booleanQuery = new BooleanQuery();
+                booleanQuery.Add(termQuery, Occur.MUST);
+                booleanQuery.Add(new TermQuery(new Term("field", "missing")), Occur.MUST_NOT);
+                qwf = new QueryWrapperFilter(termQuery);
+
+                hits = searcher.Search(new MatchAllDocsQuery(), qwf, 10, null);
+                Assert.AreEqual(1, hits.TotalHits);
+
+                // should not throw exception with non primitive Query (doesn't implement
+                // Query#createWeight)
+                qwf = new QueryWrapperFilter(new FuzzyQuery(new Term("field", "valu")));
+
+                hits = searcher.Search(new MatchAllDocsQuery(), qwf, 10, null);
+                Assert.AreEqual(1, hits.TotalHits);
+            }
+        }
 	}
 }

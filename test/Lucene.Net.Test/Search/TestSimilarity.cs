@@ -252,31 +252,33 @@ namespace Lucene.Net.Search
 			writer.AddDocument(d2, null);
 			writer.Optimize(null);
 			writer.Close();
-			
-			Searcher searcher = new IndexSearcher(store, true, null);
-			searcher.Similarity = new SimpleSimilarity();
-			
-			Term a = new Term("field", "a");
-			Term b = new Term("field", "b");
-			Term c = new Term("field", "c");
-			
-			searcher.Search(new TermQuery(b), new AnonymousClassCollector(this), null);
-			
-			BooleanQuery bq = new BooleanQuery();
-			bq.Add(new TermQuery(a), Occur.SHOULD);
-			bq.Add(new TermQuery(b), Occur.SHOULD);
-			//System.out.println(bq.toString("field"));
-			searcher.Search(bq, new AnonymousClassCollector1(this), null);
-			
-			PhraseQuery pq = new PhraseQuery();
-			pq.Add(a);
-			pq.Add(c);
-			//System.out.println(pq.toString("field"));
-			searcher.Search(pq, new AnonymousClassCollector2(this), null);
-			
-			pq.Slop = 2;
-			//System.out.println(pq.toString("field"));
-			searcher.Search(pq, new AnonymousClassCollector3(this), null);
-		}
+
+            using (Searcher searcher = new IndexSearcher(store, true, null))
+            {
+                searcher.Similarity = new SimpleSimilarity();
+
+                Term a = new Term("field", "a");
+                Term b = new Term("field", "b");
+                Term c = new Term("field", "c");
+
+                searcher.Search(new TermQuery(b), new AnonymousClassCollector(this), null);
+
+                BooleanQuery bq = new BooleanQuery();
+                bq.Add(new TermQuery(a), Occur.SHOULD);
+                bq.Add(new TermQuery(b), Occur.SHOULD);
+                //System.out.println(bq.toString("field"));
+                searcher.Search(bq, new AnonymousClassCollector1(this), null);
+
+                PhraseQuery pq = new PhraseQuery();
+                pq.Add(a);
+                pq.Add(c);
+                //System.out.println(pq.toString("field"));
+                searcher.Search(pq, new AnonymousClassCollector2(this), null);
+
+                pq.Slop = 2;
+                //System.out.println(pq.toString("field"));
+                searcher.Search(pq, new AnonymousClassCollector3(this), null);
+            }
+        }
 	}
 }

@@ -373,23 +373,25 @@ namespace Lucene.Net.Search
 			writer.Optimize(null);
 			writer.Close();
 
-		    Searcher searcher = new IndexSearcher(directory, true, null);
-			PhraseQuery query = new PhraseQuery();
-			query.Add(new Term("field", "firstname"));
-			query.Add(new Term("field", "lastname"));
-			query.Slop = System.Int32.MaxValue;
-			ScoreDoc[] hits = searcher.Search(query, null, 1000, null).ScoreDocs;
-			Assert.AreEqual(3, hits.Length);
-			// Make sure that those matches where the terms appear closer to
-			// each other get a higher score:
-			Assert.AreEqual(0.71, hits[0].Score, 0.01);
-			Assert.AreEqual(0, hits[0].Doc);
-			Assert.AreEqual(0.44, hits[1].Score, 0.01);
-			Assert.AreEqual(1, hits[1].Doc);
-			Assert.AreEqual(0.31, hits[2].Score, 0.01);
-			Assert.AreEqual(2, hits[2].Doc);
-			QueryUtils.Check(query, searcher);
-		}
+            using (Searcher searcher = new IndexSearcher(directory, true, null))
+            {
+                PhraseQuery query = new PhraseQuery();
+                query.Add(new Term("field", "firstname"));
+                query.Add(new Term("field", "lastname"));
+                query.Slop = System.Int32.MaxValue;
+                ScoreDoc[] hits = searcher.Search(query, null, 1000, null).ScoreDocs;
+                Assert.AreEqual(3, hits.Length);
+                // Make sure that those matches where the terms appear closer to
+                // each other get a higher score:
+                Assert.AreEqual(0.71, hits[0].Score, 0.01);
+                Assert.AreEqual(0, hits[0].Doc);
+                Assert.AreEqual(0.44, hits[1].Score, 0.01);
+                Assert.AreEqual(1, hits[1].Doc);
+                Assert.AreEqual(0.31, hits[2].Score, 0.01);
+                Assert.AreEqual(2, hits[2].Doc);
+                QueryUtils.Check(query, searcher);
+            }
+        }
 		
 		[Test]
 		public virtual void  TestToString()
