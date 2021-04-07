@@ -1951,9 +1951,12 @@ namespace Lucene.Net.Index
             Assert.AreEqual(1, reader.NumDocs());
             Term t = new Term("field", "a");
             Assert.AreEqual(1, reader.DocFreq(t, null));
-            TermDocs td = reader.TermDocs(t, null);
-            td.Next(null);
-            Assert.AreEqual(128 * 1024, td.Freq);
+            using (TermDocs td = reader.TermDocs(t, null))
+            {
+                td.Next(null);
+                Assert.AreEqual(128 * 1024, td.Freq);
+            }
+
             reader.Close();
             dir.Close();
         }
@@ -1979,6 +1982,7 @@ namespace Lucene.Net.Index
             IndexSearcher searcher = new IndexSearcher(dir, false, null);
             ScoreDoc[] hits = searcher.Search(new TermQuery(searchTerm), null, 1000, null).ScoreDocs;
             Assert.AreEqual(100, hits.Length, "did not get right number of hits");
+            searcher.Dispose();
             writer.Close();
 
             writer = new IndexWriter(dir, new WhitespaceAnalyzer(), true, IndexWriter.MaxFieldLength.LIMITED, null);
@@ -4215,10 +4219,13 @@ namespace Lucene.Net.Index
             Query q = new SpanTermQuery(new Term("field", "a"));
             hits = s.Search(q, null, 1000, null).ScoreDocs;
             Assert.AreEqual(1, hits.Length);
-            TermPositions tps = s.IndexReader.TermPositions(new Term("field", "a"), null);
-            Assert.IsTrue(tps.Next(null));
-            Assert.AreEqual(1, tps.Freq);
-            Assert.AreEqual(0, tps.NextPosition(null));
+            using (TermPositions tps = s.IndexReader.TermPositions(new Term("field", "a"), null))
+            {
+                Assert.IsTrue(tps.Next(null));
+                Assert.AreEqual(1, tps.Freq);
+                Assert.AreEqual(0, tps.NextPosition(null));
+            }
+
             w.Close();
 
             Assert.IsTrue(_TestUtil.CheckIndex(dir));
@@ -5453,13 +5460,36 @@ namespace Lucene.Net.Index
 
 
             // test that the terms were indexed.
-            Assert.IsTrue(ir.TermDocs(new Term("binary", "doc1field1"), null).Next(null));
-            Assert.IsTrue(ir.TermDocs(new Term("binary", "doc2field1"), null).Next(null));
-            Assert.IsTrue(ir.TermDocs(new Term("binary", "doc3field1"), null).Next(null));
-            Assert.IsTrue(ir.TermDocs(new Term("string", "doc1field2"), null).Next(null));
-            Assert.IsTrue(ir.TermDocs(new Term("string", "doc2field2"), null).Next(null));
-            Assert.IsTrue(ir.TermDocs(new Term("string", "doc3field2"), null).Next(null));
+            using (var td = ir.TermDocs(new Term("binary", "doc1field1"), null))
+            {
+                Assert.IsTrue(td.Next(null));
+            }
 
+            using (var td = ir.TermDocs(new Term("binary", "doc2field1"), null))
+            {
+                Assert.IsTrue(td.Next(null));
+            }
+
+            using (var td = ir.TermDocs(new Term("binary", "doc3field1"), null))
+            {
+                Assert.IsTrue(td.Next(null));
+            }
+
+            using (var td = ir.TermDocs(new Term("string", "doc1field2"), null))
+            {
+                Assert.IsTrue(td.Next(null));
+            }
+
+            using (var td = ir.TermDocs(new Term("string", "doc2field2"), null))
+            {
+                Assert.IsTrue(td.Next(null));
+            }
+
+            using (var td = ir.TermDocs(new Term("string", "doc3field2"), null))
+            {
+                Assert.IsTrue(td.Next(null));
+            }
+            
             ir.Close();
             w.Close();
             dir.Close();
