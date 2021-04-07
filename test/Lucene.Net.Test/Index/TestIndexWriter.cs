@@ -1396,6 +1396,7 @@ namespace Lucene.Net.Index
             hits = searcher.Search(new TermQuery(searchTerm), null, 1000, null).ScoreDocs;
             Assert.AreEqual(47, hits.Length, "reader did not see changes after writer was closed");
             searcher.Close();
+            reader.Dispose();
         }
 
         /*
@@ -2021,6 +2022,7 @@ namespace Lucene.Net.Index
             _TestUtil.CheckIndex(dir);
             IndexReader reader = IndexReader.Open(dir, true, null);
             Assert.AreEqual(2, reader.NumDocs());
+            reader.Dispose();
         }
 
         // Test calling optimize(false) whereby optimize is kicked
@@ -2300,13 +2302,16 @@ namespace Lucene.Net.Index
 
             // Make sure the doc that hit the exception was marked
             // as deleted:
-            TermDocs tdocs = reader.TermDocs(t, null);
-            int count = 0;
-            while (tdocs.Next(null))
+            using (TermDocs tdocs = reader.TermDocs(t, null))
             {
-                count++;
+                int count = 0;
+                while (tdocs.Next(null))
+                {
+                    count++;
+                }
+
+                Assert.AreEqual(2, count);
             }
-            Assert.AreEqual(2, count);
 
             Assert.AreEqual(reader.DocFreq(new Term("content", "gg"), null), 0);
             reader.Close();
@@ -2859,13 +2864,16 @@ namespace Lucene.Net.Index
 
                 // Quick test to make sure index is not corrupt:
                 IndexReader reader = IndexReader.Open((Directory) dir, true, null);
-                TermDocs tdocs = reader.TermDocs(new Term("field", "aaa"), null);
-                int count = 0;
-                while (tdocs.Next(null))
+                using (TermDocs tdocs = reader.TermDocs(new Term("field", "aaa"), null))
                 {
-                    count++;
+                    int count = 0;
+                    while (tdocs.Next(null))
+                    {
+                        count++;
+                    }
+                    Assert.IsTrue(count > 0);
                 }
-                Assert.IsTrue(count > 0);
+
                 reader.Close();
 
                 dir.Close();

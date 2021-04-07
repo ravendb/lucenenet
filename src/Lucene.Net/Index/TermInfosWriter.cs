@@ -79,7 +79,7 @@ namespace Lucene.Net.Index
 		
 		private long lastIndexPointer;
 		private bool isIndex;
-		private IMemoryOwner<byte> lastTermBytes = LuceneMemoryPool.Instance.RentBytes(10);
+        private IMemoryOwner<byte> lastTermBytes;
 		private int lastTermBytesLength = 0;
 		private int lastFieldNumber = - 1;
 		
@@ -89,6 +89,7 @@ namespace Lucene.Net.Index
 		internal TermInfosWriter(Directory directory, System.String segment, FieldInfos fis, int interval, IState state)
 		{
 			Initialize(directory, segment, fis, interval, false, state);
+			lastTermBytes = LuceneMemoryPool.Instance.RentBytes(10);
 			other = new TermInfosWriter(directory, segment, fis, interval, true, state);
 			other.other = this;
 		}
@@ -96,6 +97,7 @@ namespace Lucene.Net.Index
 		private TermInfosWriter(Directory directory, System.String segment, FieldInfos fis, int interval, bool isIndex, IState state)
 		{
 			Initialize(directory, segment, fis, interval, isIndex, state);
+            lastTermBytes = LuceneMemoryPool.Instance.RentBytes(10);
 		}
 		
 		private void  Initialize(Directory directory, System.String segment, FieldInfos fis, int interval, bool isi, IState state)
