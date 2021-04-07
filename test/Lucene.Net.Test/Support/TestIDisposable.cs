@@ -51,7 +51,10 @@ namespace Lucene.Net.Support
 
                     using (reader = writer.GetReader(null))
                     {
-                        IndexReader r1 = reader.Reopen(null);
+                        using (IndexReader r1 = reader.Reopen(null))
+                        {
+
+                        }
                     }
 
                     Assert.Throws<AlreadyClosedException>(() => reader.Reopen(null), "IndexReader shouldn't be open here");

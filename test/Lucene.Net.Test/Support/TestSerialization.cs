@@ -97,6 +97,8 @@ namespace Lucene.Net.Support
             int hitCount2 = searcher.Search(lucQuery2, 20, null).TotalHits;
 
             Assert.AreEqual(hitCount, hitCount2, "Error in serialization - different hit counts");
+
+            searcher.Dispose();
         }
     }
 }

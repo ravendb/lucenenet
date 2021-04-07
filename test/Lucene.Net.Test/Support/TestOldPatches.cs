@@ -50,6 +50,9 @@ namespace Lucene.Net.Support
             //Console.WriteLine("tpv: " + tpv);
             int index = tpv.IndexOf("a_");
             Assert.AreEqual(index, 1, "See the issue: LUCENENET-183");
+
+            reader.Dispose();
+            writer.Dispose();
         }
 
         //-------------------------------------------
@@ -192,7 +195,11 @@ namespace Lucene.Net.Support
             int resCount2 = new IndexSearcher(reader).Search(new TermQuery(new Term("TEST", "mytest")),100, null).TotalHits;
             Assert.AreEqual(1, resCount2, "Reopen not invoked yet, resultCount must still be 1.");
 
-            reader = reader.Reopen(null);
+            using (var oldReader = reader)
+            {
+                reader = reader.Reopen(null);
+            }
+
             Assert.IsTrue(reader.IsCurrent(null));
 
             int resCount3 = new IndexSearcher(reader).Search(new TermQuery(new Term("TEST", "mytest")), 100, null).TotalHits;
