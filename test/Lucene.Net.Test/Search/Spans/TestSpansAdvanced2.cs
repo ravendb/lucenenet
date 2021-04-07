@@ -54,8 +54,16 @@ namespace Lucene.Net.Search.Spans
 			// re-open the searcher since we added more docs
 			searcher2 = new IndexSearcher(mDirectory, true, null);
 		}
-		
-		/// <summary> Verifies that the index has the correct number of documents.
+
+        public override void TearDown()
+        {
+            base.TearDown();
+
+			searcher2?.Dispose();
+            searcher2 = null;
+        }
+
+        /// <summary> Verifies that the index has the correct number of documents.
 		/// 
 		/// </summary>
 		/// <throws>  Exception </throws>
