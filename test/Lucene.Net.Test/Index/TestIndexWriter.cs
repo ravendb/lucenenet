@@ -991,10 +991,12 @@ namespace Lucene.Net.Index
 
             // Make sure position is still incremented when
             // massive term is skipped:
-            TermPositions tps = reader.TermPositions(new Term("content", "another"), null);
-            Assert.IsTrue(tps.Next(null));
-            Assert.AreEqual(1, tps.Freq);
-            Assert.AreEqual(3, tps.NextPosition(null));
+            using (TermPositions tps = reader.TermPositions(new Term("content", "another"), null))
+            {
+                Assert.IsTrue(tps.Next(null));
+                Assert.AreEqual(1, tps.Freq);
+                Assert.AreEqual(3, tps.NextPosition(null));
+            }
 
             // Make sure the doc that has the massive term is in
             // the index:

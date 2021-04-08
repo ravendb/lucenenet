@@ -134,14 +134,16 @@ namespace Lucene.Net.Index
 				IndexWriter writer1 = new IndexWriter(dir1, new WhitespaceAnalyzer(), IndexWriter.MaxFieldLength.LIMITED, null);
 				writer1.SetMaxBufferedDocs(3);
 				writer1.MergeFactor = 2;
-				((ConcurrentMergeScheduler) writer1.MergeScheduler).SetSuppressExceptions();
+                writer1.SetMergeScheduler(new SerialMergeScheduler(), null);
+				//((ConcurrentMergeScheduler) writer1.MergeScheduler).SetSuppressExceptions();
 				
 				IndexWriter writer2 = new IndexWriter(dir2, new WhitespaceAnalyzer(), IndexWriter.MaxFieldLength.LIMITED, null);
-				// Intentionally use different params so flush/merge
+				writer2.SetMergeScheduler(new SerialMergeScheduler(), null);
+                // Intentionally use different params so flush/merge
 				// happen @ different times
 				writer2.SetMaxBufferedDocs(2);
 				writer2.MergeFactor = 3;
-				((ConcurrentMergeScheduler) writer2.MergeScheduler).SetSuppressExceptions();
+				//((ConcurrentMergeScheduler) writer2.MergeScheduler).SetSuppressExceptions();
 				
 				Update(writer1);
 				Update(writer2);
@@ -179,10 +181,10 @@ namespace Lucene.Net.Index
 				finally
 				{
 					TestTransactions.doFail = false;
+
+                    writer1.Dispose(waitForMerges: true);
+                    writer2.Dispose(waitForMerges: true);
 				}
-				
-				writer1.Close();
-				writer2.Close();
 			}
 			
 			public virtual void  Update(IndexWriter writer)
@@ -245,7 +247,7 @@ namespace Lucene.Net.Index
 				d.Add(new Field("contents", English.IntToEnglish(n), Field.Store.NO, Field.Index.ANALYZED));
 				writer.AddDocument(d, null);
 			}
-			writer.Close();
+			writer.Dispose(waitForMerges: true);
 		}
 		
 		[Test]
