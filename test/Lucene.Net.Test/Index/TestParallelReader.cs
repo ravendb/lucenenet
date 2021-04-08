@@ -307,7 +307,7 @@ namespace Lucene.Net.Index
 			ParallelReader pr = new ParallelReader();
             pr.Add(IndexReader.Open(dir1, false, null));
             pr.Add(IndexReader.Open(dir2, false, null));
-			return new IndexSearcher(pr);
+			return new IndexSearcher(pr, closeReader: true);
 		}
 		
 		private Directory GetDir1()

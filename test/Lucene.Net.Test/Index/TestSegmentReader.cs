@@ -141,32 +141,37 @@ namespace Lucene.Net.Index
 		[Test]
 		public virtual void  TestTerms()
 		{
-			TermEnum terms = reader.Terms(null);
-			Assert.IsTrue(terms != null);
-			while (terms.Next(null) == true)
-			{
-				Term term = terms.Term;
-				Assert.IsTrue(term != null);
-				//System.out.println("Term: " + term);
-				System.String fieldValue = (System.String) DocHelper.nameValues[term.Field];
-				Assert.IsTrue(fieldValue.IndexOf(term.Text) != - 1);
-			}
-			
-			TermDocs termDocs = reader.TermDocs(null);
-			Assert.IsTrue(termDocs != null);
-			termDocs.Seek(new Term(DocHelper.TEXT_FIELD_1_KEY, "field"), null);
-			Assert.IsTrue(termDocs.Next(null) == true);
-			
-			termDocs.Seek(new Term(DocHelper.NO_NORMS_KEY, DocHelper.NO_NORMS_TEXT), null);
-			Assert.IsTrue(termDocs.Next(null) == true);
-			
-			
-			TermPositions positions = reader.TermPositions(null);
-			positions.Seek(new Term(DocHelper.TEXT_FIELD_1_KEY, "field"), null);
-			Assert.IsTrue(positions != null);
-			Assert.IsTrue(positions.Doc == 0);
-			Assert.IsTrue(positions.NextPosition(null) >= 0);
-		}
+            using (TermEnum terms = reader.Terms(null))
+            {
+                Assert.IsTrue(terms != null);
+                while (terms.Next(null) == true)
+                {
+                    Term term = terms.Term;
+                    Assert.IsTrue(term != null);
+                    //System.out.println("Term: " + term);
+                    System.String fieldValue = (System.String) DocHelper.nameValues[term.Field];
+                    Assert.IsTrue(fieldValue.IndexOf(term.Text) != -1);
+                }
+            }
+
+            using (TermDocs termDocs = reader.TermDocs(null))
+            {
+                Assert.IsTrue(termDocs != null);
+                termDocs.Seek(new Term(DocHelper.TEXT_FIELD_1_KEY, "field"), null);
+                Assert.IsTrue(termDocs.Next(null) == true);
+
+                termDocs.Seek(new Term(DocHelper.NO_NORMS_KEY, DocHelper.NO_NORMS_TEXT), null);
+                Assert.IsTrue(termDocs.Next(null) == true);
+            }
+
+            using (TermPositions positions = reader.TermPositions(null))
+            {
+                positions.Seek(new Term(DocHelper.TEXT_FIELD_1_KEY, "field"), null);
+                Assert.IsTrue(positions != null);
+                Assert.IsTrue(positions.Doc == 0);
+                Assert.IsTrue(positions.NextPosition(null) >= 0);
+            }
+        }
 		
 		[Test]
 		public virtual void  TestNorms()

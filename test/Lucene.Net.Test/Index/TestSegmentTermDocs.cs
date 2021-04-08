@@ -78,17 +78,20 @@ namespace Lucene.Net.Index
 			SegmentReader reader = SegmentReader.Get(true, info, indexDivisor, null);
 			Assert.IsTrue(reader != null);
 			Assert.AreEqual(indexDivisor, reader.TermInfosIndexDivisor);
-			SegmentTermDocs segTermDocs = new SegmentTermDocs(reader, null);
-			Assert.IsTrue(segTermDocs != null);
-			segTermDocs.Seek(new Term(DocHelper.TEXT_FIELD_2_KEY, "field"), null);
-			if (segTermDocs.Next(null) == true)
-			{
-				int docId = segTermDocs.Doc;
-				Assert.IsTrue(docId == 0);
-				int freq = segTermDocs.Freq;
-				Assert.IsTrue(freq == 3);
-			}
-			reader.Close();
+            using (SegmentTermDocs segTermDocs = new SegmentTermDocs(reader, null))
+            {
+                Assert.IsTrue(segTermDocs != null);
+                segTermDocs.Seek(new Term(DocHelper.TEXT_FIELD_2_KEY, "field"), null);
+                if (segTermDocs.Next(null) == true)
+                {
+                    int docId = segTermDocs.Doc;
+                    Assert.IsTrue(docId == 0);
+                    int freq = segTermDocs.Freq;
+                    Assert.IsTrue(freq == 3);
+                }
+            }
+
+            reader.Close();
 		}
 		
 		[Test]
