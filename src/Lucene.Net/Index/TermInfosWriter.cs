@@ -89,9 +89,9 @@ namespace Lucene.Net.Index
 		internal TermInfosWriter(Directory directory, System.String segment, FieldInfos fis, int interval, IState state)
 		{
 			Initialize(directory, segment, fis, interval, false, state);
-			lastTermBytes = LuceneMemoryPool.Instance.RentBytes(10);
 			other = new TermInfosWriter(directory, segment, fis, interval, true, state);
 			other.other = this;
+            lastTermBytes = LuceneMemoryPool.Instance.RentBytes(10);
 		}
 		
 		private TermInfosWriter(Directory directory, System.String segment, FieldInfos fis, int interval, bool isIndex, IState state)
@@ -243,6 +243,9 @@ namespace Lucene.Net.Index
 			// Move to protected method if class becomes unsealed
 			if (isDisposed) return;
 
+            lastTermBytes?.Dispose();
+            lastTermBytes = null;
+
 			using (!isIndex ? other : null)
 			using (output)
 			{
@@ -250,8 +253,6 @@ namespace Lucene.Net.Index
 				output.WriteLong(size);
 			}
 
-			lastTermBytes?.Dispose();
-            lastTermBytes = null;
 			isDisposed = true;
 		}
 	}

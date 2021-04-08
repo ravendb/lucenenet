@@ -680,9 +680,9 @@ namespace Lucene.Net.Index
 		{
 			
 			SegmentWriteState state = new SegmentWriteState(null, directory, segment, null, mergedDocs, 0, termIndexInterval);
-			
+
 			FormatPostingsFieldsConsumer consumer = new FormatPostingsFieldsWriter(state, fieldInfos, s);
-			
+
 			try
 			{
 				queue = new SegmentMergeQueue(readers.Count);
@@ -708,71 +708,97 @@ namespace Lucene.Net.Index
 				IndexReader reader = readers[i];
 				TermEnum termEnum = reader.Terms(state);
 				SegmentMergeInfo smi = new SegmentMergeInfo(base_Renamed, termEnum, reader);
-				int[] docMap = smi.GetDocMap();
-				if (docMap != null)
-				{
-					if (docMaps == null)
-					{
-						docMaps = new int[readerCount][];
-						delCounts = new int[readerCount];
-					}
-					docMaps[i] = docMap;
-					delCounts[i] = smi.reader.MaxDoc - smi.reader.NumDocs();
-				}
+                try
+                {
+                    int[] docMap = smi.GetDocMap();
+                    if (docMap != null)
+                    {
+                        if (docMaps == null)
+                        {
+                            docMaps = new int[readerCount][];
+                            delCounts = new int[readerCount];
+                        }
+                        docMaps[i] = docMap;
+                        delCounts[i] = smi.reader.MaxDoc - smi.reader.NumDocs();
+                    }
 				
-				base_Renamed += reader.NumDocs();
+                    base_Renamed += reader.NumDocs();
 				
-				System.Diagnostics.Debug.Assert(reader.NumDocs() == reader.MaxDoc - smi.delCount);
+                    System.Diagnostics.Debug.Assert(reader.NumDocs() == reader.MaxDoc - smi.delCount);
 				
-				if (smi.Next(state))
-					queue.Add(smi);
-				// initialize queue
-				else
-					smi.Dispose();
+                    if (smi.Next(state))
+                        queue.Add(smi);
+                    // initialize queue
+                    else
+                        smi.Dispose();
+                }
+                catch
+                {
+                    smi.Dispose();
+                    throw;
+                }
 			}
 			
 			SegmentMergeInfo[] match = new SegmentMergeInfo[readers.Count];
 			
 			System.String currentField = null;
 			FormatPostingsTermsConsumer termsConsumer = null;
-			
-			while (queue.Size() > 0)
-			{
-				int matchSize = 0; // pop matching terms
-				match[matchSize++] = queue.Pop();
-				Term term = match[0].term;
-				SegmentMergeInfo top = queue.Top();
+
+            try
+            {
+                while (queue.Size() > 0)
+                {
+                    int matchSize = 0; // pop matching terms
+                    match[matchSize++] = queue.Pop();
+                    Term term = match[0].term;
+                    SegmentMergeInfo top = queue.Top();
 				
-				while (top != null && term.CompareTo(top.term) == 0)
-				{
-					match[matchSize++] = queue.Pop();
-					top = queue.Top();
-				}
+                    while (top != null && term.CompareTo(top.term) == 0)
+                    {
+                        match[matchSize++] = queue.Pop();
+                        top = queue.Top();
+                    }
 				
-				if ((System.Object) currentField != (System.Object) term.Field)
-				{
-                    currentField = term.Field;
-					if (termsConsumer != null)
-						termsConsumer.Finish();
-					FieldInfo fieldInfo = fieldInfos.FieldInfo(currentField);
-					termsConsumer = consumer.AddField(fieldInfo);
-					omitTermFreqAndPositions = fieldInfo.omitTermFreqAndPositions;
-				}
+                    if ((System.Object) currentField != (System.Object) term.Field)
+                    {
+                        currentField = term.Field;
+                        if (termsConsumer != null)
+                            termsConsumer.Finish();
+                        FieldInfo fieldInfo = fieldInfos.FieldInfo(currentField);
+                        termsConsumer = consumer.AddField(fieldInfo);
+                        omitTermFreqAndPositions = fieldInfo.omitTermFreqAndPositions;
+                    }
 				
-				int df = AppendPostings(termsConsumer, match, matchSize, state); // add new TermInfo
+                    int df = AppendPostings(termsConsumer, match, matchSize, state); // add new TermInfo
 				
-				checkAbort.Work(df / 3.0, state);
+                    checkAbort.Work(df / 3.0, state);
 				
-				while (matchSize > 0)
-				{
-					SegmentMergeInfo smi = match[--matchSize];
-					if (smi.Next(state))
-						queue.Add(smi);
-					// restore queue
-					else
-						smi.Dispose(); // done with a segment
-				}
-			}
+                    while (matchSize > 0)
+                    {
+                        SegmentMergeInfo smi = match[--matchSize];
+                        if (smi.Next(state))
+                            queue.Add(smi);
+                        // restore queue
+                        else
+                            smi.Dispose(); // done with a segment
+                    }
+                }
+            }
+            catch
+            {
+                foreach (var smi in match)
+                {
+					smi?.Dispose();
+                }
+
+                while (queue.Size() > 0)
+                {
+                    var smi = queue.Pop();
+					smi?.Dispose();
+                }
+
+                throw;
+            }
 		}
 		
 		private int[][] docMaps;
@@ -801,66 +827,66 @@ namespace Lucene.Net.Index
 		/// <throws>  IOException if there is a low-level IO error </throws>
 		private int AppendPostings(FormatPostingsTermsConsumer termsConsumer, SegmentMergeInfo[] smis, int n, IState state)
 		{
-			
 			FormatPostingsDocsConsumer docConsumer = termsConsumer.AddTerm(smis[0].term.Text);
 			int df = 0;
 			for (int i = 0; i < n; i++)
 			{
 				SegmentMergeInfo smi = smis[i];
-				TermPositions postings = smi.GetPositions(state);
-				System.Diagnostics.Debug.Assert(postings != null);
-				int base_Renamed = smi.base_Renamed;
-				int[] docMap = smi.GetDocMap();
-				postings.Seek(smi.termEnum, state);
-				
-				while (postings.Next(state))
-				{
-					df++;
-					int doc = postings.Doc;
-					if (docMap != null)
-						doc = docMap[doc]; // map around deletions
-					doc += base_Renamed; // convert to merged space
-					
-					int freq = postings.Freq;
-					FormatPostingsPositionsConsumer posConsumer = docConsumer.AddDoc(doc, freq);
-					
-					if (!omitTermFreqAndPositions)
-					{
-						IMemoryOwner<byte> payloadBuffer = null;
-						try
-                        {
-							for (int j = 0; j < freq; j++)
-							{
-								int position = postings.NextPosition(state);
-								int payloadLength = postings.PayloadLength;
-								if (payloadLength > 0)
-								{
-									if (payloadBuffer == null)
-										payloadBuffer = LuceneMemoryPool.Instance.RentBytes(payloadLength);
-									else if (payloadBuffer.Memory.Length < payloadLength)
-                                    {
-										payloadBuffer.Dispose();
-										payloadBuffer = LuceneMemoryPool.Instance.RentBytes(payloadLength);
-									}
+                TermPositions postings = smi.GetPositions(state);
+                System.Diagnostics.Debug.Assert(postings != null);
+                int base_Renamed = smi.base_Renamed;
+                int[] docMap = smi.GetDocMap();
+                postings.Seek(smi.termEnum, state);
 
-									postings.GetPayload(payloadBuffer.Memory, state);
-								}
+                while (postings.Next(state))
+                {
+                    df++;
+                    int doc = postings.Doc;
+                    if (docMap != null)
+                        doc = docMap[doc]; // map around deletions
+                    doc += base_Renamed; // convert to merged space
+
+                    int freq = postings.Freq;
+                    FormatPostingsPositionsConsumer posConsumer = docConsumer.AddDoc(doc, freq);
+
+                    if (!omitTermFreqAndPositions)
+                    {
+                        IMemoryOwner<byte> payloadBuffer = null;
+                        try
+                        {
+                            for (int j = 0; j < freq; j++)
+                            {
+                                int position = postings.NextPosition(state);
+                                int payloadLength = postings.PayloadLength;
+                                if (payloadLength > 0)
+                                {
+                                    if (payloadBuffer == null)
+                                        payloadBuffer = LuceneMemoryPool.Instance.RentBytes(payloadLength);
+                                    else if (payloadBuffer.Memory.Length < payloadLength)
+                                    {
+                                        payloadBuffer.Dispose();
+                                        payloadBuffer = LuceneMemoryPool.Instance.RentBytes(payloadLength);
+                                    }
+
+                                    postings.GetPayload(payloadBuffer.Memory, state);
+                                }
 
                                 var payload = payloadLength == 0
                                     ? Span<byte>.Empty
                                     : payloadBuffer.Memory.Span.Slice(0, payloadLength);
 
-								posConsumer.AddPosition(position, payload);
-							}
-							posConsumer.Finish();
-						}
+                                posConsumer.AddPosition(position, payload);
+                            }
+
+                            posConsumer.Finish();
+                        }
                         finally
                         {
-							payloadBuffer?.Dispose();
+                            payloadBuffer?.Dispose();
                         }
-					}
-				}
-			}
+                    }
+                }
+            }
 			docConsumer.Finish();
 			
 			return df;
