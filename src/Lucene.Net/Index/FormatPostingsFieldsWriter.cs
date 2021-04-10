@@ -64,10 +64,10 @@ namespace Lucene.Net.Index
 		/// <summary>Called when we are done adding everything. </summary>
 		internal override void  Finish()
 		{
-			using(termsWriter)
+			using (termsWriter)
+			using (skipListWriter)
 			using (termsOut)
 			{
-				
 			}
 		}
 	}

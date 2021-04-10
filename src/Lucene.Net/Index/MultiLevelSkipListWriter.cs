@@ -46,7 +46,7 @@ namespace Lucene.Net.Index
 	/// subclasses must define the actual format of the skip data.
 	/// 
 	/// </summary>
-	abstract class MultiLevelSkipListWriter
+	abstract class MultiLevelSkipListWriter : IDisposable
 	{
 		// number of levels in this skip list
 		private int numberOfSkipLevels;
@@ -56,9 +56,12 @@ namespace Lucene.Net.Index
 		
 		// for every skip level a different buffer is used 
 		private RAMOutputStream[] skipBuffer;
+
+        protected readonly int maxNumberOfSkipLevels;
 		
 		protected internal MultiLevelSkipListWriter(int skipInterval, int maxSkipLevels, int df)
 		{
+            maxNumberOfSkipLevels = maxSkipLevels;
 			this.skipInterval = skipInterval;
 			
 			// calculate the maximum number of skip levels for this document frequency
@@ -174,5 +177,7 @@ namespace Lucene.Net.Index
 			
 			return skipPointer;
 		}
-	}
+
+        public abstract void Dispose();
+    }
 }

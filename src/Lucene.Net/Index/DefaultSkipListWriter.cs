@@ -16,7 +16,9 @@
  */
 
 using System;
-
+using System.Buffers;
+using System.Diagnostics;
+using Lucene.Net.Memory;
 using IndexOutput = Lucene.Net.Store.IndexOutput;
 
 namespace Lucene.Net.Index
@@ -30,10 +32,10 @@ namespace Lucene.Net.Index
     // PERF: Internal and noone is extending from it. On CoreCLR 2.0 we can achieve some devirtualization for it. 
     sealed class DefaultSkipListWriter : MultiLevelSkipListWriter
 	{
-		private int[] lastSkipDoc;
-		private int[] lastSkipPayloadLength;
-		private long[] lastSkipFreqPointer;
-		private long[] lastSkipProxPointer;
+		private IMemoryOwner<int> lastSkipDoc;
+		private IMemoryOwner<int> lastSkipPayloadLength;
+		private IMemoryOwner<long> lastSkipFreqPointer;
+		private IMemoryOwner<long> lastSkipProxPointer;
 		
 		private IndexOutput freqOutput;
 		private IndexOutput proxOutput;
@@ -48,11 +50,11 @@ namespace Lucene.Net.Index
 		{
 			this.freqOutput = freqOutput;
 			this.proxOutput = proxOutput;
-			
-			lastSkipDoc = new int[numberOfSkipLevels];
-			lastSkipPayloadLength = new int[numberOfSkipLevels];
-			lastSkipFreqPointer = new long[numberOfSkipLevels];
-			lastSkipProxPointer = new long[numberOfSkipLevels];
+
+            lastSkipDoc = LuceneMemoryPool.Instance.RentInts(numberOfSkipLevels);
+			lastSkipPayloadLength = LuceneMemoryPool.Instance.RentInts(numberOfSkipLevels);
+			lastSkipFreqPointer = LuceneMemoryPool.Instance.RentLongs(numberOfSkipLevels);
+			lastSkipProxPointer = LuceneMemoryPool.Instance.RentLongs(numberOfSkipLevels);
 		}
 		
 		internal void SetFreqOutput(IndexOutput freqOutput)
@@ -78,17 +80,23 @@ namespace Lucene.Net.Index
 		
 		protected internal override void ResetSkip()
 		{
-		    ResetSkipInternal();		    
+		    ResetSkipInternal();
 
-            for (int i = 0; i < lastSkipDoc.Length; i++) lastSkipDoc[i] = 0;
-			for (int i = 0; i < lastSkipPayloadLength.Length; i++) lastSkipPayloadLength[i] = -1; // we don't have to write the first length in the skip list
-			for (int i = 0; i < lastSkipFreqPointer.Length; i++) lastSkipFreqPointer[i] = freqOutput.FilePointer;
-			if (proxOutput != null)
-				for (int i = 0; i < lastSkipProxPointer.Length; i++) lastSkipProxPointer[i] = proxOutput.FilePointer;
-		}
+            for (var i = 0; i < maxNumberOfSkipLevels; i++)
+            {
+                lastSkipDoc.Memory.Span[i] = 0;
+                lastSkipPayloadLength.Memory.Span[i] = -1; // we don't have to write the first length in the skip list
+                lastSkipFreqPointer.Memory.Span[i] = freqOutput.FilePointer;
+
+				if (proxOutput != null)
+                    lastSkipProxPointer.Memory.Span[i] = proxOutput.FilePointer;
+            }
+        }
 		
 		protected internal override void  WriteSkipData(int level, IndexOutput skipBuffer)
 		{
+            Debug.Assert(level <= maxNumberOfSkipLevels, "level <= maxNumberOfSkipLevels");
+
 			// To efficiently store payloads in the posting lists we do not store the length of
 			// every payload. Instead we omit the length for a payload if the previous payload had
 			// the same length.
@@ -111,8 +119,8 @@ namespace Lucene.Net.Index
 			//         skip point
 			if (curStorePayloads)
 			{
-				int delta = curDoc - lastSkipDoc[level];
-				if (curPayloadLength == lastSkipPayloadLength[level])
+				int delta = curDoc - lastSkipDoc.Memory.Span[level];
+				if (curPayloadLength == lastSkipPayloadLength.Memory.Span[level])
 				{
 					// the current payload length equals the length at the previous skip point,
 					// so we don't store the length again
@@ -124,22 +132,37 @@ namespace Lucene.Net.Index
 					// set the lowest bit and store the current payload length as VInt.
 					skipBuffer.WriteVInt(delta * 2 + 1);
 					skipBuffer.WriteVInt(curPayloadLength);
-					lastSkipPayloadLength[level] = curPayloadLength;
+					lastSkipPayloadLength.Memory.Span[level] = curPayloadLength;
 				}
 			}
 			else
 			{
 				// current field does not store payloads
-				skipBuffer.WriteVInt(curDoc - lastSkipDoc[level]);
+				skipBuffer.WriteVInt(curDoc - lastSkipDoc.Memory.Span[level]);
 			}
-			skipBuffer.WriteVInt((int) (curFreqPointer - lastSkipFreqPointer[level]));
-			skipBuffer.WriteVInt((int) (curProxPointer - lastSkipProxPointer[level]));
+			skipBuffer.WriteVInt((int) (curFreqPointer - lastSkipFreqPointer.Memory.Span[level]));
+			skipBuffer.WriteVInt((int) (curProxPointer - lastSkipProxPointer.Memory.Span[level]));
 			
-			lastSkipDoc[level] = curDoc;
+			lastSkipDoc.Memory.Span[level] = curDoc;
 			//System.out.println("write doc at level " + level + ": " + curDoc);
 			
-			lastSkipFreqPointer[level] = curFreqPointer;
-			lastSkipProxPointer[level] = curProxPointer;
+			lastSkipFreqPointer.Memory.Span[level] = curFreqPointer;
+			lastSkipProxPointer.Memory.Span[level] = curProxPointer;
 		}
-	}
+
+        public override void Dispose()
+        {
+            lastSkipDoc?.Dispose();
+            lastSkipDoc = null;
+
+			lastSkipFreqPointer?.Dispose();
+            lastSkipFreqPointer = null;
+
+			lastSkipPayloadLength?.Dispose();
+            lastSkipPayloadLength = null;
+
+			lastSkipProxPointer?.Dispose();
+            lastSkipProxPointer = null;
+        }
+    }
 }
