@@ -54,32 +54,41 @@ namespace Lucene.Net.Spatial.Util
 				return result;
 			}
 
-			String lastField = null;
+			string lastField = null;
 			TermsEnumCompatibility termsEnum = null;
-			foreach (Term term in terms)
-			{
-				if (!term.Field.Equals(lastField))
-				{
-					var termsC = new TermsEnumCompatibility(reader, term.Field, state);
-					if (termsC.Term() == null)
-					{
-						return result;
-					}
-					termsEnum = termsC;
-					lastField = term.Field;
-				}
+            try
+            {
+                foreach (Term term in terms)
+                {
+                    if (!term.Field.Equals(lastField))
+                    {
+                        var termsC = new TermsEnumCompatibility(reader, term.Field, state);
+                        if (termsC.Term() == null)
+                        {
+							termsC.Dispose();
+                            return result;
+                        }
+						termsEnum?.Dispose();
+                        termsEnum = termsC;
+                        lastField = term.Field;
+                    }
 
-				if (terms != null)
-				{
-					// TODO this check doesn't make sense, decide which variable its supposed to be for
-					Debug.Assert(termsEnum != null);
-					if (termsEnum.SeekCeil(term.Text, state) == TermsEnumCompatibility.SeekStatus.FOUND)
-					{
-						termsEnum.Docs(result, state);
-					}
-				}
-			}
-			return result;
+                    if (terms != null)
+                    {
+                        // TODO this check doesn't make sense, decide which variable its supposed to be for
+                        Debug.Assert(termsEnum != null);
+                        if (termsEnum.SeekCeil(term.Text, state) == TermsEnumCompatibility.SeekStatus.FOUND)
+                        {
+                            termsEnum.Docs(result, state);
+                        }
+                    }
+                }
+                return result;
+            }
+            finally
+            {
+                termsEnum?.Dispose();
+            }
 		}
 
 		public override bool Equals(object obj)

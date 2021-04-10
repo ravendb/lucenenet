@@ -35,72 +35,75 @@ namespace Lucene.Net.Spatial.Util
     /// </summary>
     /// <typeparam name="T"></typeparam>
 	public abstract class ShapeFieldCacheProvider<T> where T : Shape
-	{
-		//private Logger log = Logger.getLogger(getClass().getName());
+    {
+        //private Logger log = Logger.getLogger(getClass().getName());
 
-		// it may be a List<T> or T
+        // it may be a List<T> or T
 #if !NET35
-		private readonly ConditionalWeakTable<IndexReader, ShapeFieldCache<T>> sidx =
-			new ConditionalWeakTable<IndexReader, ShapeFieldCache<T>>(); // WeakHashMap
+        private readonly ConditionalWeakTable<IndexReader, ShapeFieldCache<T>> sidx =
+            new ConditionalWeakTable<IndexReader, ShapeFieldCache<T>>(); // WeakHashMap
 #else
 	    private readonly WeakDictionary<IndexReader, ShapeFieldCache<T>> sidx =
 	        new WeakDictionary<IndexReader, ShapeFieldCache<T>>();
 #endif
 
 
-		protected readonly int defaultSize;
-		protected readonly String shapeField;
+        protected readonly int defaultSize;
+        protected readonly String shapeField;
 
-		protected ShapeFieldCacheProvider(String shapeField, int defaultSize)
-		{
-			this.shapeField = shapeField;
-			this.defaultSize = defaultSize;
-		}
+        protected ShapeFieldCacheProvider(String shapeField, int defaultSize)
+        {
+            this.shapeField = shapeField;
+            this.defaultSize = defaultSize;
+        }
 
-		protected abstract T ReadShape(/*BytesRef*/ Term term);
+        protected abstract T ReadShape(/*BytesRef*/ Term term);
 
-		private readonly object locker = new object();
+        private readonly object locker = new object();
 
-		public ShapeFieldCache<T> GetCache(IndexReader reader, IState state)
-		{
-			lock (locker)
-			{
-				ShapeFieldCache<T> idx;
-				if (sidx.TryGetValue(reader, out idx) && idx != null)
-				{
-					return idx;
-				}
+        public ShapeFieldCache<T> GetCache(IndexReader reader, IState state)
+        {
+            lock (locker)
+            {
+                ShapeFieldCache<T> idx;
+                if (sidx.TryGetValue(reader, out idx) && idx != null)
+                {
+                    return idx;
+                }
 
-				//long startTime = System.CurrentTimeMillis();
-				//log.fine("Building Cache [" + reader.MaxDoc() + "]");
+                //long startTime = System.CurrentTimeMillis();
+                //log.fine("Building Cache [" + reader.MaxDoc() + "]");
 
-				idx = new ShapeFieldCache<T>(reader.MaxDoc, defaultSize);
-				var count = 0;
-				var tec = new TermsEnumCompatibility(reader, shapeField, state);
+                idx = new ShapeFieldCache<T>(reader.MaxDoc, defaultSize);
+                var count = 0;
+                using (var tec = new TermsEnumCompatibility(reader, shapeField, state))
+                {
+                    var term = tec.Next(state);
+                    while (term != null)
+                    {
+                        var shape = ReadShape(term);
+                        if (shape != null)
+                        {
+                            using (var docs = reader.TermDocs(new Term(shapeField, tec.Term().Text), state))
+                            {
+                                while (docs.Next(state))
+                                {
+                                    idx.Add(docs.Doc, shape);
+                                    count++;
+                                }
+                            }
+                        }
 
-				var term = tec.Next(state);
-				while (term != null)
-				{
-					var shape = ReadShape(term);
-					if (shape != null)
-					{
-						var docs = reader.TermDocs(new Term(shapeField, tec.Term().Text), state);
-						while (docs.Next(state))
-						{
-							idx.Add(docs.Doc, shape);
-							count++;
-						}
-					}
-					term = tec.Next(state);
-				}
+                        term = tec.Next(state);
+                    }
 
-				sidx.Add(reader, idx);
-				tec.Close();
+                    sidx.Add(reader, idx);
+                }
 
-				//long elapsed = System.CurrentTimeMillis() - startTime;
-				//log.fine("Cached: [" + count + " in " + elapsed + "ms] " + idx);
-				return idx;
-			}
-		}
-	}
+                //long elapsed = System.CurrentTimeMillis() - startTime;
+                //log.fine("Cached: [" + count + " in " + elapsed + "ms] " + idx);
+                return idx;
+            }
+        }
+    }
 }

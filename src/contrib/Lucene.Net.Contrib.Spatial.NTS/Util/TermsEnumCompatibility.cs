@@ -32,7 +32,7 @@ namespace Lucene.Net.Spatial.Util
 	/// SOLR-2155
 	/// @author dsmiley
 	/// </summary>
-	public class TermsEnumCompatibility
+	public class TermsEnumCompatibility : IDisposable
 	{
 		private readonly IndexReader reader;
 		private readonly String fieldName;
@@ -73,7 +73,7 @@ namespace Lucene.Net.Spatial.Util
 
 		public void Close()
 		{
-			termEnum.Close();
+			Dispose();
 		}
 
 		public enum SeekStatus
@@ -85,6 +85,7 @@ namespace Lucene.Net.Spatial.Util
 
 		public SeekStatus Seek(String value, IState state)
 		{
+			termEnum?.Dispose();
 			termEnum = reader.Terms(new Term(this.fieldName, value), state);
 			Term t = Term();
 			if (t == null)
@@ -122,20 +123,29 @@ namespace Lucene.Net.Spatial.Util
 
 		public void Docs(OpenBitSet bits, IState state)
 		{
-			var termDocs = reader.TermDocs(new Term(fieldName, Term().Text), state);
-			while (termDocs.Next(state))
-			{
-				bits.FastSet(termDocs.Doc);
-			}
-		}
+            using (var termDocs = reader.TermDocs(new Term(fieldName, Term().Text), state))
+            {
+                while (termDocs.Next(state))
+                {
+                    bits.FastSet(termDocs.Doc);
+                }
+            }
+        }
 
 		public void Docs(FixedBitSet bits, IState state)
 		{
-			var termDocs = reader.TermDocs(new Term(fieldName, Term().Text), state);
-			while (termDocs.Next(state))
-			{
-				bits.Set(termDocs.Doc);
-			}
-		}
-	}
+            using (var termDocs = reader.TermDocs(new Term(fieldName, Term().Text), state))
+            {
+                while (termDocs.Next(state))
+                {
+                    bits.Set(termDocs.Doc);
+                }
+            }
+        }
+
+        public void Dispose()
+        {
+            termEnum?.Dispose();
+        }
+    }
 }
