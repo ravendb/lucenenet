@@ -1122,7 +1122,9 @@ namespace Lucene.Net.Index
 					r = r2;
 				}
 				Query q = new TermQuery(new Term("indexname", "test"));
-				sum += new IndexSearcher(r).Search(q, 10, null).TotalHits;
+
+				using (var s = new IndexSearcher(r))
+				    sum += s.Search(q, 10, null).TotalHits;
 			}
 			
 			for (int i = 0; i < NUM_THREAD; i++)

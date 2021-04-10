@@ -15,6 +15,9 @@
  * limitations under the License.
  */
 
+using System.Buffers;
+using System.Diagnostics;
+using Lucene.Net.Memory;
 using Lucene.Net.Store;
 using Lucene.Net.Support;
 using IndexInput = Lucene.Net.Store.IndexInput;
@@ -30,20 +33,19 @@ namespace Lucene.Net.Index
     sealed class DefaultSkipListReader : MultiLevelSkipListReader
 	{
 		private bool currentFieldStoresPayloads;
-		private readonly long[] freqPointer;
-		private readonly long[] proxPointer;
-		private readonly int[] payloadLength;
+		private IMemoryOwner<long> freqPointer;
+		private IMemoryOwner<long> proxPointer;
+		private IMemoryOwner<int> payloadLength;
 		
 		private long lastFreqPointer;
 		private long lastProxPointer;
 		private int lastPayloadLength;
 		
-		
 		internal DefaultSkipListReader(IndexInput skipStream, int maxSkipLevels, int skipInterval):base(skipStream, maxSkipLevels, skipInterval)
-		{
-			freqPointer = new long[maxSkipLevels];
-			proxPointer = new long[maxSkipLevels];
-			payloadLength = new int[maxSkipLevels];
+        {
+            freqPointer = LuceneMemoryPool.Instance.RentLongs(maxSkipLevels);
+			proxPointer = LuceneMemoryPool.Instance.RentLongs(maxSkipLevels);
+			payloadLength = LuceneMemoryPool.Instance.RentInts(maxSkipLevels);
 		}
 		
 		internal void Init(long skipPointer, long freqBasePointer, long proxBasePointer, int df, bool storesPayloads)
@@ -53,9 +55,12 @@ namespace Lucene.Net.Index
 			lastFreqPointer = freqBasePointer;
 			lastProxPointer = proxBasePointer;
 
-			for (int i = 0; i < freqPointer.Length; i++) freqPointer[i] = freqBasePointer;
-			for (int i = 0; i < proxPointer.Length; i++) proxPointer[i] = proxBasePointer;
-			for (int i = 0; i < payloadLength.Length; i++) payloadLength[i] = 0;
+            for (var i = 0; i < maxNumberOfSkipLevels; i++)
+            {
+                freqPointer.Memory.Span[i] = freqBasePointer;
+                proxPointer.Memory.Span[i] = proxBasePointer;
+                payloadLength.Memory.Span[i] = 0;
+            }
         }
 		
 		/// <summary>Returns the freq pointer of the doc to which the last call of 
@@ -85,23 +90,30 @@ namespace Lucene.Net.Index
 		
 		protected internal override void  SeekChild(int level, IState state)
 		{
+			Debug.Assert(level <= maxNumberOfSkipLevels, "level <= maxNumberOfSkipLevels");
+
 			base.SeekChild(level, state);
-			freqPointer[level] = lastFreqPointer;
-			proxPointer[level] = lastProxPointer;
-			payloadLength[level] = lastPayloadLength;
+			freqPointer.Memory.Span[level] = lastFreqPointer;
+			proxPointer.Memory.Span[level] = lastProxPointer;
+			payloadLength.Memory.Span[level] = lastPayloadLength;
 		}
 		
 		protected internal override void  SetLastSkipData(int level)
 		{
+            Debug.Assert(level <= maxNumberOfSkipLevels, "level <= maxNumberOfSkipLevels");
+
 			base.SetLastSkipData(level);
-			lastFreqPointer = freqPointer[level];
-			lastProxPointer = proxPointer[level];
-			lastPayloadLength = payloadLength[level];
+
+			lastFreqPointer = freqPointer.Memory.Span[level];
+			lastProxPointer = proxPointer.Memory.Span[level];
+			lastPayloadLength = payloadLength.Memory.Span[level];
 		}
 		
 		
 		protected internal override int ReadSkipData(int level, IndexInput skipStream, IState state)
 		{
+            Debug.Assert(level <= maxNumberOfSkipLevels, "level <= maxNumberOfSkipLevels");
+
 			int delta;
 			if (currentFieldStoresPayloads)
 			{
@@ -113,7 +125,7 @@ namespace Lucene.Net.Index
 				delta = skipStream.ReadVInt(state);
 				if ((delta & 1) != 0)
 				{
-					payloadLength[level] = skipStream.ReadVInt(state);
+					payloadLength.Memory.Span[level] = skipStream.ReadVInt(state);
 				}
 				delta = Number.URShift(delta, 1);
 			}
@@ -121,10 +133,24 @@ namespace Lucene.Net.Index
 			{
 				delta = skipStream.ReadVInt(state);
 			}
-			freqPointer[level] += skipStream.ReadVInt(state);
-			proxPointer[level] += skipStream.ReadVInt(state);
+			freqPointer.Memory.Span[level] += skipStream.ReadVInt(state);
+			proxPointer.Memory.Span[level] += skipStream.ReadVInt(state);
 			
 			return delta;
 		}
-	}
+
+        protected override void Dispose(bool disposing)
+        {
+            base.Dispose(disposing);
+
+			freqPointer?.Dispose();
+            freqPointer = null;
+
+			proxPointer?.Dispose();
+            proxPointer = null;
+
+			payloadLength?.Dispose();
+            payloadLength = null;
+        }
+    }
 }

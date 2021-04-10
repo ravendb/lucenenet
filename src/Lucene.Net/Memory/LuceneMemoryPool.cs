@@ -8,15 +8,33 @@ namespace Lucene.Net.Memory
         public static LuceneMemoryPool Instance = new DefaultLuceneMemoryPool();
 
         public abstract IMemoryOwner<byte> RentBytes(int minSize, string stackTrace = null);
+
+        public abstract IMemoryOwner<long> RentLongs(int minSize, string stackTrace = null);
+
+        public abstract IMemoryOwner<int> RentInts(int minSize, string stackTrace = null);
     }
 
     internal class DefaultLuceneMemoryPool : LuceneMemoryPool
     {
         private readonly MemoryPool<byte> _bytePool = MemoryPool<byte>.Shared;
 
+        private readonly MemoryPool<long> _longPool = MemoryPool<long>.Shared;
+
+        private readonly MemoryPool<int> _intPool = MemoryPool<int>.Shared;
+
         public override IMemoryOwner<byte> RentBytes(int minSize, string stackTrace = null)
         {
             return new TrackingMemoryOwner<byte>(_bytePool.Rent(minSize), stackTrace);
+        }
+
+        public override IMemoryOwner<long> RentLongs(int minSize, string stackTrace = null)
+        {
+            return new TrackingMemoryOwner<long>(_longPool.Rent(minSize), stackTrace);
+        }
+
+        public override IMemoryOwner<int> RentInts(int minSize, string stackTrace = null)
+        {
+            return new TrackingMemoryOwner<int>(_intPool.Rent(minSize), stackTrace);
         }
     }
 

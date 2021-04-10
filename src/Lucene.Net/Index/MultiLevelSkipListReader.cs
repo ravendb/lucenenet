@@ -17,6 +17,7 @@
 
 using System;
 using System.Buffers;
+using System.Diagnostics;
 using Lucene.Net.Memory;
 using Lucene.Net.Store;
 using BufferedIndexInput = Lucene.Net.Store.BufferedIndexInput;
@@ -36,7 +37,7 @@ namespace Lucene.Net.Index
 	abstract class MultiLevelSkipListReader : IDisposable
 	{
 		// the maximum number of skip levels possible for this index
-		private readonly int maxNumberOfSkipLevels;
+		protected readonly int maxNumberOfSkipLevels;
 		
 		// number of levels in this skip list
 		private int numberOfSkipLevels;
@@ -56,34 +57,35 @@ namespace Lucene.Net.Index
 	    private bool isDisposed;
 		
 		private readonly IndexInput[] skipStream; // skipStream for each level
-		private readonly long[] skipPointer; // the start pointer of each skip level
-		private readonly int[] skipInterval; // skipInterval of each level
-		private readonly int[] numSkipped; // number of docs skipped per level
+		private IMemoryOwner<long> skipPointer; // the start pointer of each skip level
+		private IMemoryOwner<int> skipInterval; // skipInterval of each level
+		private IMemoryOwner<int> numSkipped; // number of docs skipped per level
 		
-		private readonly int[] skipDoc; // doc id of current skip entry per level 
+		private IMemoryOwner<int> skipDoc; // doc id of current skip entry per level 
 		private int lastDoc; // doc id of last read skip entry with docId <= target
-		private readonly long[] childPointer; // child pointer of current skip entry per level
+		private IMemoryOwner<long> childPointer; // child pointer of current skip entry per level
 		private long lastChildPointer; // childPointer of last read skip entry with docId <= target
 		
 		private readonly bool inputIsBuffered;
 
+
 		protected MultiLevelSkipListReader(IndexInput skipStream, int maxSkipLevels, int skipInterval)
 		{
+            this.maxNumberOfSkipLevels = maxSkipLevels;
 			this.skipStream = new IndexInput[maxSkipLevels];
-			this.skipPointer = new long[maxSkipLevels];
-			this.childPointer = new long[maxSkipLevels];
-			this.numSkipped = new int[maxSkipLevels];
-			this.maxNumberOfSkipLevels = maxSkipLevels;
-			this.skipInterval = new int[maxSkipLevels];
+            this.skipPointer = LuceneMemoryPool.Instance.RentLongs(maxSkipLevels);
+			this.childPointer = LuceneMemoryPool.Instance.RentLongs(maxSkipLevels);
+			this.numSkipped = LuceneMemoryPool.Instance.RentInts(maxSkipLevels);
+			this.skipInterval = LuceneMemoryPool.Instance.RentInts(maxSkipLevels);
 			this.skipStream[0] = skipStream;
 			this.inputIsBuffered = (skipStream is BufferedIndexInput);
-			this.skipInterval[0] = skipInterval;
+			this.skipInterval.Memory.Span[0] = skipInterval;
 			for (int i = 1; i < maxSkipLevels; i++)
 			{
 				// cache skip intervals
-				this.skipInterval[i] = this.skipInterval[i - 1] * skipInterval;
+				this.skipInterval.Memory.Span[i] = this.skipInterval.Memory.Span[i - 1] * skipInterval;
 			}
-			skipDoc = new int[maxSkipLevels];
+			skipDoc = LuceneMemoryPool.Instance.RentInts(maxSkipLevels);
 		}
 		
 		
@@ -111,14 +113,14 @@ namespace Lucene.Net.Index
 			// walk up the levels until highest level is found that has a skip
 			// for this target
 			int level = 0;
-			while (level < numberOfSkipLevels - 1 && target > skipDoc[level + 1])
+			while (level < numberOfSkipLevels - 1 && target > skipDoc.Memory.Span[level + 1])
 			{
 				level++;
 			}
 			
 			while (level >= 0)
 			{
-				if (target > skipDoc[level])
+				if (target > skipDoc.Memory.Span[level])
 				{
 					if (!LoadNextSkip(level, state))
 					{
@@ -136,33 +138,35 @@ namespace Lucene.Net.Index
 				}
 			}
 			
-			return numSkipped[0] - skipInterval[0] - 1;
+			return numSkipped.Memory.Span[0] - skipInterval.Memory.Span[0] - 1;
 		}
 		
 		private bool LoadNextSkip(int level, IState state)
 		{
+            Debug.Assert(level <= maxNumberOfSkipLevels, "level <= maxNumberOfSkipLevels");
+
 			// we have to skip, the target document is greater than the current
 			// skip list entry        
 			SetLastSkipData(level);
 			
-			numSkipped[level] += skipInterval[level];
+			numSkipped.Memory.Span[level] += skipInterval.Memory.Span[level];
 			
-			if (numSkipped[level] > docCount)
+			if (numSkipped.Memory.Span[level] > docCount)
 			{
 				// this skip list is exhausted
-				skipDoc[level] = System.Int32.MaxValue;
+				skipDoc.Memory.Span[level] = System.Int32.MaxValue;
 				if (numberOfSkipLevels > level)
 					numberOfSkipLevels = level;
 				return false;
 			}
 			
 			// read next skip entry
-			skipDoc[level] += ReadSkipData(level, skipStream[level], state);
+			skipDoc.Memory.Span[level] += ReadSkipData(level, skipStream[level], state);
 			
 			if (level != 0)
 			{
 				// read the child pointer if we are not on the leaf level
-				childPointer[level] = skipStream[level].ReadVLong(state) + skipPointer[level - 1];
+				childPointer.Memory.Span[level] = skipStream[level].ReadVLong(state) + skipPointer.Memory.Span[level - 1];
 			}
 			
 			return true;
@@ -172,11 +176,11 @@ namespace Lucene.Net.Index
 		protected internal virtual void  SeekChild(int level, IState state)
 		{
 			skipStream[level].Seek(lastChildPointer, state);
-			numSkipped[level] = numSkipped[level + 1] - skipInterval[level + 1];
-			skipDoc[level] = lastDoc;
+			numSkipped.Memory.Span[level] = numSkipped.Memory.Span[level + 1] - skipInterval.Memory.Span[level + 1];
+			skipDoc.Memory.Span[level] = lastDoc;
 			if (level > 0)
 			{
-				childPointer[level] = skipStream[level].ReadVLong(state) + skipPointer[level - 1];
+				childPointer.Memory.Span[level] = skipStream[level].ReadVLong(state) + skipPointer.Memory.Span[level - 1];
 			}
 		}
 
@@ -191,6 +195,21 @@ namespace Lucene.Net.Index
 
             if (disposing)
             {
+				childPointer?.Dispose();
+                childPointer = null;
+
+				numSkipped?.Dispose();
+                numSkipped = null;
+
+				skipDoc?.Dispose();
+                skipDoc = null;
+
+				skipInterval?.Dispose();
+                skipInterval = null;
+
+				skipPointer?.Dispose();
+                skipPointer = null;
+
 				skipStream[0]?.Dispose(); // initial skip stream
 
                 for (int i = 1; i < skipStream.Length; i++)
@@ -208,13 +227,14 @@ namespace Lucene.Net.Index
 		/// <summary>initializes the reader </summary>
 		internal virtual void  Init(long skipPointer, int df)
 		{
-			this.skipPointer[0] = skipPointer;
+			this.skipPointer.Memory.Span[0] = skipPointer;
 			this.docCount = df;
-            System.Array.Clear(skipDoc, 0, skipDoc.Length);
-			System.Array.Clear(numSkipped, 0, numSkipped.Length);
-            System.Array.Clear(childPointer, 0, childPointer.Length);
-			
-			haveSkipped = false;
+
+			skipDoc.Memory.Span.Clear();
+			numSkipped.Memory.Span.Clear();
+			childPointer.Memory.Span.Clear();
+
+            haveSkipped = false;
 			for (int i = 1; i < numberOfSkipLevels; i++)
 			{
 				skipStream[i]?.Dispose();
@@ -225,13 +245,13 @@ namespace Lucene.Net.Index
 		/// <summary>Loads the skip levels  </summary>
 		private void  LoadSkipLevels(IState state)
 		{
-			numberOfSkipLevels = docCount == 0?0:(int) System.Math.Floor(System.Math.Log(docCount) / System.Math.Log(skipInterval[0]));
+			numberOfSkipLevels = docCount == 0?0:(int) System.Math.Floor(System.Math.Log(docCount) / System.Math.Log(skipInterval.Memory.Span[0]));
 			if (numberOfSkipLevels > maxNumberOfSkipLevels)
 			{
 				numberOfSkipLevels = maxNumberOfSkipLevels;
 			}
 			
-			skipStream[0].Seek(skipPointer[0], state);
+			skipStream[0].Seek(skipPointer.Memory.Span[0], state);
 			
 			int toBuffer = numberOfLevelsToBuffer;
 			
@@ -241,7 +261,7 @@ namespace Lucene.Net.Index
 				long length = skipStream[0].ReadVLong(state);
 				
 				// the start pointer of the current level
-				skipPointer[i] = skipStream[0].FilePointer(state);
+				skipPointer.Memory.Span[i] = skipStream[0].FilePointer(state);
 				if (toBuffer > 0)
 				{
 					// buffer this level
@@ -265,7 +285,7 @@ namespace Lucene.Net.Index
 			}
 			
 			// use base stream for the lowest level
-			skipPointer[0] = skipStream[0].FilePointer(state);
+			skipPointer.Memory.Span[0] = skipStream[0].FilePointer(state);
 		}
 		
 		/// <summary> Subclasses must implement the actual skip data encoding in this method.
@@ -280,8 +300,8 @@ namespace Lucene.Net.Index
 		/// <summary>Copies the values of the last read skip entry on this level </summary>
 		protected internal virtual void  SetLastSkipData(int level)
 		{
-			lastDoc = skipDoc[level];
-			lastChildPointer = childPointer[level];
+			lastDoc = skipDoc.Memory.Span[level];
+			lastChildPointer = childPointer.Memory.Span[level];
 		}
 		
 		
@@ -341,7 +361,7 @@ namespace Lucene.Net.Index
 				this.pos = (int) (pos - pointer);
 			}
 			
-			override public System.Object Clone(IState state)
+			public override System.Object Clone(IState state)
 			{
                 System.Diagnostics.Debug.Fail("Port issue:", "Lets see if we need this FilterIndexReader.Clone()"); // {{Aroush-2.9}}
 				return null;
