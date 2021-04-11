@@ -16,6 +16,7 @@
  */
 
 using System;
+using Lucene.Net.Memory;
 using Lucene.Net.Store;
 using Directory = Lucene.Net.Store.Directory;
 using IndexOutput = Lucene.Net.Store.IndexOutput;
@@ -64,115 +65,121 @@ namespace Lucene.Net.Index
 				int numFields = vectors.Length;
 				tvd.WriteVInt(numFields);
 				
-				var fieldPointers = new long[numFields];
-				
-				for (int i = 0; i < numFields; i++)
-				{
-					fieldPointers[i] = tvf.FilePointer;
-					
-					int fieldNumber = fieldInfos.FieldNumber(vectors[i].Field);
-					
-					// 1st pass: write field numbers to tvd
-					tvd.WriteVInt(fieldNumber);
-					
-					int numTerms = vectors[i].Size;
-					tvf.WriteVInt(numTerms);
-					
-					TermPositionVector tpVector;
-					
-					byte bits;
-					bool storePositions;
-					bool storeOffsets;
-					
-					if (vectors[i] is TermPositionVector)
-					{
-						// May have positions & offsets
-						tpVector = (TermPositionVector) vectors[i];
-						storePositions = tpVector.Size > 0 && tpVector.GetTermPositions(0) != null;
-						storeOffsets = tpVector.Size > 0 && tpVector.GetOffsets(0) != null;
-						bits = (byte) ((storePositions?TermVectorsReader.STORE_POSITIONS_WITH_TERMVECTOR: (byte) 0) + (storeOffsets?TermVectorsReader.STORE_OFFSET_WITH_TERMVECTOR: (byte) 0));
-					}
-					else
-					{
-						tpVector = null;
-						bits = 0;
-						storePositions = false;
-						storeOffsets = false;
-					}
-					
-					tvf.WriteVInt(bits);
-					
-					System.String[] terms = vectors[i].GetTerms();
-					int[] freqs = vectors[i].GetTermFrequencies();
-					
-					int utf8Upto = 0;
-					utf8Results[1].length = 0;
-					
-					for (int j = 0; j < numTerms; j++)
-					{
-						
-						UnicodeUtil.UTF16toUTF8(terms[j], 0, terms[j].Length, utf8Results[utf8Upto]);
-						
-						int start = StringHelper.BytesDifference(utf8Results[1 - utf8Upto].result.Span.Slice(0, utf8Results[1 - utf8Upto].length), utf8Results[utf8Upto].result.Span.Slice(0, utf8Results[utf8Upto].length));
-						int length = utf8Results[utf8Upto].length - start;
-						tvf.WriteVInt(start); // write shared prefix length
-						tvf.WriteVInt(length); // write delta length
-						tvf.WriteBytes(utf8Results[utf8Upto].result.Span.Slice(start, length)); // write delta bytes
-						utf8Upto = 1 - utf8Upto;
-						
-						int termFreq = freqs[j];
-						
-						tvf.WriteVInt(termFreq);
-						
-						if (storePositions)
-						{
-							int[] positions = tpVector.GetTermPositions(j);
-							if (positions == null)
-								throw new System.SystemException("Trying to write positions that are null!");
-							System.Diagnostics.Debug.Assert(positions.Length == termFreq);
-							
-							// use delta encoding for positions
-							int lastPosition = 0;
-							foreach (int position in positions)
-							{
-								tvf.WriteVInt(position - lastPosition);
-								lastPosition = position;
-							}
-						}
-						
-						if (storeOffsets)
-						{
-							TermVectorOffsetInfo[] offsets = tpVector.GetOffsets(j);
-							if (offsets == null)
-								throw new System.SystemException("Trying to write offsets that are null!");
-							System.Diagnostics.Debug.Assert(offsets.Length == termFreq);
-							
-							// use delta encoding for offsets
-							int lastEndOffset = 0;
-							foreach (TermVectorOffsetInfo t in offsets)
-							{
-								int startOffset = t.StartOffset;
-								int endOffset = t.EndOffset;
-								tvf.WriteVInt(startOffset - lastEndOffset);
-								tvf.WriteVInt(endOffset - startOffset);
-								lastEndOffset = endOffset;
-							}
-						}
-					}
-				}
-				
-				// 2nd pass: write field pointers to tvd
-				if (numFields > 1)
-				{
-					long lastFieldPointer = fieldPointers[0];
-					for (int i = 1; i < numFields; i++)
-					{
-						long fieldPointer = fieldPointers[i];
-						tvd.WriteVLong(fieldPointer - lastFieldPointer);
-						lastFieldPointer = fieldPointer;
-					}
-				}
-			}
+                using (var fieldPointers = LuceneMemoryPool.Instance.RentLongs(numFields))
+                {
+                    for (int i = 0; i < numFields; i++)
+                    {
+                        fieldPointers.Memory.Span[i] = tvf.FilePointer;
+
+                        int fieldNumber = fieldInfos.FieldNumber(vectors[i].Field);
+
+                        // 1st pass: write field numbers to tvd
+                        tvd.WriteVInt(fieldNumber);
+
+                        int numTerms = vectors[i].Size;
+                        tvf.WriteVInt(numTerms);
+
+                        TermPositionVector tpVector;
+
+                        byte bits;
+                        bool storePositions;
+                        bool storeOffsets;
+
+                        if (vectors[i] is TermPositionVector)
+                        {
+                            // May have positions & offsets
+                            tpVector = (TermPositionVector) vectors[i];
+                            storePositions = tpVector.Size > 0 && tpVector.GetTermPositions(0) != null;
+                            storeOffsets = tpVector.Size > 0 && tpVector.GetOffsets(0) != null;
+                            bits = (byte) ((storePositions
+                                               ? TermVectorsReader.STORE_POSITIONS_WITH_TERMVECTOR
+                                               : (byte) 0) +
+                                           (storeOffsets ? TermVectorsReader.STORE_OFFSET_WITH_TERMVECTOR : (byte) 0));
+                        }
+                        else
+                        {
+                            tpVector = null;
+                            bits = 0;
+                            storePositions = false;
+                            storeOffsets = false;
+                        }
+
+                        tvf.WriteVInt(bits);
+
+                        System.String[] terms = vectors[i].GetTerms();
+                        int[] freqs = vectors[i].GetTermFrequencies();
+
+                        int utf8Upto = 0;
+                        utf8Results[1].length = 0;
+
+                        for (int j = 0; j < numTerms; j++)
+                        {
+
+                            UnicodeUtil.UTF16toUTF8(terms[j], 0, terms[j].Length, utf8Results[utf8Upto]);
+
+                            int start = StringHelper.BytesDifference(
+                                utf8Results[1 - utf8Upto].result.Span.Slice(0, utf8Results[1 - utf8Upto].length),
+                                utf8Results[utf8Upto].result.Span.Slice(0, utf8Results[utf8Upto].length));
+                            int length = utf8Results[utf8Upto].length - start;
+                            tvf.WriteVInt(start); // write shared prefix length
+                            tvf.WriteVInt(length); // write delta length
+                            tvf.WriteBytes(utf8Results[utf8Upto].result.Span.Slice(start, length)); // write delta bytes
+                            utf8Upto = 1 - utf8Upto;
+
+                            int termFreq = freqs[j];
+
+                            tvf.WriteVInt(termFreq);
+
+                            if (storePositions)
+                            {
+                                int[] positions = tpVector.GetTermPositions(j);
+                                if (positions == null)
+                                    throw new System.SystemException("Trying to write positions that are null!");
+                                System.Diagnostics.Debug.Assert(positions.Length == termFreq);
+
+                                // use delta encoding for positions
+                                int lastPosition = 0;
+                                foreach (int position in positions)
+                                {
+                                    tvf.WriteVInt(position - lastPosition);
+                                    lastPosition = position;
+                                }
+                            }
+
+                            if (storeOffsets)
+                            {
+                                TermVectorOffsetInfo[] offsets = tpVector.GetOffsets(j);
+                                if (offsets == null)
+                                    throw new System.SystemException("Trying to write offsets that are null!");
+                                System.Diagnostics.Debug.Assert(offsets.Length == termFreq);
+
+                                // use delta encoding for offsets
+                                int lastEndOffset = 0;
+                                foreach (TermVectorOffsetInfo t in offsets)
+                                {
+                                    int startOffset = t.StartOffset;
+                                    int endOffset = t.EndOffset;
+                                    tvf.WriteVInt(startOffset - lastEndOffset);
+                                    tvf.WriteVInt(endOffset - startOffset);
+                                    lastEndOffset = endOffset;
+                                }
+                            }
+                        }
+                    }
+
+                    // 2nd pass: write field pointers to tvd
+                    if (numFields > 1)
+                    {
+                        long lastFieldPointer = fieldPointers.Memory.Span[0];
+                        for (int i = 1; i < numFields; i++)
+                        {
+                            long fieldPointer = fieldPointers.Memory.Span[i];
+                            tvd.WriteVLong(fieldPointer - lastFieldPointer);
+                            lastFieldPointer = fieldPointer;
+                        }
+                    }
+                }
+            }
 			else
 				tvd.WriteVInt(0);
 		}
