@@ -401,7 +401,7 @@ namespace Lucene.Net.Index
 		
 		// Reads the long[] offsets into TVF; you have to pre-seek
 		// tvx/tvd to the right point
-		private long[] ReadTvfPointers(int fieldCount, IState state)
+		private IMemoryOwner<long> ReadTvfPointers(int fieldCount, IState state)
 		{
 			// Compute position in the tvf file
 			long position;
@@ -409,14 +409,14 @@ namespace Lucene.Net.Index
 				position = tvx.ReadLong(state);
 			else
 				position = tvd.ReadVLong(state);
-			
-			long[] tvfPointers = new long[fieldCount];
-			tvfPointers[0] = position;
+
+            IMemoryOwner<long> tvfPointers = LuceneMemoryPool.Instance.RentLongs(fieldCount);
+			tvfPointers.Memory.Span[0] = position;
 			
 			for (int i = 1; i < fieldCount; i++)
 			{
 				position += tvd.ReadVLong(state);
-				tvfPointers[i] = position;
+				tvfPointers.Memory.Span[i] = position;
 			}
 			
 			return tvfPointers;
@@ -446,9 +446,11 @@ namespace Lucene.Net.Index
 				if (fieldCount != 0)
 				{
 					System.String[] fields = ReadFields(fieldCount, state);
-					long[] tvfPointers = ReadTvfPointers(fieldCount, state);
-					result = ReadTermVectors(docNum, fields, tvfPointers, state);
-				}
+                    using (var tvfPointers = ReadTvfPointers(fieldCount, state))
+                    {
+                        result = ReadTermVectors(docNum, fields, tvfPointers.Memory.Span.Slice(0, fieldCount), state);
+                    }
+                }
 			}
 			else
 			{
@@ -474,10 +476,12 @@ namespace Lucene.Net.Index
 				if (fieldCount != 0)
 				{
 					System.String[] fields = ReadFields(fieldCount, state);
-					long[] tvfPointers = ReadTvfPointers(fieldCount, state);
-					mapper.SetDocumentNumber(docNumber);
-					ReadTermVectors(fields, tvfPointers, mapper, state);
-				}
+                    using (var tvfPointers = ReadTvfPointers(fieldCount, state))
+                    {
+                        mapper.SetDocumentNumber(docNumber);
+                        ReadTermVectors(fields, tvfPointers.Memory.Span.Slice(0, fieldCount), mapper, state);
+                    }
+                }
 			}
 			else
 			{
@@ -486,7 +490,7 @@ namespace Lucene.Net.Index
 		}
 		
 		
-		private SegmentTermVector[] ReadTermVectors(int docNum, System.String[] fields, long[] tvfPointers, IState state)
+		private SegmentTermVector[] ReadTermVectors(int docNum, System.String[] fields, Span<long> tvfPointers, IState state)
 		{
 			SegmentTermVector[] res = new SegmentTermVector[fields.Length];
 			for (int i = 0; i < fields.Length; i++)
@@ -499,7 +503,7 @@ namespace Lucene.Net.Index
 			return res;
 		}
 		
-		private void  ReadTermVectors(System.String[] fields, long[] tvfPointers, TermVectorMapper mapper, IState state)
+		private void  ReadTermVectors(System.String[] fields, Span<long> tvfPointers, TermVectorMapper mapper, IState state)
 		{
 			for (int i = 0; i < fields.Length; i++)
 			{
