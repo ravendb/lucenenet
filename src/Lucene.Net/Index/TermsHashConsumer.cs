@@ -22,7 +22,7 @@ using Lucene.Net.Store;
 namespace Lucene.Net.Index
 {
 	
-	abstract class TermsHashConsumer
+	abstract class TermsHashConsumer : IDisposable
 	{
 		internal abstract int BytesPerPosting();
 		internal abstract void  CreatePostings(RawPostingList[] postings, int start, int count);
@@ -37,5 +37,7 @@ namespace Lucene.Net.Index
 		{
 			this.fieldInfos = fieldInfos;
 		}
-	}
+
+        public abstract void Dispose();
+    }
 }

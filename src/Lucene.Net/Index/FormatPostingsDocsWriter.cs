@@ -25,7 +25,7 @@ namespace Lucene.Net.Index
     /// <summary>Consumes doc and freq, writing them using the current
     /// index file format 
     /// </summary>
-	sealed class FormatPostingsDocsWriter : FormatPostingsDocsConsumer, IDisposable
+	sealed class FormatPostingsDocsWriter : FormatPostingsDocsConsumer
 	{
 		
 		internal IndexOutput out_Renamed;
@@ -118,20 +118,21 @@ namespace Lucene.Net.Index
 			
 			if (df > 0)
 			{
-				parent.termsOut.Add(fieldInfo.number, utf8.result.Span.Slice(0, utf8.length), termInfo);
+				parent.termsOut.Add(fieldInfo.number, utf8.result.Memory.Span.Slice(0, utf8.length), termInfo);
 			}
 			
 			lastDocID = 0;
 			df = 0;
 		}
 
-        public void Dispose()
+        public override void Dispose()
         {
 			using (posWriter)
 			using (out_Renamed) // Move to protected method if class becomes unsealed
+			using (utf8)
 	        {
 		        
 	        }
         }
-	}
+    }
 }

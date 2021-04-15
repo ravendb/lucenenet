@@ -244,6 +244,15 @@ namespace Lucene.Net.Index
         protected override void Dispose(bool disposing)
         {
             input.Dispose();
+
+			termBuffer?.Dispose();
+            termBuffer = null;
+
+			prevBuffer?.Dispose();
+            prevBuffer = null;
+
+			scanBuffer?.Dispose();
+            scanBuffer = null;
         }
 	}
 }

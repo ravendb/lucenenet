@@ -868,14 +868,32 @@ namespace Lucene.Net.Index
 				deletesFlushed.Update(deletesInRAM);
 			}
 		}
+
+		
+        internal void Close()
+        {
+            // Move to protected method if class becomes unsealed
+            lock (this)
+            {
+                CloseInternal();
+            }
+        }
+
+        private void CloseInternal()
+        {
+            closed = true;
+            System.Threading.Monitor.PulseAll(this);
+        }
 		
         public void Dispose()
         {
             // Move to protected method if class becomes unsealed
             lock (this)
             {
-                closed = true;
-                System.Threading.Monitor.PulseAll(this);
+				consumer?.Dispose();
+                consumer = null;
+
+                CloseInternal();
             }
         }
 		
@@ -1989,5 +2007,5 @@ namespace Lucene.Net.Index
         {
             get { return CHAR_BLOCK_SIZE; }
         }
-	}
+    }
 }

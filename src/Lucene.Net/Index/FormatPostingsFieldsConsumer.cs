@@ -27,13 +27,12 @@ namespace Lucene.Net.Index
 	/// 
 	/// NOTE: this API is experimental and will likely change
 	/// </summary>
-	abstract class FormatPostingsFieldsConsumer
+	abstract class FormatPostingsFieldsConsumer : IDisposable
 	{
 		
 		/// <summary>Add a new field </summary>
 		internal abstract FormatPostingsTermsConsumer AddField(FieldInfo field);
-		
-		/// <summary>Called when we are done adding everything. </summary>
-		internal abstract void  Finish();
-	}
+
+        public abstract void Dispose();
+    }
 }

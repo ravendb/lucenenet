@@ -118,12 +118,12 @@ namespace Lucene.Net.Index
                             UnicodeUtil.UTF16toUTF8(terms[j], 0, terms[j].Length, utf8Results[utf8Upto]);
 
                             int start = StringHelper.BytesDifference(
-                                utf8Results[1 - utf8Upto].result.Span.Slice(0, utf8Results[1 - utf8Upto].length),
-                                utf8Results[utf8Upto].result.Span.Slice(0, utf8Results[utf8Upto].length));
+                                utf8Results[1 - utf8Upto].result.Memory.Span.Slice(0, utf8Results[1 - utf8Upto].length),
+                                utf8Results[utf8Upto].result.Memory.Span.Slice(0, utf8Results[utf8Upto].length));
                             int length = utf8Results[utf8Upto].length - start;
                             tvf.WriteVInt(start); // write shared prefix length
                             tvf.WriteVInt(length); // write delta length
-                            tvf.WriteBytes(utf8Results[utf8Upto].result.Span.Slice(start, length)); // write delta bytes
+                            tvf.WriteBytes(utf8Results[utf8Upto].result.Memory.Span.Slice(start, length)); // write delta bytes
                             utf8Upto = 1 - utf8Upto;
 
                             int termFreq = freqs[j];

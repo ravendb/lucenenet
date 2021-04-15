@@ -76,6 +76,12 @@ namespace Lucene.Net.Index
 			consumer.SetFieldInfos(fieldInfos);
 		}
 
+        public override void Dispose()
+        {
+            consumer?.Dispose();
+            consumer = null;
+        }
+
         // NOTE: do not make this sync'd; it's not necessary (DW
         // ensures all other threads are idle), and it leads to
         // deadlock

@@ -681,21 +681,21 @@ namespace Lucene.Net.Index
 			
 			SegmentWriteState state = new SegmentWriteState(null, directory, segment, null, mergedDocs, 0, termIndexInterval);
 
-			FormatPostingsFieldsConsumer consumer = new FormatPostingsFieldsWriter(state, fieldInfos, s);
+            using (FormatPostingsFieldsConsumer consumer = new FormatPostingsFieldsWriter(state, fieldInfos, s))
+            {
+                try
+                {
+                    queue = new SegmentMergeQueue(readers.Count);
 
-			try
-			{
-				queue = new SegmentMergeQueue(readers.Count);
-				
-				MergeTermInfos(consumer, s);
-			}
-			finally
-			{
-				consumer.Finish();
-				if (queue != null)
-					queue.Dispose();
-			}
-		}
+                    MergeTermInfos(consumer, s);
+                }
+                finally
+                {
+                    if (queue != null)
+                        queue.Dispose();
+                }
+            }
+        }
 		
 		internal bool omitTermFreqAndPositions;
 		

@@ -645,7 +645,7 @@ namespace Lucene.Net.Index
 					UnicodeUtil.UTF16toUTF8(s, 0, s.Length, utf8Result);
 					try
 					{
-                        return System.Text.Encoding.UTF8.GetString(utf8Result.result.Span.Slice(0, utf8Result.length));
+                        return System.Text.Encoding.UTF8.GetString(utf8Result.result.Memory.Span.Slice(0, utf8Result.length));
 					}
 					catch (System.IO.IOException uee)
 					{

@@ -61,7 +61,12 @@ namespace Lucene.Net.Index
 		internal override void  CloseDocStore(SegmentWriteState state, IState s)
 		{
 		}
-		public override void  Abort()
+
+        public override void Dispose()
+        {
+        }
+
+        public override void  Abort()
 		{
 		}
 		
@@ -94,67 +99,62 @@ namespace Lucene.Net.Index
 			int numAllFields = allFields.Count;
 			
 			// TODO: allow Lucene user to customize this consumer:
-			FormatPostingsFieldsConsumer consumer = new FormatPostingsFieldsWriter(state, fieldInfos, s);
-			/*
-			Current writer chain:
-			FormatPostingsFieldsConsumer
-			-> IMPL: FormatPostingsFieldsWriter
-			-> FormatPostingsTermsConsumer
-			-> IMPL: FormatPostingsTermsWriter
-			-> FormatPostingsDocConsumer
-			-> IMPL: FormatPostingsDocWriter
-			-> FormatPostingsPositionsConsumer
-			-> IMPL: FormatPostingsPositionsWriter
-			*/
-	        try
-	        {
-		        int start = 0;
-		        while (start < numAllFields)
-		        {
-			        FieldInfo fieldInfo = allFields[start].fieldInfo;
-			        System.String fieldName = fieldInfo.name;
+            using (FormatPostingsFieldsConsumer consumer = new FormatPostingsFieldsWriter(state, fieldInfos, s))
+            {
+                /*
+                Current writer chain:
+                FormatPostingsFieldsConsumer
+                -> IMPL: FormatPostingsFieldsWriter
+                -> FormatPostingsTermsConsumer
+                -> IMPL: FormatPostingsTermsWriter
+                -> FormatPostingsDocConsumer
+                -> IMPL: FormatPostingsDocWriter
+                -> FormatPostingsPositionsConsumer
+                -> IMPL: FormatPostingsPositionsWriter
+                */
+                int start = 0;
+                while (start < numAllFields)
+                {
+                    FieldInfo fieldInfo = allFields[start].fieldInfo;
+                    System.String fieldName = fieldInfo.name;
 
-			        int end = start + 1;
-			        while (end < numAllFields && allFields[end].fieldInfo.name.Equals(fieldName))
-				        end++;
+                    int end = start + 1;
+                    while (end < numAllFields && allFields[end].fieldInfo.name.Equals(fieldName))
+                        end++;
 
-			        FreqProxTermsWriterPerField[] fields = new FreqProxTermsWriterPerField[end - start];
-			        for (int i = start; i < end; i++)
-			        {
-				        fields[i - start] = allFields[i];
+                    FreqProxTermsWriterPerField[] fields = new FreqProxTermsWriterPerField[end - start];
+                    for (int i = start; i < end; i++)
+                    {
+                        fields[i - start] = allFields[i];
 
-				        // Aggregate the storePayload as seen by the same
-				        // field across multiple threads
-				        fieldInfo.storePayloads |= fields[i - start].hasPayloads;
-			        }
+                        // Aggregate the storePayload as seen by the same
+                        // field across multiple threads
+                        fieldInfo.storePayloads |= fields[i - start].hasPayloads;
+                    }
 
-			        // If this field has postings then add them to the
-			        // segment
-			        AppendPostings(fields, consumer, s);
+                    // If this field has postings then add them to the
+                    // segment
+                    AppendPostings(fields, consumer, s);
 
-			        for (int i = 0; i < fields.Length; i++)
-			        {
-				        TermsHashPerField perField = fields[i].termsHashPerField;
-				        int numPostings = perField.numPostings;
-				        perField.Reset();
-				        perField.ShrinkHash(numPostings);
-				        fields[i].Reset();
-			        }
+                    for (int i = 0; i < fields.Length; i++)
+                    {
+                        TermsHashPerField perField = fields[i].termsHashPerField;
+                        int numPostings = perField.numPostings;
+                        perField.Reset();
+                        perField.ShrinkHash(numPostings);
+                        fields[i].Reset();
+                    }
 
-			        start = end;
-		        }
+                    start = end;
+                }
 
-		        foreach (var entry in threadsAndFields)
-		        {
-			        FreqProxTermsWriterPerThread perThread = (FreqProxTermsWriterPerThread) entry.Key;
-			        perThread.termsHashPerThread.Reset(true);
-		        }
-	        }
-	        finally
-	        {
-				consumer.Finish();
-	        }
-		}
+                foreach (var entry in threadsAndFields)
+                {
+                    FreqProxTermsWriterPerThread perThread = (FreqProxTermsWriterPerThread) entry.Key;
+                    perThread.termsHashPerThread.Reset(true);
+                }
+            }
+        }
 		
 		/* Walk through all unique text tokens (Posting
 		* instances) found in this field and serialize them
@@ -309,8 +309,6 @@ namespace Lucene.Net.Index
 			termsConsumer.Finish();
 		}
 
-		internal UnicodeUtil.UTF8Result termsUTF8 = new UnicodeUtil.UTF8Result();
-		
 		internal sealed class PostingList:RawPostingList
 		{
 			internal int docFreq; // # times this term occurs in the current doc

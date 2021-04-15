@@ -117,7 +117,7 @@ namespace Lucene.Net.Index
 		internal void  Add(Term term, TermInfo ti)
 		{
 			UnicodeUtil.UTF16toUTF8(term.Text, 0, term.Text.Length, utf8Result);
-			Add(fieldInfos.FieldNumber(term.Field), utf8Result.result.Span.Slice(0, utf8Result.length), ti);
+			Add(fieldInfos.FieldNumber(term.Field), utf8Result.result.Memory.Span.Slice(0, utf8Result.length), ti);
 		}
 		
 		// Currently used only by assert statements
@@ -245,6 +245,9 @@ namespace Lucene.Net.Index
 
             lastTermBytes?.Dispose();
             lastTermBytes = null;
+
+			utf8Result?.Dispose();
+            utf8Result = null;
 
 			using (!isIndex ? other : null)
 			using (output)

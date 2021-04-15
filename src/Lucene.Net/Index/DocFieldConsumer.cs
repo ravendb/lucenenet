@@ -22,7 +22,7 @@ using Lucene.Net.Store;
 namespace Lucene.Net.Index
 {
 	
-	abstract class DocFieldConsumer
+	abstract class DocFieldConsumer : IDisposable
 	{
 		
 		internal FieldInfos fieldInfos;
@@ -53,5 +53,7 @@ namespace Lucene.Net.Index
 		{
 			this.fieldInfos = fieldInfos;
 		}
-	}
+
+        public abstract void Dispose();
+    }
 }

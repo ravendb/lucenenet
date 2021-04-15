@@ -99,7 +99,7 @@ namespace Lucene.Net.Documents
 		{
 			UnicodeUtil.UTF8Result result = new UnicodeUtil.UTF8Result();
 			UnicodeUtil.UTF16toUTF8(value_Renamed, 0, value_Renamed.Length, result);
-			return Compress(result.result.Span.Slice(0, result.length), compressionLevel);
+			return Compress(result.result.Memory.Span.Slice(0, result.length), compressionLevel);
 		}
 		
 		/// <summary>Decompress the byte array previously returned by

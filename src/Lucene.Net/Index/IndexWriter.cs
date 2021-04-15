@@ -1991,7 +1991,7 @@ namespace Lucene.Net.Index
 				if (infoStream != null)
 					Message("now flush at close");
 				
-				docWriter.Dispose();
+				docWriter.Close();
 				
 				// Only allow a new merge to be triggered if we are
 				// going to wait for merges:
@@ -2026,6 +2026,7 @@ namespace Lucene.Net.Index
 				lock (this)
 				{
 					readerPool.Dispose();
+					docWriter?.Dispose();
 					docWriter = null;
 					deleter.Dispose();
 				}

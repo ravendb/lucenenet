@@ -16,6 +16,8 @@
  */
 
 using System;
+using System.Buffers;
+using Lucene.Net.Memory;
 
 namespace Lucene.Net.Util
 {
@@ -74,22 +76,39 @@ namespace Lucene.Net.Util
 		private const long HALF_SHIFT = 10;
 		private const long HALF_MASK = 0x3FFL;
 		
-		public sealed class UTF8Result
-		{
-			public Memory<byte> result = new byte[10];
+		public sealed class UTF8Result : IDisposable
+        {
+            public IMemoryOwner<byte> result;
 			public int length;
+
+            public UTF8Result()
+            {
+                result = LuceneMemoryPool.Instance.RentBytes(10);
+            }
 			
-			public void  SetLength(int newLength)
+			public void SetLength(int newLength)
 			{
-				if (result.Length < newLength)
-				{
-					Memory<byte> newArray = new byte[(int) (1.5 * newLength)];
-					result.Span.Slice(0, length).CopyTo(newArray.Span);
-					result = newArray;
-				}
+				if (result.Memory.Length < newLength)
+                {
+                    IMemoryOwner<byte> newResult = LuceneMemoryPool.Instance.RentBytes((int) (1.5 * newLength));
+
+                    using (var oldResult = result)
+                    {
+                        oldResult.Memory.Span.Slice(0, length).CopyTo(newResult.Memory.Span);
+
+                        result = newResult;
+                    }
+                }
+
 				length = newLength;
 			}
-		}
+
+            public void Dispose()
+            {
+				result?.Dispose();
+                result = null;
+            }
+        }
 		
 		public sealed class UTF16Result
 		{
@@ -124,35 +143,38 @@ namespace Lucene.Net.Util
 			
 			int upto = 0;
 			int i = offset;
-			Memory<byte> out_Renamed = result.result;
+			var out_Renamed = result.result;
 			
 			while (true)
 			{
 				
 				int code = (int) source[i++];
 				
-				if (upto + 4 > out_Renamed.Length)
+				if (upto + 4 > out_Renamed.Memory.Length)
 				{
-					Memory<byte> newOut = new byte[2 * out_Renamed.Length];
-					System.Diagnostics.Debug.Assert(newOut.Length >= upto + 4);
-					out_Renamed.Span.Slice(0, upto).CopyTo(newOut.Span);
-					result.result = out_Renamed = newOut;
-				}
+					var newOut = LuceneMemoryPool.Instance.RentBytes(2 * out_Renamed.Memory.Length);
+					System.Diagnostics.Debug.Assert(newOut.Memory.Length >= upto + 4);
+					out_Renamed.Memory.Span.Slice(0, upto).CopyTo(newOut.Memory.Span);
+                    using (var oldResult = result.result)
+                    {
+                        result.result = out_Renamed = newOut;
+                    }
+                }
 				if (code < 0x80)
-					out_Renamed.Span[upto++] = (byte) code;
+					out_Renamed.Memory.Span[upto++] = (byte) code;
 				else if (code < 0x800)
 				{
-					out_Renamed.Span[upto++] = (byte) (0xC0 | (code >> 6));
-					out_Renamed.Span[upto++] = (byte) (0x80 | (code & 0x3F));
+					out_Renamed.Memory.Span[upto++] = (byte) (0xC0 | (code >> 6));
+					out_Renamed.Memory.Span[upto++] = (byte) (0x80 | (code & 0x3F));
 				}
 				else if (code < 0xD800 || code > 0xDFFF)
 				{
 					if (code == 0xffff)
 					// END
 						break;
-					out_Renamed.Span[upto++] = (byte) (0xE0 | (code >> 12));
-					out_Renamed.Span[upto++] = (byte) (0x80 | ((code >> 6) & 0x3F));
-					out_Renamed.Span[upto++] = (byte) (0x80 | (code & 0x3F));
+					out_Renamed.Memory.Span[upto++] = (byte) (0xE0 | (code >> 12));
+					out_Renamed.Memory.Span[upto++] = (byte) (0x80 | ((code >> 6) & 0x3F));
+					out_Renamed.Memory.Span[upto++] = (byte) (0x80 | (code & 0x3F));
 				}
 				else
 				{
@@ -166,18 +188,18 @@ namespace Lucene.Net.Util
 						{
 							utf32 = ((code - 0xD7C0) << 10) + (utf32 & 0x3FF);
 							i++;
-							out_Renamed.Span[upto++] = (byte) (0xF0 | (utf32 >> 18));
-							out_Renamed.Span[upto++] = (byte) (0x80 | ((utf32 >> 12) & 0x3F));
-							out_Renamed.Span[upto++] = (byte) (0x80 | ((utf32 >> 6) & 0x3F));
-							out_Renamed.Span[upto++] = (byte) (0x80 | (utf32 & 0x3F));
+							out_Renamed.Memory.Span[upto++] = (byte) (0xF0 | (utf32 >> 18));
+							out_Renamed.Memory.Span[upto++] = (byte) (0x80 | ((utf32 >> 12) & 0x3F));
+							out_Renamed.Memory.Span[upto++] = (byte) (0x80 | ((utf32 >> 6) & 0x3F));
+							out_Renamed.Memory.Span[upto++] = (byte) (0x80 | (utf32 & 0x3F));
 							continue;
 						}
 					}
 					// replace unpaired surrogate or out-of-order low surrogate
 					// with substitution character
-					out_Renamed.Span[upto++] = (byte) (0xEF);
-					out_Renamed.Span[upto++] = (byte) (0xBF);
-					out_Renamed.Span[upto++] = (byte) (0xBD);
+					out_Renamed.Memory.Span[upto++] = (byte) (0xEF);
+					out_Renamed.Memory.Span[upto++] = (byte) (0xBF);
+					out_Renamed.Memory.Span[upto++] = (byte) (0xBD);
 				}
 			}
 			//assert matches(source, offset, i-offset-1, out, upto);
@@ -194,32 +216,36 @@ namespace Lucene.Net.Util
 			int upto = 0;
 			int i = offset;
 			int end = offset + length;
-			Memory<byte> out_Renamed = result.result;
+			var out_Renamed = result.result;
 			
 			while (i < end)
 			{
 				
 				int code = (int) source[i++];
 				
-				if (upto + 4 > out_Renamed.Length)
+				if (upto + 4 > out_Renamed.Memory.Length)
 				{
-					Memory<byte> newOut = new byte[2 * out_Renamed.Length];
-					System.Diagnostics.Debug.Assert(newOut.Length >= upto + 4);
-					out_Renamed.Span.Slice(0, upto).CopyTo(newOut.Span);
-					result.result = out_Renamed = newOut;
-				}
+					var newOut = LuceneMemoryPool.Instance.RentBytes(2 * out_Renamed.Memory.Length);
+					System.Diagnostics.Debug.Assert(newOut.Memory.Length >= upto + 4);
+					out_Renamed.Memory.Span.Slice(0, upto).CopyTo(newOut.Memory.Span);
+
+                    using (var oldResult = result.result)
+                    {
+                        result.result = out_Renamed = newOut;
+                    }
+                }
 				if (code < 0x80)
-					out_Renamed.Span[upto++] = (byte) code;
+					out_Renamed.Memory.Span[upto++] = (byte) code;
 				else if (code < 0x800)
 				{
-					out_Renamed.Span[upto++] = (byte) (0xC0 | (code >> 6));
-					out_Renamed.Span[upto++] = (byte) (0x80 | (code & 0x3F));
+					out_Renamed.Memory.Span[upto++] = (byte) (0xC0 | (code >> 6));
+					out_Renamed.Memory.Span[upto++] = (byte) (0x80 | (code & 0x3F));
 				}
 				else if (code < 0xD800 || code > 0xDFFF)
 				{
-					out_Renamed.Span[upto++] = (byte) (0xE0 | (code >> 12));
-					out_Renamed.Span[upto++] = (byte) (0x80 | ((code >> 6) & 0x3F));
-					out_Renamed.Span[upto++] = (byte) (0x80 | (code & 0x3F));
+					out_Renamed.Memory.Span[upto++] = (byte) (0xE0 | (code >> 12));
+					out_Renamed.Memory.Span[upto++] = (byte) (0x80 | ((code >> 6) & 0x3F));
+					out_Renamed.Memory.Span[upto++] = (byte) (0x80 | (code & 0x3F));
 				}
 				else
 				{
@@ -233,18 +259,18 @@ namespace Lucene.Net.Util
 						{
 							utf32 = ((code - 0xD7C0) << 10) + (utf32 & 0x3FF);
 							i++;
-							out_Renamed.Span[upto++] = (byte) (0xF0 | (utf32 >> 18));
-							out_Renamed.Span[upto++] = (byte) (0x80 | ((utf32 >> 12) & 0x3F));
-							out_Renamed.Span[upto++] = (byte) (0x80 | ((utf32 >> 6) & 0x3F));
-							out_Renamed.Span[upto++] = (byte) (0x80 | (utf32 & 0x3F));
+							out_Renamed.Memory.Span[upto++] = (byte) (0xF0 | (utf32 >> 18));
+							out_Renamed.Memory.Span[upto++] = (byte) (0x80 | ((utf32 >> 12) & 0x3F));
+							out_Renamed.Memory.Span[upto++] = (byte) (0x80 | ((utf32 >> 6) & 0x3F));
+							out_Renamed.Memory.Span[upto++] = (byte) (0x80 | (utf32 & 0x3F));
 							continue;
 						}
 					}
 					// replace unpaired surrogate or out-of-order low surrogate
 					// with substitution character
-					out_Renamed.Span[upto++] = (byte) (0xEF);
-					out_Renamed.Span[upto++] = (byte) (0xBF);
-					out_Renamed.Span[upto++] = (byte) (0xBD);
+					out_Renamed.Memory.Span[upto++] = (byte) (0xEF);
+					out_Renamed.Memory.Span[upto++] = (byte) (0xBF);
+					out_Renamed.Memory.Span[upto++] = (byte) (0xBD);
 				}
 			}
 			//assert matches(source, offset, length, out, upto);
@@ -259,32 +285,36 @@ namespace Lucene.Net.Util
 		{
 			int end = offset + length;
 			
-			Memory<byte> out_Renamed = result.result;
+			var out_Renamed = result.result;
 			
 			int upto = 0;
 			for (int i = offset; i < end; i++)
 			{
 				int code = (int) s[i];
 				
-				if (upto + 4 > out_Renamed.Length)
+				if (upto + 4 > out_Renamed.Memory.Length)
 				{
-					Memory<byte> newOut = new byte[2 * out_Renamed.Length];
-					System.Diagnostics.Debug.Assert(newOut.Length >= upto + 4);
-					out_Renamed.Span.Slice(0, upto).CopyTo(newOut.Span);
-					result.result = out_Renamed = newOut;
+					var newOut = LuceneMemoryPool.Instance.RentBytes(2 * out_Renamed.Memory.Length);
+					System.Diagnostics.Debug.Assert(newOut.Memory.Length >= upto + 4);
+					out_Renamed.Memory.Span.Slice(0, upto).CopyTo(newOut.Memory.Span);
+
+                    using (var oldResult = result.result)
+                    {
+                        result.result = out_Renamed = newOut;
+                    }
 				}
 				if (code < 0x80)
-					out_Renamed.Span[upto++] = (byte) code;
+					out_Renamed.Memory.Span[upto++] = (byte) code;
 				else if (code < 0x800)
 				{
-					out_Renamed.Span[upto++] = (byte) (0xC0 | (code >> 6));
-					out_Renamed.Span[upto++] = (byte) (0x80 | (code & 0x3F));
+					out_Renamed.Memory.Span[upto++] = (byte) (0xC0 | (code >> 6));
+					out_Renamed.Memory.Span[upto++] = (byte) (0x80 | (code & 0x3F));
 				}
 				else if (code < 0xD800 || code > 0xDFFF)
 				{
-					out_Renamed.Span[upto++] = (byte) (0xE0 | (code >> 12));
-					out_Renamed.Span[upto++] = (byte) (0x80 | ((code >> 6) & 0x3F));
-					out_Renamed.Span[upto++] = (byte) (0x80 | (code & 0x3F));
+					out_Renamed.Memory.Span[upto++] = (byte) (0xE0 | (code >> 12));
+					out_Renamed.Memory.Span[upto++] = (byte) (0x80 | ((code >> 6) & 0x3F));
+					out_Renamed.Memory.Span[upto++] = (byte) (0x80 | (code & 0x3F));
 				}
 				else
 				{
@@ -298,18 +328,18 @@ namespace Lucene.Net.Util
 						{
 							utf32 = ((code - 0xD7C0) << 10) + (utf32 & 0x3FF);
 							i++;
-							out_Renamed.Span[upto++] = (byte) (0xF0 | (utf32 >> 18));
-							out_Renamed.Span[upto++] = (byte) (0x80 | ((utf32 >> 12) & 0x3F));
-							out_Renamed.Span[upto++] = (byte) (0x80 | ((utf32 >> 6) & 0x3F));
-							out_Renamed.Span[upto++] = (byte) (0x80 | (utf32 & 0x3F));
+							out_Renamed.Memory.Span[upto++] = (byte) (0xF0 | (utf32 >> 18));
+							out_Renamed.Memory.Span[upto++] = (byte) (0x80 | ((utf32 >> 12) & 0x3F));
+							out_Renamed.Memory.Span[upto++] = (byte) (0x80 | ((utf32 >> 6) & 0x3F));
+							out_Renamed.Memory.Span[upto++] = (byte) (0x80 | (utf32 & 0x3F));
 							continue;
 						}
 					}
 					// replace unpaired surrogate or out-of-order low surrogate
 					// with substitution character
-					out_Renamed.Span[upto++] = (byte) (0xEF);
-					out_Renamed.Span[upto++] = (byte) (0xBF);
-					out_Renamed.Span[upto++] = (byte) (0xBD);
+					out_Renamed.Memory.Span[upto++] = (byte) (0xEF);
+					out_Renamed.Memory.Span[upto++] = (byte) (0xBF);
+					out_Renamed.Memory.Span[upto++] = (byte) (0xBD);
 				}
 			}
 			//assert matches(s, offset, length, out, upto);

@@ -46,6 +46,12 @@ namespace Lucene.Net.Index
 			endConsumer.SetFieldInfos(fieldInfos);
 		}
 
+        public override void Dispose()
+        {
+            consumer?.Dispose();
+            consumer = null;
+        }
+
         public override void Flush(IDictionary<DocFieldConsumerPerThread, ICollection<DocFieldConsumerPerField>> threadsAndFields, SegmentWriteState state, IState s)
 		{
 

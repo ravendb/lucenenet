@@ -74,5 +74,5 @@ namespace Lucene.Net.Index
         {
             docsWriter.Dispose();
         }
-	}
+        }
 }

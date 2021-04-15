@@ -127,8 +127,13 @@ namespace Lucene.Net.Index
 				}
 			}
 		}
-		
-		internal int allocCount;
+
+        public override void Dispose()
+        {
+            
+        }
+
+        internal int allocCount;
 		
 		internal PerDoc GetPerDoc()
 		{

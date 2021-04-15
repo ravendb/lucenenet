@@ -51,6 +51,11 @@ namespace Lucene.Net.Index
 			two.SetFieldInfos(fieldInfos);
 		}
 
+        public override void Dispose()
+        {
+            throw new NotImplementedException();
+        }
+
         public override void Flush(IDictionary<DocFieldConsumerPerThread, ICollection<DocFieldConsumerPerField>> threadsAndFields, SegmentWriteState state, IState s)
 		{
 

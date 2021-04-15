@@ -22,7 +22,7 @@ using Lucene.Net.Store;
 namespace Lucene.Net.Index
 {
 	
-	abstract class InvertedDocConsumer
+	abstract class InvertedDocConsumer : IDisposable
 	{
 		
 		/// <summary>Add a new thread </summary>
@@ -50,5 +50,7 @@ namespace Lucene.Net.Index
 		{
 			this.fieldInfos = fieldInfos;
 		}
-	}
+
+        public abstract void Dispose();
+    }
 }

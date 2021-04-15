@@ -21,12 +21,13 @@ using Lucene.Net.Store;
 namespace Lucene.Net.Index
 {
 	
-	abstract class DocConsumer
+	abstract class DocConsumer : IDisposable
 	{
 		public abstract DocConsumerPerThread AddThread(DocumentsWriterThreadState perThread);
 		public abstract void  Flush(System.Collections.Generic.ICollection<DocConsumerPerThread> threads, SegmentWriteState state, IState s);
 		public abstract void  CloseDocStore(SegmentWriteState state, IState s);
 		public abstract void  Abort();
 		public abstract bool FreeRAM();
-	}
+        public abstract void Dispose();
+    }
 }

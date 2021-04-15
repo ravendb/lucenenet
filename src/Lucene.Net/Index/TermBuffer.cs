@@ -24,7 +24,7 @@ using UnicodeUtil = Lucene.Net.Util.UnicodeUtil;
 namespace Lucene.Net.Index
 {
 	
-	sealed class TermBuffer : System.ICloneable
+	sealed class TermBuffer : System.ICloneable, IDisposable
 	{
 		
 		private System.String field;
@@ -37,6 +37,10 @@ namespace Lucene.Net.Index
 
         public Span<char> TextAsSpan => new Span<char>(text.result, 0, text.length);
         public string Field => field;
+
+        public TermBuffer()
+        {
+        }
 
 		public int CompareTo(TermBuffer other)
 		{
@@ -90,16 +94,16 @@ namespace Lucene.Net.Index
 					// Fully convert all bytes since bytes is dirty
 					UnicodeUtil.UTF16toUTF8(text.result, 0, text.length, bytes);
 					bytes.SetLength(totalLength);
-					input.ReadBytes(bytes.result.Span.Slice(start, length), state);
-					UnicodeUtil.UTF8toUTF16(bytes.result.Span, 0, totalLength, text);
+					input.ReadBytes(bytes.result.Memory.Span.Slice(start, length), state);
+					UnicodeUtil.UTF8toUTF16(bytes.result.Memory.Span, 0, totalLength, text);
 					dirty = false;
 				}
 				else
 				{
 					// Incrementally convert only the UTF8 bytes that are new:
 					bytes.SetLength(totalLength);
-					input.ReadBytes(bytes.result.Span.Slice(start, length), state);
-					UnicodeUtil.UTF8toUTF16(bytes.result.Span, start, length, text);
+					input.ReadBytes(bytes.result.Memory.Span.Slice(start, length), state);
+					UnicodeUtil.UTF8toUTF16(bytes.result.Memory.Span, start, length, text);
 				}
 			}
 			this.field = fieldInfos.FieldName(input.ReadVInt(state));
@@ -166,5 +170,11 @@ namespace Lucene.Net.Index
 			clone.text.CopyText(text);
 			return clone;
 		}
-	}
+
+        public void Dispose()
+        {
+            bytes?.Dispose();
+            bytes = null;
+        }
+    }
 }

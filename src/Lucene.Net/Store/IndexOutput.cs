@@ -97,11 +97,13 @@ namespace Lucene.Net.Store
 		/// </seealso>
 		public virtual void  WriteString(System.String s)
 		{
-            UnicodeUtil.UTF8Result utf8Result = new UnicodeUtil.UTF8Result();
-			UnicodeUtil.UTF16toUTF8(s, 0, s.Length, utf8Result);
-			WriteVInt(utf8Result.length);
-			WriteBytes(utf8Result.result.Span.Slice(0, utf8Result.length));
-		}
+            using (UnicodeUtil.UTF8Result utf8Result = new UnicodeUtil.UTF8Result())
+            {
+                UnicodeUtil.UTF16toUTF8(s, 0, s.Length, utf8Result);
+                WriteVInt(utf8Result.length);
+                WriteBytes(utf8Result.result.Memory.Span.Slice(0, utf8Result.length));
+            }
+        }
 		
 		/// <summary>Writes a sub sequence of characters from s as the old
 		/// format (modified UTF-8 encoded bytes).

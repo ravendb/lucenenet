@@ -60,15 +60,14 @@ namespace Lucene.Net.Index
 			termsWriter.SetField(field);
 			return termsWriter;
 		}
-		
-		/// <summary>Called when we are done adding everything. </summary>
-		internal override void  Finish()
-		{
-			using (termsWriter)
-			using (skipListWriter)
-			using (termsOut)
-			{
-			}
-		}
-	}
+
+        public override void Dispose()
+        {
+            using (termsWriter)
+            using (skipListWriter)
+            using (termsOut)
+            {
+            }
+        }
+    }
 }

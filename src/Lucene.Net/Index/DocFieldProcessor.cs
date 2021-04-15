@@ -84,8 +84,14 @@ namespace Lucene.Net.Index
 		{
 			return consumer.FreeRAM();
 		}
-		
-		public override DocConsumerPerThread AddThread(DocumentsWriterThreadState threadState)
+
+        public override void Dispose()
+        {
+            consumer?.Dispose();
+            consumer = null;
+        }
+
+        public override DocConsumerPerThread AddThread(DocumentsWriterThreadState threadState)
 		{
 			return new DocFieldProcessorPerThread(threadState, this);
 		}
