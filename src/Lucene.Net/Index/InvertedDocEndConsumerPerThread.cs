@@ -20,11 +20,12 @@ using System;
 namespace Lucene.Net.Index
 {
 	
-	abstract class InvertedDocEndConsumerPerThread
+	abstract class InvertedDocEndConsumerPerThread : IDisposable
 	{
 		internal abstract void  StartDocument();
 		internal abstract InvertedDocEndConsumerPerField AddField(DocInverterPerField docInverterPerField, FieldInfo fieldInfo);
 		internal abstract void  FinishDocument();
 		internal abstract void  Abort();
-	}
+        public abstract void Dispose();
+    }
 }

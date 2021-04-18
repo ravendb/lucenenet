@@ -53,8 +53,17 @@ namespace Lucene.Net.Index
 				two.Abort();
 			}
 		}
-		
-		public override DocumentsWriter.DocWriter FinishDocument()
+
+        public override void Dispose()
+        {
+            one?.Dispose();
+            one = null;
+
+			two?.Dispose();
+            two = null;
+        }
+
+        public override DocumentsWriter.DocWriter FinishDocument()
 		{
 			DocumentsWriter.DocWriter oneDoc = one.FinishDocument();
 			DocumentsWriter.DocWriter twoDoc = two.FinishDocument();

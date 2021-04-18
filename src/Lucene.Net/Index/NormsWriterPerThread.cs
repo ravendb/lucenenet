@@ -39,8 +39,12 @@ namespace Lucene.Net.Index
 		internal override void  Abort()
 		{
 		}
-		
-		internal override void  StartDocument()
+
+        public override void Dispose()
+        {
+        }
+
+        internal override void  StartDocument()
 		{
 		}
 		internal override void  FinishDocument()

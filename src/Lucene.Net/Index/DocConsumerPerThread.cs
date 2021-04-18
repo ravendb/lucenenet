@@ -21,7 +21,7 @@ using Lucene.Net.Store;
 namespace Lucene.Net.Index
 {
 	
-	abstract class DocConsumerPerThread
+	abstract class DocConsumerPerThread : IDisposable
 	{
 		
 		/// <summary>Process the document. If there is
@@ -34,5 +34,6 @@ namespace Lucene.Net.Index
 		public abstract DocumentsWriter.DocWriter ProcessDocument(IState state);
 		
 		public abstract void  Abort();
-	}
+        public abstract void Dispose();
+    }
 }

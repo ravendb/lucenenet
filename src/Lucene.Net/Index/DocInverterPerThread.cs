@@ -98,8 +98,17 @@ namespace Lucene.Net.Index
 				endConsumer.Abort();
 			}
 		}
-		
-		public override DocFieldConsumerPerField AddField(FieldInfo fi)
+
+        public override void Dispose()
+        {
+            consumer?.Dispose();
+            consumer = null;
+
+            endConsumer?.Dispose();
+            endConsumer = null;
+        }
+
+        public override DocFieldConsumerPerField AddField(FieldInfo fi)
 		{
 			return new DocInverterPerField(this, fi);
 		}

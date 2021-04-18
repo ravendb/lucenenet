@@ -79,8 +79,17 @@ namespace Lucene.Net.Index
 					nextPerThread.Abort();
 			}
 		}
-		
-		// perField calls this when it needs more postings:
+
+        public override void Dispose()
+        {
+            consumer?.Dispose();
+            consumer = null;
+
+			nextPerThread?.Dispose();
+            nextPerThread = null;
+        }
+
+        // perField calls this when it needs more postings:
 		internal void  MorePostings()
 		{
 			System.Diagnostics.Debug.Assert(freePostingsCount == 0);

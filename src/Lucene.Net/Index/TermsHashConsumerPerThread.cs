@@ -20,11 +20,12 @@ using System;
 namespace Lucene.Net.Index
 {
 	
-	abstract class TermsHashConsumerPerThread
+	abstract class TermsHashConsumerPerThread : IDisposable
 	{
 		public abstract void  StartDocument();
 		public abstract DocumentsWriter.DocWriter FinishDocument();
-		abstract public TermsHashConsumerPerField AddField(TermsHashPerField termsHashPerField, FieldInfo fieldInfo);
-		abstract public void  Abort();
-	}
+		public abstract TermsHashConsumerPerField AddField(TermsHashPerField termsHashPerField, FieldInfo fieldInfo);
+		public abstract void  Abort();
+        public abstract void Dispose();
+    }
 }

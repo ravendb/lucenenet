@@ -78,8 +78,26 @@ namespace Lucene.Net.Index
 				doc = null;
 			}
 		}
-		
-		// Called only by assert
+
+        public override void Dispose()
+        {
+            DisposeUtf8Results(ref utf8Results);
+
+            static void DisposeUtf8Results(ref UnicodeUtil.UTF8Result[] utf8Results)
+            {
+				if (utf8Results == null)
+					return;
+
+                foreach (var utf8Result in utf8Results)
+                {
+                    utf8Result?.Dispose();
+                }
+
+                utf8Results = null;
+            }
+        }
+
+        // Called only by assert
 		internal bool ClearLastVectorFieldName()
 		{
 			lastVectorFieldName = null;

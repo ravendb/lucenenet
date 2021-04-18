@@ -894,6 +894,14 @@ namespace Lucene.Net.Index
                 consumer = null;
 
                 CloseInternal();
+
+                if (threadStates != null)
+                {
+                    foreach (var state in threadStates)
+                        state?.Dispose();
+
+                    threadStates = null;
+                }
             }
         }
 		

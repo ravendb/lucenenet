@@ -25,7 +25,7 @@ namespace Lucene.Net.Index
 	/// thread and then merge postings hashes from all threads
 	/// when writing the segment. 
 	/// </summary>
-	sealed class DocumentsWriterThreadState
+	sealed class DocumentsWriterThreadState : IDisposable
 	{
 		
 		internal bool isIdle = true; // false if this is currently in use by a thread
@@ -52,5 +52,11 @@ namespace Lucene.Net.Index
 			numThreads = 0;
 			doFlushAfter = false;
 		}
-	}
+
+        public void Dispose()
+        {
+            consumer?.Dispose();
+            consumer = null;
+        }
+    }
 }

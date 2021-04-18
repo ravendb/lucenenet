@@ -89,8 +89,14 @@ namespace Lucene.Net.Index
 			fieldsWriter.Abort();
 			consumer.Abort();
 		}
-		
-		public System.Collections.Generic.ICollection<DocFieldConsumerPerField> Fields()
+
+        public override void Dispose()
+        {
+            consumer?.Dispose();
+            consumer = null;
+        }
+
+        public System.Collections.Generic.ICollection<DocFieldConsumerPerField> Fields()
 		{
 		    System.Collections.Generic.ICollection<DocFieldConsumerPerField> fields =
 		        new System.Collections.Generic.HashSet<DocFieldConsumerPerField>();

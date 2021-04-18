@@ -63,8 +63,12 @@ namespace Lucene.Net.Index
 		{
 			upto = 0;
 		}
-		
-		public int CompareTo(NormsWriterPerField other)
+
+        public override void Dispose()
+        {
+        }
+
+        public int CompareTo(NormsWriterPerField other)
 		{
 			return String.CompareOrdinal(fieldInfo.name, other.fieldInfo.name);
 		}

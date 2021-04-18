@@ -48,5 +48,9 @@ namespace Lucene.Net.Index
 		public override void  Abort()
 		{
 		}
-	}
+
+        public override void Dispose()
+        {
+        }
+    }
 }
