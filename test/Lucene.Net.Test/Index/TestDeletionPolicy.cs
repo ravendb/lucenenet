@@ -697,7 +697,8 @@ namespace Lucene.Net.Index
 				IndexSearcher searcher2 = new IndexSearcher(dir, false, null);
 				ScoreDoc[] hits2 = searcher2.Search(query, null, 1000, null).ScoreDocs;
 				Assert.AreEqual(176, hits2.Length);
-				
+				searcher2.Close();
+
 				// Simplistic check: just verify only the past N segments_N's still
 				// exist, and, I can open a reader on each:
 				long gen = SegmentInfos.GetCurrentSegmentGeneration(dir, null);
