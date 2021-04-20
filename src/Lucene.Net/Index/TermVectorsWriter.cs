@@ -216,35 +216,54 @@ namespace Lucene.Net.Index
 			// the first exception encountered in this process
 			System.IO.IOException keep = null;
 			if (tvx != null)
-				try
-				{
-					tvx.Close();
-				}
-				catch (System.IO.IOException e)
-				{
-					keep = e;
-				}
-			if (tvd != null)
-				try
-				{
-					tvd.Close();
-				}
-				catch (System.IO.IOException e)
-				{
-					if (keep == null)
-						keep = e;
-				}
-			if (tvf != null)
-				try
-				{
-					tvf.Close();
-				}
-				catch (System.IO.IOException e)
-				{
-					if (keep == null)
-						keep = e;
-				}
-			if (keep != null)
+            {
+                try
+                {
+                    tvx.Close();
+                }
+                catch (System.IO.IOException e)
+                {
+                    keep = e;
+                }
+            }
+
+            if (tvd != null)
+            {
+                try
+                {
+                    tvd.Close();
+                }
+                catch (System.IO.IOException e)
+                {
+                    if (keep == null)
+                        keep = e;
+                }
+            }
+
+            if (tvf != null)
+            {
+                try
+                {
+                    tvf.Close();
+                }
+                catch (System.IO.IOException e)
+                {
+                    if (keep == null)
+                        keep = e;
+                }
+            }
+
+            if (utf8Results != null)
+            {
+                foreach (var utf8Result in utf8Results)
+                {
+                    utf8Result?.Dispose();
+                }
+
+                utf8Results = null;
+            }
+
+            if (keep != null)
 			{
 				throw new System.IO.IOException(keep.StackTrace);
 			}
