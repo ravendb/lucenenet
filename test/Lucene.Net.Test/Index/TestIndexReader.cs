@@ -1795,6 +1795,7 @@ namespace Lucene.Net.Index
 			Assert.IsTrue(subs[1] is ReadOnlySegmentReader);
 			Assert.IsTrue(ints == ints2);
 			
+			writer.Close();
 			dir.Close();
 		}
 		
