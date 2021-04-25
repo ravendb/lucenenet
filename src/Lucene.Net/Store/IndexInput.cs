@@ -170,7 +170,7 @@ namespace Lucene.Net.Store
 		/// from those utf8 bytes
 		/// </deprecated>
         [Obsolete("-- please use ReadString or ReadBytes instead, and construct the string from those utf8 bytes")]
-		public virtual void  ReadChars(char[] buffer, int start, int length, IState state)
+		public virtual void  ReadChars(Span<char> buffer, int start, int length, IState state)
 		{
 			int end = start + length;
 			for (int i = start; i < end; i++)

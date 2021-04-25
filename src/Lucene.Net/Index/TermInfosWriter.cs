@@ -157,8 +157,8 @@ namespace Lucene.Net.Index
 			
 			for (int i = 0; i < len; i++)
 			{
-				char ch1 = utf16Result1.result[i];
-				char ch2 = utf16Result2.result[i];
+				char ch1 = utf16Result1.result.Memory.Span[i];
+				char ch2 = utf16Result2.result.Memory.Span[i];
 				if (ch1 != ch2)
 					return ch1 - ch2;
 			}

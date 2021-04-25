@@ -140,7 +140,7 @@ namespace Lucene.Net.Documents
 			UnicodeUtil.UTF16Result result = new UnicodeUtil.UTF16Result();
 			Memory<byte> bytes = Decompress(value_Renamed);
 			UnicodeUtil.UTF8toUTF16(bytes.Span, 0, bytes.Length, result);
-			return new System.String(result.result, 0, result.length);
+			return new System.String(result.result.Memory.Span.Slice(0, result.length));
 		}
 	}
 }

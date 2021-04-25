@@ -110,29 +110,51 @@ namespace Lucene.Net.Util
             }
         }
 		
-		public sealed class UTF16Result
+		public sealed class UTF16Result : IDisposable
 		{
-			public char[] result = new char[10];
-			public int[] offsets = new int[10];
-			public int length;
+            public IMemoryOwner<char> result;
+            public IMemoryOwner<int> offsets;
+            public int length;
+
+            public UTF16Result()
+            {
+                result = LuceneMemoryPool.Instance.RentChars(10);
+                offsets = LuceneMemoryPool.Instance.RentInts(10);
+            }
 			
 			public void  SetLength(int newLength)
 			{
-				if (result.Length < newLength)
-				{
-					char[] newArray = new char[(int) (1.5 * newLength)];
-					Array.Copy(result, 0, newArray, 0, length);
-					result = newArray;
-				}
+				if (result.Memory.Length < newLength)
+                {
+                    IMemoryOwner<char> newResult = LuceneMemoryPool.Instance.RentChars((int) (1.5 * newLength));
+
+                    using (var oldResult = result)
+                    {
+                        oldResult.Memory.Span.Slice(0, length).CopyTo(newResult.Memory.Span);
+
+                        result = newResult;
+                    }
+                }
+
 				length = newLength;
 			}
 			
-			public void  CopyText(UTF16Result other)
+			public void CopyText(UTF16Result other)
 			{
 				SetLength(other.length);
-				Array.Copy(other.result, 0, result, 0, length);
-			}
-		}
+
+				other.result.Memory.Span.Slice(0, length).CopyTo(result.Memory.Span);
+            }
+
+            public void Dispose()
+            {
+                result?.Dispose();
+                result = null;
+
+                offsets?.Dispose();
+                offsets = null;
+            }
+        }
 		
 		/// <summary>Encode characters from a char[] source, starting at
 		/// offset and stopping when the character 0xffff is seen.
@@ -210,7 +232,7 @@ namespace Lucene.Net.Util
 		/// offset for length chars.  Returns the number of bytes
 		/// written to bytesOut. 
 		/// </summary>
-		public static void  UTF16toUTF8(char[] source, int offset, int length, UTF8Result result)
+		public static void  UTF16toUTF8(Span<char> source, int offset, int length, UTF8Result result)
 		{
 			
 			int upto = 0;
@@ -354,30 +376,38 @@ namespace Lucene.Net.Util
 		public static void  UTF8toUTF16(Span<byte> utf8, int offset, int length, UTF16Result result)
         {
 			int end = offset + length;
-			char[] out_Renamed = result.result;
-			if (result.offsets.Length <= end)
-			{
-				int[] newOffsets = new int[2 * end];
-				Array.Copy(result.offsets, 0, newOffsets, 0, result.offsets.Length);
-				result.offsets = newOffsets;
+			var out_Renamed = result.result;
+			if (result.offsets.Memory.Span.Length <= end)
+            {
+                var newOffsets = LuceneMemoryPool.Instance.RentInts(2 * end);
+				result.offsets.Memory.Span.CopyTo(newOffsets.Memory.Span.Slice(0, result.offsets.Memory.Length));
+
+                using (var oldOffsets = result.offsets)
+                {
+                    result.offsets = newOffsets;
+                }
 			}
-			int[] offsets = result.offsets;
+			var offsets = result.offsets;
 			
 			// If incremental decoding fell in the middle of a
 			// single unicode character, rollback to its start:
 			int upto = offset;
-			while (offsets[upto] == - 1)
+			while (offsets.Memory.Span[upto] == - 1)
 				upto--;
 			
-			int outUpto = offsets[upto];
+			int outUpto = offsets.Memory.Span[upto];
 			
 			// Pre-allocate for worst case 1-for-1
-			if (outUpto + length >= out_Renamed.Length)
+			if (outUpto + length >= out_Renamed.Memory.Span.Length)
 			{
-				char[] newOut = new char[2 * (outUpto + length)];
-				Array.Copy(out_Renamed, 0, newOut, 0, outUpto);
-				result.result = out_Renamed = newOut;
-			}
+                var newOut = LuceneMemoryPool.Instance.RentChars(2 * (outUpto + length));
+				out_Renamed.Memory.Span.Slice(0, outUpto).CopyTo(newOut.Memory.Span);
+
+                using (var oldResult = result.result)
+                {
+                    result.result = out_Renamed = newOut;
+                }
+            }
 			
 			while (upto < end)
 			{
@@ -385,7 +415,7 @@ namespace Lucene.Net.Util
 				int b = utf8[upto] & 0xff;
 				int ch;
 				
-				offsets[upto++] = outUpto;
+				offsets.Memory.Span[upto++] = outUpto;
 				
 				if (b < 0xc0)
 				{
@@ -395,38 +425,38 @@ namespace Lucene.Net.Util
 				else if (b < 0xe0)
 				{
 					ch = ((b & 0x1f) << 6) + (utf8[upto] & 0x3f);
-					offsets[upto++] = - 1;
+					offsets.Memory.Span[upto++] = - 1;
 				}
 				else if (b < 0xf0)
 				{
 					ch = ((b & 0xf) << 12) + ((utf8[upto] & 0x3f) << 6) + (utf8[upto + 1] & 0x3f);
-					offsets[upto++] = - 1;
-					offsets[upto++] = - 1;
+					offsets.Memory.Span[upto++] = - 1;
+					offsets.Memory.Span[upto++] = - 1;
 				}
 				else
 				{
 					System.Diagnostics.Debug.Assert(b < 0xf8);
 					ch = ((b & 0x7) << 18) + ((utf8[upto] & 0x3f) << 12) + ((utf8[upto + 1] & 0x3f) << 6) + (utf8[upto + 2] & 0x3f);
-					offsets[upto++] = - 1;
-					offsets[upto++] = - 1;
-					offsets[upto++] = - 1;
+					offsets.Memory.Span[upto++] = - 1;
+					offsets.Memory.Span[upto++] = - 1;
+					offsets.Memory.Span[upto++] = - 1;
 				}
 				
 				if (ch <= UNI_MAX_BMP)
 				{
 					// target is a character <= 0xFFFF
-					out_Renamed[outUpto++] = (char) ch;
+					out_Renamed.Memory.Span[outUpto++] = (char) ch;
 				}
 				else
 				{
 					// target is a character in range 0xFFFF - 0x10FFFF
 					int chHalf = ch - HALF_BASE;
-					out_Renamed[outUpto++] = (char) ((chHalf >> (int) HALF_SHIFT) + UNI_SUR_HIGH_START);
-					out_Renamed[outUpto++] = (char) ((chHalf & HALF_MASK) + UNI_SUR_LOW_START);
+					out_Renamed.Memory.Span[outUpto++] = (char) ((chHalf >> (int) HALF_SHIFT) + UNI_SUR_HIGH_START);
+					out_Renamed.Memory.Span[outUpto++] = (char) ((chHalf & HALF_MASK) + UNI_SUR_LOW_START);
 				}
 			}
 			
-			offsets[upto] = outUpto;
+			offsets.Memory.Span[upto] = outUpto;
 			result.length = outUpto;
 		}
 		

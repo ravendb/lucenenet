@@ -9,6 +9,8 @@ namespace Lucene.Net.Memory
 
         public abstract IMemoryOwner<byte> RentBytes(int minSize, string stackTrace = null);
 
+        public abstract IMemoryOwner<char> RentChars(int minSize, string stackTrace = null);
+
         public abstract IMemoryOwner<long> RentLongs(int minSize, string stackTrace = null);
 
         public abstract IMemoryOwner<int> RentInts(int minSize, string stackTrace = null);
@@ -18,6 +20,8 @@ namespace Lucene.Net.Memory
     {
         private readonly MemoryPool<byte> _bytePool = MemoryPool<byte>.Shared;
 
+        private readonly MemoryPool<char> _charPool = MemoryPool<char>.Shared;
+
         private readonly MemoryPool<long> _longPool = MemoryPool<long>.Shared;
 
         private readonly MemoryPool<int> _intPool = MemoryPool<int>.Shared;
@@ -25,6 +29,11 @@ namespace Lucene.Net.Memory
         public override IMemoryOwner<byte> RentBytes(int minSize, string stackTrace = null)
         {
             return new TrackingMemoryOwner<byte>(_bytePool.Rent(minSize), stackTrace);
+        }
+
+        public override IMemoryOwner<char> RentChars(int minSize, string stackTrace = null)
+        {
+            return new TrackingMemoryOwner<char>(_charPool.Rent(minSize), stackTrace);
         }
 
         public override IMemoryOwner<long> RentLongs(int minSize, string stackTrace = null)

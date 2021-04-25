@@ -35,7 +35,7 @@ namespace Lucene.Net.Index
 		private UnicodeUtil.UTF16Result text = new UnicodeUtil.UTF16Result();
 		private UnicodeUtil.UTF8Result bytes = new UnicodeUtil.UTF8Result();
 
-        public Span<char> TextAsSpan => new Span<char>(text.result, 0, text.length);
+        public Span<char> TextAsSpan => text.result.Memory.Span.Slice(0, text.length);
         public string Field => field;
 
         public TermBuffer()
@@ -46,12 +46,12 @@ namespace Lucene.Net.Index
 		{
 			if ((System.Object) field == (System.Object) other.field)
 			// fields are interned
-				return CompareChars(text.result, text.length, other.text.result, other.text.length);
+				return CompareChars(text.result.Memory.Span, text.length, other.text.result.Memory.Span, other.text.length);
 			else
 				return String.CompareOrdinal(field, other.field);
 		}
 		
-		private static int CompareChars(char[] chars1, int len1, char[] chars2, int len2)
+		private static int CompareChars(Span<char> chars1, int len1, Span<char> chars2, int len2)
 		{
 			int end = len1 < len2?len1:len2;
 			for (int k = 0; k < end; k++)
@@ -84,7 +84,7 @@ namespace Lucene.Net.Index
 			if (preUTF8Strings)
 			{
 				text.SetLength(totalLength);
-				input.ReadChars(text.result, start, length, state);
+				input.ReadChars(text.result.Memory.Span, start, length, state);
 			}
 			else
 			{
@@ -92,7 +92,7 @@ namespace Lucene.Net.Index
 				if (dirty)
 				{
 					// Fully convert all bytes since bytes is dirty
-					UnicodeUtil.UTF16toUTF8(text.result, 0, text.length, bytes);
+					UnicodeUtil.UTF16toUTF8(text.result.Memory.Span, 0, text.length, bytes);
 					bytes.SetLength(totalLength);
 					input.ReadBytes(bytes.result.Memory.Span.Slice(start, length), state);
 					UnicodeUtil.UTF8toUTF16(bytes.result.Memory.Span, 0, totalLength, text);
@@ -119,7 +119,7 @@ namespace Lucene.Net.Index
 			System.String termText = term.Text;
 			int termLen = termText.Length;
 			text.SetLength(termLen);
-			TextSupport.GetCharsFromString(termText, 0, termLen, text.result, 0);
+			TextSupport.GetCharsFromString(termText, 0, termLen, text.result.Memory.Span, 0);
 			dirty = true;
 			field = term.Field;
 			this.term = term;
@@ -148,7 +148,7 @@ namespace Lucene.Net.Index
                 return null;
 			
 			if (term == null)
-				term = new Term(field, new System.String(text.result, 0, text.length), false);
+				term = new Term(field, new string(text.result.Memory.Span.Slice(0, text.length)), false);
 			
 			return term;
 		}

@@ -4031,7 +4031,7 @@ namespace Lucene.Net.Index
                 Assert.AreEqual(s1, s2, "codepoint " + ch);
 
                 UnicodeUtil.UTF8toUTF16(utf8.result.Memory.Span, 0, utf8.length, utf16);
-                Assert.AreEqual(s1, new String(utf16.result, 0, utf16.length), "codepoint " + ch);
+                Assert.AreEqual(s1, new String(utf16.result.Memory.Span.Slice(0, utf16.length)), "codepoint " + ch);
 
                 byte[] b = System.Text.Encoding.GetEncoding("UTF-8").GetBytes(s1);
                 Assert.AreEqual(utf8.length, b.Length);
@@ -4133,7 +4133,7 @@ namespace Lucene.Net.Index
                 UnicodeUtil.UTF8toUTF16(utf8.result.Memory.Span, 0, utf8.length, utf16);
                 Assert.AreEqual(utf16.length, 20);
                 for (int i = 0; i < 20; i++)
-                    Assert.AreEqual(expected[i], utf16.result[i]);
+                    Assert.AreEqual(expected[i], utf16.result.Memory.Span[i]);
             }
         }
 
@@ -4188,12 +4188,12 @@ namespace Lucene.Net.Index
                 UnicodeUtil.UTF8toUTF16(utf8.result.Memory.Span, bytePrefix, utf8.length - bytePrefix, utf16);
                 Assert.AreEqual(20, utf16.length);
                 for (int i = 0; i < 20; i++)
-                    Assert.AreEqual(expected[i], utf16.result[i]);
+                    Assert.AreEqual(expected[i], utf16.result.Memory.Span[i]);
 
                 UnicodeUtil.UTF8toUTF16(utf8.result.Memory.Span, 0, utf8.length, utf16a);
                 Assert.AreEqual(20, utf16a.length);
                 for (int i = 0; i < 20; i++)
-                    Assert.AreEqual(expected[i], utf16a.result[i]);
+                    Assert.AreEqual(expected[i], utf16a.result.Memory.Span[i]);
             }
         }
 

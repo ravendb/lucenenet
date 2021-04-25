@@ -19,6 +19,8 @@
  *
 */
 
+using System;
+
 namespace Lucene.Net.Support
 {
     public class TextSupport
@@ -32,7 +34,7 @@ namespace Lucene.Net.Support
         /// <param name="destinationArray">Array to return the chars</param>
         /// <param name="destinationStart">Position of the destination array of chars to start storing the chars</param>
         /// <returns>An array of chars</returns>
-        public static void GetCharsFromString(string sourceString, int sourceStart, int sourceEnd, char[] destinationArray, int destinationStart)
+        public static void GetCharsFromString(string sourceString, int sourceStart, int sourceEnd, Span<char> destinationArray, int destinationStart)
         {
             int sourceCounter;
             int destinationCounter;
