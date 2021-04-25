@@ -16,6 +16,7 @@
  */
 
 using System;
+using System.Threading;
 using Lucene.Net.Store;
 using Lucene.Net.Support;
 using IndexInput = Lucene.Net.Store.IndexInput;
@@ -74,9 +75,9 @@ namespace Lucene.Net.Index
 		{
 			preUTF8Strings = true;
 		}
-		
+
 		public void  Read(IndexInput input, FieldInfos fieldInfos, IState state)
-		{
+        {
             this.term = null; // invalidate cache
 			int start = input.ReadVInt(state);
 			int length = input.ReadVInt(state);
@@ -175,6 +176,9 @@ namespace Lucene.Net.Index
         {
             bytes?.Dispose();
             bytes = null;
+
+			text?.Dispose();
+            text = null;
         }
     }
 }

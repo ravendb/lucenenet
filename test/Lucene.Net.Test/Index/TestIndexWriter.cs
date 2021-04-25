@@ -4002,41 +4002,43 @@ namespace Lucene.Net.Index
         [Test]
         public virtual void TestAllUnicodeChars()
         {
-
-            UnicodeUtil.UTF8Result utf8 = new UnicodeUtil.UTF8Result();
-            UnicodeUtil.UTF16Result utf16 = new UnicodeUtil.UTF16Result();
-            char[] chars = new char[2];
-            for (int ch = 0; ch < 0x0010FFFF; ch++)
+            using (UnicodeUtil.UTF8Result utf8 = new UnicodeUtil.UTF8Result())
+            using (UnicodeUtil.UTF16Result utf16 = new UnicodeUtil.UTF16Result())
             {
-
-                if (ch == 0xd800)
-                    // Skip invalid code points
-                    ch = 0xe000;
-
-                int len = 0;
-                if (ch <= 0xffff)
+                char[] chars = new char[2];
+                for (int ch = 0; ch < 0x0010FFFF; ch++)
                 {
-                    chars[len++] = (char)ch;
+
+                    if (ch == 0xd800)
+                        // Skip invalid code points
+                        ch = 0xe000;
+
+                    int len = 0;
+                    if (ch <= 0xffff)
+                    {
+                        chars[len++] = (char) ch;
+                    }
+                    else
+                    {
+                        chars[len++] = (char) (((ch - 0x0010000) >> 10) + UnicodeUtil.UNI_SUR_HIGH_START);
+                        chars[len++] = (char) (((ch - 0x0010000) & 0x3FFL) + UnicodeUtil.UNI_SUR_LOW_START);
+                    }
+
+                    UnicodeUtil.UTF16toUTF8(chars, 0, len, utf8);
+
+                    System.String s1 = new System.String(chars, 0, len);
+                    System.String s2 =
+                        System.Text.Encoding.UTF8.GetString(utf8.result.Memory.Span.Slice(0, utf8.length));
+                    Assert.AreEqual(s1, s2, "codepoint " + ch);
+
+                    UnicodeUtil.UTF8toUTF16(utf8.result.Memory.Span, 0, utf8.length, utf16);
+                    Assert.AreEqual(s1, new String(utf16.result.Memory.Span.Slice(0, utf16.length)), "codepoint " + ch);
+
+                    byte[] b = System.Text.Encoding.GetEncoding("UTF-8").GetBytes(s1);
+                    Assert.AreEqual(utf8.length, b.Length);
+                    for (int j = 0; j < utf8.length; j++)
+                        Assert.AreEqual(utf8.result.Memory.Span[j], b[j]);
                 }
-                else
-                {
-                    chars[len++] = (char)(((ch - 0x0010000) >> 10) + UnicodeUtil.UNI_SUR_HIGH_START);
-                    chars[len++] = (char)(((ch - 0x0010000) & 0x3FFL) + UnicodeUtil.UNI_SUR_LOW_START);
-                }
-
-                UnicodeUtil.UTF16toUTF8(chars, 0, len, utf8);
-
-                System.String s1 = new System.String(chars, 0, len);
-                System.String s2 = System.Text.Encoding.UTF8.GetString(utf8.result.Memory.Span.Slice( 0, utf8.length));
-                Assert.AreEqual(s1, s2, "codepoint " + ch);
-
-                UnicodeUtil.UTF8toUTF16(utf8.result.Memory.Span, 0, utf8.length, utf16);
-                Assert.AreEqual(s1, new String(utf16.result.Memory.Span.Slice(0, utf16.length)), "codepoint " + ch);
-
-                byte[] b = System.Text.Encoding.GetEncoding("UTF-8").GetBytes(s1);
-                Assert.AreEqual(utf8.length, b.Length);
-                for (int j = 0; j < utf8.length; j++)
-                    Assert.AreEqual(utf8.result.Memory.Span[j], b[j]);
             }
         }
 
@@ -4114,26 +4116,27 @@ namespace Lucene.Net.Index
             char[] buffer = new char[20];
             char[] expected = new char[20];
 
-            UnicodeUtil.UTF8Result utf8 = new UnicodeUtil.UTF8Result();
-            UnicodeUtil.UTF16Result utf16 = new UnicodeUtil.UTF16Result();
-
-            for (int iter = 0; iter < 100000; iter++)
+            using (UnicodeUtil.UTF8Result utf8 = new UnicodeUtil.UTF8Result())
+            using (UnicodeUtil.UTF16Result utf16 = new UnicodeUtil.UTF16Result())
             {
-                bool hasIllegal = FillUnicode(buffer, expected, 0, 20);
-
-                UnicodeUtil.UTF16toUTF8(buffer, 0, 20, utf8);
-                if (!hasIllegal)
+                for (int iter = 0; iter < 100000; iter++)
                 {
-                    byte[] b = System.Text.Encoding.GetEncoding("UTF-8").GetBytes(new System.String(buffer, 0, 20));
-                    Assert.AreEqual(b.Length, utf8.length);
-                    for (int i = 0; i < b.Length; i++)
-                        Assert.AreEqual(b[i], utf8.result.Memory.Span[i]);
-                }
+                    bool hasIllegal = FillUnicode(buffer, expected, 0, 20);
 
-                UnicodeUtil.UTF8toUTF16(utf8.result.Memory.Span, 0, utf8.length, utf16);
-                Assert.AreEqual(utf16.length, 20);
-                for (int i = 0; i < 20; i++)
-                    Assert.AreEqual(expected[i], utf16.result.Memory.Span[i]);
+                    UnicodeUtil.UTF16toUTF8(buffer, 0, 20, utf8);
+                    if (!hasIllegal)
+                    {
+                        byte[] b = System.Text.Encoding.GetEncoding("UTF-8").GetBytes(new System.String(buffer, 0, 20));
+                        Assert.AreEqual(b.Length, utf8.length);
+                        for (int i = 0; i < b.Length; i++)
+                            Assert.AreEqual(b[i], utf8.result.Memory.Span[i]);
+                    }
+
+                    UnicodeUtil.UTF8toUTF16(utf8.result.Memory.Span, 0, utf8.length, utf16);
+                    Assert.AreEqual(utf16.length, 20);
+                    for (int i = 0; i < 20; i++)
+                        Assert.AreEqual(expected[i], utf16.result.Memory.Span[i]);
+                }
             }
         }
 
@@ -4145,55 +4148,57 @@ namespace Lucene.Net.Index
             char[] buffer = new char[20];
             char[] expected = new char[20];
 
-            UnicodeUtil.UTF8Result utf8 = new UnicodeUtil.UTF8Result();
-            UnicodeUtil.UTF16Result utf16 = new UnicodeUtil.UTF16Result();
-            UnicodeUtil.UTF16Result utf16a = new UnicodeUtil.UTF16Result();
-
-            bool hasIllegal = false;
-            Span<byte> last = new byte[60];
-
-            for (int iter = 0; iter < 100000; iter++)
+            using (UnicodeUtil.UTF8Result utf8 = new UnicodeUtil.UTF8Result())
+            using (UnicodeUtil.UTF16Result utf16 = new UnicodeUtil.UTF16Result())
+            using (UnicodeUtil.UTF16Result utf16a = new UnicodeUtil.UTF16Result())
             {
+                bool hasIllegal = false;
+                Span<byte> last = new byte[60];
 
-                int prefix;
-
-                if (iter == 0 || hasIllegal)
-                    prefix = 0;
-                else
-                    prefix = NextInt(20);
-
-                hasIllegal = FillUnicode(buffer, expected, prefix, 20 - prefix);
-
-                UnicodeUtil.UTF16toUTF8(buffer, 0, 20, utf8);
-                if (!hasIllegal)
+                for (int iter = 0; iter < 100000; iter++)
                 {
-                    byte[] b = System.Text.Encoding.GetEncoding("UTF-8").GetBytes(new System.String(buffer, 0, 20));
-                    Assert.AreEqual(b.Length, utf8.length);
-                    for (int i = 0; i < b.Length; i++)
-                        Assert.AreEqual(b[i], utf8.result.Memory.Span[i]);
-                }
 
-                int bytePrefix = 20;
-                if (iter == 0 || hasIllegal)
-                    bytePrefix = 0;
-                else
+                    int prefix;
+
+                    if (iter == 0 || hasIllegal)
+                        prefix = 0;
+                    else
+                        prefix = NextInt(20);
+
+                    hasIllegal = FillUnicode(buffer, expected, prefix, 20 - prefix);
+
+                    UnicodeUtil.UTF16toUTF8(buffer, 0, 20, utf8);
+                    if (!hasIllegal)
+                    {
+                        byte[] b = System.Text.Encoding.GetEncoding("UTF-8").GetBytes(new System.String(buffer, 0, 20));
+                        Assert.AreEqual(b.Length, utf8.length);
+                        for (int i = 0; i < b.Length; i++)
+                            Assert.AreEqual(b[i], utf8.result.Memory.Span[i]);
+                    }
+
+                    int bytePrefix = 20;
+                    if (iter == 0 || hasIllegal)
+                        bytePrefix = 0;
+                    else
+                        for (int i = 0; i < 20; i++)
+                            if (last[i] != utf8.result.Memory.Span[i])
+                            {
+                                bytePrefix = i;
+                                break;
+                            }
+
+                    utf8.result.Memory.Span.Slice(0, utf8.length).CopyTo(last);
+
+                    UnicodeUtil.UTF8toUTF16(utf8.result.Memory.Span, bytePrefix, utf8.length - bytePrefix, utf16);
+                    Assert.AreEqual(20, utf16.length);
                     for (int i = 0; i < 20; i++)
-                        if (last[i] != utf8.result.Memory.Span[i])
-                        {
-                            bytePrefix = i;
-                            break;
-                        }
-                utf8.result.Memory.Span.Slice(0, utf8.length).CopyTo(last);
+                        Assert.AreEqual(expected[i], utf16.result.Memory.Span[i]);
 
-                UnicodeUtil.UTF8toUTF16(utf8.result.Memory.Span, bytePrefix, utf8.length - bytePrefix, utf16);
-                Assert.AreEqual(20, utf16.length);
-                for (int i = 0; i < 20; i++)
-                    Assert.AreEqual(expected[i], utf16.result.Memory.Span[i]);
-
-                UnicodeUtil.UTF8toUTF16(utf8.result.Memory.Span, 0, utf8.length, utf16a);
-                Assert.AreEqual(20, utf16a.length);
-                for (int i = 0; i < 20; i++)
-                    Assert.AreEqual(expected[i], utf16a.result.Memory.Span[i]);
+                    UnicodeUtil.UTF8toUTF16(utf8.result.Memory.Span, 0, utf8.length, utf16a);
+                    Assert.AreEqual(20, utf16a.length);
+                    for (int i = 0; i < 20; i++)
+                        Assert.AreEqual(expected[i], utf16a.result.Memory.Span[i]);
+                }
             }
         }
 

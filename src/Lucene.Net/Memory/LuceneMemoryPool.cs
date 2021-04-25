@@ -13,7 +13,7 @@ namespace Lucene.Net.Memory
 
         public abstract IMemoryOwner<long> RentLongs(int minSize, string stackTrace = null);
 
-        public abstract IMemoryOwner<int> RentInts(int minSize, string stackTrace = null);
+        public abstract IMemoryOwner<int> RentInts(int minSize, bool clear = false, string stackTrace = null);
     }
 
     internal class DefaultLuceneMemoryPool : LuceneMemoryPool
@@ -41,9 +41,13 @@ namespace Lucene.Net.Memory
             return new TrackingMemoryOwner<long>(_longPool.Rent(minSize), stackTrace);
         }
 
-        public override IMemoryOwner<int> RentInts(int minSize, string stackTrace = null)
+        public override IMemoryOwner<int> RentInts(int minSize, bool clear = false, string stackTrace = null)
         {
-            return new TrackingMemoryOwner<int>(_intPool.Rent(minSize), stackTrace);
+            var memory = _intPool.Rent(minSize);
+            if (clear)
+                memory.Memory.Span.Clear();
+
+            return new TrackingMemoryOwner<int>(memory, stackTrace);
         }
     }
 

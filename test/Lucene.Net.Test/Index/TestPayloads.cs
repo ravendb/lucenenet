@@ -530,45 +530,50 @@ namespace Lucene.Net.Index
 			rnd = NewRandom();
 			int numThreads = 5;
 			int numDocs = 50;
-			ByteArrayPool pool = new ByteArrayPool(numThreads, 5);
-			
-			Directory dir = new RAMDirectory();
-			IndexWriter writer = new IndexWriter(dir, new WhitespaceAnalyzer(), IndexWriter.MaxFieldLength.LIMITED, null);
-			System.String field = "test";
-			
-			ThreadClass[] ingesters = new ThreadClass[numThreads];
-			for (int i = 0; i < numThreads; i++)
-			{
-				ingesters[i] = new AnonymousClassThread(numDocs, field, pool, writer, this);
-				ingesters[i].Start();
-			}
-			
-			for (int i = 0; i < numThreads; i++)
-			{
-				ingesters[i].Join();
-			}
-			writer.Close();
-		    IndexReader reader = IndexReader.Open(dir, true, null);
-			TermEnum terms = reader.Terms(null);
-			while (terms.Next(null))
-			{
-				TermPositions tp = reader.TermPositions(terms.Term, null);
-				while (tp.Next(null))
-				{
-					int freq = tp.Freq;
-					for (int i = 0; i < freq; i++)
-					{
-						tp.NextPosition(null);
-						Assert.AreEqual(pool.BytesToString(tp.GetPayload(new byte[5], null)), terms.Term.Text);
-					}
-				}
-				tp.Close();
-			}
-			terms.Close();
-			reader.Close();
-			
-			Assert.AreEqual(pool.Size(), numThreads);
-		}
+            using (ByteArrayPool pool = new ByteArrayPool(numThreads, 5))
+            {
+                Directory dir = new RAMDirectory();
+                IndexWriter writer = new IndexWriter(dir, new WhitespaceAnalyzer(), IndexWriter.MaxFieldLength.LIMITED,
+                    null);
+                System.String field = "test";
+
+                ThreadClass[] ingesters = new ThreadClass[numThreads];
+                for (int i = 0; i < numThreads; i++)
+                {
+                    ingesters[i] = new AnonymousClassThread(numDocs, field, pool, writer, this);
+                    ingesters[i].Start();
+                }
+
+                for (int i = 0; i < numThreads; i++)
+                {
+                    ingesters[i].Join();
+                }
+
+                writer.Close();
+                IndexReader reader = IndexReader.Open(dir, true, null);
+                TermEnum terms = reader.Terms(null);
+                while (terms.Next(null))
+                {
+                    TermPositions tp = reader.TermPositions(terms.Term, null);
+                    while (tp.Next(null))
+                    {
+                        int freq = tp.Freq;
+                        for (int i = 0; i < freq; i++)
+                        {
+                            tp.NextPosition(null);
+                            Assert.AreEqual(pool.BytesToString(tp.GetPayload(new byte[5], null)), terms.Term.Text);
+                        }
+                    }
+
+                    tp.Close();
+                }
+
+                terms.Close();
+                reader.Close();
+
+                Assert.AreEqual(pool.Size(), numThreads);
+            }
+        }
 		
 		private class PoolingPayloadTokenStream:TokenStream
 		{
@@ -622,7 +627,7 @@ namespace Lucene.Net.Index
             }
 		}
 		
-		internal class ByteArrayPool
+		internal class ByteArrayPool : IDisposable
 		{
 			private System.Collections.IList pool;
 			
@@ -680,6 +685,12 @@ namespace Lucene.Net.Index
 					return pool.Count;
 				}
 			}
-		}
+
+            public void Dispose()
+            {
+                utf8Result?.Dispose();
+                utf8Result = null;
+            }
+        }
 	}
 }

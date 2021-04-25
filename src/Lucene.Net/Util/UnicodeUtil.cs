@@ -17,6 +17,8 @@
 
 using System;
 using System.Buffers;
+using System.Linq;
+using System.Threading;
 using Lucene.Net.Memory;
 
 namespace Lucene.Net.Util
@@ -119,7 +121,7 @@ namespace Lucene.Net.Util
             public UTF16Result()
             {
                 result = LuceneMemoryPool.Instance.RentChars(10);
-                offsets = LuceneMemoryPool.Instance.RentInts(10);
+                offsets = LuceneMemoryPool.Instance.RentInts(10, clear: true);
             }
 			
 			public void  SetLength(int newLength)
@@ -367,7 +369,7 @@ namespace Lucene.Net.Util
 			//assert matches(s, offset, length, out, upto);
 			result.length = upto;
 		}
-		
+
 		/// <summary>Convert UTF8 bytes into UTF16 characters.  If offset
 		/// is non-zero, conversion starts at that starting point
 		/// in utf8, re-using the results from the previous call
@@ -379,8 +381,8 @@ namespace Lucene.Net.Util
 			var out_Renamed = result.result;
 			if (result.offsets.Memory.Span.Length <= end)
             {
-                var newOffsets = LuceneMemoryPool.Instance.RentInts(2 * end);
-				result.offsets.Memory.Span.CopyTo(newOffsets.Memory.Span.Slice(0, result.offsets.Memory.Length));
+                var newOffsets = LuceneMemoryPool.Instance.RentInts(2 * end, clear: true);
+				result.offsets.Memory.Span.Slice(0, result.offsets.Memory.Length).CopyTo(newOffsets.Memory.Span);
 
                 using (var oldOffsets = result.offsets)
                 {
@@ -396,8 +398,8 @@ namespace Lucene.Net.Util
 				upto--;
 			
 			int outUpto = offsets.Memory.Span[upto];
-			
-			// Pre-allocate for worst case 1-for-1
+
+            // Pre-allocate for worst case 1-for-1
 			if (outUpto + length >= out_Renamed.Memory.Span.Length)
 			{
                 var newOut = LuceneMemoryPool.Instance.RentChars(2 * (outUpto + length));
@@ -416,7 +418,7 @@ namespace Lucene.Net.Util
 				int ch;
 				
 				offsets.Memory.Span[upto++] = outUpto;
-				
+
 				if (b < 0xc0)
 				{
 					System.Diagnostics.Debug.Assert(b < 0x80);

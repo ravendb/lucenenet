@@ -127,8 +127,12 @@ namespace Lucene.Net.Index
 		// Currently used only by assert statements
 		private bool InitUTF16Results()
 		{
+			utf16Result1?.Dispose();
+            utf16Result2?.Dispose();
+
 			utf16Result1 = new UnicodeUtil.UTF16Result();
-			utf16Result2 = new UnicodeUtil.UTF16Result();
+            utf16Result2 = new UnicodeUtil.UTF16Result();
+
 			return true;
 		}
 		
@@ -248,6 +252,12 @@ namespace Lucene.Net.Index
 
 			utf8Result?.Dispose();
             utf8Result = null;
+
+			utf16Result1?.Dispose();
+            utf16Result1 = null;
+
+			utf16Result2?.Dispose();
+            utf16Result2 = null;
 
 			using (!isIndex ? other : null)
 			using (output)

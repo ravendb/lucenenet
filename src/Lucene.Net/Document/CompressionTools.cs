@@ -97,10 +97,12 @@ namespace Lucene.Net.Documents
 		/// </summary>
 		public static byte[] CompressString(System.String value_Renamed, int compressionLevel)
 		{
-			UnicodeUtil.UTF8Result result = new UnicodeUtil.UTF8Result();
-			UnicodeUtil.UTF16toUTF8(value_Renamed, 0, value_Renamed.Length, result);
-			return Compress(result.result.Memory.Span.Slice(0, result.length), compressionLevel);
-		}
+            using (UnicodeUtil.UTF8Result result = new UnicodeUtil.UTF8Result())
+            {
+                UnicodeUtil.UTF16toUTF8(value_Renamed, 0, value_Renamed.Length, result);
+                return Compress(result.result.Memory.Span.Slice(0, result.length), compressionLevel);
+            }
+        }
 		
 		/// <summary>Decompress the byte array previously returned by
 		/// compress 
@@ -137,11 +139,13 @@ namespace Lucene.Net.Documents
 		/// </summary>
 		public static System.String DecompressString(Span<byte> value_Renamed)
 		{
-			UnicodeUtil.UTF16Result result = new UnicodeUtil.UTF16Result();
-			Memory<byte> bytes = Decompress(value_Renamed);
-			UnicodeUtil.UTF8toUTF16(bytes.Span, 0, bytes.Length, result);
-			return new System.String(result.result.Memory.Span.Slice(0, result.length));
-		}
+            using (UnicodeUtil.UTF16Result result = new UnicodeUtil.UTF16Result())
+            {
+                Memory<byte> bytes = Decompress(value_Renamed);
+                UnicodeUtil.UTF8toUTF16(bytes.Span, 0, bytes.Length, result);
+                return new System.String(result.result.Memory.Span.Slice(0, result.length));
+            }
+        }
 	}
 }
 

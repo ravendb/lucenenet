@@ -131,7 +131,6 @@ namespace Lucene.Net.Index
 			using (out_Renamed) // Move to protected method if class becomes unsealed
 			using (utf8)
 	        {
-		        
 	        }
         }
     }
