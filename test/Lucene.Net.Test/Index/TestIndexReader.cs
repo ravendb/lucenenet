@@ -1751,6 +1751,7 @@ namespace Lucene.Net.Index
 			r2.Close();
 			Assert.IsTrue(ints == ints2);
 			
+			writer.Close();
 			dir.Close();
 		}
 		
