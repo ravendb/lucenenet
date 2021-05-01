@@ -389,7 +389,7 @@ namespace Lucene.Net.Index
 				int toRead = fieldsStream.ReadVInt(state);
 				Memory<byte> b = new byte[toRead];
 				fieldsStream.ReadBytes(b.Span, state);
-				doc.Add(compressed ? new Field(fi.name, Uncompress(b.Span), Field.Store.YES) : new Field(fi.name, b, Field.Store.YES));
+				doc.Add(compressed ? new Field(fi.name, Uncompress(b), Field.Store.YES) : new Field(fi.name, b, Field.Store.YES));
 			}
 			else
 			{
@@ -402,8 +402,8 @@ namespace Lucene.Net.Index
 				{
 					int toRead = fieldsStream.ReadVInt(state);
 					
-					Span<byte> b = new byte[toRead];
-					fieldsStream.ReadBytes(b, state);
+					Memory<byte> b = new byte[toRead];
+					fieldsStream.ReadBytes(b.Span, state);
 					f = new Field(fi.name, false, System.Text.Encoding.GetEncoding("UTF-8").GetString(Uncompress(b).Span), store, index,
 					              termVector) {OmitTermFreqAndPositions = fi.omitTermFreqAndPositions, OmitNorms = fi.omitNorms};
 				}
@@ -529,8 +529,8 @@ namespace Lucene.Net.Index
 		        		localFieldsStream.Seek(pointer, state);
 		        		if (isCompressed)
 		        		{
-		        			Span<byte> b = new byte[toRead];
-		        			localFieldsStream.ReadBytes(b, state);
+		        			Memory<byte> b = new byte[toRead];
+		        			localFieldsStream.ReadBytes(b.Span, state);
 		        			fieldsData =
 		        				System.Text.Encoding.GetEncoding("UTF-8").GetString(Enclosing_Instance.Uncompress(b).Span);
 		        		}
@@ -610,7 +610,7 @@ namespace Lucene.Net.Index
 						{
 							localFieldsStream.Seek(pointer, state);
 							localFieldsStream.ReadBytes(b.Span.Slice(0, toRead), state);
-							fieldsData = isCompressed ? Enclosing_Instance.Uncompress(b.Span) : b;
+							fieldsData = isCompressed ? Enclosing_Instance.Uncompress(b) : b;
 						}
 						catch (IOException e)
 						{
@@ -627,7 +627,7 @@ namespace Lucene.Net.Index
 			}
 		}
 		
-		private Memory<byte> Uncompress(Span<byte> b)
+		private Memory<byte> Uncompress(Memory<byte> b)
 		{
 			try
 			{

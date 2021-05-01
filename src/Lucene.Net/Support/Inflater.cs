@@ -20,6 +20,7 @@
 */
 
 using System;
+using System.Runtime.InteropServices;
 
 namespace Lucene.Net.Support
 {
@@ -27,7 +28,7 @@ namespace Lucene.Net.Support
 
     public class Inflater
     {
-        delegate void SetInputDelegate(Span<byte> buffer);
+        delegate void SetInputDelegate(byte[] input, int offset, int count);
         delegate bool GetIsFinishedDelegate();
         delegate int InflateDelegate(byte[] buffer);
 
@@ -42,7 +43,7 @@ namespace Lucene.Net.Support
             setInputMethod = (SetInputDelegate)Delegate.CreateDelegate(
                 typeof(SetInputDelegate),
                 inflaterInstance,
-                type.GetMethod("SetInput", new Type[] { typeof(byte[]) }));
+                type.GetMethod("SetInput", new Type[] { typeof(byte[]), typeof(int), typeof(int) }));
 
             getIsFinishedMethod = (GetIsFinishedDelegate)Delegate.CreateDelegate(
                 typeof(GetIsFinishedDelegate),
@@ -55,9 +56,15 @@ namespace Lucene.Net.Support
                 type.GetMethod("Inflate", new Type[] { typeof(byte[]) }));
         }
 
-        public void SetInput(Span<byte> buffer)
+        public void SetInput(Memory<byte> buffer)
         {
-            setInputMethod(buffer);
+            if (MemoryMarshal.TryGetArray(buffer, out ArraySegment<byte> array))
+            {
+                setInputMethod(array.Array, array.Offset, array.Count);
+                return;
+            }
+
+            throw new NotImplementedException();
         }
 
         public bool IsFinished

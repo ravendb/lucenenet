@@ -106,7 +106,7 @@ namespace Lucene.Net.Documents
 			Assert.IsTrue(docFromReader != null);
 			
 			/* fetch the binary compressed field and compare it's content with the original one */
-			System.String binaryFldCompressedTest = new System.String(System.Text.UTF8Encoding.UTF8.GetChars(CompressionTools.Decompress(docFromReader.GetBinaryValue("binaryCompressed", null).Span).ToArray()));
+			System.String binaryFldCompressedTest = new System.String(System.Text.UTF8Encoding.UTF8.GetChars(CompressionTools.Decompress(docFromReader.GetBinaryValue("binaryCompressed", null)).ToArray()));
 			Assert.IsTrue(binaryFldCompressedTest.Equals(binaryValCompressed));
 			Assert.IsTrue(CompressionTools.DecompressString(docFromReader.GetBinaryValue("stringCompressed", null).ToArray()).Equals(binaryValCompressed));
 			

@@ -47,7 +47,7 @@ namespace Lucene.Net.Documents
 		/// specified compressionLevel (constants are defined in
 		/// java.util.zip.Deflater). 
 		/// </summary>
-		public static byte[] Compress(Span<byte> value_Renamed, int compressionLevel)
+		public static byte[] Compress(Memory<byte> value_Renamed, int compressionLevel)
 		{
 			/* Create an expandable byte array to hold the compressed data.
 			* You cannot use an array that's the same size as the orginal because
@@ -80,7 +80,7 @@ namespace Lucene.Net.Documents
 		}
 		
 		/// <summary>Compresses all bytes in the array, with default BEST_COMPRESSION level </summary>
-		public static byte[] Compress(Span<byte> value_Renamed)
+		public static byte[] Compress(Memory<byte> value_Renamed)
 		{
             return Compress(value_Renamed, Deflater.BEST_COMPRESSION);
 		}
@@ -100,14 +100,14 @@ namespace Lucene.Net.Documents
             using (UnicodeUtil.UTF8Result result = new UnicodeUtil.UTF8Result())
             {
                 UnicodeUtil.UTF16toUTF8(value_Renamed, 0, value_Renamed.Length, result);
-                return Compress(result.result.Memory.Span.Slice(0, result.length), compressionLevel);
+                return Compress(result.result.Memory.Slice(0, result.length), compressionLevel);
             }
         }
 		
 		/// <summary>Decompress the byte array previously returned by
 		/// compress 
 		/// </summary>
-		public static Memory<byte> Decompress(Span<byte> value_Renamed)
+		public static Memory<byte> Decompress(Memory<byte> value_Renamed)
 		{
 			// Create an expandable byte array to hold the decompressed data
 			System.IO.MemoryStream bos = new System.IO.MemoryStream(value_Renamed.Length);
@@ -137,7 +137,7 @@ namespace Lucene.Net.Documents
 		/// <summary>Decompress the byte array previously returned by
 		/// compressString back into a String 
 		/// </summary>
-		public static System.String DecompressString(Span<byte> value_Renamed)
+		public static System.String DecompressString(Memory<byte> value_Renamed)
 		{
             using (UnicodeUtil.UTF16Result result = new UnicodeUtil.UTF16Result())
             {

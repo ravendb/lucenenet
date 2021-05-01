@@ -20,6 +20,8 @@
 */
 
 using System;
+using System.Buffers;
+using System.Runtime.InteropServices;
 
 namespace Lucene.Net.Support
 {
@@ -28,7 +30,7 @@ namespace Lucene.Net.Support
     public class Deflater
     {
         delegate void SetLevelDelegate(int level);
-        delegate void SetInputDelegate(Span<byte> input);
+        delegate void SetInputDelegate(byte[] input, int offset, int count);
         delegate void FinishDelegate();
         delegate bool GetIsFinishedDelegate();
         delegate int DeflateDelegate(byte[] output);
@@ -76,9 +78,15 @@ namespace Lucene.Net.Support
             setLevelMethod(level);
         }
 
-        public void SetInput(Span<byte> input)
+        public void SetInput(Memory<byte> input)
         {
-            setInputMethod(input);
+            if (MemoryMarshal.TryGetArray(input, out ArraySegment<byte> array))
+            {
+                setInputMethod(array.Array, array.Offset, array.Count);
+                return;
+            }
+
+            throw new NotImplementedException();
         }
 
         public void Finish()
