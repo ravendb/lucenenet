@@ -325,27 +325,85 @@ namespace Lucene.Net.Search
 		{
 			return GetIndex(true, true);
 		}
-		
+
+		[Test]
+        public void LargeStrings()
+        {
+            RAMDirectory indexStore = new RAMDirectory();
+            IndexWriter writer = new IndexWriter(indexStore, new SimpleAnalyzer(), true, IndexWriter.MaxFieldLength.LIMITED, null);
+
+            var doc = new Document();
+            var num = new string('a', 4567);
+            doc.Add(new Field("string", num, Field.Store.NO, Field.Index.NOT_ANALYZED));
+            writer.AddDocument(doc, null);
+            writer.Close();
+
+            var searcher = new IndexSearcher(indexStore, true, null);
+
+            sort.SetSort(new SortField("string", SortField.STRING), SortField.FIELD_DOC);
+            var result = searcher.Search(new MatchAllDocsQuery(), null, 500, sort, null).ScoreDocs;
+        }
+
+        [Test]
+        public void LargeStrings2()
+        {
+            RAMDirectory indexStore = new RAMDirectory();
+            IndexWriter writer = new IndexWriter(indexStore, new SimpleAnalyzer(), true, IndexWriter.MaxFieldLength.LIMITED, null);
+
+            var doc = new Document();
+            var num = new string('a', 4090);
+            doc.Add(new Field("string", num, Field.Store.NO, Field.Index.NOT_ANALYZED));
+            writer.AddDocument(doc, null);
+
+            doc = new Document();
+            num = new string('b', 4096 * 2);
+            doc.Add(new Field("string", num, Field.Store.NO, Field.Index.NOT_ANALYZED));
+            writer.AddDocument(doc, null);
+
+            writer.Close();
+
+            var searcher = new IndexSearcher(indexStore, true, null);
+
+            sort.SetSort(new SortField("string", SortField.STRING), SortField.FIELD_DOC);
+            var result = searcher.Search(new MatchAllDocsQuery(), null, 500, sort, null).ScoreDocs;
+        }
+
 		private IndexSearcher GetFullStrings()
 		{
 			RAMDirectory indexStore = new RAMDirectory();
 			IndexWriter writer = new IndexWriter(indexStore, new SimpleAnalyzer(), true, IndexWriter.MaxFieldLength.LIMITED, null);
 			writer.SetMaxBufferedDocs(4);
 			writer.MergeFactor = 97;
-			for (int i = 0; i < NUM_STRINGS; i++)
+            Document doc = null;
+            System.String num, num2; 
+
+			for (int i = 0; i < NUM_STRINGS - 1; i++)
 			{
-				Document doc = new Document();
-				System.String num = GetRandomCharString(GetRandomNumber(2, 8), 48, 52);
+				doc = new Document();
+				num = GetRandomCharString(GetRandomNumber(2, 8), 48, 52);
 				doc.Add(new Field("tracer", num, Field.Store.YES, Field.Index.NO));
 				//doc.add (new Field ("contents", Integer.toString(i), Field.Store.NO, Field.Index.ANALYZED));
 				doc.Add(new Field("string", num, Field.Store.NO, Field.Index.NOT_ANALYZED));
-				System.String num2 = GetRandomCharString(GetRandomNumber(1, 4), 48, 50);
+				num2 = GetRandomCharString(GetRandomNumber(1, 4), 48, 50);
 				doc.Add(new Field("string2", num2, Field.Store.NO, Field.Index.NOT_ANALYZED));
 				doc.Add(new Field("tracer2", num2, Field.Store.YES, Field.Index.NO));
 				doc.Boost = 2; // produce some scores above 1.0
 				writer.SetMaxBufferedDocs(GetRandomNumber(2, 12));
 				writer.AddDocument(doc, null);
 			}
+
+            doc = new Document();
+            num = new string('-', 4567);
+            doc.Add(new Field("tracer", num, Field.Store.YES, Field.Index.NO));
+            //doc.add (new Field ("contents", Integer.toString(i), Field.Store.NO, Field.Index.ANALYZED));
+            doc.Add(new Field("string", num, Field.Store.NO, Field.Index.NOT_ANALYZED));
+            num2 = new string('-', 4566);
+            doc.Add(new Field("string2", num2, Field.Store.NO, Field.Index.NOT_ANALYZED));
+            doc.Add(new Field("tracer2", num2, Field.Store.YES, Field.Index.NO));
+            doc.Boost = 2; // produce some scores above 1.0
+            writer.SetMaxBufferedDocs(GetRandomNumber(2, 12));
+            writer.AddDocument(doc, null);
+
 			//writer.optimize ();
 			//System.out.println(writer.getSegmentCount());
 			writer.Close();
