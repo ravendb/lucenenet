@@ -18,6 +18,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Lucene.Net.Search;
 using Lucene.Net.Store;
 using Lucene.Net.Support;
 using Lucene.Net.Util;
@@ -44,7 +45,7 @@ namespace Lucene.Net.Index
 	/// same order to the other indexes. <em>Failure to do so will result in
 	/// undefined behavior</em>.
 	/// </summary>
-	public class ParallelReader:IndexReader, ILuceneCloneable
+	public class ParallelReader : IndexReader, ILuceneCloneable
 	{
         private List<IndexReader> readers = new List<IndexReader>();
         private List<bool> decrefOnClose = new List<bool>(); // remember which subreaders to decRef on close
@@ -142,8 +143,23 @@ namespace Lucene.Net.Index
 				throw new System.SystemException(ex.Message, ex);
 			}
 		}
-		
-		/// <summary> Tries to reopen the subreaders.
+
+        public override string GetStringValueFor(string field, int doc, IState state)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override long GetLongValueFor(string field, LongParser parser, int doc, IState state)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override double GetDoubleValueFor(string field, DoubleParser parser, int doc, IState state)
+        {
+            throw new NotImplementedException();
+        }
+
+        /// <summary> Tries to reopen the subreaders.
 		/// <br/>
 		/// If one or more subreaders could be re-opened (i. e. subReader.reopen() 
 		/// returned a new instance != subReader), then a new ParallelReader instance 

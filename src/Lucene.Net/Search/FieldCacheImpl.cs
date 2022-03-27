@@ -760,8 +760,7 @@ namespace Lucene.Net.Search
                 return retArray;
             }
         }
-        
-        
+
         // inherit javadocs
         public virtual StringIndex GetStringIndex(IndexReader reader, System.String field, IState state)
         {

@@ -17,6 +17,7 @@
 
 using System;
 using System.Linq;
+using Lucene.Net.Search;
 using Lucene.Net.Store;
 using Lucene.Net.Support;
 using Lucene.Net.Util;
@@ -832,8 +833,26 @@ namespace Lucene.Net.Index
 		{
 			return (BitVector) bv.Clone();
 		}
-		
-		public override System.Object Clone(IState state)
+
+        public override string GetStringValueFor(string field, int doc, IState state)
+        {
+            var stringIndex = FieldCache_Fields.DEFAULT.GetStringIndex(this, field, state);
+            return stringIndex.lookup[stringIndex.order[doc]].ToString();
+        }
+
+        public override long GetLongValueFor(string field, LongParser parser, int doc, IState state)
+        {
+			var longs = FieldCache_Fields.DEFAULT.GetLongs(this, field, parser, state);
+            return longs[doc];
+		}
+
+		public override double GetDoubleValueFor(string field, DoubleParser parser, int doc, IState state)
+		{
+			var doubles = FieldCache_Fields.DEFAULT.GetDoubles(this, field, parser, state);
+            return doubles[doc];
+		}
+
+        public override System.Object Clone(IState state)
 		{
             lock (this)
             {

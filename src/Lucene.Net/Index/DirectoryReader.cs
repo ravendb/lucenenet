@@ -18,6 +18,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Lucene.Net.Search;
 using Lucene.Net.Store;
 using Lucene.Net.Support;
 using Document = Lucene.Net.Documents.Document;
@@ -31,7 +32,7 @@ namespace Lucene.Net.Index
 {
     
     /// <summary> An IndexReader which reads indexes with multiple segments.</summary>
-    public class DirectoryReader:IndexReader
+    public class DirectoryReader : IndexReader
     {
         /*new*/ private class AnonymousClassFindSegmentsFile:SegmentInfos.FindSegmentsFile
         {
@@ -112,7 +113,25 @@ namespace Lucene.Net.Index
         // > our current segmentInfos version in case we were
         // opened on a past IndexCommit:
         private long maxIndexVersion;
-        
+
+        public override string GetStringValueFor(string field, int doc, IState state)
+        {
+            var i = ReaderIndex(doc);
+            return subReaders[i].GetStringValueFor(field, doc - starts[i], state);
+        }
+
+        public override long GetLongValueFor(string field, LongParser parser, int doc, IState state)
+        {
+            var i = ReaderIndex(doc);
+            return subReaders[i].GetLongValueFor(field, parser, doc - starts[i], state);
+        }
+
+        public override double GetDoubleValueFor(string field, DoubleParser parser, int doc, IState state)
+        {
+            var i = ReaderIndex(doc);
+            return subReaders[i].GetDoubleValueFor(field, parser, doc - starts[i], state);
+        }
+
         internal static IndexReader Open(Directory directory, IndexDeletionPolicy deletionPolicy, IndexCommit commit, bool readOnly, int termInfosIndexDivisor, IState state)
         {
             return (IndexReader) new AnonymousClassFindSegmentsFile(readOnly, deletionPolicy, termInfosIndexDivisor, directory).Run(commit, state);

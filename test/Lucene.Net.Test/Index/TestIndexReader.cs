@@ -16,9 +16,10 @@
  */
 
 using System;
-using System.Collections.Generic;
 using System.IO;
+using Lucene.Net.Analysis;
 using Lucene.Net.Documents;
+using Lucene.Net.Search;
 using Lucene.Net.Support;
 using NUnit.Framework;
 
@@ -36,7 +37,6 @@ using LockObtainFailedException = Lucene.Net.Store.LockObtainFailedException;
 using MockRAMDirectory = Lucene.Net.Store.MockRAMDirectory;
 using NoSuchDirectoryException = Lucene.Net.Store.NoSuchDirectoryException;
 using RAMDirectory = Lucene.Net.Store.RAMDirectory;
-using FieldCache = Lucene.Net.Search.FieldCache;
 using IndexSearcher = Lucene.Net.Search.IndexSearcher;
 using ScoreDoc = Lucene.Net.Search.ScoreDoc;
 using TermQuery = Lucene.Net.Search.TermQuery;
@@ -1886,6 +1886,63 @@ namespace Lucene.Net.Index
             writer.Close();
             r.Close();
             dir.Close();
+        }
+
+        [Test]
+        public void TestGetOrderByValueFor()
+        {
+            Directory dir = new MockRAMDirectory();
+            IndexWriter w = new IndexWriter(dir, new StopAnalyzer(Util.Version.LUCENE_CURRENT), IndexWriter.MaxFieldLength.UNLIMITED, null);
+
+            const string fieldName1 = "Name";
+            const string fieldValue1 = "can gEt tHiS Field";
+			const string fieldName2 = "Count";
+            const long fieldValue2 = 300;
+            const string fieldName3 = "Sum";
+            const double fieldValue3 = 2.5;
+
+			var doc = new Document();
+            doc.Add(new Field(fieldName1, fieldValue1, Field.Store.NO, Field.Index.NOT_ANALYZED));
+
+			var numericField1 = new NumericField(fieldName2, Field.Store.NO, true);
+            numericField1.SetLongValue(fieldValue2);
+            doc.Add(numericField1);
+
+			var numericField2 = new NumericField(fieldName3, Field.Store.NO, true);
+            numericField2 = numericField2.SetDoubleValue(fieldValue3);
+            doc.Add(numericField2);
+
+			w.AddDocument(doc, null);
+            w.Close();
+
+            var reader = IndexReader.Open(dir, false, null);
+			VerifyOrderByFields(reader);
+
+            var mr = new MultiReader(new[] { reader });
+			VerifyOrderByFields(mr);
+
+			reader.Close();
+			mr.Close();
+			dir.Close();
+
+            static void VerifyOrderByFields(IndexReader reader)
+            {
+				const string nonExistingField = "Field_DOESNT_Exist";
+				var value1 = reader.GetStringValueFor(fieldName1, 0, null);
+                Assert.AreEqual(fieldValue1, value1);
+                value1 = reader.GetStringValueFor(nonExistingField, 0, null);
+                Assert.AreEqual(string.Empty, value1);
+
+				var value2 = reader.GetLongValueFor(fieldName2, FieldCache_Fields.NUMERIC_UTILS_LONG_PARSER, 0, null);
+                Assert.AreEqual(fieldValue2, value2);
+                value2 = reader.GetLongValueFor(nonExistingField, null, 0, null);
+                Assert.AreEqual(0, value2);
+
+                var value3 = reader.GetDoubleValueFor(fieldName3, null, 0, null);
+				Assert.AreEqual(fieldValue3, value3);
+                value3 = reader.GetDoubleValueFor(nonExistingField, null, 0, null);
+                Assert.AreEqual(0, value3);
+			}
         }
 	}
 }

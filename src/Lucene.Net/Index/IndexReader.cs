@@ -18,6 +18,7 @@
 using System;
 using System.Collections.Generic;
 using Lucene.Net.Documents;
+using Lucene.Net.Search;
 using Document = Lucene.Net.Documents.Document;
 using FieldSelector = Lucene.Net.Documents.FieldSelector;
 using Lucene.Net.Store;
@@ -64,7 +65,13 @@ namespace Lucene.Net.Index
 	/// (non-Lucene) objects instead.
 	/// </summary>
 	public abstract class IndexReader : ILuceneCloneable, System.IDisposable
-	{
+    {
+        public abstract string GetStringValueFor(string field, int doc, IState state);
+
+        public abstract long GetLongValueFor(string field, LongParser parser, int doc, IState state);
+
+        public abstract double GetDoubleValueFor(string field, DoubleParser parser, int doc, IState state);
+
 		private class AnonymousClassFindSegmentsFile : SegmentInfos.FindSegmentsFile
 		{
 			private void  InitBlock(Lucene.Net.Store.Directory directory2)

@@ -16,6 +16,7 @@
  */
 
 using System;
+using Lucene.Net.Search;
 using Lucene.Net.Store;
 using Document = Lucene.Net.Documents.Document;
 using FieldSelector = Lucene.Net.Documents.FieldSelector;
@@ -33,9 +34,8 @@ namespace Lucene.Net.Index
 	/// further override some of these methods and may also provide additional
 	/// methods and fields.
 	/// </summary>
-	public class FilterIndexReader:IndexReader
+	public class FilterIndexReader : IndexReader
 	{
-
         /// <summary>Base class for filtering <see cref="Lucene.Net.Index.TermDocs" /> implementations. </summary>
 		public class FilterTermDocs : TermDocs
 		{
@@ -359,7 +359,22 @@ namespace Lucene.Net.Index
 	        return in_Renamed.GetSequentialSubReaders();
 	    }
 
-	    override public System.Object Clone(IState state)
+        public override string GetStringValueFor(string field, int doc, IState state)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override long GetLongValueFor(string field, LongParser parser, int doc, IState state)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override double GetDoubleValueFor(string field, DoubleParser parser, int doc, IState state)
+        {
+            throw new NotImplementedException();
+        }
+
+        override public System.Object Clone(IState state)
 		{
             System.Diagnostics.Debug.Fail("Port issue:", "Lets see if we need this FilterIndexReader.Clone()"); // {{Aroush-2.9}}
 			return null;

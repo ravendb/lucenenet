@@ -17,6 +17,7 @@
 
 using System;
 using System.Linq;
+using Lucene.Net.Search;
 using Lucene.Net.Store;
 using Lucene.Net.Support;
 using Lucene.Net.Util;
@@ -33,7 +34,7 @@ namespace Lucene.Net.Index
     /// <summary>An IndexReader which reads multiple indexes, appending 
     /// their content.
     /// </summary>
-    public class MultiReader:IndexReader, ILuceneCloneable
+    public class MultiReader : IndexReader, ILuceneCloneable
     {
         protected internal IndexReader[] subReaders;
         private int[] starts; // 1st docno for each segment
@@ -97,7 +98,25 @@ namespace Lucene.Net.Index
             }
             starts[subReaders.Length] = maxDoc;
         }
-        
+
+        public override string GetStringValueFor(string field, int doc, IState state)
+        {
+            var i = ReaderIndex(doc);
+            return subReaders[i].GetStringValueFor(field, doc - starts[i], state);
+        }
+
+        public override long GetLongValueFor(string field, LongParser parser, int doc, IState state)
+        {
+            var i = ReaderIndex(doc);
+            return subReaders[i].GetLongValueFor(field, parser, doc - starts[i], state);
+        }
+
+        public override double GetDoubleValueFor(string field, DoubleParser parser, int doc, IState state)
+        {
+            var i = ReaderIndex(doc);
+            return subReaders[i].GetDoubleValueFor(field, parser, doc - starts[i], state);
+        }
+
         /// <summary> Tries to reopen the subreaders.
         /// <br/>
         /// If one or more subreaders could be re-opened (i. e. subReader.reopen() 
