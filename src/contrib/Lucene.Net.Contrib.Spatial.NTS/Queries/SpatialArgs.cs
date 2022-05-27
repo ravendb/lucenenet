@@ -16,10 +16,10 @@
  */
 
 using System;
-using Spatial4n.Core.Context;
-using Spatial4n.Core.Shapes;
+using Spatial4n.Context;
+using Spatial4n.Shapes;
 
-namespace Spatial4n.Core.Exceptions
+namespace Spatial4n.Exceptions
 {
 	[Serializable]
 	public class InvalidSpatialArgument : ArgumentException

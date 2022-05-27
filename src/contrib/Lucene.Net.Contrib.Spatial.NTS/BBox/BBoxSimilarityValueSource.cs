@@ -20,7 +20,7 @@ using Lucene.Net.Search;
 using Lucene.Net.Search.Function;
 using Lucene.Net.Spatial.Util;
 using Lucene.Net.Store;
-using Spatial4n.Core.Shapes;
+using Spatial4n.Shapes;
 
 namespace Lucene.Net.Spatial.BBox
 {

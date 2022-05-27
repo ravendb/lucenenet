@@ -16,9 +16,9 @@
  */
 
 using Lucene.Net.Spatial.BBox;
-using Spatial4n.Core.Context;
+using Spatial4n.Context;
 using NUnit.Framework;
-using Spatial4n.Core.Shapes;
+using Spatial4n.Shapes;
 
 namespace Lucene.Net.Contrib.Spatial.Test.BBox
 {
@@ -28,11 +28,11 @@ namespace Lucene.Net.Contrib.Spatial.Test.BBox
 		public override void SetUp()
 		{
 			base.SetUp();
-			this.ctx = SpatialContext.GEO;
+			this.ctx = SpatialContext.Geo;
 			this.strategy = new BBoxStrategy(ctx, "bbox");
 		}
 
-        protected override IShape convertShapeFromGetDocuments(Spatial4n.Core.Shapes.IShape shape)
+        protected override IShape convertShapeFromGetDocuments(IShape shape)
         {
             return shape.BoundingBox;
         }

@@ -21,10 +21,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Lucene.Net.Contrib.FastVect
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Lucene.Net.Contrib.FastVectorHighlighter.Tests", "test\contrib\Lucene.Net.Contrib.FastVectorHighlighter.Tests\Lucene.Net.Contrib.FastVectorHighlighter.Tests.csproj", "{1A8B2267-B8D8-4539-B0D0-7E755A2CDF42}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Spatial4n.Core.NTS", "..\Spatial4n\Spatial4n.Core.NTS\Spatial4n.Core.NTS.csproj", "{3BF3D5E4-CAD1-4287-B88A-70BE80C4A7AC}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Spatial4n.Core", "..\Spatial4n\Spatial4n.Core\Spatial4n.Core.csproj", "{DF555858-4CF6-4CAC-8BAD-662D798B5D60}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU

@@ -17,7 +17,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
-using Spatial4n.Core.Exceptions;
+using Spatial4n.Exceptions;
 
 namespace Lucene.Net.Spatial.Queries
 {

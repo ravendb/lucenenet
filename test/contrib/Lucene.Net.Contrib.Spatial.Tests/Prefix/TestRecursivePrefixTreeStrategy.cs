@@ -22,11 +22,10 @@ using Lucene.Net.Spatial.Prefix;
 using Lucene.Net.Spatial.Prefix.Tree;
 using Lucene.Net.Spatial.Queries;
 using NUnit.Framework;
-using Spatial4n.Core.Context;
-using Spatial4n.Core.Distance;
-using Spatial4n.Core.Shapes;
-using Spatial4n.Core.Shapes.Impl;
-using Spatial4n.Core.Util;
+using Spatial4n.Context;
+using Spatial4n.Distance;
+using Spatial4n.Shapes;
+using Spatial4n.Util;
 
 namespace Lucene.Net.Contrib.Spatial.Test.Prefix
 {
@@ -38,7 +37,7 @@ namespace Lucene.Net.Contrib.Spatial.Test.Prefix
         private void init(int maxLength)
         {
             this.maxLength = maxLength;
-            this.ctx = SpatialContext.GEO;
+            this.ctx = SpatialContext.Geo;
             var grid = new GeohashPrefixTree(ctx, maxLength);
             this.strategy = new RecursivePrefixTreeStrategy(grid, GetType().Name);
         }
@@ -63,7 +62,7 @@ namespace Lucene.Net.Contrib.Spatial.Test.Prefix
             init(GeohashPrefixTree.GetMaxLevelsPossible());
             GeohashPrefixTree grid = (GeohashPrefixTree) ((RecursivePrefixTreeStrategy) strategy).GetGrid();
             //DWS: I know this to be true.  11 is needed for one meter
-            double degrees = DistanceUtils.Dist2Degrees(0.001, DistanceUtils.EARTH_MEAN_RADIUS_KM);
+            double degrees = DistanceUtils.Dist2Degrees(0.001, DistanceUtils.EarthMeanRadiusKilometers);
             assertEquals(11, grid.GetLevelForDistance(degrees));
         }
 
@@ -78,11 +77,11 @@ namespace Lucene.Net.Contrib.Spatial.Test.Prefix
 
             IPoint qPt = ctx.MakePoint(2.4632387000000335, 48.6003516);
 
-            double KM2DEG = DistanceUtils.Dist2Degrees(1, DistanceUtils.EARTH_MEAN_RADIUS_KM);
+            double KM2DEG = DistanceUtils.Dist2Degrees(1, DistanceUtils.EarthMeanRadiusKilometers);
             double DEG2KM = 1/KM2DEG;
 
             const double DIST = 35.75; //35.7499...
-            assertEquals(DIST, ctx.DistCalc.Distance(iPt, qPt)*DEG2KM, 0.001);
+            assertEquals(DIST, ctx.DistanceCalculator.Distance(iPt, qPt)*DEG2KM, 0.001);
 
             //distErrPct will affect the query shape precision. The indexed precision
             // was set to nearly zilch via init(GeohashPrefixTree.getMaxLevelsPossible());
@@ -132,7 +131,7 @@ namespace Lucene.Net.Contrib.Spatial.Test.Prefix
                         //Note that this will not result in randomly distributed points in the
                         // circle, they will be concentrated towards the center a little. But
                         // it's good enough.
-                        IPoint pt = ctx.DistCalc.PointOnBearing(clusterCenter,
+                        IPoint pt = ctx.DistanceCalculator.PointOnBearing(clusterCenter,
                                                                     random.NextDouble()*radiusDeg, random.Next()*360,
                                                                     ctx, null);
                         pt = alignGeohash(pt);
@@ -144,7 +143,7 @@ namespace Lucene.Net.Contrib.Spatial.Test.Prefix
                     //3. Use some query centers. Each is twice the cluster's radius away.
                     for (int ri = 0; ri < 4; ri++)
                     {
-                        IPoint queryCenter = ctx.DistCalc.PointOnBearing(clusterCenter,
+                        IPoint queryCenter = ctx.DistanceCalculator.PointOnBearing(clusterCenter,
                                                                              radiusDeg*2, random.Next(360), ctx, null);
                         queryCenter = alignGeohash(queryCenter);
                         //4.1 Query a small box getting nothing
@@ -160,7 +159,7 @@ namespace Lucene.Net.Contrib.Spatial.Test.Prefix
                         for (int i = 0; i < points.Count; i++)
                         {
                             IPoint point = points[i];
-                            if (ctx.DistCalc.Distance(queryCenter, point) <= queryDist)
+                            if (ctx.DistanceCalculator.Distance(queryCenter, point) <= queryDist)
                                 ids[ids_sz++] = i;
                         }
 

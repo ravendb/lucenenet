@@ -20,10 +20,8 @@ using Lucene.Net.Search;
 using Lucene.Net.Spatial.Queries;
 using Lucene.Net.Spatial.Vector;
 using NUnit.Framework;
-using Spatial4n.Core.Context;
-using Spatial4n.Core.Shapes;
-using Spatial4n.Core.Shapes.Impl;
-using Spatial4n.Core.Exceptions;
+using Spatial4n.Context;
+using Spatial4n.Shapes;
 
 namespace Lucene.Net.Contrib.Spatial.Test.Vector
 {
@@ -32,7 +30,7 @@ namespace Lucene.Net.Contrib.Spatial.Test.Vector
 		public override void SetUp()
 		{
 			base.SetUp();
-			this.ctx = SpatialContext.GEO;
+			this.ctx = SpatialContext.Geo;
 			this.strategy = new PointVectorStrategy(ctx, GetType().Name);
 		}
 

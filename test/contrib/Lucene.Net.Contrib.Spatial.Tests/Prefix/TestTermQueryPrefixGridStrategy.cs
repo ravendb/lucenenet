@@ -21,9 +21,8 @@ using Lucene.Net.Spatial.Prefix;
 using Lucene.Net.Spatial.Prefix.Tree;
 using Lucene.Net.Spatial.Queries;
 using NUnit.Framework;
-using Spatial4n.Core.Context;
-using Spatial4n.Core.Shapes;
-using Spatial4n.Core.Shapes.Impl;
+using Spatial4n.Context;
+using Spatial4n.Shapes;
 
 namespace Lucene.Net.Contrib.Spatial.Test.Prefix
 {
@@ -32,7 +31,7 @@ namespace Lucene.Net.Contrib.Spatial.Test.Prefix
 		[Test]
 		public void testNGramPrefixGridLosAngeles()
 		{
-			SpatialContext ctx = SpatialContext.GEO;
+			SpatialContext ctx = SpatialContext.Geo;
 			TermQueryPrefixTreeStrategy prefixGridStrategy = new TermQueryPrefixTreeStrategy(new QuadPrefixTree(ctx), "geo");
 
 			IShape point = ctx.MakePoint(-118.243680, 34.052230);

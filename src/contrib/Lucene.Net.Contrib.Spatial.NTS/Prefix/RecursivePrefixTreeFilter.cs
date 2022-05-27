@@ -23,7 +23,7 @@ using Lucene.Net.Spatial.Prefix.Tree;
 using Lucene.Net.Spatial.Util;
 using Lucene.Net.Store;
 using Lucene.Net.Util;
-using Spatial4n.Core.Shapes;
+using Spatial4n.Shapes;
 
 namespace Lucene.Net.Spatial.Prefix
 {

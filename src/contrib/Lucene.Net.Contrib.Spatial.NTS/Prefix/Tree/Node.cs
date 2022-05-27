@@ -20,7 +20,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
-using Spatial4n.Core.Shapes;
+using Spatial4n.Shapes;
 
 namespace Lucene.Net.Spatial.Prefix.Tree
 {

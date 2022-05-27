@@ -21,8 +21,8 @@ using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Runtime.CompilerServices;
-using Spatial4n.Core.Context;
-using Spatial4n.Core.Shapes;
+using Spatial4n.Context;
+using Spatial4n.Shapes;
 
 namespace Lucene.Net.Spatial.Prefix.Tree
 {

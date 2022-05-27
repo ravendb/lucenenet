@@ -11,9 +11,9 @@ using Lucene.Net.Spatial.Queries;
 using Lucene.Net.Spatial.Util;
 using Lucene.Net.Spatial.Vector;
 using NUnit.Framework;
-using Spatial4n.Core.Context;
-using Spatial4n.Core.Distance;
-using Spatial4n.Core.Shapes;
+using Spatial4n.Context;
+using Spatial4n.Distance;
+using Spatial4n.Shapes;
 
 namespace Lucene.Net.Contrib.Spatial.Test.Compatibility
 {
@@ -23,7 +23,7 @@ namespace Lucene.Net.Contrib.Spatial.Test.Compatibility
 
         private const int NumDocsToCreate = 100000;
 
-        private readonly SpatialStrategy _spatialStrategy = new PointVectorStrategy(SpatialContext.GEO, StrategyPrefix);
+        private readonly SpatialStrategy _spatialStrategy = new PointVectorStrategy(SpatialContext.Geo, StrategyPrefix);
 
         [SetUp]
         public override void SetUp()
@@ -105,7 +105,7 @@ namespace Lucene.Net.Contrib.Spatial.Test.Compatibility
             IPoint pt = ctx.MakePoint(double.Parse(parts[0]),
                                      double.Parse(parts[1]));
 
-            ICircle circle = ctx.MakeCircle(pt, DistanceUtils.Dist2Degrees(distanceInKms, DistanceUtils.EARTH_MEAN_RADIUS_KM));
+            ICircle circle = ctx.MakeCircle(pt, DistanceUtils.Dist2Degrees(distanceInKms, DistanceUtils.EarthMeanRadiusKilometers));
 
             var args = new SpatialArgs(SpatialOperation.Intersects, circle);
 

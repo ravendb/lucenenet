@@ -18,8 +18,8 @@
 using Lucene.Net.Spatial.Prefix.Tree;
 using Lucene.Net.Util;
 using NUnit.Framework;
-using Spatial4n.Core.Context;
-using Spatial4n.Core.Shapes;
+using Spatial4n.Context;
+using Spatial4n.Shapes;
 
 namespace Lucene.Net.Contrib.Spatial.Test.Prefix.Tree
 {
@@ -33,7 +33,7 @@ namespace Lucene.Net.Contrib.Spatial.Test.Prefix.Tree
 		  public override void SetUp()
 		{
 			base.SetUp();
-			ctx = SpatialContext.GEO;
+			ctx = SpatialContext.Geo;
 			trie = new GeohashPrefixTree(ctx, 4);
 		}
 

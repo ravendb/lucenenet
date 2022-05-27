@@ -17,7 +17,7 @@
 
 using System.IO;
 
-namespace Spatial4n.Core.Io.Samples
+namespace Spatial4n.Io.Samples
 {
     public class SampleDataReader : LineReader<SampleData>
     {

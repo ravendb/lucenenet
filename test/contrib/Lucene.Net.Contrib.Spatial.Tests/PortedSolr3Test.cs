@@ -22,9 +22,9 @@ using Lucene.Net.Spatial.Prefix.Tree;
 using Lucene.Net.Spatial.Queries;
 using Lucene.Net.Spatial.Vector;
 using NUnit.Framework;
-using Spatial4n.Core.Context;
-using Spatial4n.Core.Distance;
-using Spatial4n.Core.Shapes;
+using Spatial4n.Context;
+using Spatial4n.Distance;
+using Spatial4n.Shapes;
 using System;
 using System.Collections.Generic;
 
@@ -44,7 +44,7 @@ namespace Lucene.Net.Contrib.Spatial.Test
             {
                 var ctorArgs = new List<Param>();
 
-                SpatialContext ctx = SpatialContext.GEO;
+                SpatialContext ctx = SpatialContext.Geo;
 
                 SpatialPrefixTree grid = new GeohashPrefixTree(ctx, 12);
                 SpatialStrategy strategy = new RecursivePrefixTreeStrategy(grid, "recursive_geohash");
@@ -162,7 +162,7 @@ namespace Lucene.Net.Contrib.Spatial.Test
         {
             SpatialOperation op = SpatialOperation.Intersects;
             IPoint pt = (IPoint)ctx.ReadShape(ptStr);
-            double distDEG = DistanceUtils.Dist2Degrees(distKM, DistanceUtils.EARTH_MEAN_RADIUS_KM);
+            double distDEG = DistanceUtils.Dist2Degrees(distKM, DistanceUtils.EarthMeanRadiusKilometers);
             IShape shape = ctx.MakeCircle(pt, distDEG);
             if (bbox)
                 shape = shape.BoundingBox;

@@ -16,7 +16,7 @@
  */
 
 using Lucene.Net.Search;
-using Spatial4n.Core.Shapes;
+using Spatial4n.Shapes;
 
 namespace Lucene.Net.Spatial.BBox
 {

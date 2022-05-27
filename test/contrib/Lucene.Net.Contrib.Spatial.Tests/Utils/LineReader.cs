@@ -22,7 +22,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Text;
 
-namespace Spatial4n.Core.Io
+namespace Spatial4n.Io
 {
     public abstract class LineReader<T> : IEnumerator<T>
     {

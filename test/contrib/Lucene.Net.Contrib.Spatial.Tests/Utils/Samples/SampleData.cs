@@ -17,7 +17,7 @@
 
 using System;
 
-namespace Spatial4n.Core.Io.Samples
+namespace Spatial4n.Io.Samples
 {
     public class SampleData : IComparable<SampleData>
     {

@@ -17,8 +17,8 @@
 
 using System;
 using System.Collections.Generic;
-using Spatial4n.Core.Context;
-using Spatial4n.Core.Distance;
+using Spatial4n.Context;
+using Spatial4n.Distance;
 
 namespace Lucene.Net.Spatial.Prefix.Tree
 {

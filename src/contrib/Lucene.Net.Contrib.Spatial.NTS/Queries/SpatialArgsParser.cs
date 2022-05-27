@@ -18,9 +18,9 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using Spatial4n.Core.Context;
-using Spatial4n.Core.IO;
-using Spatial4n.Core.Shapes;
+using Spatial4n.Context;
+using Spatial4n.IO;
+using Spatial4n.Shapes;
 
 namespace Lucene.Net.Spatial.Queries
 {

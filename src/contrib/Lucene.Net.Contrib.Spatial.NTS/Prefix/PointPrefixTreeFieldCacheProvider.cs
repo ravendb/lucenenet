@@ -18,7 +18,7 @@
 using Lucene.Net.Index;
 using Lucene.Net.Spatial.Prefix.Tree;
 using Lucene.Net.Spatial.Util;
-using Spatial4n.Core.Shapes;
+using Spatial4n.Shapes;
 using System;
 
 namespace Lucene.Net.Spatial.Prefix

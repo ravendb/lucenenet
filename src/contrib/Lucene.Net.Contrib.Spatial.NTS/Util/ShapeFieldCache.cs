@@ -16,7 +16,7 @@
  */
 
 using System.Collections.Generic;
-using Spatial4n.Core.Shapes;
+using Spatial4n.Shapes;
 
 namespace Lucene.Net.Spatial.Util
 {

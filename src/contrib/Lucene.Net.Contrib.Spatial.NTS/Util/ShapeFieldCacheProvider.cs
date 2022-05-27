@@ -19,7 +19,7 @@ using System;
 using System.Runtime.CompilerServices;
 using Lucene.Net.Index;
 using Lucene.Net.Store;
-using Spatial4n.Core.Shapes;
+using Spatial4n.Shapes;
 #if NET35
 using Lucene.Net.Support;
 #endif

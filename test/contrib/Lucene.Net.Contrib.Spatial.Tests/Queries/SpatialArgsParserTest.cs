@@ -18,14 +18,14 @@
 using System;
 using Lucene.Net.Spatial.Queries;
 using NUnit.Framework;
-using Spatial4n.Core.Context;
-using Spatial4n.Core.Shapes;
+using Spatial4n.Context;
+using Spatial4n.Shapes;
 
 namespace Lucene.Net.Contrib.Spatial.Test.Queries
 {
 	public class SpatialArgsParserTest
 	{
-		private readonly SpatialContext ctx = SpatialContext.GEO;
+		private readonly SpatialContext ctx = SpatialContext.Geo;
 
 		//The args parser is only dependent on the ctx for IO so I don't care to test
 		// with other implementations.

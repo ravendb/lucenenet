@@ -16,9 +16,9 @@
  */
 
 using Lucene.Net.Search;
-using Spatial4n.Core.Context;
-using Spatial4n.Core.Distance;
-using Spatial4n.Core.Shapes;
+using Spatial4n.Context;
+using Spatial4n.Distance;
+using Spatial4n.Shapes;
 
 namespace Lucene.Net.Spatial.BBox
 {
@@ -35,7 +35,7 @@ namespace Lucene.Net.Spatial.BBox
         public DistanceSimilarity(SpatialContext ctx, IPoint queryPoint)
         {
             this.queryPoint = queryPoint;
-            this.distCalc = ctx.DistCalc;
+            this.distCalc = ctx.DistanceCalculator;
             this.nullValue = (ctx.IsGeo ? 180 : double.MaxValue);
         }
 
