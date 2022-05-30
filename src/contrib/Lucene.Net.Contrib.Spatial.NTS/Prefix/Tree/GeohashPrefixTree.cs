@@ -64,7 +64,7 @@ namespace Lucene.Net.Spatial.Prefix.Tree
         /// <returns></returns>
         public static int GetMaxLevelsPossible()
         {
-            return GeohashUtils.MAX_PRECISION;
+            return GeohashUtils.MaxPrecision;
         }
 
         public override int GetLevelForDistance(double dist)

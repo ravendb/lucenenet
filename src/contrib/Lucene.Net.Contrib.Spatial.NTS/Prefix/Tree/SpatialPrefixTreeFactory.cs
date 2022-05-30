@@ -84,7 +84,7 @@ namespace Lucene.Net.Spatial.Prefix.Tree
             {
                 if (!ctx.IsGeo)
                     return; //let default to max
-                degrees = DistanceUtils.Dist2Degrees(DEFAULT_GEO_MAX_DETAIL_KM, DistanceUtils.EARTH_MEAN_RADIUS_KM);
+                degrees = DistanceUtils.Dist2Degrees(DEFAULT_GEO_MAX_DETAIL_KM, DistanceUtils.EarthMeanRadiusKilometers);
             }
             else
             {

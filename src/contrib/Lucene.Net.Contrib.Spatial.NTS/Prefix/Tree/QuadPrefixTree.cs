@@ -191,13 +191,13 @@ namespace Lucene.Net.Spatial.Prefix.Tree
 			int strlen = str.Length;
             IRectangle rectangle = ctx.MakeRectangle(cx - w, cx + w, cy - h, cy + h);
             SpatialRelation v = shape.Relate(rectangle);
-			if (SpatialRelation.CONTAINS == v)
+			if (SpatialRelation.Contains == v)
 			{
 				str.Append(c);
 				//str.append(SpatialPrefixGrid.COVER);
 				matches.Add(new QuadCell(str.ToString(), v.Transpose(), this));
 			}
-			else if (SpatialRelation.DISJOINT == v)
+			else if (SpatialRelation.Disjoint == v)
 			{
 				// nothing
 			}

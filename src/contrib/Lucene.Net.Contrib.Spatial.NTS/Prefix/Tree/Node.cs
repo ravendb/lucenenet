@@ -164,7 +164,7 @@ namespace Lucene.Net.Spatial.Prefix.Tree
 			foreach (var cell in cells)
 			{
                 SpatialRelation rel = cell.GetShape().Relate(shapeFilter);
-				if (rel == SpatialRelation.DISJOINT)
+				if (rel == SpatialRelation.Disjoint)
 					continue;
 				cell.shapeRel = rel;
 				copy.Add(cell);

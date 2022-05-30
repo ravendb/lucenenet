@@ -55,7 +55,7 @@ namespace Lucene.Net.Spatial.Util
 				this.enclosingInstance = enclosingInstance;
 				
                 from = enclosingInstance.from;
-			    calculator = enclosingInstance.ctx.DistCalc;
+			    calculator = enclosingInstance.ctx.DistanceCalculator;
 			    nullValue = (enclosingInstance.ctx.IsGeo ? 180 : double.MaxValue);
 			}
 

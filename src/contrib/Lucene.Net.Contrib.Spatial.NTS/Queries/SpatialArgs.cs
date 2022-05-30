@@ -69,7 +69,7 @@ namespace Lucene.Net.Spatial.Queries
             IRectangle bbox = shape.BoundingBox;
             //The diagonal distance should be the same computed from any opposite corner,
             // and this is the longest distance that might be occurring within the shape.
-            double diagonalDist = ctx.DistCalc.Distance(
+            double diagonalDist = ctx.DistanceCalculator.Distance(
                 ctx.MakePoint(bbox.MinX, bbox.MinY), bbox.MaxX, bbox.MaxY);
             return diagonalDist*0.5*distErrPct;
         }

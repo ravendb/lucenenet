@@ -149,7 +149,7 @@ if (!scan) {
 									cShape = scanCell.GetCenter();
 								else
 									cShape = scanCell.GetShape();
-                                if (queryShape.Relate(cShape) == SpatialRelation.DISJOINT)
+                                if (queryShape.Relate(cShape) == SpatialRelation.Disjoint)
 									continue;
 
 								terms.Docs(bits, state);
