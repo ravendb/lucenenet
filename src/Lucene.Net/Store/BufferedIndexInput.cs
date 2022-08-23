@@ -168,7 +168,7 @@ namespace Lucene.Net.Store
 			}
 		}
 		
-		public void  Refill(IState state)
+		protected void Refill(IState state)
 		{
 			long start = bufferStart + bufferPosition;
 			long end = start + _bufferSize;
