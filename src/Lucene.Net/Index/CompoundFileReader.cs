@@ -285,7 +285,7 @@ namespace Lucene.Net.Index
 			/// </summary>
 			/// <seealso cref="ReadInternal(byte[],int,int)">
 			/// </seealso>
-			public override void  SeekInternal(long pos)
+			public override void  SeekInternal(long pos, IState state)
 			{
 			}
 

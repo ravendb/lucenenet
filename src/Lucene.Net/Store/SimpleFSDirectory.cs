@@ -206,7 +206,7 @@ namespace Lucene.Net.Store
                 isDisposed = true;
             }
 
-		    public override void  SeekInternal(long position)
+		    public override void  SeekInternal(long position, IState state)
 			{
 			}
 			

@@ -32,9 +32,9 @@ namespace Lucene.Net.Store
 		
 		protected internal byte[] buffer;
 		
-		private long bufferStart = 0; // position in file of buffer
-		private int bufferLength = 0; // end of valid bytes
-		private int bufferPosition = 0; // next byte to read
+		protected long bufferStart = 0; // position in file of buffer
+		protected int bufferLength = 0; // end of valid bytes
+		protected int bufferPosition = 0; // next byte to read
 		
 		public override byte ReadByte(IState state)
 		{
@@ -78,15 +78,15 @@ namespace Lucene.Net.Store
 					bufferStart += bufferPosition;
 					bufferPosition = 0;
 					bufferLength = numToCopy;
-					NewBuffer(newBuffer);
+					buffer = newBuffer;
 				}
 			}
 		}
 		
-		protected internal virtual void  NewBuffer(byte[] newBuffer)
+		protected virtual void NewBuffer(int newBufferSize)
 		{
 			// Subclasses can do something here
-			buffer = newBuffer;
+			buffer = new byte[newBufferSize];
 		}
 
 	    /// <seealso cref="SetBufferSize">
@@ -168,7 +168,7 @@ namespace Lucene.Net.Store
 			}
 		}
 		
-		private void  Refill(IState state)
+		public void  Refill(IState state)
 		{
 			long start = bufferStart + bufferPosition;
 			long end = start + _bufferSize;
@@ -181,8 +181,8 @@ namespace Lucene.Net.Store
 			
 			if (buffer == null)
 			{
-				NewBuffer(new byte[_bufferSize]); // allocate buffer lazily
-				SeekInternal(bufferStart);
+				NewBuffer(_bufferSize); // allocate buffer lazily
+				SeekInternal(bufferStart, state);
 			}
 			ReadInternal(buffer, 0, newLength, state);
 			bufferLength = newLength;
@@ -216,7 +216,7 @@ namespace Lucene.Net.Store
 				bufferStart = pos;
 				bufferPosition = 0;
 				bufferLength = 0; // trigger refill() on read()
-				SeekInternal(pos);
+				SeekInternal(pos, state);
 			}
 		}
 		
@@ -225,7 +225,7 @@ namespace Lucene.Net.Store
 		/// </summary>
 		/// <seealso cref="ReadInternal(byte[],int,int)">
 		/// </seealso>
-		public abstract void  SeekInternal(long pos);
+		public abstract void  SeekInternal(long pos, IState state);
 		
 		public override System.Object Clone(IState state)
 		{
