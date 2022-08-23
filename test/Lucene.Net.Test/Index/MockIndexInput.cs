@@ -60,7 +60,7 @@ namespace Lucene.Net.Index
             //ignore
         }
 		
-		public override void  SeekInternal(long pos)
+		public override void  SeekInternal(long pos, IState state)
 		{
 			pointer = (int) pos;
 		}

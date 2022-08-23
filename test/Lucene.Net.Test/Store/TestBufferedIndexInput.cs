@@ -249,7 +249,7 @@ namespace Lucene.Net.Store
 					b[i] = Lucene.Net.Store.TestBufferedIndexInput.Byten(pos++);
 			}
 			
-			public override void  SeekInternal(long pos)
+			public override void  SeekInternal(long pos, IState state)
 			{
 				this.pos = pos;
 			}

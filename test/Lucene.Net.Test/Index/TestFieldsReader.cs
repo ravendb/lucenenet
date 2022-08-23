@@ -432,7 +432,7 @@ namespace Lucene.Net.Index
 				delegate_Renamed.ReadBytes(b, offset, length, null);
 			}
 
-			public override void  SeekInternal(long pos)
+			public override void  SeekInternal(long pos, IState state)
 			{
 				//simOutage();
 				delegate_Renamed.Seek(pos, null);
