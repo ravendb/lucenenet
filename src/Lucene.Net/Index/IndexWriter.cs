@@ -18,7 +18,9 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Runtime.ExceptionServices;
+using System.Threading;
 using Lucene.Net.Store;
 using Lucene.Net.Support;
 using Analyzer = Lucene.Net.Analysis.Analyzer;
@@ -105,7 +107,7 @@ namespace Lucene.Net.Index
 	/// the <see cref="MergePolicy" /> and the <see cref="MergeScheduler" />.
 	/// The <see cref="MergePolicy" /> is invoked whenever there are
 	/// changes to the segments in the index.  Its role is to
-	/// select which merges to do, if any, and return a <see cref="Index.MergePolicy.MergeSpecification" />
+	/// select which merges to do, if any, and return a <see cref="Net.Index.MergePolicy.MergeSpecification" />
 	/// describing the merges.  It
 	/// also selects merges to do for optimize().  (The default is
 	/// <see cref="LogByteSizeMergePolicy" />.  Then, the <see cref="MergeScheduler" />
@@ -279,7 +281,9 @@ namespace Lucene.Net.Index
 		internal ReaderPool readerPool;
 		private int upgradeCount;
 
-        private int readerTermsIndexDivisor = IndexReader.DEFAULT_TERMS_INDEX_DIVISOR;
+		private OptimizeScope _optimizeScope;
+
+		private int readerTermsIndexDivisor = IndexReader.DEFAULT_TERMS_INDEX_DIVISOR;
 		
 		// This is a "write once" variable (like the organic dye
 		// on a DVD-R that may or may not be heated by a laser and
@@ -890,6 +894,20 @@ namespace Lucene.Net.Index
 			}
 		}
 
+		/// <summary>
+		/// Contains current OptimizeScope
+		/// </summary>
+		public OptimizeScope OptimizeScope
+		{
+			get
+			{
+				lock (this)
+				{
+					return _optimizeScope;
+				}
+			}
+		}
+		
 	    /// <summary> Casts current mergePolicy to LogMergePolicy, and throws
 	    /// an exception if the mergePolicy is not a LogMergePolicy.
 	    /// </summary>
@@ -2669,11 +2687,17 @@ namespace Lucene.Net.Index
 		/// </summary>
 		/// <throws>  CorruptIndexException if the index is corrupt </throws>
 		/// <throws>  IOException if there is a low-level IO error </throws>
-		/// <seealso cref="Index.LogMergePolicy.FindMergesForOptimize">
+		/// <seealso cref="Net.Index.LogMergePolicy.FindMergesForOptimize">
 		/// </seealso>
-		public virtual void  Optimize(IState state)
+		public virtual void  Optimize(IState state, CancellationToken token)
 		{
-			Optimize(true, state);
+			Optimize(true, state, token);
+		}
+		
+		public virtual void  Optimize(StreamWriter writer, IState state, CancellationToken token)
+		{
+			infoStream = writer;
+			Optimize(true, state, token);
 		}
 
         /// <summary> Optimize the index down to &lt;= maxNumSegments.  If
@@ -2688,9 +2712,9 @@ namespace Lucene.Net.Index
 		/// <param name="maxNumSegments">maximum number of segments left
 		/// in the index after optimization finishes
 		/// </param>
-		public virtual void  Optimize(int maxNumSegments, IState state)
+		public virtual void  Optimize(int maxNumSegments, IState state, CancellationToken token)
 		{
-			Optimize(maxNumSegments, true, state);
+			Optimize(maxNumSegments, true, state, token);
 		}
 		
 		/// <summary>Just like <see cref="Optimize()" />, except you can specify
@@ -2703,11 +2727,11 @@ namespace Lucene.Net.Index
 		/// you should immediately close the writer.  See <a
 		/// href="#OOME">above</a> for details.<p/>
 		/// </summary>
-		public virtual void  Optimize(bool doWait, IState state)
+		public virtual void  Optimize(bool doWait, IState state, CancellationToken token)
 		{
-			Optimize(1, doWait, state);
+			Optimize(1, doWait, state, token);
 		}
-		
+
 		/// <summary>Just like <see cref="Optimize(int)" />, except you can
 		/// specify whether the call should block until the
 		/// optimize completes.  This is only meaningful with a
@@ -2718,100 +2742,117 @@ namespace Lucene.Net.Index
 		/// you should immediately close the writer.  See <a
 		/// href="#OOME">above</a> for details.<p/>
 		/// </summary>
-		public virtual void  Optimize(int maxNumSegments, bool doWait, IState state)
+		public virtual void Optimize(int maxNumSegments, bool doWait, IState state, CancellationToken token)
 		{
-			EnsureOpen();
-			
-			if (maxNumSegments < 1)
-				throw new System.ArgumentException("maxNumSegments must be >= 1; got " + maxNumSegments);
-			
-			if (infoStream != null)
-				Message("optimize: index now " + SegString(state));
-			
-			Flush(true, false, true, state);
-			
 			lock (this)
-			{
-				ResetMergeExceptions();
-                segmentsToOptimize = Lucene.Net.Support.Compatibility.SetFactory.CreateHashSet<SegmentInfo>();
-                optimizeMaxNumSegments = maxNumSegments;
-				int numSegments = segmentInfos.Count;
-				for (int i = 0; i < numSegments; i++)
-                    segmentsToOptimize.Add(segmentInfos.Info(i));
-				
-				// Now mark all pending & running merges as optimize
-				// merge:
-				foreach(MergePolicy.OneMerge merge in pendingMerges)
-				{
-					merge.optimize = true;
-					merge.maxNumSegmentsOptimize = maxNumSegments;
-				}
-				
-				foreach(MergePolicy.OneMerge merge in runningMerges)
-				{
-					merge.optimize = true;
-					merge.maxNumSegmentsOptimize = maxNumSegments;
-				}
-			}
+				_optimizeScope = new OptimizeScope(token);
 			
-			MaybeMerge(maxNumSegments, true, state);
-			
-			if (doWait)
+			using (_optimizeScope)
 			{
+				EnsureOpen();
+
+				if (maxNumSegments < 1)
+					throw new System.ArgumentException("maxNumSegments must be >= 1; got " + maxNumSegments);
+
+				if (infoStream != null)
+					Message("optimize: index now " + SegString(state));
+
+				Flush(true, false, true, state);
+
 				lock (this)
 				{
-					while (true)
+					ResetMergeExceptions();
+					segmentsToOptimize = Lucene.Net.Support.Compatibility.SetFactory.CreateHashSet<SegmentInfo>();
+					optimizeMaxNumSegments = maxNumSegments;
+					int numSegments = segmentInfos.Count;
+					for (int i = 0; i < numSegments; i++)
+						segmentsToOptimize.Add(segmentInfos.Info(i));
+
+					// Now mark all pending & running merges as optimize
+					// merge:
+					foreach (MergePolicy.OneMerge merge in pendingMerges)
 					{
-						
-						if (hitOOM)
-						{
-							throw new System.SystemException("this writer hit an OutOfMemoryError; cannot complete optimize");
-						}
-						
-						if (mergeExceptions.Count > 0)
-						{
-							// Forward any exceptions in background merge
-							// threads to the current thread:
-							int size = mergeExceptions.Count;
-							for (int i = 0; i < size; i++)
-							{
-								MergePolicy.OneMerge merge = mergeExceptions[i];
-								if (merge.optimize)
-								{
-                                    System.IO.IOException err;
-									System.Exception t = merge.GetException();
-                                    if (t != null)
-									    err = new System.IO.IOException("background merge hit exception: " + merge.SegString(directory, state), t);
-                                    else
-                                        err = new System.IO.IOException("background merge hit exception: " + merge.SegString(directory, state));
-									throw err;
-								}
-							}
-						}
-						
-						if (OptimizeMergesPending())
-							DoWait();
-						else
-							break;
+						merge.optimize = true;
+						merge.maxNumSegmentsOptimize = maxNumSegments;
+					}
+
+					foreach (MergePolicy.OneMerge merge in runningMerges)
+					{
+						merge.optimize = true;
+						merge.maxNumSegmentsOptimize = maxNumSegments;
 					}
 				}
-				
-				// If close is called while we are still
-				// running, throw an exception so the calling
-				// thread will know the optimize did not
-				// complete
-				EnsureOpen();
+
+				MaybeMerge(maxNumSegments, true, state);
+
+				if (doWait)
+				{
+					lock (this)
+					{
+						while (true)
+						{
+
+							if (hitOOM)
+							{
+								throw new System.SystemException("this writer hit an OutOfMemoryError; cannot complete optimize");
+							}
+
+							if (mergeExceptions.Count > 0)
+							{
+								// Forward any exceptions in background merge
+								// threads to the current thread:
+								int size = mergeExceptions.Count;
+								for (int i = 0; i < size; i++)
+								{
+									MergePolicy.OneMerge merge = mergeExceptions[i];
+									if (merge.optimize)
+									{
+										System.IO.IOException err;
+										System.Exception t = merge.GetException();
+										if (t != null)
+											err = new System.IO.IOException("background merge hit exception: " + merge.SegString(directory, state), t);
+										else
+											err = new System.IO.IOException("background merge hit exception: " + merge.SegString(directory, state));
+										throw err;
+									}
+								}
+							}
+
+							if (OptimizeMergesPending())
+							{
+								if (token.IsCancellationRequested)
+								{
+									foreach (var merge in runningMerges)
+										merge.Abort();
+									foreach (var merge in pendingMerges)
+										merge.Abort();
+									token.ThrowIfCancellationRequested();
+								}
+
+								DoWait();
+							}
+							else
+								break;
+						}
+					}
+
+					// If close is called while we are still
+					// running, throw an exception so the calling
+					// thread will know the optimize did not
+					// complete
+					EnsureOpen();
+				}
+
+				// NOTE: in the ConcurrentMergeScheduler case, when
+				// doWait is false, we can return immediately while
+				// background threads accomplish the optimization
 			}
-			
-			// NOTE: in the ConcurrentMergeScheduler case, when
-			// doWait is false, we can return immediately while
-			// background threads accomplish the optimization
 		}
-		
+
 		/// <summary>Returns true if any merges in pendingMerges or
 		/// runningMerges are optimization merges. 
 		/// </summary>
-		private bool OptimizeMergesPending()
+		public bool OptimizeMergesPending()
 		{
 			lock (this)
 			{
@@ -2916,7 +2957,7 @@ namespace Lucene.Net.Index
 		/// searching.  expungeDeletes should be somewhat faster
 		/// than optimize since it does not insist on reducing the
 		/// index to a single segment (though, this depends on the
-		/// <see cref="MergePolicy" />; see <see cref="Index.MergePolicy.FindMergesToExpungeDeletes" />.). Note that
+		/// <see cref="MergePolicy" />; see <see cref="Net.Index.MergePolicy.FindMergesToExpungeDeletes" />.). Note that
 		/// this call does not first commit any buffered
 		/// documents, so you must do so yourself if necessary.
 		/// See also <seealso cref="ExpungeDeletes(bool)" />
@@ -3333,7 +3374,7 @@ namespace Lucene.Net.Index
 		/// <p/>NOTE: this method will forcefully abort all merges
 		/// in progress.  If other threads are running <see cref="Optimize()" />
 		/// or any of the addIndexes methods, they
-		/// will receive <see cref="Index.MergePolicy.MergeAbortedException" />s.
+		/// will receive <see cref="Net.Index.MergePolicy.MergeAbortedException" />s.
 		/// </summary>
 		public virtual void  DeleteAll(IState state)
 		{
@@ -3810,7 +3851,7 @@ namespace Lucene.Net.Index
 				try
 				{
 					Flush(true, false, true, state);
-					Optimize(state); // start with zero or 1 seg
+					Optimize(state, CancellationToken.None); // start with zero or 1 seg
 					success = true;
 				}
 				finally
@@ -5930,6 +5971,29 @@ namespace Lucene.Net.Index
 		static IndexWriter()
 		{
 			MAX_TERM_LENGTH = DocumentsWriter.MAX_TERM_LENGTH;
+		}
+	}
+
+	/// <summary>
+	/// Scope for Optimize function. This is also use to persist reference to CancellationToken because it is easly accessible from Mergers.
+	/// </summary>
+	public class OptimizeScope : IDisposable
+	{
+		public bool IsDisposed;
+		public bool IsRunning;
+		public readonly CancellationToken Token;
+
+		public OptimizeScope(CancellationToken token)
+		{
+			Token = token;
+			IsRunning = true;
+			IsDisposed = false;
+		}
+
+		public void Dispose()
+		{
+			IsRunning = false;
+			IsDisposed = true;
 		}
 	}
 }
