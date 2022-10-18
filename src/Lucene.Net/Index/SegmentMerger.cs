@@ -44,6 +44,38 @@ namespace Lucene.Net.Index
 	/// </seealso>
 	public sealed class SegmentMerger
 	{
+		private class OptimizeScopeCheckAbort : CheckAbort
+		{
+			private readonly OptimizeScope _scope;
+
+			public OptimizeScopeCheckAbort(MergePolicy.OneMerge merge, Directory dir, OptimizeScope scope) : base(merge, dir)
+			{
+				_scope = scope;
+			}
+
+			/// <summary> Records the fact that roughly units amount of work
+			/// have been done since this method was last called.
+			/// When adding time-consuming code into SegmentMerger,
+			/// you should test different values for units to ensure
+			/// that the time in between calls to merge.checkAborted
+			/// is up to ~ 1 second.
+			/// </summary>
+			public override void Work(double units, IState state)
+			{
+				workCount += units;
+				if (workCount >= 10000.0)
+				{
+					if (_scope.Token.IsCancellationRequested)
+					{
+						merge.Abort();
+						_scope.Token.ThrowIfCancellationRequested();
+					}
+					merge.CheckAborted(dir, state);
+					workCount = 0;
+				}
+			}
+		}
+		
 		private class AnonymousClassCheckAbort:CheckAbort
 		{
 			private void  InitBlock(SegmentMerger enclosingInstance)
@@ -145,7 +177,9 @@ namespace Lucene.Net.Index
 			segment = name;
 			if (merge != null)
 			{
-				checkAbort = new CheckAbort(merge, directory);
+				checkAbort = merge.optimize == false 
+					? new CheckAbort(merge, directory) 
+					: new OptimizeScopeCheckAbort(merge, directory, writer.OptimizeScope);
 			}
 			else
 			{
@@ -905,9 +939,9 @@ namespace Lucene.Net.Index
 		
 		internal class CheckAbort
 		{
-			private double workCount;
-			private MergePolicy.OneMerge merge;
-			private Directory dir;
+			protected double workCount;
+			protected MergePolicy.OneMerge merge;
+			protected Directory dir;
 			public CheckAbort(MergePolicy.OneMerge merge, Directory dir)
 			{
 				this.merge = merge;
