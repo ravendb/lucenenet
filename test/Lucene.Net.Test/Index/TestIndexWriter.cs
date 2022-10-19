@@ -1045,7 +1045,7 @@ namespace Lucene.Net.Index
                 writer = new IndexWriter(dir, new WhitespaceAnalyzer(), IndexWriter.MaxFieldLength.LIMITED, null);
                 writer.SetMergePolicy(ldmp);
                 writer.MergeFactor = 5;
-                writer.Optimize(3, null);
+                writer.Optimize(3, null, default);
                 writer.Close();
 
                 sis = new SegmentInfos();
@@ -1088,7 +1088,7 @@ namespace Lucene.Net.Index
 
                 int segCount = sis.Count;
 
-                writer.Optimize(7, null);
+                writer.Optimize(7, null, default);
                 writer.Commit(null);
 
                 sis = new SegmentInfos();
@@ -2041,7 +2041,7 @@ namespace Lucene.Net.Index
                 writer.MergeFactor = 101;
                 for (int i = 0; i < 200; i++)
                     writer.AddDocument(doc, null);
-                writer.Optimize(false, null);
+                writer.Optimize(false, null, default);
 
                 if (0 == pass)
                 {

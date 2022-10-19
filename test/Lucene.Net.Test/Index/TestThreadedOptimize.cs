@@ -68,7 +68,7 @@ namespace Lucene.Net.Index
 				{
 					for (int j = 0; j < Lucene.Net.Index.TestThreadedOptimize.NUM_ITER2; j++)
 					{
-						writerFinal.Optimize(false, null);
+						writerFinal.Optimize(false, null, default);
 						for (int k = 0; k < 17 * (1 + iFinal); k++)
 						{
 							Document d = new Document();
