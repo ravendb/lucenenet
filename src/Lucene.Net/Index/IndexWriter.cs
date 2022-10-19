@@ -2689,7 +2689,7 @@ namespace Lucene.Net.Index
 		/// <throws>  IOException if there is a low-level IO error </throws>
 		/// <seealso cref="Net.Index.LogMergePolicy.FindMergesForOptimize">
 		/// </seealso>
-		public virtual void  Optimize(IState state, CancellationToken token)
+		public virtual void  Optimize(IState state, CancellationToken token = default)
 		{
 			Optimize(true, state, token);
 		}
