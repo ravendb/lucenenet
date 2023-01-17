@@ -213,6 +213,11 @@ namespace Lucene.Net.Util
             _index++;
         }
 
+        public void AddEmpty()
+        {
+            _index++;
+        }
+
         public UnmanagedString this[int position]
         {
             get => _strings[position];

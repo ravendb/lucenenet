@@ -789,34 +789,45 @@ namespace Lucene.Net.Search
                 TermDocs termDocs = reader.TermDocs(state);
                 
                 SegmentTermEnum termEnum = (SegmentTermEnum)reader.Terms(new Term(field), state);
-                int t = 0; // current term number
+                int termNumber = 0; // current term number
                 int docIndex = 0;
                 // an entry for documents that have no terms in this field
                 // should a document with no terms be at top or bottom?
                 // this puts them at the top - if it is changed, FieldDocSortedHitQueue
                 // needs to change as well.
-                t++;
+                termNumber++;
                 
                 try
                 {
                     do 
                     {
-                        if (termEnum.termBuffer.Field != field || t >= length) break;
+                        if (termEnum.termBuffer.Field != field || termNumber >= length) break;
 
-                        // store term text
-                        mterms.Add(termEnum.termBuffer.TextAsSpan);
-                        
+                        var canAdd = false;
+
                         termDocs.Seek(termEnum, state);
                         while (termDocs.Next(state))
                         {
+                            canAdd = true;
                             var pt = retArray[termDocs.Doc];
-                            retArray[termDocs.Doc] = t;
+                            retArray[termDocs.Doc] = termNumber;
 
                             if (pt == 0)
                                 retArrayOrdered[docIndex++] = termDocs.Doc;
                         }
-                        
-                        t++;
+
+                        if (canAdd)
+                        {
+                            // store the term text only if we don't have deletions
+                            mterms.Add(termEnum.termBuffer.TextAsSpan);
+                        }
+                        else
+                        {
+                            // the term was deleted but we must preserve the order in the array (it must match the termNumber)
+                            mterms.AddEmpty();
+                        }
+
+                        termNumber++;
                     }
                     while (termEnum.Next(state));
                 }
