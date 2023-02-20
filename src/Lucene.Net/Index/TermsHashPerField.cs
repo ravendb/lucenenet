@@ -355,168 +355,175 @@ namespace Lucene.Net.Index
 		}
 		
 		// Primary entry point (for first TermsHash)
-		internal override void Add()
-		{			
-			System.Diagnostics.Debug.Assert(!postingsCompacted);
+        internal override void Add()
+        {
+            char[] tokenText = null;
+            int tokenTextLen = -1;
 
-            // We are first in the chain so we must "intern" the
-            // term text into textStart address
+            try
+            {
+                System.Diagnostics.Debug.Assert(!postingsCompacted);
 
-		    char[] tokenText;
-		    int tokenTextLen;
+                // We are first in the chain so we must "intern" the
+                // term text into textStart address
+				
+                // Get the text of this term.
+                var termAttConcrete = termAtt as TermAttribute;
+                if (termAttConcrete != null)
+                {
+                    // PERF: Fast-path to avoid the method calls at the expense of a larger method.
+                    tokenText = termAttConcrete.TermBuffer();
+                    tokenTextLen = termAttConcrete.TermLength();
+                }
+                else
+                {
+                    tokenText = termAtt.TermBuffer();
+                    tokenTextLen = termAtt.TermLength();
+                }
 
-            // Get the text of this term.
-            var termAttConcrete = termAtt as TermAttribute;
-		    if (termAttConcrete != null)
-		    {
-                // PERF: Fast-path to avoid the method calls at the expense of a larger method.
-		        tokenText = termAttConcrete.TermBuffer();
-		        tokenTextLen = termAttConcrete.TermLength();
-            }
-		    else
-		    {
-		        tokenText = termAtt.TermBuffer();
-		        tokenTextLen = termAtt.TermLength();
-            }
-			
-			// Compute hashcode & replace any invalid UTF16 sequences
-			int downto = tokenTextLen;
-			int code = 0;
-			while (downto > 0)
-			{
-				char ch = tokenText[--downto];
-				
-				if (ch >= UnicodeUtil.UNI_SUR_LOW_START && ch <= UnicodeUtil.UNI_SUR_LOW_END)
-				{
-					if (0 == downto)
-					{
-						// Unpaired
-						ch = tokenText[downto] = (char) (UnicodeUtil.UNI_REPLACEMENT_CHAR);
-					}
-					else
-					{
-						char ch2 = tokenText[downto - 1];
-						if (ch2 >= UnicodeUtil.UNI_SUR_HIGH_START && ch2 <= UnicodeUtil.UNI_SUR_HIGH_END)
-						{
-							// OK: high followed by low.  This is a valid
-							// surrogate pair.
-							code = ((code * 31) + ch) * 31 + ch2;
-							downto--;
-							continue;
-						}
-						else
-						{
-							// Unpaired
-							ch = tokenText[downto] = (char) (UnicodeUtil.UNI_REPLACEMENT_CHAR);
-						}
-					}
-				}
-				else if (ch >= UnicodeUtil.UNI_SUR_HIGH_START && (ch <= UnicodeUtil.UNI_SUR_HIGH_END || ch == 0xffff))
-				{
-					// Unpaired or 0xffff
-					ch = tokenText[downto] = (char) (UnicodeUtil.UNI_REPLACEMENT_CHAR);
-				}
-				
-				code = (code * 31) + ch;
-			}
-			
-			int hashPos = code & postingsHashMask;
-			
-			// Locate RawPostingList in hash
-			var pAux = postingsHash[hashPos];			
-			if (pAux != null && !PostingEquals(ref pAux, tokenText, tokenTextLen))
-			{
-				// Conflict: keep searching different locations in
-				// the hash table.
-				int inc = ((code >> 8) + code) | 1;
-				do 
-				{
-					code += inc;
-					hashPos = code & postingsHashMask;
-				    pAux = postingsHash[hashPos];
-				}
-				while (pAux != null && !PostingEquals(ref pAux, tokenText, tokenTextLen));
-			}
-		    p = pAux;
+                // Compute hashcode & replace any invalid UTF16 sequences
+                int downto = tokenTextLen;
+                int code = 0;
+                while (downto > 0)
+                {
+                    char ch = tokenText[--downto];
 
-			if (p == null)
-			{				
-				// First time we are seeing this token since we last
-				// flushed the hash.
-				int textLen1 = 1 + tokenTextLen;
-				if (textLen1 + charPool.charUpto > DocumentsWriter.CHAR_BLOCK_SIZE)
-				{
-					if (textLen1 > DocumentsWriter.CHAR_BLOCK_SIZE)
-					{
-						// Just skip this term, to remain as robust as
-						// possible during indexing.  A TokenFilter
-						// can be inserted into the analyzer chain if
-						// other behavior is wanted (pruning the term
-						// to a prefix, throwing an exception, etc).
-						
-						if (docState.maxTermPrefix == null)
-							docState.maxTermPrefix = new System.String(tokenText, 0, 30);
-						
-						consumer.SkippingLongTerm();
-						return ;
-					}
-					charPool.NextBuffer();
-				}
-				
-				// Refill?
-				if (0 == perThread.freePostingsCount)
-					perThread.MorePostings();
-				
-				// Pull next free RawPostingList from free list
-				p = perThread.freePostings[--perThread.freePostingsCount];
-				System.Diagnostics.Debug.Assert(p != null);
-				
-				char[] text = charPool.buffer;
-				int textUpto = charPool.charUpto;
-				p.textStart = textUpto + charPool.charOffset;
-				charPool.charUpto += textLen1;
-				Array.Copy(tokenText, 0, text, textUpto, tokenTextLen);
+                    if (ch >= UnicodeUtil.UNI_SUR_LOW_START && ch <= UnicodeUtil.UNI_SUR_LOW_END)
+                    {
+                        if (0 == downto)
+                        {
+                            // Unpaired
+                            ch = tokenText[downto] = (char) (UnicodeUtil.UNI_REPLACEMENT_CHAR);
+                        }
+                        else
+                        {
+                            char ch2 = tokenText[downto - 1];
+                            if (ch2 >= UnicodeUtil.UNI_SUR_HIGH_START && ch2 <= UnicodeUtil.UNI_SUR_HIGH_END)
+                            {
+                                // OK: high followed by low.  This is a valid
+                                // surrogate pair.
+                                code = ((code * 31) + ch) * 31 + ch2;
+                                downto--;
+                                continue;
+                            }
+                            else
+                            {
+                                // Unpaired
+                                ch = tokenText[downto] = (char) (UnicodeUtil.UNI_REPLACEMENT_CHAR);
+                            }
+                        }
+                    }
+                    else if (ch >= UnicodeUtil.UNI_SUR_HIGH_START && (ch <= UnicodeUtil.UNI_SUR_HIGH_END || ch == 0xffff))
+                    {
+                        // Unpaired or 0xffff
+                        ch = tokenText[downto] = (char) (UnicodeUtil.UNI_REPLACEMENT_CHAR);
+                    }
+
+                    code = (code * 31) + ch;
+                }
+
+                int hashPos = code & postingsHashMask;
+
+                // Locate RawPostingList in hash
+                var pAux = postingsHash[hashPos];
+                if (pAux != null && !PostingEquals(ref pAux, tokenText, tokenTextLen))
+                {
+                    // Conflict: keep searching different locations in
+                    // the hash table.
+                    int inc = ((code >> 8) + code) | 1;
+                    do
+                    {
+                        code += inc;
+                        hashPos = code & postingsHashMask;
+                        pAux = postingsHash[hashPos];
+                    } 
+                    while (pAux != null && !PostingEquals(ref pAux, tokenText, tokenTextLen));
+                }
+                p = pAux;
+
+                if (p == null)
+                {
+                    // First time we are seeing this token since we last
+                    // flushed the hash.
+                    int textLen1 = 1 + tokenTextLen;
+                    if (textLen1 + charPool.charUpto > DocumentsWriter.CHAR_BLOCK_SIZE)
+                    {
+                        if (textLen1 > DocumentsWriter.CHAR_BLOCK_SIZE)
+                        {
+                            // Just skip this term, to remain as robust as
+                            // possible during indexing.  A TokenFilter
+                            // can be inserted into the analyzer chain if
+                            // other behavior is wanted (pruning the term
+                            // to a prefix, throwing an exception, etc).
+
+                            if (docState.maxTermPrefix == null)
+                                docState.maxTermPrefix = new System.String(tokenText, 0, 30);
+
+                            consumer.SkippingLongTerm();
+                            return ;
+                        }
+                        charPool.NextBuffer();
+                    }
+
+                    // Refill?
+                    if (0 == perThread.freePostingsCount)
+                        perThread.MorePostings();
+
+                    // Pull next free RawPostingList from free list
+                    p = perThread.freePostings[--perThread.freePostingsCount];
+                    System.Diagnostics.Debug.Assert(p != null);
+
+                    char[] text = charPool.buffer;
+                    int textUpto = charPool.charUpto;
+                    p.textStart = textUpto + charPool.charOffset;
+                    charPool.charUpto += textLen1;
+                    Array.Copy(tokenText, 0, text, textUpto, tokenTextLen);
 				text[textUpto + tokenTextLen] = (char) (0xffff);
-				
+
 				System.Diagnostics.Debug.Assert(postingsHash [hashPos] == null);
-				postingsHash[hashPos] = p;
-				numPostings++;
-				
-				if (numPostings == postingsHashHalfSize)
-					RehashPostings(2 * postingsHashSize);
-				
-				// Init stream slices
-				if (numPostingInt + intPool.intUpto > DocumentsWriter.INT_BLOCK_SIZE)
-					intPool.NextBuffer();
-				
-				if (DocumentsWriter.BYTE_BLOCK_SIZE - bytePool.byteUpto < numPostingInt * ByteBlockPool.FIRST_LEVEL_SIZE)
-					bytePool.NextBuffer();
-				
-				intUptos = intPool.buffer;
-				intUptoStart = intPool.intUpto;
-				intPool.intUpto += streamCount;
-				
-				p.intStart = intUptoStart + intPool.intOffset;
-				
-				for (int i = 0; i < streamCount; i++)
-				{
-					int upto = bytePool.NewSlice(ByteBlockPool.FIRST_LEVEL_SIZE);
-					intUptos[intUptoStart + i] = upto + bytePool.byteOffset;
-				}
-				p.byteStart = intUptos[intUptoStart];
-				
-				consumer.NewTerm(p);
-			}
-			else
-			{
-				intUptos = intPool.buffers[p.intStart >> DocumentsWriter.INT_BLOCK_SHIFT];
-				intUptoStart = p.intStart & DocumentsWriter.INT_BLOCK_MASK;
-				consumer.AddTerm(p);
-			}
-			
-			if (doNextCall)
-				nextPerField.Add(p.textStart);
-		}
+                    postingsHash[hashPos] = p;
+                    numPostings++;
+
+                    if (numPostings == postingsHashHalfSize)
+                        RehashPostings(2 * postingsHashSize);
+
+                    // Init stream slices
+                    if (numPostingInt + intPool.intUpto > DocumentsWriter.INT_BLOCK_SIZE)
+                        intPool.NextBuffer();
+
+                    if (DocumentsWriter.BYTE_BLOCK_SIZE - bytePool.byteUpto < numPostingInt * ByteBlockPool.FIRST_LEVEL_SIZE)
+                        bytePool.NextBuffer();
+
+                    intUptos = intPool.buffer;
+                    intUptoStart = intPool.intUpto;
+                    intPool.intUpto += streamCount;
+
+                    p.intStart = intUptoStart + intPool.intOffset;
+
+                    for (int i = 0; i < streamCount; i++)
+                    {
+                        int upto = bytePool.NewSlice(ByteBlockPool.FIRST_LEVEL_SIZE);
+                        intUptos[intUptoStart + i] = upto + bytePool.byteOffset;
+                    }
+                    p.byteStart = intUptos[intUptoStart];
+
+                    consumer.NewTerm(p);
+                }
+                else
+                {
+                    intUptos = intPool.buffers[p.intStart >> DocumentsWriter.INT_BLOCK_SHIFT];
+                    intUptoStart = p.intStart & DocumentsWriter.INT_BLOCK_MASK;
+                    consumer.AddTerm(p);
+                }
+
+                if (doNextCall)
+                    nextPerField.Add(p.textStart);
+            }
+            catch (IndexOutOfRangeException e)
+            {
+                throw new IndexOutOfRangeException($"Failed to add term for field '{fieldInfo.name}', term: '{termAtt.Term}', tokenText: '{new string(tokenText)}', tokenTextLength: '{tokenTextLen}'.", e);
+            }
+        }
 		
 		internal int[] intUptos;
 		internal int intUptoStart;
