@@ -519,9 +519,10 @@ namespace Lucene.Net.Index
                 if (doNextCall)
                     nextPerField.Add(p.textStart);
             }
-            catch (IndexOutOfRangeException e)
+            catch (Exception e)
             {
-                throw new IndexOutOfRangeException($"Failed to add term for field '{fieldInfo.name}', term: '{termAtt.Term}', tokenText: '{new string(tokenText)}', tokenTextLength: '{tokenTextLen}'.", e);
+                var field = docState.doc.GetField("id()");
+                throw new InvalidOperationException($"Failed to add term for document field '{fieldInfo.name}', docId: '{field?.fieldsData}', term: '{termAtt.Term}', tokenText: '{new string(tokenText)}', tokenTextLength: '{tokenTextLen}'.", e);
             }
         }
 		
