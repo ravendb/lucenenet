@@ -215,6 +215,8 @@ namespace Lucene.Net.Util
 
         public void AddEmpty()
         {
+            // since we are doing a binary search, we must keep the order of the terms
+            _strings[_index].Start = _index > 0 ? _strings[_index - 1].Start : null;
             _index++;
         }
 
