@@ -38,7 +38,9 @@ public class UnmanagedStringArrayTests
         {
             if (++count == 5)
             {
-                terms.AddEmpty(new TermBuffer());
+                var termBuffer = new TermBuffer();
+                termBuffer.Set(new Term("test", letter.ToString()));
+                terms.AddDeleted(termBuffer);
             }
             else
             {
@@ -52,7 +54,36 @@ public class UnmanagedStringArrayTests
                 continue;
 
             var position = FieldComparator.BinarySearch(terms, terms[i]);
-            Assert.AreEqual(i == 4 ? 5 : i, position);
+            // in position 5 we save the same value as in position 4
+            var expected = i == 4 ? 5 : i;
+            Assert.AreEqual(expected, position);
+        }
+
+        VerifyNonExistingTerms(terms);
+
+        terms = new UnmanagedStringArray(11);
+
+        for (var letter = 'a'; letter <= 'j'; letter++)
+        {
+            if (letter != 'j')
+            {
+                var termBuffer = new TermBuffer();
+                termBuffer.Set(new Term("test", letter.ToString()));
+                terms.AddDeleted(termBuffer);
+            }
+            else
+            {
+                terms.Add(new Span<char>(letter.ToString().ToCharArray()));
+            }
+        }
+
+        for (var i = 1; i < terms.Length; i++)
+        {
+            if (i != 10)
+                continue;
+
+            var position = FieldComparator.BinarySearch(terms, terms[i]);
+            Assert.AreEqual(10, position);
         }
 
         VerifyNonExistingTerms(terms);
@@ -65,7 +96,7 @@ public class UnmanagedStringArrayTests
             {
                 var termBuffer = new TermBuffer();
                 termBuffer.Set(new Term("test", letter.ToString()));
-                terms.AddEmpty(termBuffer);
+                terms.AddDeleted(termBuffer);
             }
             else
             {
