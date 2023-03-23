@@ -218,7 +218,7 @@ namespace Lucene.Net.Util
         {
             // since we are doing a binary search, we must keep the order of the terms
 
-            if (_index == 0)
+            if (_index == 1)
             {
                 // we must allocate the first one
                 Add(termBuffer.TextAsSpan);
