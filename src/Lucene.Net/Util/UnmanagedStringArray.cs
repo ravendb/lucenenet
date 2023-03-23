@@ -214,7 +214,7 @@ namespace Lucene.Net.Util
             _index++;
         }
 
-        public void AddEmpty(TermBuffer termBuffer)
+        public void AddDeleted(TermBuffer termBuffer)
         {
             // since we are doing a binary search, we must keep the order of the terms
 
