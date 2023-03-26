@@ -3,6 +3,7 @@ using System.Buffers;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Text;
+using Lucene.Net.Index;
 
 namespace Lucene.Net.Util
 {
@@ -213,8 +214,18 @@ namespace Lucene.Net.Util
             _index++;
         }
 
-        public void AddEmpty()
+        public void AddDeleted(TermBuffer termBuffer)
         {
+            // since we are doing a binary search, we must keep the order of the terms
+
+            if (_index == 1)
+            {
+                // we must allocate the first one
+                Add(termBuffer.TextAsSpan);
+                return;
+            }
+
+            _strings[_index].Start = _strings[_index - 1].Start;
             _index++;
         }
 
