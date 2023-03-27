@@ -24,7 +24,7 @@ using UnicodeUtil = Lucene.Net.Util.UnicodeUtil;
 namespace Lucene.Net.Index
 {
 	
-	sealed class TermBuffer : System.ICloneable
+	public sealed class TermBuffer : System.ICloneable
 	{
 		
 		private System.String field;

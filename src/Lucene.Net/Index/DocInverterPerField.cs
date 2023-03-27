@@ -98,6 +98,10 @@ namespace Lucene.Net.Index
 							consumer.Add();
 							success = true;
 						}
+						catch (IndexOutOfRangeException e)
+						{
+							throw new IndexOutOfRangeException($"Failed to add term for document field '{fieldInfo.name}', docId: '{docState?.doc.GetField("id()").fieldsData}', field attributes: {fieldState.AttributeSource}.", e);
+						}
 						finally
 						{
 							if (!success)
@@ -190,6 +194,10 @@ namespace Lucene.Net.Index
 									// new segment:
 									consumer.Add();
 									success = true;
+								}
+								catch (IndexOutOfRangeException e)
+								{
+									throw new IndexOutOfRangeException($"Failed to add term for document field '{fieldInfo.name}', docId: '{docState?.doc.GetField("id()").fieldsData}', field attributes: {fieldState.AttributeSource}.", e);
 								}
 								finally
 								{
