@@ -823,7 +823,7 @@ namespace Lucene.Net.Search
                         else
                         {
                             // the term was deleted but we must preserve the order in the array (it must match the termNumber)
-                            mterms.AddEmpty();
+                            mterms.AddDeleted(termEnum.termBuffer);
                         }
 
                         termNumber++;
