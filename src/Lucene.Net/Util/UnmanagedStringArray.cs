@@ -71,7 +71,7 @@ namespace Lucene.Net.Util
             
             public override string ToString()
             {
-                return Encoding.UTF8.GetString(StringAsBytes.ToArray());
+                return Encoding.UTF8.GetString(StringAsBytes);
             }
 
             public static int CompareOrdinal(UnmanagedString strA, UnmanagedString strB)
