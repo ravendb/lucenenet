@@ -6,7 +6,7 @@ using System.Text;
 
 namespace Lucene.Net.Util
 {
-    public unsafe class UnmanagedStringArray
+    public unsafe class UnmanagedStringArray : IDisposable
     {
         public class Segment : IDisposable
         {
@@ -217,6 +217,16 @@ namespace Lucene.Net.Util
         {
             get => _strings[position];
             set => _strings[position] = value;
+        }
+
+        public void Dispose()
+        {
+            foreach (var segment in _segments)
+            {
+                segment.Dispose();
+            }
+
+            _segments.Clear();
         }
     }
 }

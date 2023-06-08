@@ -61,7 +61,8 @@ namespace Lucene.Net.Search
         {
             Init();
         }
-        private void  Init()
+
+        private void Init()
         {
             _byteCache = new ByteCache(this);
             _shortCache = new ShortCache(this);
@@ -73,11 +74,17 @@ namespace Lucene.Net.Search
             _stringIndexCache = new StringIndexCache(this);
         }
 
-        public virtual void  PurgeAllCaches()
+        public virtual IDisposable PurgeAllCaches()
         {
             lock (this)
             {
+                // PurgeAllCaches is replacing the cache with a new one (without actually releasing any memory).
+                // When the GC will run, the finalizer of the Segments will be executed and release the unmanaged memory.
+                // We'll return the old StringIndexCache and let the caller decide if he wants to dispose it sooner
+
+                var copy = _stringIndexCache;
                 Init();
+                return copy;
             }
         }
 
@@ -768,7 +775,7 @@ namespace Lucene.Net.Search
             return _stringIndexCache.Get(reader, new Entry(field, (Parser) null), state);
         }
         
-        internal sealed class StringIndexCache:Cache<StringIndex>
+        internal sealed class StringIndexCache : Cache<StringIndex>, IDisposable
         {
             internal StringIndexCache(FieldCache wrapper):base(wrapper)
             {
@@ -828,6 +835,20 @@ namespace Lucene.Net.Search
 
                 StringIndex value_Renamed = new StringIndex(retArray, retArrayOrdered, mterms);
                 return value_Renamed;
+            }
+
+            public void Dispose()
+            {
+                foreach (var keyValue in readerCache)
+                {
+                    foreach (var keyValuePair in keyValue.Value)
+                    {
+                        if (keyValuePair.Value is StringIndex si)
+                        {
+                            si.lookup.Dispose();
+                        }
+                    }
+                }
             }
         }
         

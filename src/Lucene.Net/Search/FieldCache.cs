@@ -659,7 +659,7 @@ namespace Lucene.Net.Search
         /// of Lucene.
         /// <p/>
         /// </summary>
-        void PurgeAllCaches();
+        IDisposable PurgeAllCaches();
 
         /// <summary>
         /// Expert: drops all cache entries associated with this
