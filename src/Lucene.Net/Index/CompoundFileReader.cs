@@ -167,7 +167,7 @@ namespace Lucene.Net.Index
 			}
 		}
 
-        public override ArrayHolder GetCache(Directory _, string name, FieldInfos fieldInfos, int readBufferSize, int indexDivisor, IState state)
+        public override ArrayHolder GetCache(string name, FieldInfos fieldInfos, int readBufferSize, int indexDivisor, IState state)
         {
             return directory.GetCache(this, name, fieldInfos, readBufferSize, indexDivisor, state);
         }

@@ -107,7 +107,7 @@ namespace Lucene.Net.Index
 				{
 					// Load terms index
 					totalIndexInterval = origEnum.indexInterval * indexDivisor;
-                    _termsIndexCache = directory.GetCache(directory, segment + "." + IndexFileNames.TERMS_INDEX_EXTENSION, fieldInfos, readBufferSize, indexDivisor, state);
+                    _termsIndexCache = directory.GetCache(segment + "." + IndexFileNames.TERMS_INDEX_EXTENSION, fieldInfos, readBufferSize, indexDivisor, state);
 					_termsIndexCache.AddRef();
                 }
 				else
