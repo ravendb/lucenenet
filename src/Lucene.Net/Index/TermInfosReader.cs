@@ -16,7 +16,6 @@
  */
 
 using System;
-using System.Buffers;
 using Lucene.Net.Store;
 using Lucene.Net.Support;
 using Lucene.Net.Util;
@@ -25,13 +24,12 @@ using Directory = Lucene.Net.Store.Directory;
 
 namespace Lucene.Net.Index
 {
-
     /// <summary>This stores a monotonically increasing set of &lt;Term, TermInfo&gt; pairs in a
-	/// Directory.  Pairs are accessed either by Term or by ordinal position the
-	/// set.  
-	/// </summary>
-	
-	sealed class TermInfosReader : IDisposable
+    /// Directory.  Pairs are accessed either by Term or by ordinal position the
+    /// set.  
+    /// </summary>
+
+    sealed class TermInfosReader : IDisposable
 	{
 		private readonly Directory directory;
 		private readonly String segment;
@@ -43,9 +41,9 @@ namespace Lucene.Net.Index
 		private readonly SegmentTermEnum origEnum;
 		private readonly long size;
 		
-		private Span<Term> indexTerms => _holder.IndexTerms;
-		private Span<TermInfo> indexInfos => _holder.InfoArray;
-		private Span<long> indexPointers =>_holder.LongArray;
+		private Span<Term> indexTerms => _termsIndexCache.IndexTerms;
+		private Span<TermInfo> indexInfos => _termsIndexCache.InfoArray;
+		private Span<long> indexPointers =>_termsIndexCache.LongArray;
 		
 		private readonly int totalIndexInterval;
 		
@@ -77,49 +75,7 @@ namespace Lucene.Net.Index
 	        }
 	    }
 
-        private class ArrayHolder : IDisposable
-        {
-            private readonly int _size;
-            private readonly long[] _longArray;
-            private readonly Term[] _termArray;
-            private readonly TermInfo[] _termInfoArray;
-
-            public ArrayHolder(int size)
-            {
-                _size = size;
-                _longArray = ArrayPool<long>.Shared.Rent(size);
-                _termArray = ArrayPool<Term>.Shared.Rent(size);
-                _termInfoArray = ArrayPool<TermInfo>.Shared.Rent(size);
-            }
-
-            public Span<long> LongArray => _longArray.AsSpan(0, _size);
-            public Span<TermInfo> InfoArray => _termInfoArray.AsSpan(0, _size);
-            public Span<Term> IndexTerms => _termArray.AsSpan(0, _size);
-
-            public void Dispose()
-            {
-                GC.SuppressFinalize(this);
-
-                if (_longArray != null)
-                    ArrayPool<long>.Shared.Return(_longArray);
-
-                if (_termArray != null)
-                    ArrayPool<Term>.Shared.Return(_termArray, clearArray: true);
-
-                if (_termInfoArray != null)
-                    ArrayPool<TermInfo>.Shared.Return(_termInfoArray);
-            }
-
-            ~ArrayHolder()
-            {
-				#if DEBUG
-                Console.WriteLine("Array holder is leaking...");
-				#endif
-				Dispose();
-            }
-        }
-
-        private readonly ArrayHolder _holder;
+        private readonly ArrayHolder _termsIndexCache;
 
         private readonly DoubleBarrelLRUCache<CloneableTerm, TermInfo> termInfoCache = new DoubleBarrelLRUCache<CloneableTerm, TermInfo>(DEFAULT_CACHE_SIZE);
 
@@ -146,41 +102,18 @@ namespace Lucene.Net.Index
 				
 				origEnum = new SegmentTermEnum(directory.OpenInput(segment + "." + IndexFileNames.TERMS_EXTENSION, readBufferSize, state), fieldInfos, false, state);
 				size = origEnum.size;
-				
+
 				if (indexDivisor != - 1)
 				{
 					// Load terms index
 					totalIndexInterval = origEnum.indexInterval * indexDivisor;
-					var indexEnum = new SegmentTermEnum(directory.OpenInput(segment + "." + IndexFileNames.TERMS_INDEX_EXTENSION, readBufferSize, state), fieldInfos, true, state);
-					
-					try
-					{
-						int indexSize = 1 + ((int) indexEnum.size - 1) / indexDivisor; // otherwise read index
-						
-                        _holder?.Dispose();
-                        _holder = new ArrayHolder(indexSize);
-						
-						for (int i = 0; indexEnum.Next(state); i++)
-						{
-							indexTerms[i] = indexEnum.Term;
-							indexInfos[i] = indexEnum.TermInfo();
-							indexPointers[i] = indexEnum.indexPointer;
-							
-							for (int j = 1; j < indexDivisor; j++)
-								if (!indexEnum.Next(state))
-									break;
-						}
-					}
-					finally
-					{
-						indexEnum.Close();
-					}
-				}
+                    _termsIndexCache = directory.GetCache(directory, segment + "." + IndexFileNames.TERMS_INDEX_EXTENSION, fieldInfos, readBufferSize, indexDivisor, state);
+					_termsIndexCache.AddRef();
+                }
 				else
 				{
 					// Do not load terms index:
 					totalIndexInterval = - 1;
-                    _holder?.Dispose();
 				}
 				success = true;
 			}
@@ -216,7 +149,10 @@ namespace Lucene.Net.Index
             if (origEnum != null)
                 origEnum.Dispose();
             threadResources.Dispose();
-            _holder?.Dispose();
+
+            _termsIndexCache?.ReleaseRef();
+			// not disposing the cache here, since it might be still in use
+            //_termsIndexCache?.Dispose();
 
             isDisposed = true;
         }
