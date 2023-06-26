@@ -105,7 +105,12 @@ namespace Lucene.Net.Store
 			return OpenInput(name, state);
 		}
 
-        public virtual ArrayHolder GetCache(Directory directory, string name, FieldInfos fieldInfos, int readBufferSize, int indexDivisor, IState state)
+        public virtual ArrayHolder GetCache(string name, FieldInfos fieldInfos, int readBufferSize, int indexDivisor, IState state)
+        {
+            return GetCache(this, name, fieldInfos, readBufferSize, indexDivisor, state);
+        }
+
+        public ArrayHolder GetCache(Directory directory, string name, FieldInfos fieldInfos, int readBufferSize, int indexDivisor, IState state)
         {
             var lazyArrayHolder = _termsIndexCachePerSegment.GetOrAdd(name,
                 new Lazy<ArrayHolder>(() => ArrayHolder.GenerateArrayHolder(directory, name, fieldInfos, readBufferSize, indexDivisor, state)));
