@@ -22,7 +22,7 @@ namespace Lucene.Net.Index
 	
 	/// <summary>A TermInfo is the record of information stored for a term.</summary>
 	
-	struct TermInfo
+	public struct TermInfo
 	{
 		/// <summary>The number of documents which contain the term. </summary>
 		internal int docFreq;
