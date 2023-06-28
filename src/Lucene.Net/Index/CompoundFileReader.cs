@@ -166,7 +166,17 @@ namespace Lucene.Net.Index
 				return new CSIndexInput(stream, entry.offset, entry.length, readBufferSize, state);
 			}
 		}
-		
+
+        public override ArrayHolder GetCache(string name, FieldInfos fieldInfos, int readBufferSize, int indexDivisor, IState state)
+        {
+            return directory.GetCache(this, name, fieldInfos, readBufferSize, indexDivisor, state);
+        }
+
+        public override void RemoveFromTermsIndexCache(string name)
+        {
+            directory.RemoveFromTermsIndexCache(name);
+        }
+
 		/// <summary>Returns an array of strings, one for each file in the directory. </summary>
 		public override System.String[] ListAll(IState state)
 		{

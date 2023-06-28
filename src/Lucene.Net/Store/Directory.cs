@@ -17,7 +17,9 @@
 
 using System;
 using System.Buffers;
+using System.Collections.Concurrent;
 using System.Runtime.Serialization;
+using Lucene.Net.Index;
 using IndexFileNameFilter = Lucene.Net.Index.IndexFileNameFilter;
 
 namespace Lucene.Net.Store
@@ -43,6 +45,9 @@ namespace Lucene.Net.Store
         [Serializable]
     public abstract class Directory : System.IDisposable
 	{
+        [NonSerialized]
+        private ConcurrentDictionary<string, Lazy<ArrayHolder>> _termsIndexCachePerSegment = new ConcurrentDictionary<string, Lazy<ArrayHolder>>();
+
 		protected internal volatile bool isOpen = true;
 		
 		/// <summary>Holds the LockFactory instance (implements locking for
@@ -99,7 +104,27 @@ namespace Lucene.Net.Store
 		{
 			return OpenInput(name, state);
 		}
-		
+
+        public virtual ArrayHolder GetCache(string name, FieldInfos fieldInfos, int readBufferSize, int indexDivisor, IState state)
+        {
+            return GetCache(this, name, fieldInfos, readBufferSize, indexDivisor, state);
+        }
+
+        public ArrayHolder GetCache(Directory directory, string name, FieldInfos fieldInfos, int readBufferSize, int indexDivisor, IState state)
+        {
+            var lazyArrayHolder = _termsIndexCachePerSegment.GetOrAdd(name,
+                new Lazy<ArrayHolder>(() => ArrayHolder.GenerateArrayHolder(directory, name, fieldInfos, readBufferSize, indexDivisor, state)));
+
+            return lazyArrayHolder.Value;
+        }
+
+        public virtual void RemoveFromTermsIndexCache(string name)
+        {
+            _termsIndexCachePerSegment.TryRemove(name, out _);
+            // intentionally not disposing the cache here since it might be in use by a TemInfosReader instance.
+            // we'll let the finalizer clean it when it isn't in use anymore.
+        }
+
 		/// <summary>Construct a <see cref="Lock" />.</summary>
 		/// <param name="name">the name of the lock file
 		/// </param>
@@ -133,7 +158,13 @@ namespace Lucene.Net.Store
             Dispose(true);
         }
 
-	    protected abstract void Dispose(bool disposing);
+        protected virtual void Dispose(bool disposing)
+        {
+            foreach ((_, Lazy<ArrayHolder> cacheLazy) in _termsIndexCachePerSegment)
+            {
+                cacheLazy.Value.Dispose();
+            }
+        }
 
 	    /// <summary> Set the LockFactory that this Directory instance should
 		/// use for its locking implementation.  Each * instance of
@@ -265,5 +296,11 @@ namespace Lucene.Net.Store
 
         [NonSerialized]
         internal ArrayPool<byte> ByteBlockPool = ArrayPool<byte>.Create();
+
+		[OnDeserialized]
+        public void OnDeserialized(StreamingContext _)
+        {
+            _termsIndexCachePerSegment = new ConcurrentDictionary<string, Lazy<ArrayHolder>>();
+        }
     }
 }
