@@ -14,10 +14,15 @@ namespace Lucene.Net.Index
         private readonly Term[] _termArray;
         private readonly TermInfo[] _termInfoArray;
         private int _usages;
+        private long _managedAllocations;
 
         public Span<long> LongArray => _longArray.AsSpan(0, _size);
         public Span<TermInfo> InfoArray => _termInfoArray.AsSpan(0, _size);
         public Span<Term> IndexTerms => _termArray.AsSpan(0, _size);
+
+        public static Action<long> OnArrayHolderCreated;
+
+        public static Action<long> OnArrayHolderDisposed;
 
         public ArrayHolder(int size, Directory directory, string name)
         {
@@ -49,6 +54,8 @@ namespace Lucene.Net.Index
                 int indexSize = 1 + ((int)indexEnum.size - 1) / indexDivisor; // otherwise read index
 
                 var holder = new ArrayHolder(indexSize, directory, name);
+                
+                var before = GC.GetAllocatedBytesForCurrentThread();
 
                 for (int i = 0; indexEnum.Next(state); i++)
                 {
@@ -61,11 +68,16 @@ namespace Lucene.Net.Index
                             break;
                 }
 
+                holder._managedAllocations = GC.GetAllocatedBytesForCurrentThread() - before;
+
+                OnArrayHolderCreated?.Invoke(holder._managedAllocations);
+
                 return holder;
 
             }
             finally
             {
+
                 indexEnum?.Close();
             }
         }
@@ -73,6 +85,8 @@ namespace Lucene.Net.Index
         public void Dispose()
         {
             GC.SuppressFinalize(this);
+
+            OnArrayHolderDisposed?.Invoke(_managedAllocations);
 
             if (_size > 256 * 1024)
                 return;
