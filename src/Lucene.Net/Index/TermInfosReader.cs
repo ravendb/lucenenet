@@ -143,7 +143,10 @@ namespace Lucene.Net.Index
 
         public void Dispose()
         {
-            if (isDisposed) return;
+            if (isDisposed)
+                return;
+
+			GC.SuppressFinalize(this);
 
             // Move to protected method if class becomes unsealed
             if (origEnum != null)
@@ -155,6 +158,18 @@ namespace Lucene.Net.Index
             //_termsIndexCache?.Dispose();
 
             isDisposed = true;
+        }
+
+        ~TermInfosReader()
+        {
+            // each TermInfosReader holds a cache (ArrayHolder) which is created upon creation of the TermInfosReader instance.
+            // in the past we created a new ArrayHolder when creating a new TermInfosReader instance.
+            // if it wasn't disposed, nothing happened since we have a finalizer for the ArrayHolder.
+            // we changed the implementation and now this cache is shared between different instances of TermInfosReader.
+            // when TermInfosReader isn't disposed we are still holding a reference to the ArrayHolder.
+
+            // releasing the reference for the cached ArrayHolder will match the previous behaviour.
+            _termsIndexCache?.ReleaseRef();
         }
 		
 		/// <summary>Returns the number of term/value pairs in the set. </summary>
