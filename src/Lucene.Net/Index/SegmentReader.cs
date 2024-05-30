@@ -191,10 +191,16 @@ namespace Lucene.Net.Index
 					return cfsReader;
 				}
 			}
-			
+
 			internal TermInfosReader GetTermsReader()
-			{
-				lock (this)
+            {
+                // This is initialized in the constructor.
+                // The only time it isn't initialized is when termsIndexDivisor equals -1, which we don't use.
+                var reader = tis;
+                if (reader != null)
+                    return reader;
+
+                lock (this)
 				{
 					if (tis != null)
 					{
@@ -208,11 +214,9 @@ namespace Lucene.Net.Index
 			}
 			
 			internal bool TermsIndexIsLoaded()
-			{
-				lock (this)
-				{
-					return tis != null;
-				}
+            {
+                // If this is null, we call LoadTermsIndex, which uses a lock.
+                return tis != null;
 			}
 			
 			// NOTE: only called from IndexWriter when a near
@@ -220,8 +224,11 @@ namespace Lucene.Net.Index
 			// sharing a segment that's still being merged.  This
 			// method is not fully thread safe, and relies on the
 			// synchronization in IndexWriter
-			internal void  LoadTermsIndex(SegmentInfo si, int termsIndexDivisor, IState state)
-			{
+			internal void LoadTermsIndex(SegmentInfo si, int termsIndexDivisor, IState state)
+            {
+                if (tis != null)
+                    return;
+
 				lock (this)
 				{
 					if (tis == null)
@@ -310,7 +317,10 @@ namespace Lucene.Net.Index
 			}
 			
 			internal void  OpenDocStores(SegmentInfo si, IState state)
-			{
+            {
+                if (fieldsReaderOrig != null)
+                    return;
+
 				lock (this)
 				{
 					
