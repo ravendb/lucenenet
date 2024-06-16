@@ -62,7 +62,7 @@ namespace Lucene.Net.Index
 		/// <p/>Returns the number of entries read.  Zero is only returned when the
 		/// stream has been exhausted.  
 		/// </summary>
-		int Read(int[] docs, int[] freqs, IState state);
+		int Read(Span<int> docs, Span<int> freqs, IState state);
 		
 		/// <summary>Skips entries to the first beyond the current whose document number is
 		/// greater than or equal to <i>target</i>. <p/>Returns true iff there is such

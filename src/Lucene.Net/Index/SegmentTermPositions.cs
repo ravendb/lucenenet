@@ -115,7 +115,7 @@ namespace Lucene.Net.Index
 			return false;
 		}
 		
-		public override int Read(int[] docs, int[] freqs, IState state)
+		public override int Read(Span<int> docs, Span<int> freqs, IState state)
 		{
 			throw new System.NotSupportedException("TermPositions does not support processing multiple documents in one call. Use TermDocs instead.");
 		}

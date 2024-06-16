@@ -71,7 +71,7 @@ namespace Lucene.Net.Index
             return SkipTo(internalDoc + 1, state);
         }
 
-        public int Read(int[] docs, int[] freqs, IState state)
+        public int Read(Span<int> docs, Span<int> freqs, IState state)
         {
             int length = docs.Length;
             int i = 0;

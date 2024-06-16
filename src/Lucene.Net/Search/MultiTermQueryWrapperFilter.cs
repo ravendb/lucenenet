@@ -114,8 +114,9 @@ namespace Lucene.Net.Search
                     return DocIdSet.EMPTY_DOCIDSET;
                 // else fill into an OpenBitSet
                 OpenBitSet bitSet = new OpenBitSet(reader.MaxDoc);
-                int[] docs = new int[32];
-                int[] freqs = new int[32];
+                Span<int> docs = stackalloc int[32];
+                Span<int> freqs = stackalloc int[32];
+
                 TermDocs termDocs = reader.TermDocs(state);
                 try
                 {
