@@ -1,24 +1,25 @@
 using Lucene.Net.Util;
 
-namespace Lucene.Net.Index;
-
-public class UnmanagedTerm
+namespace Lucene.Net.Index
 {
-    private readonly string field;
-    private readonly UnmanagedStringArray.UnmanagedString unmanagedString;
-
-    public string Field => field;
-
-    public UnmanagedStringArray.UnmanagedString Text => unmanagedString;
-
-    public UnmanagedTerm(string field, UnmanagedStringArray.UnmanagedString unmanagedString)
+    public class UnmanagedTerm
     {
-        this.field = field;
-        this.unmanagedString = unmanagedString;
-    }
+        private readonly string field;
+        private readonly UnmanagedStringArray.UnmanagedString unmanagedString;
 
-    public Term ToTerm()
-    {
-        return new Term(field, unmanagedString.ToString(), false);
+        public string Field => field;
+
+        public UnmanagedStringArray.UnmanagedString Text => unmanagedString;
+
+        public UnmanagedTerm(string field, UnmanagedStringArray.UnmanagedString unmanagedString)
+        {
+            this.field = field;
+            this.unmanagedString = unmanagedString;
+        }
+
+        public Term ToTerm()
+        {
+            return new Term(field, unmanagedString.ToString(), false);
+        }
     }
 }
