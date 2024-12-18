@@ -26,7 +26,7 @@ namespace Lucene.Net.Index
 
         public static Action<long> OnArrayHolderDisposed;
 
-        public const int MaxSizeToTakeFromArrayPool = 128 * 1024;
+        public const int ArrayPoolThreshold = 128 * 1024;
 
         public ArrayHolder(int size, Directory directory, string name)
         {
@@ -34,7 +34,7 @@ namespace Lucene.Net.Index
             _directory = directory;
             _name = name;
 
-            if (size > MaxSizeToTakeFromArrayPool)
+            if (size > ArrayPoolThreshold)
             {
                 _longArray = new long[size];
                 _termInfoArray = new TermInfo[size];
@@ -102,7 +102,7 @@ namespace Lucene.Net.Index
 
             _unmanagedIndexTerms?.Dispose();
 
-            if (_size > MaxSizeToTakeFromArrayPool)
+            if (_size > ArrayPoolThreshold)
                 return;
 
             if (_longArray != null)
