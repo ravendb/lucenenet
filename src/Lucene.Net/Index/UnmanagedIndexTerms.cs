@@ -16,7 +16,7 @@ namespace Lucene.Net.Index
         {
             _size = size;
             _fields = size > ArrayHolder.ArrayPoolThreshold ? new string[size] : ArrayPool<string>.Shared.Rent(size);
-            _text = new UnmanagedStringArray(size, startIndex: 0);
+            _text = new UnmanagedStringArray(size, 0, UnmanagedStringArray.Type.TermCache);
         }
 
         public void Add(int index, string field, Span<char> textAsSpan)
