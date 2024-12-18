@@ -77,8 +77,11 @@ namespace Lucene.Net.Index
 			{
 				// optimized case
 				var segmentTermEnum = ((SegmentTermEnum) termEnum);
-				term = segmentTermEnum.Term;
-				ti = segmentTermEnum.TermInfo();
+
+                // we avoid using segmentTermEnum.Term because it materializes the term text into a string,
+                // which is unnecessary as the next step only requires the Field, and the Field is already interned.
+                term = new Term(segmentTermEnum.Field, txt: null, intern: false);
+                ti = segmentTermEnum.TermInfo();
 			}
 			else
 			{
