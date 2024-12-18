@@ -11,14 +11,15 @@ namespace Lucene.Net.Index
         private readonly Directory _directory;
         private readonly string _name;
         private readonly long[] _longArray;
-        private readonly Term[] _termArray;
         private readonly TermInfo[] _termInfoArray;
+        private readonly UnmanagedIndexTerms _unmanagedIndexTerms;
+
         private int _usages;
         private long _managedAllocations;
 
         public Span<long> LongArray => _longArray.AsSpan(0, _size);
         public Span<TermInfo> InfoArray => _termInfoArray.AsSpan(0, _size);
-        public Span<Term> IndexTerms => _termArray.AsSpan(0, _size);
+        public UnmanagedIndexTerms UnmanagedIndexTerms => _unmanagedIndexTerms;
 
         public static Action<long> OnArrayHolderCreated;
 
@@ -30,7 +31,7 @@ namespace Lucene.Net.Index
             _directory = directory;
             _name = name;
             _longArray = ArrayPool<long>.Shared.Rent(size);
-            _termArray = ArrayPool<Term>.Shared.Rent(size);
+            _unmanagedIndexTerms = new UnmanagedIndexTerms(size);
             _termInfoArray = ArrayPool<TermInfo>.Shared.Rent(size);
         }
 
@@ -59,7 +60,7 @@ namespace Lucene.Net.Index
 
                 for (int i = 0; indexEnum.Next(state); i++)
                 {
-                    holder.IndexTerms[i] = indexEnum.Term;
+                    holder.UnmanagedIndexTerms.Add(i, indexEnum.Field, indexEnum.TextAsSpan);
                     holder.InfoArray[i] = indexEnum.TermInfo();
                     holder.LongArray[i] = indexEnum.indexPointer;
 
@@ -88,14 +89,13 @@ namespace Lucene.Net.Index
 
             OnArrayHolderDisposed?.Invoke(_managedAllocations);
 
+            _unmanagedIndexTerms?.Dispose();
+
             if (_size > 256 * 1024)
                 return;
 
             if (_longArray != null)
                 ArrayPool<long>.Shared.Return(_longArray);
-
-            if (_termArray != null)
-                ArrayPool<Term>.Shared.Return(_termArray, clearArray: true);
 
             if (_termInfoArray != null)
                 ArrayPool<TermInfo>.Shared.Return(_termInfoArray);
