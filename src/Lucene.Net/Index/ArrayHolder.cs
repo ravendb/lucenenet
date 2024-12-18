@@ -20,19 +20,31 @@ namespace Lucene.Net.Index
         public Span<long> LongArray => _longArray.AsSpan(0, _size);
         public Span<TermInfo> InfoArray => _termInfoArray.AsSpan(0, _size);
         public UnmanagedIndexTerms UnmanagedIndexTerms => _unmanagedIndexTerms;
-        public int ActualLongArraySize => _longArray.Length;
+        public int ActualArraySize => _longArray.Length;
 
         public static Action<long> OnArrayHolderCreated;
 
         public static Action<long> OnArrayHolderDisposed;
+
+        public const int MaxSizeToTakeFromArrayPool = 128 * 1024;
 
         public ArrayHolder(int size, Directory directory, string name)
         {
             _size = size;
             _directory = directory;
             _name = name;
-            _longArray = ArrayPool<long>.Shared.Rent(size);
-            _termInfoArray = ArrayPool<TermInfo>.Shared.Rent(size);
+
+            if (size > MaxSizeToTakeFromArrayPool)
+            {
+                _longArray = new long[size];
+                _termInfoArray = new TermInfo[size];
+            }
+            else
+            {
+                _longArray = ArrayPool<long>.Shared.Rent(size);
+                _termInfoArray = ArrayPool<TermInfo>.Shared.Rent(size);
+            }
+
             _unmanagedIndexTerms = new UnmanagedIndexTerms(size);
         }
 
@@ -68,7 +80,7 @@ namespace Lucene.Net.Index
                             break;
                 }
 
-                holder._managedAllocations = (holder.ActualLongArraySize * (TermInfo.SizeOf + sizeof(long)));
+                holder._managedAllocations = (holder.ActualArraySize * (TermInfo.SizeOf + sizeof(long)));
 
                 OnArrayHolderCreated?.Invoke(holder._managedAllocations);
 
@@ -90,7 +102,7 @@ namespace Lucene.Net.Index
 
             _unmanagedIndexTerms?.Dispose();
 
-            if (_size > 256 * 1024)
+            if (_size > MaxSizeToTakeFromArrayPool)
                 return;
 
             if (_longArray != null)
