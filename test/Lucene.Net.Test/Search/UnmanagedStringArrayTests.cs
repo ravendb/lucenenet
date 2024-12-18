@@ -13,7 +13,7 @@ namespace Lucene.Net.Search
         [Test]
         public void Should_Find_All_Terms()
         {
-            using (var terms = new UnmanagedStringArray(11, startIndex: 1))
+            using (var terms = new UnmanagedStringArray(11, startIndex: 1, UnmanagedStringArray.Type.Sorting))
             {
                 for (var letter = 'a'; letter <= 'j'; letter++)
                 {
@@ -33,7 +33,7 @@ namespace Lucene.Net.Search
         [Test]
         public void Should_Find_With_Missing_Terms()
         {
-            var terms = new UnmanagedStringArray(11, startIndex: 1);
+            var terms = new UnmanagedStringArray(11, startIndex: 1, UnmanagedStringArray.Type.Sorting);
             var count = 0;
             for (var letter = 'a'; letter <= 'j'; letter++)
             {
@@ -62,7 +62,7 @@ namespace Lucene.Net.Search
 
             VerifyNonExistingTerms(terms);
 
-            terms = new UnmanagedStringArray(11, startIndex: 1);
+            terms = new UnmanagedStringArray(11, startIndex: 1, UnmanagedStringArray.Type.Sorting);
 
             for (var letter = 'a'; letter <= 'j'; letter++)
             {
@@ -89,7 +89,7 @@ namespace Lucene.Net.Search
 
             VerifyNonExistingTerms(terms);
 
-            terms = new UnmanagedStringArray(11, startIndex: 1);
+            terms = new UnmanagedStringArray(11, startIndex: 1, UnmanagedStringArray.Type.Sorting);
 
             for (var letter = 'a'; letter <= 'j'; letter++)
             {
@@ -126,7 +126,7 @@ namespace Lucene.Net.Search
         [Test]
         public void Should_Find_Terms()
         {
-            using (var terms = new UnmanagedStringArray(char.MaxValue + 1, startIndex: 0))
+            using (var terms = new UnmanagedStringArray(char.MaxValue + 1, startIndex: 0, UnmanagedStringArray.Type.TermCache))
             {
                 for (int code = char.MinValue; code <= char.MaxValue; code++)
                 {
@@ -167,7 +167,7 @@ namespace Lucene.Net.Search
             var sortedStrings = new List<string>(uniqueStrings);
             sortedStrings.Sort(string.CompareOrdinal);
 
-            using (var terms = new UnmanagedStringArray(sortedStrings.Count + 1, startIndex: 0))
+            using (var terms = new UnmanagedStringArray(sortedStrings.Count + 1, startIndex: 0, UnmanagedStringArray.Type.TermCache))
             {
                 foreach (var str in sortedStrings)
                 {
@@ -209,7 +209,7 @@ namespace Lucene.Net.Search
             var sortedStrings = new List<string>(uniqueStrings);
             sortedStrings.Sort(string.CompareOrdinal);
 
-            using (var terms = new UnmanagedStringArray(sortedStrings.Count + 1, startIndex: 0))
+            using (var terms = new UnmanagedStringArray(sortedStrings.Count + 1, startIndex: 0, UnmanagedStringArray.Type.TermCache))
             {
                 foreach (var str in sortedStrings)
                 {
@@ -280,7 +280,7 @@ namespace Lucene.Net.Search
             var sortedStrings = new List<string>(uniqueStrings);
             sortedStrings.Sort(string.CompareOrdinal);
 
-            using (var terms = new UnmanagedStringArray(sortedStrings.Count + 1, startIndex: 0))
+            using (var terms = new UnmanagedStringArray(sortedStrings.Count + 1, startIndex: 0, UnmanagedStringArray.Type.TermCache))
             {
                 foreach (var str in sortedStrings)
                 {
@@ -300,7 +300,7 @@ namespace Lucene.Net.Search
         [Test]
         public unsafe void Compare_Unmanaged_Strings()
         {
-            using (var terms = new UnmanagedStringArray(128, startIndex: 0))
+            using (var terms = new UnmanagedStringArray(128, startIndex: 0, UnmanagedStringArray.Type.TermCache))
             {
                 const string word1 = "";
                 terms.Add(word1.ToCharArray());
@@ -482,7 +482,7 @@ namespace Lucene.Net.Search
 
         private static void VerifyNonExistingTerms(UnmanagedStringArray terms)
         {
-            using (var internalTerms = new UnmanagedStringArray(3, startIndex: 0))
+            using (var internalTerms = new UnmanagedStringArray(3, startIndex: 0, UnmanagedStringArray.Type.TermCache))
             {
                 const string smallerThan = "A";
                 const string biggerThan = "z";

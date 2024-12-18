@@ -787,7 +787,7 @@ namespace Lucene.Net.Search
                 int[] retArray = new int[reader.MaxDoc];
 
                 var length = reader.MaxDoc + 1;
-                UnmanagedStringArray mterms = new UnmanagedStringArray(length, startIndex: 1);
+                UnmanagedStringArray mterms = new UnmanagedStringArray(length, 1, UnmanagedStringArray.Type.Sorting);
                 TermDocs termDocs = reader.TermDocs(state);
                 
                 SegmentTermEnum termEnum = (SegmentTermEnum)reader.Terms(new Term(field), state);

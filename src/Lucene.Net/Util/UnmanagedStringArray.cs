@@ -9,26 +9,34 @@ namespace Lucene.Net.Util
 {
     public unsafe class UnmanagedStringArray : IDisposable
     {
+        public enum Type
+        {
+            TermCache,
+            Sorting
+        }
+
         public class Segment: IDisposable
         {
             public readonly int Size;
+            private readonly Type _type;
 
             public byte* Start;
             public byte* CurrentPosition => Start + Used;
             public int Free => Size - Used;
             public int Used;
 
-            public delegate byte* AllocateSegmentDelegate(long size);
-            public delegate void FreeSegmentDelegate(byte* ptr, long size);
+            public delegate byte* AllocateSegmentDelegate(long size, Type type);
+            public delegate void FreeSegmentDelegate(byte* ptr, long size, Type type);
 
-            public static AllocateSegmentDelegate AllocateMemory = (size) => (byte*) Marshal.AllocHGlobal((IntPtr) size);
-            public static FreeSegmentDelegate FreeMemory = (ptr, _) => Marshal.FreeHGlobal((IntPtr) ptr);
+            public static AllocateSegmentDelegate AllocateMemory = (size, _) => (byte*) Marshal.AllocHGlobal((IntPtr) size);
+            public static FreeSegmentDelegate FreeMemory = (ptr, _, __) => Marshal.FreeHGlobal((IntPtr) ptr);
 
-            public Segment(int size)
+            public Segment(int size, Type type)
             {
-                Start = AllocateMemory(size);
+                Start = AllocateMemory(size, type);
                 Used = 0;
                 Size = size;
+                _type = type;
             }
 
             public byte* Add(int size)
@@ -66,7 +74,7 @@ namespace Lucene.Net.Util
                 GC.SuppressFinalize(this);
                 if (Start != null)
                 {
-                    FreeMemory(Start, Size);
+                    FreeMemory(Start, Size, _type);
                 }
                 Start = null;
             }
@@ -205,11 +213,13 @@ namespace Lucene.Net.Util
 
         public int Length => _index;
         public int _index;
+        private readonly Type _type;
 
-        public UnmanagedStringArray(int size, int startIndex)
+        public UnmanagedStringArray(int size, int startIndex, Type type)
         {
             _strings = new UnmanagedString[size];
             _index = startIndex;
+            _type = type;
         }
 
         private Segment GetSegment(int size)
@@ -246,7 +256,7 @@ namespace Lucene.Net.Util
 
         private Segment GetAndAddNewSegment(int segmentSize)
         {
-            var newSegment = new Segment(segmentSize);
+            var newSegment = new Segment(segmentSize, _type);
             _segments.Add(newSegment);
             return newSegment;
         }
