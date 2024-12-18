@@ -15,15 +15,14 @@
  * limitations under the License.
  */
 
-using System;
-
 namespace Lucene.Net.Index
 {
-	
 	/// <summary>A TermInfo is the record of information stored for a term.</summary>
 	
 	public struct TermInfo
 	{
+		public static int SizeOf = sizeof(int) + sizeof(long) + sizeof(long) + sizeof(int);
+
 		/// <summary>The number of documents which contain the term. </summary>
 		internal int docFreq;
 		

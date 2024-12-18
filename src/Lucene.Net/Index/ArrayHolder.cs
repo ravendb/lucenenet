@@ -20,6 +20,7 @@ namespace Lucene.Net.Index
         public Span<long> LongArray => _longArray.AsSpan(0, _size);
         public Span<TermInfo> InfoArray => _termInfoArray.AsSpan(0, _size);
         public UnmanagedIndexTerms UnmanagedIndexTerms => _unmanagedIndexTerms;
+        public int ActualLongArraySize => _longArray.Length;
 
         public static Action<long> OnArrayHolderCreated;
 
@@ -31,8 +32,8 @@ namespace Lucene.Net.Index
             _directory = directory;
             _name = name;
             _longArray = ArrayPool<long>.Shared.Rent(size);
-            _unmanagedIndexTerms = new UnmanagedIndexTerms(size);
             _termInfoArray = ArrayPool<TermInfo>.Shared.Rent(size);
+            _unmanagedIndexTerms = new UnmanagedIndexTerms(size);
         }
 
         public void AddRef()
@@ -55,8 +56,6 @@ namespace Lucene.Net.Index
                 int indexSize = 1 + ((int)indexEnum.size - 1) / indexDivisor; // otherwise read index
 
                 var holder = new ArrayHolder(indexSize, directory, name);
-                
-                var before = GC.GetAllocatedBytesForCurrentThread();
 
                 for (int i = 0; indexEnum.Next(state); i++)
                 {
@@ -69,7 +68,7 @@ namespace Lucene.Net.Index
                             break;
                 }
 
-                holder._managedAllocations = GC.GetAllocatedBytesForCurrentThread() - before;
+                holder._managedAllocations = (holder.ActualLongArraySize * (TermInfo.SizeOf + sizeof(long)));
 
                 OnArrayHolderCreated?.Invoke(holder._managedAllocations);
 
