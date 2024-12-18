@@ -9,7 +9,7 @@ namespace Lucene.Net.Util
 {
     public unsafe class UnmanagedStringArray : IDisposable
     {
-        public class Segment : IDisposable
+        public class Segment: IDisposable
         {
             public readonly int Size;
 
@@ -149,6 +149,11 @@ namespace Lucene.Net.Util
                 //   while non-ASCII starts with bytes >=192, so non-ASCII is always greater)
                 // therefore, comparing the byte sequences directly produces the correct result.
                 return strA.StringAsBytes.SequenceCompareTo(strBAsBytes);
+            }
+
+            public static int CompareOrdinal(Span<byte> strA, ReadOnlySpan<char> aAsChars, UnmanagedString strB)
+            {
+                return -CompareOrdinal(strB, strA, aAsChars);
             }
 
             public int CompareTo(object other)

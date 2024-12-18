@@ -17,6 +17,7 @@
 
 using Lucene.Net.Store;
 using Lucene.Net.Util;
+using System;
 using IndexInput = Lucene.Net.Store.IndexInput;
 
 namespace Lucene.Net.Index
@@ -195,6 +196,16 @@ namespace Lucene.Net.Index
 	    {
 	        get { return termBuffer.ToTerm(); }
 	    }
+
+        public string Field
+        {
+            get { return termBuffer.Field; }
+        }
+
+        public Span<char> TextAsSpan
+        {
+            get { return termBuffer.TextAsSpan; }
+        }
 
 	    /// <summary>Returns the previous Term enumerated. Initially null.</summary>
 		public /*internal*/ Term Prev()

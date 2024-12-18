@@ -16,10 +16,13 @@
  */
 
 using System;
+using System.Buffers;
+using System.Text;
 using Lucene.Net.Store;
 using Lucene.Net.Support;
 using Lucene.Net.Util;
 using Lucene.Net.Util.Lucene4x;
+using static Lucene.Net.Util.UnmanagedStringArray;
 using Directory = Lucene.Net.Store.Directory;
 
 namespace Lucene.Net.Index
@@ -41,7 +44,7 @@ namespace Lucene.Net.Index
 		private readonly SegmentTermEnum origEnum;
 		private readonly long size;
 		
-		private Span<Term> indexTerms => _termsIndexCache.IndexTerms;
+		private UnmanagedIndexTerms unmanagedIndexTerms => _termsIndexCache.UnmanagedIndexTerms;
 		private Span<TermInfo> indexInfos => _termsIndexCache.InfoArray;
 		private Span<long> indexPointers =>_termsIndexCache.LongArray;
 		
@@ -189,26 +192,60 @@ namespace Lucene.Net.Index
 			}
 			return resources;
 		}
-		
+
 		/// <summary>Returns the offset of the greatest index entry which is less than or equal to term.</summary>
 		private int GetIndexOffset(Term term)
 		{
-			int lo = 0; // binary search indexTerms[]
-			int hi = indexTerms.Length - 1;
-			
-			while (hi >= lo)
-			{
-				int mid = Number.URShift((lo + hi), 1);
-				int delta = term.CompareTo(indexTerms[mid]);
-				if (delta < 0)
-					hi = mid - 1;
-				else if (delta > 0)
-					lo = mid + 1;
-				else
-					return mid;
-			}
-			return hi;
+			int lo = 0; // binary search unmanagedIndexTerms[]
+			int hi = unmanagedIndexTerms.Length - 1;
+
+            byte[] arr = null;
+            Span<byte> stringAsBytes = stackalloc byte[0]; // relax the compiler
+            var stringAsSpan = term.Text.AsSpan();
+            var strSize = (ushort)Encoding.UTF8.GetByteCount(stringAsSpan);
+            if (strSize <= 256) // allocate on the stack
+            {
+                stringAsBytes = stackalloc byte[strSize];
+            }
+            else
+            {
+                var pooledSize = BitUtil.NextHighestPowerOfTwo(strSize);
+                arr = ArrayPool<byte>.Shared.Rent(pooledSize);
+                stringAsBytes = new Span<byte>(arr, 0, strSize);
+            }
+
+            try
+            {
+                Encoding.UTF8.GetBytes(stringAsSpan, stringAsBytes);
+
+                while (hi >= lo)
+                {
+                    int mid = Number.URShift((lo + hi), 1);
+                    int delta = CompareTerms(term.Field, stringAsBytes, stringAsSpan, unmanagedIndexTerms[mid]);
+                    if (delta < 0)
+                        hi = mid - 1;
+                    else if (delta > 0)
+                        lo = mid + 1;
+                    else
+                        return mid;
+                }
+
+                return hi;
+            }
+            finally
+            {
+                if (arr != null)
+                    ArrayPool<byte>.Shared.Return(arr);
+            }
 		}
+
+        private static int CompareTerms(string field, Span<byte> stringAsBytes, ReadOnlySpan<char> stringAsChar, UnmanagedTerm unmanagedTerm)
+        {
+            if (ReferenceEquals(field, unmanagedTerm.Field))
+                return UnmanagedString.CompareOrdinal(stringAsBytes, stringAsChar, unmanagedTerm.Text);
+
+            return String.CompareOrdinal(field, unmanagedTerm.Field);
+        }
 		
 	    internal static Term DeepCopyOf(Term other)
 	    {
@@ -219,7 +256,7 @@ namespace Lucene.Net.Index
 
         private void SeekEnum(SegmentTermEnum enumerator, int indexOffset, IState state)
 		{
-			enumerator.Seek(indexPointers[indexOffset], ((long)indexOffset * totalIndexInterval) - 1, indexTerms[indexOffset], indexInfos[indexOffset], state);
+			enumerator.Seek(indexPointers[indexOffset], ((long)indexOffset * totalIndexInterval) - 1, unmanagedIndexTerms[indexOffset].ToTerm(), indexInfos[indexOffset], state);
 		}
 		
 		/// <summary>Returns the TermInfo for a Term in the set, or null. </summary>
@@ -256,7 +293,7 @@ namespace Lucene.Net.Index
 			if (enumerator.Term != null && ((enumerator.Prev() != null && term.CompareTo(enumerator.Prev()) > 0) || term.CompareTo(enumerator.Term) >= 0))
 			{
 				int enumOffset = (int) (enumerator.position / totalIndexInterval) + 1;
-				if (indexTerms.Length == enumOffset || term.CompareTo(indexTerms[enumOffset]) < 0)
+				if (unmanagedIndexTerms.Length == enumOffset || term.CompareTo(unmanagedIndexTerms[enumOffset]) < 0)
 				{
 					// no need to seek
 					
@@ -303,7 +340,7 @@ namespace Lucene.Net.Index
 						
 		private void  EnsureIndexIsRead()
 		{
-			if (indexTerms == null)
+			if (unmanagedIndexTerms == null)
 			{
 				throw new SystemException("terms index was not loaded when this reader was created");
 			}

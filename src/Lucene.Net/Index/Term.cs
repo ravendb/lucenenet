@@ -21,7 +21,6 @@ using StringHelper = Lucene.Net.Util.StringHelper;
 
 namespace Lucene.Net.Index
 {
-
     /// <summary>A Term represents a word from text.  This is the unit of search.  It is
     /// composed of two elements, the text of the word, as a string, and the name of
     /// the field that the text occured in, an interned string.
@@ -140,7 +139,16 @@ namespace Lucene.Net.Index
             
             return String.CompareOrdinal(field, other.field);
 		}
-		
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public int CompareTo(UnmanagedTerm other)
+        {
+            if (ReferenceEquals(field, other.Field))
+                return -other.Text.CompareTo(text);
+
+            return String.CompareOrdinal(field, other.Field);
+        }
+
         ///// <summary>Resets the field and text of a Term. </summary>
         //internal void  Set(System.String fld, System.String txt)
         //{
