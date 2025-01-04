@@ -251,11 +251,11 @@ namespace Lucene.Net.Messages
 		private static void  MakeAccessible(System.Reflection.FieldInfo field)
 		{
 #if !NETSTANDARD2_1
-            if (System.Security.SecurityManager.SecurityEnabled)
+            //if (System.Security.SecurityManager.SecurityEnabled)
 			{
 				//field.setAccessible(true);   // {{Aroush-2.9}} java.lang.reflect.AccessibleObject.setAccessible
 			}
-			else
+            //else
 			{
                 //AccessController.doPrivileged(new AnonymousClassPrivilegedAction(field));     // {{Aroush-2.9}} java.security.AccessController.doPrivileged
 			}

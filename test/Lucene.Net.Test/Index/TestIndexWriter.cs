@@ -2959,7 +2959,7 @@ namespace Lucene.Net.Index
                     for (int i = 0; i < frames.Length; i++)
                     {
                         System.Diagnostics.StackFrame sf = frames[i];
-                        if ("Abort".Equals(sf.GetMethod().Name) || "FlushDocument".Equals(sf.GetMethod().Name))
+                        if ("Abort".Equals(sf.GetMethod().Name) || "FlushDocument".Equals(sf.GetMethod().Name) || "FinishDocument".Equals(sf.GetMethod().Name))
                         {
                             if (onlyOnce)
                                 doFail = false;
