@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Drawing;
 using System.Text;
 using Lucene.Net.Index;
 using Lucene.Net.Util;
@@ -14,27 +13,27 @@ namespace Lucene.Net.Search
         [Test]
         public void Should_Find_All_Terms()
         {
-            var terms = new UnmanagedStringArray(11, startIndex: 1);
-
-            for (var letter = 'a'; letter <= 'j'; letter++)
+            using (var terms = new UnmanagedStringArray(11, startIndex: 1))
             {
-                terms.Add(new Span<char>(letter.ToString().ToCharArray()));
-            }
+                for (var letter = 'a'; letter <= 'j'; letter++)
+                {
+                    terms.Add(new Span<char>(letter.ToString().ToCharArray()));
+                }
 
-            for (var i = 1; i < terms.Length; i++)
-            {
-                var position = FieldComparator.BinarySearch(terms, terms[i]);
-                Assert.AreEqual(i, position);
-            }
+                for (var i = 1; i < terms.Length; i++)
+                {
+                    var position = FieldComparator.BinarySearch(terms, terms[i]);
+                    Assert.AreEqual(i, position);
+                }
 
-            VerifyNonExistingTerms(terms);
+                VerifyNonExistingTerms(terms);
+            }
         }
 
         [Test]
         public void Should_Find_With_Missing_Terms()
         {
             var terms = new UnmanagedStringArray(11, startIndex: 1);
-
             var count = 0;
             for (var letter = 'a'; letter <= 'j'; letter++)
             {
@@ -127,17 +126,19 @@ namespace Lucene.Net.Search
         [Test]
         public void Should_Find_Terms()
         {
-            var terms = new UnmanagedStringArray(char.MaxValue + 1, startIndex: 0);
-            for (int code = char.MinValue; code <= char.MaxValue; code++)
+            using (var terms = new UnmanagedStringArray(char.MaxValue + 1, startIndex: 0))
             {
-                char letter = (char)code;
-                terms.Add(new Span<char>([letter]));
-            }
+                for (int code = char.MinValue; code <= char.MaxValue; code++)
+                {
+                    char letter = (char)code;
+                    terms.Add(new Span<char>([letter]));
+                }
 
-            for (var i = 0; i < terms.Length; i++)
-            {
-                var position = FieldComparator.BinarySearch(terms, terms[i]);
-                Assert.AreEqual(i, position);
+                for (var i = 0; i < terms.Length; i++)
+                {
+                    var position = FieldComparator.BinarySearch(terms, terms[i]);
+                    Assert.AreEqual(i, position);
+                }
             }
         }
 
@@ -166,18 +167,20 @@ namespace Lucene.Net.Search
             var sortedStrings = new List<string>(uniqueStrings);
             sortedStrings.Sort(string.CompareOrdinal);
 
-            var terms = new UnmanagedStringArray(sortedStrings.Count + 1, startIndex: 0);
-            foreach (var str in sortedStrings)
+            using (var terms = new UnmanagedStringArray(sortedStrings.Count + 1, startIndex: 0))
             {
-                terms.Add(new Span<char>(str.ToCharArray()));
-            }
+                foreach (var str in sortedStrings)
+                {
+                    terms.Add(new Span<char>(str.ToCharArray()));
+                }
 
-            for (var i = 0; i < terms.Length; i++)
-            {
-                var position = FieldComparator.BinarySearch(terms, terms[i]);
-                Assert.AreEqual(i, position);
+                for (var i = 0; i < terms.Length; i++)
+                {
+                    var position = FieldComparator.BinarySearch(terms, terms[i]);
+                    Assert.AreEqual(i, position);
 
-                Assert.AreEqual(sortedStrings[i], terms[i].ToString());
+                    Assert.AreEqual(sortedStrings[i], terms[i].ToString());
+                }
             }
         }
 
@@ -206,18 +209,20 @@ namespace Lucene.Net.Search
             var sortedStrings = new List<string>(uniqueStrings);
             sortedStrings.Sort(string.CompareOrdinal);
 
-            var terms = new UnmanagedStringArray(sortedStrings.Count + 1, startIndex: 0);
-            foreach (var str in sortedStrings)
+            using (var terms = new UnmanagedStringArray(sortedStrings.Count + 1, startIndex: 0))
             {
-                terms.Add(new Span<char>(str.ToCharArray()));
-            }
+                foreach (var str in sortedStrings)
+                {
+                    terms.Add(new Span<char>(str.ToCharArray()));
+                }
 
-            for (var i = 0; i < terms.Length; i++)
-            {
-                var position = FieldComparator.BinarySearch(terms, terms[i]);
-                Assert.AreEqual(i, position);
+                for (var i = 0; i < terms.Length; i++)
+                {
+                    var position = FieldComparator.BinarySearch(terms, terms[i]);
+                    Assert.AreEqual(i, position);
 
-                Assert.AreEqual(sortedStrings[i], terms[i].ToString());
+                    Assert.AreEqual(sortedStrings[i], terms[i].ToString());
+                }
             }
         }
 
@@ -275,18 +280,20 @@ namespace Lucene.Net.Search
             var sortedStrings = new List<string>(uniqueStrings);
             sortedStrings.Sort(string.CompareOrdinal);
 
-            var terms = new UnmanagedStringArray(sortedStrings.Count + 1, startIndex: 0);
-            foreach (var str in sortedStrings)
+            using (var terms = new UnmanagedStringArray(sortedStrings.Count + 1, startIndex: 0))
             {
-                terms.Add(new Span<char>(str.ToCharArray()));
-            }
+                foreach (var str in sortedStrings)
+                {
+                    terms.Add(new Span<char>(str.ToCharArray()));
+                }
 
-            for (var i = 0; i < terms.Length; i++)
-            {
-                var position = FieldComparator.BinarySearch(terms, terms[i]);
-                Assert.AreEqual(i, position);
+                for (var i = 0; i < terms.Length; i++)
+                {
+                    var position = FieldComparator.BinarySearch(terms, terms[i]);
+                    Assert.AreEqual(i, position);
 
-                Assert.AreEqual(sortedStrings[i], terms[i].ToString());
+                    Assert.AreEqual(sortedStrings[i], terms[i].ToString());
+                }
             }
         }
 
@@ -401,33 +408,20 @@ namespace Lucene.Net.Search
             }
         }
 
-        private static unsafe void VerifyNonExistingTerms(UnmanagedStringArray terms)
+        private static void VerifyNonExistingTerms(UnmanagedStringArray terms)
         {
-            using (var segment = new Segment(10))
+            using (var internalTerms = new UnmanagedStringArray(3, startIndex: 0))
             {
                 const string smallerThan = "A";
                 const string biggerThan = "z";
 
-                var size = (ushort)Encoding.UTF8.GetByteCount(smallerThan);
-                var position = segment.Add(size);
-                Encoding.UTF8.GetBytes(smallerThan, new Span<byte>(position + sizeof(ushort), size));
-                var smallerUnmanagedString = new UnmanagedString
-                {
-                    Start = position
-                };
+                internalTerms.Add(smallerThan.ToCharArray());
+                internalTerms.Add(biggerThan.ToCharArray());
 
-                var result = FieldComparator.BinarySearch(terms, smallerUnmanagedString);
+                var result = FieldComparator.BinarySearch(terms, internalTerms[0]);
                 Assert.AreEqual(-2, result);
 
-                size = (ushort)Encoding.UTF8.GetByteCount(biggerThan);
-                position = segment.Add(size);
-                Encoding.UTF8.GetBytes(biggerThan, new Span<byte>(position + sizeof(ushort), size));
-                var biggerUnmanagedString = new UnmanagedString
-                {
-                    Start = position
-                };
-
-                result = FieldComparator.BinarySearch(terms, biggerUnmanagedString);
+                result = FieldComparator.BinarySearch(terms, internalTerms[1]);
                 Assert.AreEqual(-12, result);
             }
         }
