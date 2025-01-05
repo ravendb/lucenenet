@@ -162,25 +162,26 @@ namespace Lucene.Net.Util
                 if (other is string s)
                 {
                     byte[] arr = null;
-                    Span<byte> stringAsBytes = stackalloc byte[0]; // relax the compiler
+                    Span<byte> stringAsBytes;
                     var stringAsSpan = s.AsSpan();
 
-                    var size = (ushort)Encoding.UTF8.GetByteCount(stringAsSpan);
-
+                    var size = Encoding.UTF8.GetMaxByteCount(s.Length);
                     if (size <= 256) // allocate on the stack
                     {
-                        stringAsBytes = stackalloc byte[size];
+                        Span<byte> stackAlloc = stackalloc byte[size];
+                        Encoding.UTF8.TryGetBytes(stringAsSpan, stackAlloc, out var bytesWritten);
+                        stringAsBytes = stackAlloc.Slice(0, bytesWritten);
                     }
                     else
                     {
                         var pooledSize = BitUtil.NextHighestPowerOfTwo(size);
                         arr = ArrayPool<byte>.Shared.Rent(pooledSize);
-                        stringAsBytes = new Span<byte>(arr, 0, size);
+                        Encoding.UTF8.TryGetBytes(stringAsSpan, arr, out var bytesWritten);
+                        stringAsBytes = new Span<byte>(arr, 0, bytesWritten);
                     }
 
                     try
                     {
-                        Encoding.UTF8.GetBytes(stringAsSpan, stringAsBytes);
                         return CompareOrdinal(this, stringAsBytes, stringAsSpan);
                     }
                     finally
