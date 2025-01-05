@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Text;
 using Lucene.Net.Index;
 using Lucene.Net.Util;
@@ -120,6 +121,172 @@ namespace Lucene.Net.Search
             }
 
             VerifyNonExistingTerms(terms);
+        }
+
+        [Test]
+        public void Should_Find_Terms()
+        {
+            var terms = new UnmanagedStringArray(char.MaxValue + 1);
+            for (int code = char.MinValue; code <= char.MaxValue; code++)
+            {
+                char letter = (char)code;
+                terms.Add(new Span<char>([letter]));
+            }
+
+            for (var i = 0; i < terms.Length; i++)
+            {
+                var position = FieldComparator.BinarySearch(terms, terms[i]);
+                Assert.AreEqual(i, position);
+            }
+        }
+
+        [Test]
+        public void Should_Find_Terms_Random_Ascii_Strings()
+        {
+            var uniqueStrings = new HashSet<string>();
+            var random = new Random(Seed: 3117);
+
+            const int asciiStart = 0;
+            const int asciiEnd = 127;
+
+            while (uniqueStrings.Count < 64 * 1024)
+            {
+                var length = random.Next(1, 101);
+
+                var chars = new char[length];
+                for (var j = 0; j < length; j++)
+                {
+                    chars[j] = (char)random.Next(asciiStart, asciiEnd + 1);
+                }
+
+                uniqueStrings.Add(new string(chars));
+            }
+
+            var sortedStrings = new List<string>(uniqueStrings);
+            sortedStrings.Sort(string.CompareOrdinal);
+
+            var terms = new UnmanagedStringArray(sortedStrings.Count + 1);
+            foreach (var str in sortedStrings)
+            {
+                terms.Add(new Span<char>(str.ToCharArray()));
+            }
+
+            for (var i = 0; i < terms.Length; i++)
+            {
+                var position = FieldComparator.BinarySearch(terms, terms[i]);
+                Assert.AreEqual(i, position);
+
+                Assert.AreEqual(sortedStrings[i], terms[i].ToString());
+            }
+        }
+
+        [Test]
+        public void Should_Find_Terms_Random_Non_Ascii_Strings()
+        {
+            var uniqueStrings = new HashSet<string>();
+            var random = new Random(Seed: 3117);
+
+            const int unicodeStart = 0x0080;
+            const int unicodeEnd = 0xFFFF;
+
+            while (uniqueStrings.Count < 64 * 1024)
+            {
+                var length = random.Next(1, 101);
+
+                var chars = new char[length];
+                for (var j = 0; j < length; j++)
+                {
+                    chars[j] = (char)random.Next(unicodeStart, unicodeEnd + 1);
+                }
+
+                uniqueStrings.Add(new string(chars));
+            }
+
+            var sortedStrings = new List<string>(uniqueStrings);
+            sortedStrings.Sort(string.CompareOrdinal);
+
+            var terms = new UnmanagedStringArray(sortedStrings.Count + 1);
+            foreach (var str in sortedStrings)
+            {
+                terms.Add(new Span<char>(str.ToCharArray()));
+            }
+
+            for (var i = 0; i < terms.Length; i++)
+            {
+                var position = FieldComparator.BinarySearch(terms, terms[i]);
+                Assert.AreEqual(i, position);
+
+                Assert.AreEqual(sortedStrings[i], terms[i].ToString());
+            }
+        }
+
+        [Test]
+        public void Should_Find_Terms_Random_Strings()
+        {
+            var uniqueStrings = new HashSet<string>();
+            var random = new Random(Seed: 3117);
+
+            const int asciiStart = 0x00;
+            const int asciiEnd = 0x7F;
+
+            const int unicodeStart = 0x0080;
+            const int unicodeEnd = 0xFFFF;
+
+            while (uniqueStrings.Count < 64 * 1024)
+            {
+                var type = random.Next(3); // 0 = ASCII only, 1 = non-ASCII only, 2 = mixed
+
+                var length = random.Next(1, 101);
+                var chars = new char[length];
+
+                for (var j = 0; j < length; j++)
+                {
+                    switch (type)
+                    {
+                        case 0:
+                            // ascii only
+                            chars[j] = (char)random.Next(asciiStart, asciiEnd + 1);
+                            break;
+                        case 1:
+                            // non-ascii only
+                            chars[j] = (char)random.Next(unicodeStart, unicodeEnd + 1);
+                            break;
+                        default:
+                        {
+                            // randomly pick ascii or non-ascii for this character
+                            if (random.Next(2) == 0)
+                            {
+                                chars[j] = (char)random.Next(asciiStart, asciiEnd + 1);
+                            }
+                            else
+                            {
+                                chars[j] = (char)random.Next(unicodeStart, unicodeEnd + 1);
+                            }
+
+                            break;
+                        }
+                    }
+                }
+
+                uniqueStrings.Add(new string(chars));
+            }
+
+            var sortedStrings = new List<string>(uniqueStrings);
+            sortedStrings.Sort(string.CompareOrdinal);
+
+            var terms = new UnmanagedStringArray(sortedStrings.Count + 1);
+            foreach (var str in sortedStrings)
+            {
+                terms.Add(new Span<char>(str.ToCharArray()));
+            }
+
+            for (var i = 0; i < terms.Length; i++)
+            {
+                var position = FieldComparator.BinarySearch(terms, terms[i]);
+                Assert.AreEqual(i, position);
+
+                Assert.AreEqual(sortedStrings[i], terms[i].ToString());
+            }
         }
 
         private static unsafe void VerifyNonExistingTerms(UnmanagedStringArray terms)
