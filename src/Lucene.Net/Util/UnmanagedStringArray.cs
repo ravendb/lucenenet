@@ -31,19 +31,34 @@ namespace Lucene.Net.Util
                 Size = size;
             }
 
-            public void Add(ushort size, out byte* position)
+            public byte* Add(int size)
             {
-                position = CurrentPosition;
-                *(ushort*) CurrentPosition = size;
+                var position = CurrentPosition;
+                *(int*)CurrentPosition = size;
 
-                Used += sizeof(short) + size;
+                Used += sizeof(int) + size;
                 if (Used > Size)
                     ThrowOutOfRange(size);
+
+                return position;
             }
 
-            private void ThrowOutOfRange(ushort size)
+            public void Return(int amountToReturn)
             {
-                throw new ArgumentOutOfRangeException(nameof(Used),$"Requested:{size}, Used: {Used}, but my max size is {Size}");
+                Used -= amountToReturn;
+
+                if (Used < 0)
+                    ThrowUnderflow();
+            }
+
+            private void ThrowOutOfRange(int size)
+            {
+                throw new ArgumentOutOfRangeException(nameof(Used), $"Add operation failed: Requested size {size}, Used: {Used}, Max Size: {Size}");
+            }
+
+            private void ThrowUnderflow()
+            {
+                throw new InvalidOperationException($"Return operation failed: Memory usage underflow. Current Used: {Used}");
             }
 
             public void Dispose()
@@ -66,13 +81,15 @@ namespace Lucene.Net.Util
         {
             public byte* Start;
 
-            public int Size => IsNull ? 0 : *(ushort*) Start;
-            public Span<byte> StringAsBytes => new Span<byte>(Start + sizeof(ushort), Size);
+            public int Size => IsNull ? 0 : (*(int*)Start >> 1);
+            public bool StoredAsAscii => (*(int*)Start & 1) == 1;
+            public Span<byte> StringAsBytes => new Span<byte>(Start + sizeof(int), Size);
+            public Span<char> StringAsChars => new Span<char>(Start + sizeof(int), Size);
             public bool IsNull => Start == default;
             
             public override string ToString()
             {
-                return Encoding.UTF8.GetString(StringAsBytes);
+                return StoredAsAscii ? Encoding.UTF8.GetString(StringAsBytes) : new string(StringAsChars);
             }
 
             public static int CompareOrdinal(UnmanagedString strA, UnmanagedString strB)
@@ -86,32 +103,58 @@ namespace Lucene.Net.Util
                 if (strA.IsNull)
                     return -1;
 
-                return strA.StringAsBytes.SequenceCompareTo(strB.StringAsBytes);
+                return strA.StoredAsAscii switch
+                {
+                    true when strB.StoredAsAscii => strA.StringAsBytes.SequenceCompareTo(strB.StringAsBytes),
+                    false when strB.StoredAsAscii == false => strA.StringAsChars.SequenceCompareTo(strB.StringAsChars),
+                    false when strB.StoredAsAscii => CompareChars(strA.StringAsChars, strB.StringAsBytes),
+                    true when strB.StoredAsAscii == false => -CompareChars(strB.StringAsChars, strA.StringAsBytes),
+                    _ => ThrowNotHandledCase(strA, strB)
+                };
             }
 
-            public static int CompareOrdinal(UnmanagedString strA, Span<byte> strB)
+            private static int CompareChars(Span<char> stringAsChars, Span<byte> asciiAsBytes)
             {
-                if (strA.IsNull && strB == null)
-                    return 0;
+                var minLength = Math.Min(stringAsChars.Length, asciiAsBytes.Length);
 
-                if (strB == null)
-                    return 1;
+                for (var i = 0; i < minLength; i++)
+                {
+                    var utfChar = stringAsChars[i];
+                    var asciiChar = (char)asciiAsBytes[i];
 
+                    if (utfChar != asciiChar)
+                        return utfChar - asciiChar;
+                }
+
+                return stringAsChars.Length - asciiAsBytes.Length;
+            }
+
+            private static int ThrowNotHandledCase(UnmanagedString strA, UnmanagedString strB)
+            {
+                // shouldn't happen
+                throw new ArgumentOutOfRangeException($"strA stored as ascii {strA.StoredAsAscii}, strB stored as ascii {strB.StoredAsAscii}");
+            }
+
+            public static int CompareOrdinal(UnmanagedString strA, Span<byte> strBAsBytes, ReadOnlySpan<char> strBAsChars)
+            {
                 if (strA.IsNull)
                     return -1;
 
-                return strA.StringAsBytes.SequenceCompareTo(strB);
-            }
+                if (strA.StoredAsAscii == false)
+                    return strA.StringAsChars.SequenceCompareTo(strBAsChars);
 
-            public static int CompareOrdinal(Span<byte> strA, UnmanagedString strB)
-            {
-                return -CompareOrdinal(strB, strA);
+                // the following comparison works correctly for UTF-8 encoded strings when:
+                // - comparing ASCII characters (0-127) with each other (single byte comparison)
+                // - comparing ASCII with non-ASCII (ASCII uses single byte starting with '0',
+                //   while non-ASCII starts with bytes >=192, so non-ASCII is always greater)
+                // therefore, comparing the byte sequences directly produces the correct result.
+                return strA.StringAsBytes.SequenceCompareTo(strBAsBytes);
             }
 
             public int CompareTo(object other)
             {
                 if (other == null)
-                    return CompareOrdinal(this, null);
+                    return IsNull ? 0 : 1;
 
                 if (other is UnmanagedString us)
                     return CompareOrdinal(this, us);
@@ -122,7 +165,7 @@ namespace Lucene.Net.Util
                     Span<byte> stringAsBytes = stackalloc byte[0]; // relax the compiler
                     var stringAsSpan = s.AsSpan();
 
-                    var size = (ushort) Encoding.UTF8.GetByteCount(stringAsSpan);
+                    var size = (ushort)Encoding.UTF8.GetByteCount(stringAsSpan);
 
                     if (size <= 256) // allocate on the stack
                     {
@@ -138,7 +181,7 @@ namespace Lucene.Net.Util
                     try
                     {
                         Encoding.UTF8.GetBytes(stringAsSpan, stringAsBytes);
-                        return CompareOrdinal(this, stringAsBytes);
+                        return CompareOrdinal(this, stringAsBytes, stringAsSpan);
                     }
                     finally
                     {
@@ -155,11 +198,12 @@ namespace Lucene.Net.Util
         private List<Segment> _segments = new List<Segment>();
 
         public int Length => _index;
-        public int _index = 1;
+        public int _index;
 
-        public UnmanagedStringArray(int size)
+        public UnmanagedStringArray(int size, int startIndex)
         {
             _strings = new UnmanagedString[size];
+            _index = startIndex;
         }
 
         private Segment GetSegment(int size)
@@ -203,14 +247,37 @@ namespace Lucene.Net.Util
 
         public void Add(Span<char> str)
         {
-            var size = (ushort) Encoding.UTF8.GetByteCount(str);
-            var segment = GetSegment(size + sizeof(ushort));
+            // attempt to encode as ascii bytes
+            var sizeForBytes = str.Length + sizeof(int);  // assume 1 byte per char for ascii
+            var segment = GetSegment(sizeForBytes);
+            var pos = segment.Add(str.Length);
+            var outputByteBuffer = new Span<byte>(pos + sizeof(int), str.Length);
+            if (Encoding.UTF8.TryGetBytes(str, outputByteBuffer, out var bytesWritten))
+            {
+                // all characters are ascii, store as bytes
+                *((int*)pos) = bytesWritten << 1 | 1;  // 1 flag for ascii
+            }
+            else
+            {
+                // the destination was too small to contain all the encoded bytes
+                // which means that it contains non-ascii, revert and process as chars
+                segment.Return(sizeForBytes);
 
-            segment.Add(size, out var position);
+                var sizeForChars = str.Length * sizeof(char) + sizeof(int);
+                if (segment.Free < sizeForChars)
+                {
+                    segment = GetSegment(sizeForChars);
+                }
 
-            Encoding.UTF8.GetBytes(str, new Span<byte>(position + sizeof(ushort), size));
+                pos = segment.Add(str.Length * sizeof(char));
 
-            _strings[_index].Start = position;
+                var outputBuffer = new Span<char>(pos + sizeof(int), str.Length);
+                str.CopyTo(outputBuffer);
+
+                *((int*)pos) = str.Length << 1 | 0; // 0 flag for chars
+            }
+
+            _strings[_index].Start = pos;
             _index++;
         }
 

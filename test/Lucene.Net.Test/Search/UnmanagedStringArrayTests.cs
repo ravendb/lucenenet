@@ -1,5 +1,6 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Text;
 using Lucene.Net.Index;
 using Lucene.Net.Util;
@@ -13,7 +14,7 @@ namespace Lucene.Net.Search
         [Test]
         public void Should_Find_All_Terms()
         {
-            var terms = new UnmanagedStringArray(11);
+            var terms = new UnmanagedStringArray(11, startIndex: 1);
 
             for (var letter = 'a'; letter <= 'j'; letter++)
             {
@@ -32,7 +33,7 @@ namespace Lucene.Net.Search
         [Test]
         public void Should_Find_With_Missing_Terms()
         {
-            var terms = new UnmanagedStringArray(11);
+            var terms = new UnmanagedStringArray(11, startIndex: 1);
 
             var count = 0;
             for (var letter = 'a'; letter <= 'j'; letter++)
@@ -62,7 +63,7 @@ namespace Lucene.Net.Search
 
             VerifyNonExistingTerms(terms);
 
-            terms = new UnmanagedStringArray(11);
+            terms = new UnmanagedStringArray(11, startIndex: 1);
 
             for (var letter = 'a'; letter <= 'j'; letter++)
             {
@@ -89,7 +90,7 @@ namespace Lucene.Net.Search
 
             VerifyNonExistingTerms(terms);
 
-            terms = new UnmanagedStringArray(11);
+            terms = new UnmanagedStringArray(11, startIndex: 1);
 
             for (var letter = 'a'; letter <= 'j'; letter++)
             {
@@ -126,7 +127,7 @@ namespace Lucene.Net.Search
         [Test]
         public void Should_Find_Terms()
         {
-            var terms = new UnmanagedStringArray(char.MaxValue + 1);
+            var terms = new UnmanagedStringArray(char.MaxValue + 1, startIndex: 0);
             for (int code = char.MinValue; code <= char.MaxValue; code++)
             {
                 char letter = (char)code;
@@ -165,7 +166,7 @@ namespace Lucene.Net.Search
             var sortedStrings = new List<string>(uniqueStrings);
             sortedStrings.Sort(string.CompareOrdinal);
 
-            var terms = new UnmanagedStringArray(sortedStrings.Count + 1);
+            var terms = new UnmanagedStringArray(sortedStrings.Count + 1, startIndex: 0);
             foreach (var str in sortedStrings)
             {
                 terms.Add(new Span<char>(str.ToCharArray()));
@@ -205,7 +206,7 @@ namespace Lucene.Net.Search
             var sortedStrings = new List<string>(uniqueStrings);
             sortedStrings.Sort(string.CompareOrdinal);
 
-            var terms = new UnmanagedStringArray(sortedStrings.Count + 1);
+            var terms = new UnmanagedStringArray(sortedStrings.Count + 1, startIndex: 0);
             foreach (var str in sortedStrings)
             {
                 terms.Add(new Span<char>(str.ToCharArray()));
@@ -274,7 +275,7 @@ namespace Lucene.Net.Search
             var sortedStrings = new List<string>(uniqueStrings);
             sortedStrings.Sort(string.CompareOrdinal);
 
-            var terms = new UnmanagedStringArray(sortedStrings.Count + 1);
+            var terms = new UnmanagedStringArray(sortedStrings.Count + 1, startIndex: 0);
             foreach (var str in sortedStrings)
             {
                 terms.Add(new Span<char>(str.ToCharArray()));
@@ -289,6 +290,117 @@ namespace Lucene.Net.Search
             }
         }
 
+        [Test]
+        public unsafe void Compare_Unmanaged_Strings()
+        {
+            using (var terms = new UnmanagedStringArray(128, startIndex: 0))
+            {
+                const string word1 = "";
+                terms.Add(word1.ToCharArray());
+
+                var result = UnmanagedString.CompareOrdinal(terms[0], Span<byte>.Empty, Span<char>.Empty);
+                Assert.AreEqual(0, result);
+
+                result = UnmanagedString.CompareOrdinal(new UnmanagedString(), Span<byte>.Empty, Span<char>.Empty);
+                Assert.AreEqual(-1, result);
+
+                const string word2 = "גרישה";
+                terms.Add(word2.ToCharArray());
+
+                // we pass Span<byte>.Empty since we compare by chars and not by bytes
+                result = UnmanagedString.CompareOrdinal(terms[1], Span<byte>.Empty, "גרישה");
+                Assert.AreEqual(0, result);
+
+                result = UnmanagedString.CompareOrdinal(terms[1], Span<byte>.Empty, "כרמל");
+                Assert.True(result < 0);
+
+                result = UnmanagedString.CompareOrdinal(terms[1], Span<byte>.Empty, "אורן");
+                Assert.True(result > 0);
+
+                const string word3 = "zebra";
+                terms.Add(word3.ToCharArray());
+
+                // we pass Span<char>.Empty since we compare by bytes and not by chars
+                var toCompare1 = "גרישה";
+                var size = Encoding.UTF8.GetByteCount(toCompare1);
+                Span<byte> stringAsBytes = stackalloc byte[size];
+                Encoding.UTF8.GetBytes(toCompare1, stringAsBytes);
+                result = UnmanagedString.CompareOrdinal(terms[2], stringAsBytes, Span<char>.Empty);
+                Assert.True(result < 0);
+
+                var toCompare2 = "כרמל";
+                size = Encoding.UTF8.GetByteCount(toCompare2);
+                stringAsBytes = stackalloc byte[size];
+                Encoding.UTF8.GetBytes(toCompare2, stringAsBytes);
+                result = UnmanagedString.CompareOrdinal(terms[2], stringAsBytes, Span<char>.Empty);
+                Assert.True(result < 0);
+
+                var toCompare3 = "אורן";
+                size = Encoding.UTF8.GetByteCount(toCompare3);
+                stringAsBytes = stackalloc byte[size];
+                Encoding.UTF8.GetBytes(toCompare3, stringAsBytes);
+                result = UnmanagedString.CompareOrdinal(terms[2], stringAsBytes, Span<char>.Empty);
+                Assert.True(result < 0);
+
+                size = Encoding.UTF8.GetByteCount(word1);
+                stringAsBytes = stackalloc byte[size];
+                Encoding.UTF8.GetBytes(word1, stringAsBytes);
+                result = UnmanagedString.CompareOrdinal(terms[2], stringAsBytes, Span<char>.Empty);
+                Assert.True(result > 0);
+
+                size = Encoding.UTF8.GetByteCount(word2);
+                stringAsBytes = stackalloc byte[size];
+                Encoding.UTF8.GetBytes(word2, stringAsBytes);
+                result = UnmanagedString.CompareOrdinal(terms[2], stringAsBytes, Span<char>.Empty);
+                Assert.True(result < 0);
+
+                size = Encoding.UTF8.GetByteCount(word3);
+                stringAsBytes = stackalloc byte[size];
+                Encoding.UTF8.GetBytes(word3, stringAsBytes);
+                result = UnmanagedString.CompareOrdinal(terms[2], stringAsBytes, Span<char>.Empty);
+                Assert.AreEqual(0, result);
+
+                result = terms[0].CompareTo(toCompare1);
+                Assert.True(result < 0);
+                result = terms[0].CompareTo(toCompare2);
+                Assert.True(result < 0);
+                result = terms[0].CompareTo(toCompare3);
+                Assert.True(result < 0);
+                result = terms[0].CompareTo(word1);
+                Assert.AreEqual(0, result);
+                result = terms[0].CompareTo(word2);
+                Assert.True(result < 0);
+                result = terms[0].CompareTo(word3);
+                Assert.True(result < 0);
+
+                result = terms[1].CompareTo(toCompare1);
+                Assert.AreEqual(0, result);
+                result = terms[1].CompareTo(toCompare2);
+                Assert.True(result < 0);
+                result = terms[1].CompareTo(toCompare3);
+                Assert.True(result > 0);
+                result = terms[1].CompareTo(word1);
+                Assert.True(result > 0);
+                result = terms[1].CompareTo(word2);
+                Assert.AreEqual(0, result);
+                result = terms[1].CompareTo(word3);
+                Assert.True(result > 0);
+
+                result = terms[2].CompareTo(toCompare1);
+                Assert.True(result < 0);
+                result = terms[2].CompareTo(toCompare2);
+                Assert.True(result < 0);
+                result = terms[2].CompareTo(toCompare3);
+                Assert.True(result < 0);
+                result = terms[2].CompareTo(word1);
+                Assert.True(result > 0);
+                result = terms[2].CompareTo(word2);
+                Assert.True(result < 0);
+                result = terms[2].CompareTo(word3);
+                Assert.AreEqual(0, result);
+            }
+        }
+
         private static unsafe void VerifyNonExistingTerms(UnmanagedStringArray terms)
         {
             using (var segment = new Segment(10))
@@ -297,7 +409,7 @@ namespace Lucene.Net.Search
                 const string biggerThan = "z";
 
                 var size = (ushort)Encoding.UTF8.GetByteCount(smallerThan);
-                segment.Add(size, out var position);
+                var position = segment.Add(size);
                 Encoding.UTF8.GetBytes(smallerThan, new Span<byte>(position + sizeof(ushort), size));
                 var smallerUnmanagedString = new UnmanagedString
                 {
@@ -308,7 +420,7 @@ namespace Lucene.Net.Search
                 Assert.AreEqual(-2, result);
 
                 size = (ushort)Encoding.UTF8.GetByteCount(biggerThan);
-                segment.Add(size, out position);
+                position = segment.Add(size);
                 Encoding.UTF8.GetBytes(biggerThan, new Span<byte>(position + sizeof(ushort), size));
                 var biggerUnmanagedString = new UnmanagedString
                 {

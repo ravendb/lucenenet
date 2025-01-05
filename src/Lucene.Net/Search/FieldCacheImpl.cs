@@ -792,7 +792,7 @@ namespace Lucene.Net.Search
                 }
 
                 var length = reader.MaxDoc + 1;
-                UnmanagedStringArray mterms = new UnmanagedStringArray(length);
+                UnmanagedStringArray mterms = new UnmanagedStringArray(length, startIndex: 1);
                 TermDocs termDocs = reader.TermDocs(state);
                 
                 SegmentTermEnum termEnum = (SegmentTermEnum)reader.Terms(new Term(field), state);

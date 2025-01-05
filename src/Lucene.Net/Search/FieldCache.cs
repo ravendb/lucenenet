@@ -68,7 +68,7 @@ namespace Lucene.Net.Search
                 while (low <= high)
                 {
                     int mid = Number.URShift((low + high), 1);
-                    int cmp = UnmanagedStringArray.UnmanagedString.CompareOrdinal(lookup[mid], stringAsBytes);
+                    int cmp = UnmanagedStringArray.UnmanagedString.CompareOrdinal(lookup[mid], stringAsBytes, stringAsSpan);
 
                     if (cmp < 0)
                         low = mid + 1;
