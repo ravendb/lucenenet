@@ -307,9 +307,13 @@ namespace Lucene.Net.Search
 
                 var result = UnmanagedString.CompareOrdinal(terms[0], Span<byte>.Empty, Span<char>.Empty);
                 Assert.AreEqual(0, result);
+                result = UnmanagedString.CompareOrdinal(Span<byte>.Empty, Span<char>.Empty, terms[0]);
+                Assert.AreEqual(0, result);
 
                 result = UnmanagedString.CompareOrdinal(new UnmanagedString(), Span<byte>.Empty, Span<char>.Empty);
                 Assert.AreEqual(-1, result);
+                result = UnmanagedString.CompareOrdinal(Span<byte>.Empty, Span<char>.Empty, new UnmanagedString());
+                Assert.AreEqual(1, result);
 
                 const string word2 = "גרישה";
                 terms.Add(word2.ToCharArray());
@@ -317,12 +321,18 @@ namespace Lucene.Net.Search
                 // we pass Span<byte>.Empty since we compare by chars and not by bytes
                 result = UnmanagedString.CompareOrdinal(terms[1], Span<byte>.Empty, "גרישה");
                 Assert.AreEqual(0, result);
+                result = UnmanagedString.CompareOrdinal(Span<byte>.Empty, "גרישה", terms[1]);
+                Assert.AreEqual(0, result);
 
                 result = UnmanagedString.CompareOrdinal(terms[1], Span<byte>.Empty, "כרמל");
                 Assert.True(result < 0);
+                result = UnmanagedString.CompareOrdinal(Span<byte>.Empty, "כרמל", terms[1]);
+                Assert.True(result > 0);
 
                 result = UnmanagedString.CompareOrdinal(terms[1], Span<byte>.Empty, "אורן");
                 Assert.True(result > 0);
+                result = UnmanagedString.CompareOrdinal(Span<byte>.Empty, "אורן", terms[1]);
+                Assert.True(result < 0);
 
                 const string word3 = "zebra";
                 terms.Add(word3.ToCharArray());
@@ -334,6 +344,8 @@ namespace Lucene.Net.Search
                 Encoding.UTF8.GetBytes(toCompare1, stringAsBytes);
                 result = UnmanagedString.CompareOrdinal(terms[2], stringAsBytes, Span<char>.Empty);
                 Assert.True(result < 0);
+                result = UnmanagedString.CompareOrdinal(stringAsBytes, Span<char>.Empty, terms[2]);
+                Assert.True(result > 0);
 
                 var toCompare2 = "כרמל";
                 size = Encoding.UTF8.GetByteCount(toCompare2);
@@ -341,6 +353,8 @@ namespace Lucene.Net.Search
                 Encoding.UTF8.GetBytes(toCompare2, stringAsBytes);
                 result = UnmanagedString.CompareOrdinal(terms[2], stringAsBytes, Span<char>.Empty);
                 Assert.True(result < 0);
+                result = UnmanagedString.CompareOrdinal(stringAsBytes, Span<char>.Empty, terms[2]);
+                Assert.True(result > 0);
 
                 var toCompare3 = "אורן";
                 size = Encoding.UTF8.GetByteCount(toCompare3);
@@ -348,23 +362,31 @@ namespace Lucene.Net.Search
                 Encoding.UTF8.GetBytes(toCompare3, stringAsBytes);
                 result = UnmanagedString.CompareOrdinal(terms[2], stringAsBytes, Span<char>.Empty);
                 Assert.True(result < 0);
+                result = UnmanagedString.CompareOrdinal(stringAsBytes, Span<char>.Empty, terms[2]);
+                Assert.True(result > 0);
 
                 size = Encoding.UTF8.GetByteCount(word1);
                 stringAsBytes = stackalloc byte[size];
                 Encoding.UTF8.GetBytes(word1, stringAsBytes);
                 result = UnmanagedString.CompareOrdinal(terms[2], stringAsBytes, Span<char>.Empty);
                 Assert.True(result > 0);
+                result = UnmanagedString.CompareOrdinal(stringAsBytes, Span<char>.Empty, terms[2]);
+                Assert.True(result < 0);
 
                 size = Encoding.UTF8.GetByteCount(word2);
                 stringAsBytes = stackalloc byte[size];
                 Encoding.UTF8.GetBytes(word2, stringAsBytes);
                 result = UnmanagedString.CompareOrdinal(terms[2], stringAsBytes, Span<char>.Empty);
                 Assert.True(result < 0);
+                result = UnmanagedString.CompareOrdinal(stringAsBytes, Span<char>.Empty, terms[2]);
+                Assert.True(result > 0);
 
                 size = Encoding.UTF8.GetByteCount(word3);
                 stringAsBytes = stackalloc byte[size];
                 Encoding.UTF8.GetBytes(word3, stringAsBytes);
                 result = UnmanagedString.CompareOrdinal(terms[2], stringAsBytes, Span<char>.Empty);
+                Assert.AreEqual(0, result);
+                result = UnmanagedString.CompareOrdinal(stringAsBytes, Span<char>.Empty, terms[2]);
                 Assert.AreEqual(0, result);
 
                 result = terms[0].CompareTo(toCompare1);
@@ -411,7 +433,7 @@ namespace Lucene.Net.Search
         [Test]
         public void Compare_Various_Length_Unmanaged_Strings()
         {
-            using (var terms = new UnmanagedStringArray(64 * 4, startIndex: 0))
+            using (var terms = new UnmanagedStringArray(64 * 4, startIndex: 0, UnmanagedStringArray.Type.TermCache))
             {
                 var strings = new List<string>();
                 for (var i = 0; i < 64; i++)
