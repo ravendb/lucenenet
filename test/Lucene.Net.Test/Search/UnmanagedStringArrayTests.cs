@@ -408,6 +408,78 @@ namespace Lucene.Net.Search
             }
         }
 
+        [Test]
+        public void Compare_Various_Length_Unmanaged_Strings()
+        {
+            using (var terms = new UnmanagedStringArray(64 * 4, startIndex: 0))
+            {
+                var strings = new List<string>();
+                for (var i = 0; i < 64; i++)
+                {
+                    strings.Add(GenerateLargeString(32, isAscii: true));
+                    strings.Add(GenerateLargeString(32, isAscii: false));
+                    strings.Add(GenerateLargeString(300, isAscii: true));
+                    strings.Add(GenerateLargeString(300, isAscii: false));
+                }
+
+                strings.Sort(StringComparer.Ordinal);
+
+                foreach (var str in strings)
+                {
+                    terms.Add(str.ToCharArray());
+                }
+
+                for (var i = 0; i < strings.Count; i++)
+                {
+                    var result = terms[i].CompareTo(strings[i]);
+                    Assert.AreEqual(0, result);
+
+                    // check that all subsequent strings are greater
+                    for (var j = i + 1; j < strings.Count; j++)
+                    {
+                        result = terms[j].CompareTo(strings[i]);
+                        Assert.True(result > 0);
+                    }
+
+                    // check that all preceding strings are less
+                    for (var j = i - 1; j >= 0; j--)
+                    {
+                        result = terms[j].CompareTo(strings[i]);
+                        Assert.True(result < 0);
+                    }
+                }
+            }
+        }
+
+        private static string GenerateLargeString(int size, bool isAscii)
+        {
+            var builder = new StringBuilder(size);
+            var random = new Random();
+
+            for (int i = 0; i < size; i++)
+            {
+                if (isAscii)
+                {
+                    // Generate random ASCII character (printable range: 32 to 126)
+                    builder.Append((char)random.Next(32, 127));
+                }
+                else
+                {
+                    // Generate random non-ASCII character (Unicode range: 128 to 65535)
+                    // Skipping surrogate ranges (0xD800 to 0xDFFF) to avoid invalid strings
+                    int nonAsciiCodePoint;
+                    do
+                    {
+                        nonAsciiCodePoint = random.Next(128, 65536);
+                    } while (nonAsciiCodePoint >= 0xD800 && nonAsciiCodePoint <= 0xDFFF);
+
+                    builder.Append((char)nonAsciiCodePoint);
+                }
+            }
+
+            return builder.ToString();
+        }
+
         private static void VerifyNonExistingTerms(UnmanagedStringArray terms)
         {
             using (var internalTerms = new UnmanagedStringArray(3, startIndex: 0))
