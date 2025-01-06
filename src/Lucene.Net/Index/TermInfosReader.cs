@@ -194,30 +194,32 @@ namespace Lucene.Net.Index
 		}
 
 		/// <summary>Returns the offset of the greatest index entry which is less than or equal to term.</summary>
-		private int GetIndexOffset(Term term)
+		private unsafe int GetIndexOffset(Term term)
 		{
 			int lo = 0; // binary search unmanagedIndexTerms[]
 			int hi = unmanagedIndexTerms.Length - 1;
 
             byte[] arr = null;
-            Span<byte> stringAsBytes = stackalloc byte[0]; // relax the compiler
+            Span<byte> stringAsBytes;
             var stringAsSpan = term.Text.AsSpan();
-            var strSize = (ushort)Encoding.UTF8.GetByteCount(stringAsSpan);
+
+            var strSize = Encoding.UTF8.GetMaxByteCount(term.Text.Length);
             if (strSize <= 256) // allocate on the stack
             {
-                stringAsBytes = stackalloc byte[strSize];
+                Span<byte> stackAlloc = stackalloc byte[strSize];
+                Encoding.UTF8.TryGetBytes(stringAsSpan, stackAlloc, out var bytesWritten);
+                stringAsBytes = stackAlloc.Slice(0, bytesWritten);
             }
             else
             {
                 var pooledSize = BitUtil.NextHighestPowerOfTwo(strSize);
                 arr = ArrayPool<byte>.Shared.Rent(pooledSize);
-                stringAsBytes = new Span<byte>(arr, 0, strSize);
+                Encoding.UTF8.TryGetBytes(stringAsSpan, arr, out var bytesWritten);
+                stringAsBytes = new Span<byte>(arr, 0, bytesWritten);
             }
 
             try
             {
-                Encoding.UTF8.GetBytes(stringAsSpan, stringAsBytes);
-
                 while (hi >= lo)
                 {
                     int mid = Number.URShift((lo + hi), 1);
