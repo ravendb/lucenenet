@@ -193,11 +193,11 @@ namespace Lucene.Net.Index
 			return resources;
 		}
 
-		/// <summary>Returns the offset of the greatest index entry which is less than or equal to term.</summary>
-		private unsafe int GetIndexOffset(Term term)
-		{
-			int lo = 0; // binary search unmanagedIndexTerms[]
-			int hi = unmanagedIndexTerms.Length - 1;
+        /// <summary>Returns the offset of the greatest index entry which is less than or equal to term.</summary>
+        private unsafe int GetIndexOffset(Term term)
+        {
+            int lo = 0; // binary search unmanagedIndexTerms[]
+            int hi = unmanagedIndexTerms.Length - 1;
 
             byte[] arr = null;
             Span<byte> stringAsBytes;
@@ -239,7 +239,7 @@ namespace Lucene.Net.Index
                 if (arr != null)
                     ArrayPool<byte>.Shared.Return(arr);
             }
-		}
+        }
 
         private static int CompareTerms(string field, Span<byte> stringAsBytes, ReadOnlySpan<char> stringAsChar, UnmanagedTerm unmanagedTerm)
         {
