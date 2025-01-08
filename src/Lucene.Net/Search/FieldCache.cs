@@ -35,7 +35,7 @@ namespace Lucene.Net.Search
     /// <summary>Expert: Stores term text values and document ordering data. </summary>
     public class StringIndex
     {
-        public virtual int BinarySearchLookup(System.String key)
+        public virtual unsafe int BinarySearchLookup(System.String key)
         {
             // this special case is the reason that Arrays.binarySearch() isn't useful.
             if (key == null)
@@ -45,30 +45,30 @@ namespace Lucene.Net.Search
             int high = lookup.Length - 1;
 
             byte[] arr = null;
-            Span<byte> stringAsBytes = stackalloc byte[0]; // relax the compiler
+            Span<byte> stringAsBytes;
             var stringAsSpan = key.AsSpan();
 
-            var size = (ushort) Encoding.UTF8.GetByteCount(stringAsSpan);
-
+            var size = Encoding.UTF8.GetMaxByteCount(key.Length);
             if (size <= 256) // allocate on the stack
             {
-                stringAsBytes = stackalloc byte[size];
+                Span<byte> stackAlloc = stackalloc byte[size];
+                Encoding.UTF8.TryGetBytes(stringAsSpan, stackAlloc, out var bytesWritten);
+                stringAsBytes = stackAlloc.Slice(0, bytesWritten);
             }
             else
             {
                 var pooledSize = BitUtil.NextHighestPowerOfTwo(size);
                 arr = ArrayPool<byte>.Shared.Rent(pooledSize);
-                stringAsBytes = new Span<byte>(arr, 0, size);
+                Encoding.UTF8.TryGetBytes(stringAsSpan, arr, out var bytesWritten);
+                stringAsBytes = new Span<byte>(arr, 0, bytesWritten);
             }
 
             try
             {
-                Encoding.UTF8.GetBytes(stringAsSpan, stringAsBytes);
-
                 while (low <= high)
                 {
                     int mid = Number.URShift((low + high), 1);
-                    int cmp = UnmanagedStringArray.UnmanagedString.CompareOrdinal(lookup[mid], stringAsBytes);
+                    int cmp = UnmanagedStringArray.UnmanagedString.CompareOrdinal(lookup[mid], stringAsBytes, stringAsSpan);
 
                     if (cmp < 0)
                         low = mid + 1;
