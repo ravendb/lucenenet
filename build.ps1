@@ -19,12 +19,12 @@ $OUT_DIR = [io.path]::combine($PROJECT_DIR, "artifacts")
 
 $LUCENE_SRC_DIR = [io.path]::combine($PROJECT_DIR, "src", "Lucene.Net")
 $LUCENE_OUT_DIR = [io.path]::combine($PROJECT_DIR, "src", "Lucene.Net", "bin", "Release")
-$LUCENE_DLL_PATH = [io.path]::combine($LUCENE_OUT_DIR, "netstandard2.1", "Lucene.Net.dll")
+$LUCENE_DLL_PATH = [io.path]::combine($LUCENE_OUT_DIR, "net8.0", "Lucene.Net.dll")
 
 $LUCENE_SPATIAL_NTS_SRC_DIR = [io.path]::combine($PROJECT_DIR, "src", "contrib", "Lucene.Net.Contrib.Spatial.NTS")
 $LUCENE_SPATIAL_NTS_SRC_DIR_CSPROJ = [io.path]::combine($LUCENE_SPATIAL_NTS_SRC_DIR, "Lucene.Net.Contrib.Spatial.NTS.csproj")
 $LUCENE_SPATIAL_NTS_OUT_DIR = [io.path]::combine($PROJECT_DIR, "src", "contrib", "Lucene.Net.Contrib.Spatial.NTS", "bin", "Release")
-$LUCENE_SPATIAL_NTS_DLL_PATH = [io.path]::combine($LUCENE_SPATIAL_NTS_OUT_DIR, "netstandard2.1", "Lucene.Net.Contrib.Spatial.NTS.dll")
+$LUCENE_SPATIAL_NTS_DLL_PATH = [io.path]::combine($LUCENE_SPATIAL_NTS_OUT_DIR, "net8.0", "Lucene.Net.Contrib.Spatial.NTS.dll")
 
 New-Item -Path $RELEASE_DIR -Type Directory -Force
 CleanFiles $RELEASE_DIR
