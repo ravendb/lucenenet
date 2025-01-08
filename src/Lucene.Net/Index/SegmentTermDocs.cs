@@ -66,31 +66,34 @@ namespace Lucene.Net.Index
 			TermInfo ti = parent.core.GetTermsReader().Get(term, state);
 			Seek(ti, term, state);
 		}
-		
-		public virtual void  Seek(TermEnum termEnum, IState state)
-		{
-			TermInfo ti;
-			Term term;
-			
-			// use comparison of fieldinfos to verify that termEnum belongs to the same segment as this SegmentTermDocs
-			if (termEnum is SegmentTermEnum && ((SegmentTermEnum) termEnum).fieldInfos == parent.core.fieldInfos)
-			{
-				// optimized case
-				var segmentTermEnum = ((SegmentTermEnum) termEnum);
-				term = segmentTermEnum.Term;
-				ti = segmentTermEnum.TermInfo();
-			}
-			else
-			{
-				// punt case
-				term = termEnum.Term;
-				ti = parent.core.GetTermsReader().Get(term, state);
-			}
-			
-			Seek(ti, term, state);
-		}
-		
-		internal virtual void  Seek(TermInfo ti, Term term, IState state)
+
+        public virtual void Seek(TermEnum termEnum, IState state)
+        {
+            TermInfo ti;
+            Term term;
+
+            // use comparison of fieldinfos to verify that termEnum belongs to the same segment as this SegmentTermDocs
+            if (termEnum is SegmentTermEnum && ((SegmentTermEnum)termEnum).fieldInfos == parent.core.fieldInfos)
+            {
+                // optimized case
+                var segmentTermEnum = ((SegmentTermEnum)termEnum);
+
+                // we avoid using segmentTermEnum.Term because it materializes the term text into a string,
+                // which is unnecessary as the next step only requires the Field, and the Field is already interned.
+                term = new Term(segmentTermEnum.Field, txt: null, intern: false);
+                ti = segmentTermEnum.TermInfo();
+            }
+            else
+            {
+                // punt case
+                term = termEnum.Term;
+                ti = parent.core.GetTermsReader().Get(term, state);
+            }
+
+            Seek(ti, term, state);
+        }
+
+        internal virtual void  Seek(TermInfo ti, Term term, IState state)
 		{
 			count = 0;
 			FieldInfo fi = parent.core.fieldInfos.FieldInfo(term.Field);
