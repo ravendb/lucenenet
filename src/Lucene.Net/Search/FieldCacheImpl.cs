@@ -784,19 +784,14 @@ namespace Lucene.Net.Search
             {
                 System.String field = StringHelper.Intern(entryKey.field);
                 int[] retArray = new int[reader.MaxDoc];
-                int[] retArrayOrdered = new int[reader.MaxDoc];
-                for (int i = 0; i < retArrayOrdered.Length; i++)
-                {
-                    retArrayOrdered[i] = -1;
-                }
 
                 var length = reader.MaxDoc + 1;
-                UnmanagedStringArray mterms = new UnmanagedStringArray(length);
+                UnmanagedStringArray mterms = new UnmanagedStringArray(length, 1, UnmanagedStringArray.Type.Sorting);
                 TermDocs termDocs = reader.TermDocs(state);
                 
                 SegmentTermEnum termEnum = (SegmentTermEnum)reader.Terms(new Term(field), state);
                 int termNumber = 0; // current term number
-                int docIndex = 0;
+
                 // an entry for documents that have no terms in this field
                 // should a document with no terms be at top or bottom?
                 // this puts them at the top - if it is changed, FieldDocSortedHitQueue
@@ -815,11 +810,7 @@ namespace Lucene.Net.Search
                         while (termDocs.Next(state))
                         {
                             canAdd = true;
-                            var pt = retArray[termDocs.Doc];
                             retArray[termDocs.Doc] = termNumber;
-
-                            if (pt == 0)
-                                retArrayOrdered[docIndex++] = termDocs.Doc;
                         }
 
                         if (canAdd)
@@ -843,7 +834,7 @@ namespace Lucene.Net.Search
                     termEnum.Close();
                 }
 
-                StringIndex value_Renamed = new StringIndex(retArray, retArrayOrdered, mterms);
+                StringIndex value_Renamed = new StringIndex(retArray, mterms);
                 return value_Renamed;
             }
 
