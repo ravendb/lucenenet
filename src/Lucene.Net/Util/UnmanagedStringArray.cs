@@ -89,7 +89,7 @@ namespace Lucene.Net.Util
         {
             public byte* Start;
 
-            public int Size => IsNull ? 0 : (*(int*)Start >> 1);
+            public int Size => *(int*)Start >> 1;
             public bool StoredAsAscii => (*(int*)Start & 1) == 1;
             public Span<byte> StringAsBytes => new Span<byte>(Start + sizeof(int), Size);
             public Span<char> StringAsChars => new Span<char>(Start + sizeof(int), Size);
@@ -97,6 +97,9 @@ namespace Lucene.Net.Util
             
             public override string ToString()
             {
+                if (IsNull)
+                    return string.Empty;
+
                 return StoredAsAscii ? Encoding.UTF8.GetString(StringAsBytes) : new string(StringAsChars);
             }
 
