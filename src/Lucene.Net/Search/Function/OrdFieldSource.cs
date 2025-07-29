@@ -15,10 +15,10 @@
  * limitations under the License.
  */
 
-using System;
 using Lucene.Net.Store;
+using Lucene.Net.Util;
+using System;
 using IndexReader = Lucene.Net.Index.IndexReader;
-using FieldCache = Lucene.Net.Search.FieldCache;
 
 namespace Lucene.Net.Search.Function
 {
@@ -57,16 +57,18 @@ namespace Lucene.Net.Search.Function
 	{
 		private class AnonymousClassDocValues:DocValues
 		{
-			public AnonymousClassDocValues(int[] arr, OrdFieldSource enclosingInstance)
+			public AnonymousClassDocValues(IArray<int> arr, OrdFieldSource enclosingInstance)
 			{
 				InitBlock(arr, enclosingInstance);
 			}
-			private void  InitBlock(int[] arr, OrdFieldSource enclosingInstance)
+
+			private void InitBlock(IArray<int> arr, OrdFieldSource enclosingInstance)
 			{
 				this.arr = arr;
 				this.enclosingInstance = enclosingInstance;
 			}
-			private int[] arr;
+
+			private IArray<int> arr;
 			private OrdFieldSource enclosingInstance;
 			public OrdFieldSource Enclosing_Instance
 			{
@@ -79,13 +81,13 @@ namespace Lucene.Net.Search.Function
 			/*(non-Javadoc) <see cref="Lucene.Net.Search.Function.DocValues.floatVal(int) */
 			public override float FloatVal(int doc)
 			{
-				return (float) arr[doc];
+				return (float) arr.AsSpan()[doc];
 			}
 			/*(non-Javadoc) <see cref="Lucene.Net.Search.Function.DocValues.strVal(int) */
 			public override System.String StrVal(int doc)
 			{
 				// the string value of the ordinal, not the string itself
-				return System.Convert.ToString(arr[doc]);
+				return System.Convert.ToString(arr.AsSpan()[doc]);
 			}
 			/*(non-Javadoc) <see cref="Lucene.Net.Search.Function.DocValues.toString(int) */
 			public override System.String ToString(int doc)
@@ -118,7 +120,7 @@ namespace Lucene.Net.Search.Function
 		/*(non-Javadoc) <see cref="Lucene.Net.Search.Function.ValueSource.getValues(Lucene.Net.Index.IndexReader) */
 		public override DocValues GetValues(IndexReader reader, IState state)
 		{
-			int[] arr = Lucene.Net.Search.FieldCache_Fields.DEFAULT.GetStringIndex(reader, field, state).order;
+			var arr = Lucene.Net.Search.FieldCache_Fields.DEFAULT.GetStringIndex(reader, field, state).order;
 			return new AnonymousClassDocValues(arr, this);
 		}
 		

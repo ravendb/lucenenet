@@ -784,7 +784,7 @@ namespace Lucene.Net.Search
             protected internal override StringIndex CreateValue(IndexReader reader, Entry entryKey, IState state)
             {
                 System.String field = StringHelper.Intern(entryKey.field);
-                int[] retArray = new int[reader.MaxDoc];
+                var retArray = HybridArray.Create<int>(reader.MaxDoc, UnmanagedStringArray.Type.Sorting);
 
                 var length = reader.MaxDoc + 1;
                 UnmanagedStringArray mterms = new UnmanagedStringArray(length, 1, UnmanagedStringArray.Type.Sorting);
@@ -798,7 +798,9 @@ namespace Lucene.Net.Search
                 // this puts them at the top - if it is changed, FieldDocSortedHitQueue
                 // needs to change as well.
                 termNumber++;
-                
+
+                var span = retArray.AsSpan();
+
                 try
                 {
                     do 
@@ -811,7 +813,7 @@ namespace Lucene.Net.Search
                         while (termDocs.Next(state))
                         {
                             canAdd = true;
-                            retArray[termDocs.Doc] = termNumber;
+                            span[termDocs.Doc] = termNumber;
                         }
 
                         if (canAdd)
@@ -848,6 +850,7 @@ namespace Lucene.Net.Search
                         if (keyValuePair.Value is StringIndex si)
                         {
                             si.lookup.Dispose();
+                            si.order.Dispose();
                         }
                     }
                 }

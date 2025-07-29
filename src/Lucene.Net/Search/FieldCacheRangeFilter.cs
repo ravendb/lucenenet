@@ -89,7 +89,7 @@ namespace Lucene.Net.Search
                 }
                 internal override bool MatchDoc(int doc)
                 {
-                    return fcsi.order[doc] >= inclusiveLowerPoint && fcsi.order[doc] <= inclusiveUpperPoint;
+                    return fcsi.order.AsSpan()[doc] >= inclusiveLowerPoint && fcsi.order.AsSpan()[doc] <= inclusiveUpperPoint;
                 }
             }
             internal AnonymousClassFieldCacheRangeFilter(string field, Lucene.Net.Search.Parser parser, string lowerVal, string upperVal, bool includeLower, bool includeUpper)

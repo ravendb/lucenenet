@@ -90,10 +90,10 @@ namespace Lucene.Net.Search
         public UnmanagedStringArray lookup;
 
         /// <summary>For each document, an index into the lookup array. </summary>
-        public int[] order;
+        public IArray<int> order;
 
         /// <summary>Creates one of these objects </summary>
-        public StringIndex(int[] values, UnmanagedStringArray lookup)
+        public StringIndex(IArray<int> values, UnmanagedStringArray lookup)
         {
             this.order = values;
             this.lookup = lookup;

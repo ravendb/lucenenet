@@ -1,49 +1,38 @@
 using System;
-using System.Buffers;
 using System.Threading;
 using Lucene.Net.Store;
+using Lucene.Net.Util;
 
 namespace Lucene.Net.Index
 {
     public class ArrayHolder : IDisposable
     {
-        private readonly int _size;
         private readonly Directory _directory;
         private readonly string _name;
-        private readonly long[] _longArray;
-        private readonly TermInfo[] _termInfoArray;
+        private readonly IArray<long> _longArray;
+        private readonly IArray<TermInfo> _termInfoArray;
         private readonly UnmanagedIndexTerms _unmanagedIndexTerms;
 
         private int _usages;
         private long _managedAllocations;
 
-        public Span<long> LongArray => _longArray.AsSpan(0, _size);
-        public Span<TermInfo> InfoArray => _termInfoArray.AsSpan(0, _size);
+        public Span<long> LongArray => _longArray.AsSpan();
+        public Span<TermInfo> InfoArray => _termInfoArray.AsSpan();
         public UnmanagedIndexTerms UnmanagedIndexTerms => _unmanagedIndexTerms;
-        public int ActualArraySize => _longArray.Length;
 
         public static Action<long> OnArrayHolderCreated;
 
         public static Action<long> OnArrayHolderDisposed;
 
-        public const int ArrayPoolThreshold = 128 * 1024;
+        public long TotalManagedAllocations => _longArray.TotalManagedAllocations + _termInfoArray.TotalManagedAllocations + _unmanagedIndexTerms.TotalManagedAllocations;
 
         public ArrayHolder(int size, Directory directory, string name)
         {
-            _size = size;
             _directory = directory;
             _name = name;
 
-            if (size > ArrayPoolThreshold)
-            {
-                _longArray = new long[size];
-                _termInfoArray = new TermInfo[size];
-            }
-            else
-            {
-                _longArray = ArrayPool<long>.Shared.Rent(size);
-                _termInfoArray = ArrayPool<TermInfo>.Shared.Rent(size);
-            }
+            _longArray = HybridArray.Create<long>(size, UnmanagedStringArray.Type.TermCache);
+            _termInfoArray = HybridArray.Create<TermInfo>(size, UnmanagedStringArray.Type.TermCache);
 
             _unmanagedIndexTerms = new UnmanagedIndexTerms(size);
         }
@@ -68,19 +57,21 @@ namespace Lucene.Net.Index
                 int indexSize = 1 + ((int)indexEnum.size - 1) / indexDivisor; // otherwise read index
 
                 var holder = new ArrayHolder(indexSize, directory, name);
+                var infoArraySpan = holder.InfoArray;
+                var longArraySpan = holder.LongArray;
 
                 for (int i = 0; indexEnum.Next(state); i++)
                 {
                     holder.UnmanagedIndexTerms.Add(i, indexEnum.Field, indexEnum.TextAsSpan);
-                    holder.InfoArray[i] = indexEnum.TermInfo();
-                    holder.LongArray[i] = indexEnum.indexPointer;
+                    infoArraySpan[i] = indexEnum.TermInfo();
+                    longArraySpan[i] = indexEnum.indexPointer;
 
                     for (int j = 1; j < indexDivisor; j++)
                         if (!indexEnum.Next(state))
                             break;
                 }
 
-                holder._managedAllocations = (holder.ActualArraySize * (TermInfo.SizeOf + sizeof(long)));
+                holder._managedAllocations = holder.TotalManagedAllocations;
 
                 OnArrayHolderCreated?.Invoke(holder._managedAllocations);
 
@@ -98,18 +89,12 @@ namespace Lucene.Net.Index
         {
             GC.SuppressFinalize(this);
 
-            OnArrayHolderDisposed?.Invoke(_managedAllocations);
-
-            _unmanagedIndexTerms?.Dispose();
-
-            if (_size > ArrayPoolThreshold)
-                return;
-
-            if (_longArray != null)
-                ArrayPool<long>.Shared.Return(_longArray);
-
-            if (_termInfoArray != null)
-                ArrayPool<TermInfo>.Shared.Return(_termInfoArray);
+            using (_unmanagedIndexTerms)
+            using (_longArray)
+            using (_termInfoArray)
+            {
+                OnArrayHolderDisposed?.Invoke(_managedAllocations);
+            }
         }
 
         ~ArrayHolder()
