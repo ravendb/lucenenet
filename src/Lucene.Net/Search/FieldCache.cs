@@ -577,7 +577,7 @@ namespace Lucene.Net.Search
         /// <returns> The values in the given field for each document.
         /// </returns>
         /// <throws>  IOException If any error occurs. </throws>
-        double[] GetDoubles(IndexReader reader, System.String field, IState state);
+        IArray<double> GetDoubles(IndexReader reader, System.String field, IState state);
 
         /// <summary> Checks the internal cache for an appropriate entry, and if none is found,
         /// reads the terms in <c>field</c> as doubles and returns an array of
@@ -594,7 +594,7 @@ namespace Lucene.Net.Search
         /// <returns> The values in the given field for each document.
         /// </returns>
         /// <throws>  IOException If any error occurs. </throws>
-        double[] GetDoubles(IndexReader reader, System.String field, DoubleParser parser, IState state);
+        IArray<double> GetDoubles(IndexReader reader, System.String field, DoubleParser parser, IState state);
 
         /// <summary>Checks the internal cache for an appropriate entry, and if none
         /// is found, reads the term values in <c>field</c> and returns an array

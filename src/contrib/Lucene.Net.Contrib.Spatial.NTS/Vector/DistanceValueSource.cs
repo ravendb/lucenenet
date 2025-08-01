@@ -21,6 +21,7 @@ using Lucene.Net.Search;
 using Lucene.Net.Search.Function;
 using Lucene.Net.Spatial.Util;
 using Lucene.Net.Store;
+using Lucene.Net.Util;
 using Spatial4n.Distance;
 using Spatial4n.Shapes;
 
@@ -44,7 +45,7 @@ namespace Lucene.Net.Spatial.Vector
 		{
 			private readonly DistanceValueSource enclosingInstance;
 
-			private readonly double[] ptX, ptY;
+			private readonly IArray<double> ptX, ptY;
 			private readonly IBits validX, validY;
 
             private readonly IPoint from;
@@ -76,7 +77,7 @@ namespace Lucene.Net.Spatial.Vector
 				if (validX.Get(doc))
 				{
 				    Debug.Assert(validY.Get(doc));
-					return calculator.Distance(from, ptX[doc], ptY[doc]);
+					return calculator.Distance(from, ptX.AsSpanReadOnlySpan()[doc], ptY.AsSpanReadOnlySpan()[doc]);
 				}
 				return nullValue;
 			}

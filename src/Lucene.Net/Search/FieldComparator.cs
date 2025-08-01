@@ -275,7 +275,7 @@ namespace Lucene.Net.Search
 		public sealed class DoubleComparator:FieldComparator
 		{
 			private double[] values;
-			private double[] currentReaderValues;
+			private IArray<double> currentReaderValues;
 			private System.String field;
 			private DoubleParser parser;
 			private double bottom;
@@ -307,7 +307,7 @@ namespace Lucene.Net.Search
 			
 			public override int CompareBottom(int doc, IState state)
 			{
-				double v2 = currentReaderValues[doc];
+				double v2 = currentReaderValues.AsSpanReadOnlySpan()[doc];
 				if (bottom > v2)
 				{
 					return 1;
@@ -324,7 +324,7 @@ namespace Lucene.Net.Search
 			
 			public override void  Copy(int slot, int doc, IState state)
 			{
-				values[slot] = currentReaderValues[doc];
+				values[slot] = currentReaderValues.AsSpanReadOnlySpan()[doc];
 			}
 			
 			public override void  SetNextReader(IndexReader reader, int docBase, IState state)

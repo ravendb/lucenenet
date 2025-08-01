@@ -80,6 +80,7 @@ namespace Lucene.Net.Search
                 {
                     using (_stringIndexCache)
                     using (_longCache)
+                    using (_doubleCache)
                     {
                     }
                 });
@@ -690,24 +691,24 @@ namespace Lucene.Net.Search
         
         
         // inherit javadocs
-        public virtual double[] GetDoubles(IndexReader reader, System.String field, IState state)
+        public virtual IArray<double> GetDoubles(IndexReader reader, System.String field, IState state)
         {
             return GetDoubles(reader, field, null, state);
         }
         
         // inherit javadocs
-        public virtual double[] GetDoubles(IndexReader reader, System.String field, Lucene.Net.Search.DoubleParser parser, IState state)
+        public virtual IArray<double> GetDoubles(IndexReader reader, System.String field, Lucene.Net.Search.DoubleParser parser, IState state)
         {
             return _doubleCache.Get(reader, new Entry(field, parser), state);
         }
         
-        internal sealed class DoubleCache:Cache<double[]>
+        internal sealed class DoubleCache : Cache<IArray<double>>, IDisposable
         {
             internal DoubleCache(FieldCache wrapper):base(wrapper)
             {
             }
             
-            protected internal override double[] CreateValue(IndexReader reader, Entry entryKey, IState state)
+            protected internal override IArray<double> CreateValue(IndexReader reader, Entry entryKey, IState state)
             {
                 Entry entry = entryKey;
                 System.String field = entry.field;
@@ -723,9 +724,11 @@ namespace Lucene.Net.Search
                         return wrapper.GetDoubles(reader, field, Lucene.Net.Search.FieldCache_Fields.NUMERIC_UTILS_DOUBLE_PARSER, state);
                     }
                 }
-                double[] retArray = null;
+
+                var retArray = HybridArray.Create<double>(reader.MaxDoc, UnmanagedStringArray.Type.Sorting);
                 TermDocs termDocs = reader.TermDocs(state);
                 TermEnum termEnum = reader.Terms(new Term(field), state);
+
                 try
                 {
                     do 
@@ -734,13 +737,10 @@ namespace Lucene.Net.Search
                         if (term == null || (System.Object) term.Field != (System.Object) field)
                             break;
                         double termval = parser.ParseDouble(term.Text);
-                        if (retArray == null)
-                        // late init
-                            retArray = new double[reader.MaxDoc];
                         termDocs.Seek(termEnum, state);
                         while (termDocs.Next(state))
                         {
-                            retArray[termDocs.Doc] = termval;
+                            retArray.AsSpan()[termDocs.Doc] = termval;
                         }
                     }
                     while (termEnum.Next(state));
@@ -753,10 +753,22 @@ namespace Lucene.Net.Search
                     termDocs.Close();
                     termEnum.Close();
                 }
-                if (retArray == null)
-                // no values
-                    retArray = new double[reader.MaxDoc];
+
                 return retArray;
+            }
+
+            public void Dispose()
+            {
+                foreach (var keyValue in readerCache)
+                {
+                    foreach (var keyValuePair in keyValue.Value)
+                    {
+                        if (keyValuePair.Value is IArray<double> array)
+                        {
+                            array.Dispose();
+                        }
+                    }
+                }
             }
         }
         

@@ -75,7 +75,7 @@ namespace Lucene.Net.Search
 				System.IO.MemoryStream bos = new System.IO.MemoryStream(1024);
                 System.IO.StreamWriter writer = new System.IO.StreamWriter(bos);
 				cache.InfoStream = writer;
-				double[] doubles = cache.GetDoubles(reader, "theDouble", null);
+				IArray<double> doubles = cache.GetDoubles(reader, "theDouble", null);
 				float[] floats = cache.GetFloats(reader, "theDouble", null);
                 writer.Flush();
 			    bos.Position = 0;
@@ -95,13 +95,13 @@ namespace Lucene.Net.Search
 		public virtual void  Test()
 		{
 			FieldCache cache = Lucene.Net.Search.FieldCache_Fields.DEFAULT;
-			double[] doubles = cache.GetDoubles(reader, "theDouble", null);
+			IArray<double> doubles = cache.GetDoubles(reader, "theDouble", null);
 			Assert.AreSame(doubles, cache.GetDoubles(reader, "theDouble", null), "Second request to cache return same array");
 			Assert.AreSame(doubles, cache.GetDoubles(reader, "theDouble", Lucene.Net.Search.FieldCache_Fields.DEFAULT_DOUBLE_PARSER, null), "Second request with explicit parser return same array");
 			Assert.IsTrue(doubles.Length == NUM_DOCS, "doubles Size: " + doubles.Length + " is not: " + NUM_DOCS);
 			for (int i = 0; i < doubles.Length; i++)
 			{
-				Assert.IsTrue(doubles[i] == (System.Double.MaxValue - i), doubles[i] + " does not equal: " + (System.Double.MaxValue - i));
+				Assert.IsTrue(doubles.AsSpanReadOnlySpan()[i] == (System.Double.MaxValue - i), doubles.AsSpanReadOnlySpan()[i] + " does not equal: " + (System.Double.MaxValue - i));
 			}
 			
 			IArray<long> longs = cache.GetLongs(reader, (string) "theLong", (IState) null);
