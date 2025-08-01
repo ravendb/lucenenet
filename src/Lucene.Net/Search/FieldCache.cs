@@ -544,7 +544,7 @@ namespace Lucene.Net.Search
         /// <returns> The values in the given field for each document.
         /// </returns>
         /// <throws>  java.io.IOException If any error occurs. </throws>
-        long[] GetLongs(IndexReader reader, System.String field, IState state);
+        IArray<long> GetLongs(IndexReader reader, System.String field, IState state);
 
         /// <summary> Checks the internal cache for an appropriate entry, and if none is found,
         /// reads the terms in <c>field</c> as longs and returns an array of
@@ -561,7 +561,7 @@ namespace Lucene.Net.Search
         /// <returns> The values in the given field for each document.
         /// </returns>
         /// <throws>  IOException If any error occurs. </throws>
-        long[] GetLongs(IndexReader reader, System.String field, LongParser parser, IState state);
+        IArray<long> GetLongs(IndexReader reader, System.String field, LongParser parser, IState state);
 
 
         /// <summary> Checks the internal cache for an appropriate entry, and if none is

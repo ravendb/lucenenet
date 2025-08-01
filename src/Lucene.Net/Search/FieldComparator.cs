@@ -509,7 +509,7 @@ namespace Lucene.Net.Search
 		public sealed class LongComparator:FieldComparator
 		{
 			private long[] values;
-			private long[] currentReaderValues;
+			private IArray<long> currentReaderValues;
 			private System.String field;
 			private LongParser parser;
 			private long bottom;
@@ -545,7 +545,7 @@ namespace Lucene.Net.Search
 			{
 				// TODO: there are sneaky non-branch ways to compute
 				// -1/+1/0 sign
-				long v2 = currentReaderValues[doc];
+				long v2 = currentReaderValues.AsSpanReadOnlySpan()[doc];
 				if (bottom > v2)
 				{
 					return 1;
@@ -562,7 +562,7 @@ namespace Lucene.Net.Search
 			
 			public override void  Copy(int slot, int doc, IState state)
 			{
-				values[slot] = currentReaderValues[doc];
+				values[slot] = currentReaderValues.AsSpanReadOnlySpan()[doc];
 			}
 			
 			public override void  SetNextReader(IndexReader reader, int docBase, IState state)
