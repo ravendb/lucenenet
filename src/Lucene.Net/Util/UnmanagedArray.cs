@@ -24,11 +24,18 @@ public unsafe class UnmanagedArray<T> : IArray<T> where T : unmanaged
         AsSpan().Clear();
     }
 
+    public int Length => _length;
+
     public int TotalManagedAllocations => 0;
 
     public Span<T> AsSpan()
     {
         return new Span<T>(_ptr, _length);
+    }
+
+    public ReadOnlySpan<T> AsSpanReadOnlySpan()
+    {
+        return new ReadOnlySpan<T>(_ptr, _length);
     }
 
     public void Dispose()

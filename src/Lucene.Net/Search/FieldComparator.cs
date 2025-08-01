@@ -835,7 +835,7 @@ namespace Lucene.Net.Search
 			public override int CompareBottom(int doc, IState state)
 			{
 				System.Diagnostics.Debug.Assert(bottomSlot != - 1);
-				int order = this.order.AsSpan()[doc];
+				int order = this.order.AsSpanReadOnlySpan()[doc];
 				int cmp = bottomOrd - order;
 				if (cmp != 0)
 				{
@@ -901,7 +901,7 @@ namespace Lucene.Net.Search
 			
 			public override void  Copy(int slot, int doc, IState state)
 			{
-				int ord = order.AsSpan()[doc];
+				int ord = order.AsSpanReadOnlySpan()[doc];
 				ords[slot] = ord;
 				System.Diagnostics.Debug.Assert(ord >= 0);
                 values[slot] = lookup[ord];

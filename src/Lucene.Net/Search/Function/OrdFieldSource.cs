@@ -81,13 +81,13 @@ namespace Lucene.Net.Search.Function
 			/*(non-Javadoc) <see cref="Lucene.Net.Search.Function.DocValues.floatVal(int) */
 			public override float FloatVal(int doc)
 			{
-				return (float) arr.AsSpan()[doc];
+				return (float) arr.AsSpanReadOnlySpan()[doc];
 			}
 			/*(non-Javadoc) <see cref="Lucene.Net.Search.Function.DocValues.strVal(int) */
 			public override System.String StrVal(int doc)
 			{
 				// the string value of the ordinal, not the string itself
-				return System.Convert.ToString(arr.AsSpan()[doc]);
+				return System.Convert.ToString(arr.AsSpanReadOnlySpan()[doc]);
 			}
 			/*(non-Javadoc) <see cref="Lucene.Net.Search.Function.DocValues.toString(int) */
 			public override System.String ToString(int doc)

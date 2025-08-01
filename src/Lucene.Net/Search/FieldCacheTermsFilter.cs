@@ -192,7 +192,7 @@ namespace Lucene.Net.Search
 				{
 					try
 					{
-						while (!Enclosing_Instance.openBitSet.FastGet(Enclosing_Instance.fcsi.order.AsSpan()[++doc]))
+						while (!Enclosing_Instance.openBitSet.FastGet(Enclosing_Instance.fcsi.order.AsSpanReadOnlySpan()[++doc]))
 						{
 						}
 					}
@@ -208,7 +208,7 @@ namespace Lucene.Net.Search
 					try
 					{
 						doc = target;
-						while (!Enclosing_Instance.openBitSet.FastGet(Enclosing_Instance.fcsi.order.AsSpan()[doc]))
+						while (!Enclosing_Instance.openBitSet.FastGet(Enclosing_Instance.fcsi.order.AsSpanReadOnlySpan()[doc]))
 						{
 							doc++;
 						}

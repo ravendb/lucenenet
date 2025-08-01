@@ -4,7 +4,6 @@ using System.Buffers;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Text;
-using Lucene.Net.Index;
 
 namespace Lucene.Net.Util
 {
@@ -314,13 +313,13 @@ namespace Lucene.Net.Util
                 return;
             }
 
-            _strings.AsSpan()[_index].Start = _strings.AsSpan()[_index - 1].Start;
+            _strings.AsSpan()[_index].Start = _strings.AsSpanReadOnlySpan()[_index - 1].Start;
             _index++;
         }
 
         public UnmanagedString this[int position]
         {
-            get => _strings.AsSpan()[position];
+            get => _strings.AsSpanReadOnlySpan()[position];
         }
 
         public void Dispose()
