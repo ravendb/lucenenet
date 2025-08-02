@@ -28,6 +28,7 @@ namespace Lucene.Net.Index
 	{
 		
 		private System.String field;
+		private int fieldNumber;
 		private Term term; // cached
 		private bool preUTF8Strings; // true if strings are stored in modified UTF8 encoding (LUCENE-510)
 		private bool dirty; // true if text was set externally (ie not read via UTF8 bytes)
@@ -37,6 +38,7 @@ namespace Lucene.Net.Index
 
         public Span<char> TextAsSpan => new Span<char>(text.result, 0, text.length);
         public string Field => field;
+        public int FieldNumber => fieldNumber;
 
 		public int CompareTo(TermBuffer other)
 		{
@@ -102,8 +104,10 @@ namespace Lucene.Net.Index
 					UnicodeUtil.UTF8toUTF16(bytes.result, start, length, text);
 				}
 			}
-			this.field = fieldInfos.FieldName(input.ReadVInt(state));
-		}
+
+            this.fieldNumber = input.ReadVInt(state);
+            this.field = fieldInfos.FieldName(fieldNumber);
+        }
 		
 		public void  Set(Term term)
 		{

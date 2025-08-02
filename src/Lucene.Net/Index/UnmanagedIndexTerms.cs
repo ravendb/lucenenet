@@ -1,43 +1,42 @@
-using System;
-using System.Buffers;
 using Lucene.Net.Util;
+using System;
 
 namespace Lucene.Net.Index
 {
     public class UnmanagedIndexTerms : IDisposable
     {
-        private readonly string[] _fields; // fields are interned
+        private readonly FieldInfos _fieldInfos;
+        private readonly IArray<int> _fieldNumber;
         private readonly UnmanagedStringArray _text;
-
-        private static readonly int ReferenceSize = IntPtr.Size == sizeof(int) ? 4 : 8;
 
         public int Length => _text.Length;
 
-        public long TotalManagedAllocations => _text.TotalManagedAllocations + _fields.Length * ReferenceSize;
+        public long TotalManagedAllocations => _text.TotalManagedAllocations + _fieldNumber.TotalManagedAllocations;
 
-        public UnmanagedIndexTerms(int size)
+        public UnmanagedIndexTerms(int size, FieldInfos fieldInfos)
         {
-            _fields = ArrayPool<string>.Shared.Rent(size);
+            _fieldInfos = fieldInfos;
+            _fieldNumber = HybridArray.Create<int>(size, UnmanagedStringArray.Type.TermCache);
             _text = new UnmanagedStringArray(size, 0, UnmanagedStringArray.Type.TermCache);
         }
 
-        public void Add(int index, string field, Span<char> textAsSpan)
+        public void Add(int index, int fieldNumber, Span<char> textAsSpan)
         {
-            _fields[index] = field;
+            _fieldNumber.AsSpan()[index] = fieldNumber;
             _text.Add(textAsSpan);
         }
 
         public UnmanagedTerm this[int position]
         {
-            get => new UnmanagedTerm(_fields[position], _text[position]);
+            get => new UnmanagedTerm(_fieldInfos.FieldName(_fieldNumber.AsSpanReadOnlySpan()[position]), _text[position]);
         }
 
         public void Dispose()
         {
-            _text?.Dispose();
-
-            if (_fields != null)
-                ArrayPool<string>.Shared.Return(_fields, clearArray: true);
+            using (_fieldNumber)
+            using (_text)
+            {
+            }
         }
     }
 }

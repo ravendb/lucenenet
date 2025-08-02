@@ -202,6 +202,11 @@ namespace Lucene.Net.Index
             get { return termBuffer.Field; }
         }
 
+        public int FieldNumber
+        {
+            get { return termBuffer.FieldNumber; }
+        }
+
         public Span<char> TextAsSpan
         {
             get { return termBuffer.TextAsSpan; }

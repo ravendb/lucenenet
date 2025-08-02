@@ -26,7 +26,7 @@ namespace Lucene.Net.Index
 
         public long TotalManagedAllocations => _longArray.TotalManagedAllocations + _termInfoArray.TotalManagedAllocations + _unmanagedIndexTerms.TotalManagedAllocations;
 
-        public ArrayHolder(int size, Directory directory, string name)
+        public ArrayHolder(int size, Directory directory, string name, FieldInfos fieldInfos)
         {
             _directory = directory;
             _name = name;
@@ -34,7 +34,7 @@ namespace Lucene.Net.Index
             _longArray = HybridArray.Create<long>(size, UnmanagedStringArray.Type.TermCache);
             _termInfoArray = HybridArray.Create<TermInfo>(size, UnmanagedStringArray.Type.TermCache);
 
-            _unmanagedIndexTerms = new UnmanagedIndexTerms(size);
+            _unmanagedIndexTerms = new UnmanagedIndexTerms(size, fieldInfos);
         }
 
         public void AddRef()
@@ -56,13 +56,13 @@ namespace Lucene.Net.Index
             {
                 int indexSize = 1 + ((int)indexEnum.size - 1) / indexDivisor; // otherwise read index
 
-                var holder = new ArrayHolder(indexSize, directory, name);
+                var holder = new ArrayHolder(indexSize, directory, name, fieldInfos);
                 var infoArraySpan = holder.InfoArray;
                 var longArraySpan = holder.LongArray;
 
                 for (int i = 0; indexEnum.Next(state); i++)
                 {
-                    holder.UnmanagedIndexTerms.Add(i, indexEnum.Field, indexEnum.TextAsSpan);
+                    holder.UnmanagedIndexTerms.Add(i, indexEnum.FieldNumber, indexEnum.TextAsSpan);
                     infoArraySpan[i] = indexEnum.TermInfo();
                     longArraySpan[i] = indexEnum.indexPointer;
 
