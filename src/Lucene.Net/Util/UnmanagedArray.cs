@@ -40,10 +40,17 @@ public unsafe class UnmanagedArray<T> : IArray<T> where T : unmanaged
 
     public void Dispose()
     {
+        GC.SuppressFinalize(this);
+
         if (_ptr != null)
         {
             UnmanagedStringArray.Segment.FreeMemory(_ptr, _elementSize * _length, _type);
             _ptr = null;
         }
+    }
+
+    ~UnmanagedArray()
+    {
+        Dispose();
     }
 }
