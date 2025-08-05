@@ -8,7 +8,5 @@ public interface IArray<T> : IDisposable where T : unmanaged
 
     int TotalManagedAllocations { get; }
 
-    Span<T> AsSpan();
-
-    ReadOnlySpan<T> AsSpanReadOnlySpan();
+    ref T this[int index] { get; }
 }

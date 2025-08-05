@@ -22,13 +22,13 @@ namespace Lucene.Net.Index
 
         public void Add(int index, int fieldNumber, Span<char> textAsSpan)
         {
-            _fieldNumber.AsSpan()[index] = fieldNumber;
+            _fieldNumber[index] = fieldNumber;
             _text.Add(textAsSpan);
         }
 
         public UnmanagedTerm this[int position]
         {
-            get => new UnmanagedTerm(_fieldInfos.FieldName(_fieldNumber.AsSpanReadOnlySpan()[position]), _text[position]);
+            get => new UnmanagedTerm(_fieldInfos.FieldName(_fieldNumber[position]), _text[position]);
         }
 
         public void Dispose()

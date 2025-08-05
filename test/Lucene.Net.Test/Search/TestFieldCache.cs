@@ -101,7 +101,7 @@ namespace Lucene.Net.Search
 			Assert.IsTrue(doubles.Length == NUM_DOCS, "doubles Size: " + doubles.Length + " is not: " + NUM_DOCS);
 			for (int i = 0; i < doubles.Length; i++)
 			{
-				Assert.IsTrue(doubles.AsSpanReadOnlySpan()[i] == (System.Double.MaxValue - i), doubles.AsSpanReadOnlySpan()[i] + " does not equal: " + (System.Double.MaxValue - i));
+				Assert.IsTrue(doubles[i] == (System.Double.MaxValue - i), doubles[i] + " does not equal: " + (System.Double.MaxValue - i));
 			}
 			
 			IArray<long> longs = cache.GetLongs(reader, (string) "theLong", (IState) null);
@@ -110,7 +110,7 @@ namespace Lucene.Net.Search
 			Assert.IsTrue(longs.Length == NUM_DOCS, "longs Size: " + longs.Length + " is not: " + NUM_DOCS);
 			for (int i = 0; i < longs.Length; i++)
 			{
-				Assert.IsTrue(longs.AsSpanReadOnlySpan()[i] == (System.Int64.MaxValue - i), longs.AsSpanReadOnlySpan()[i] + " does not equal: " + (System.Int64.MaxValue - i));
+				Assert.IsTrue(longs[i] == (System.Int64.MaxValue - i), longs[i] + " does not equal: " + (System.Int64.MaxValue - i));
 			}
 			
 			sbyte[] bytes = cache.GetBytes(reader, "theByte", null);

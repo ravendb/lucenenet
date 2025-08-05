@@ -14,12 +14,11 @@ public class UnmanagedArrayTests
         using var arr = new ManagedArray<int>(length);
         Assert.AreEqual(length, arr.Length);
 
-        var span = arr.AsSpan();
-        for (int i = 0; i < span.Length; i++)
-            span[i] = i * 2;
+        for (int i = 0; i < arr.Length; i++)
+            arr[i] = i * 2;
 
-        for (int i = 0; i < span.Length; i++)
-            Assert.AreEqual(i * 2, span[i]);
+        for (int i = 0; i < arr.Length; i++)
+            Assert.AreEqual(i * 2, arr[i]);
     }
 
     [TestCase(10)]
@@ -29,71 +28,65 @@ public class UnmanagedArrayTests
         using var arr = new UnmanagedArray<int>(length, UnmanagedStringArray.Type.Sorting);
         Assert.AreEqual(length, arr.Length);
 
-        var span = arr.AsSpan();
-        for (int i = 0; i < span.Length; i++)
-            span[i] = i * 3;
+        for (int i = 0; i < arr.Length; i++)
+            arr[i] = i * 3;
 
-        for (int i = 0; i < span.Length; i++)
-            Assert.AreEqual(i * 3, span[i]);
+        for (int i = 0; i < arr.Length; i++)
+            Assert.AreEqual(i * 3, arr[i]);
     }
 
     [TestCase(10)]
     public void ManagedArray_Long_BasicOperations(int length)
     {
         using var arr = new ManagedArray<long>(length);
-        var span = arr.AsSpan();
-        for (int i = 0; i < span.Length; i++)
-            span[i] = 100L + i;
-        for (int i = 0; i < span.Length; i++)
-            Assert.AreEqual(100L + i, span[i]);
+        for (int i = 0; i < arr.Length; i++)
+            arr[i] = 100L + i;
+        for (int i = 0; i < arr.Length; i++)
+            Assert.AreEqual(100L + i, arr[i]);
     }
 
     [TestCase(10)]
     public void UnmanagedArray_Long_BasicOperations(int length)
     {
         using var arr = new UnmanagedArray<long>(length, UnmanagedStringArray.Type.Sorting);
-        var span = arr.AsSpan();
-        for (int i = 0; i < span.Length; i++)
-            span[i] = 200L + i;
-        for (int i = 0; i < span.Length; i++)
-            Assert.AreEqual(200L + i, span[i]);
+        for (int i = 0; i < arr.Length; i++)
+            arr[i] = 200L + i;
+        for (int i = 0; i < arr.Length; i++)
+            Assert.AreEqual(200L + i, arr[i]);
     }
 
     [TestCase(10)]
     public void ManagedArray_Double_BasicOperations(int length)
     {
         using var arr = new ManagedArray<double>(length);
-        var span = arr.AsSpan();
-        for (int i = 0; i < span.Length; i++)
-            span[i] = i * 0.5;
-        for (int i = 0; i < span.Length; i++)
-            Assert.AreEqual(i * 0.5, span[i]);
+        for (int i = 0; i < arr.Length; i++)
+            arr[i] = i * 0.5;
+        for (int i = 0; i < arr.Length; i++)
+            Assert.AreEqual(i * 0.5, arr[i]);
     }
 
     [TestCase(10)]
     public void UnmanagedArray_Double_BasicOperations(int length)
     {
         using var arr = new UnmanagedArray<double>(length, UnmanagedStringArray.Type.Sorting);
-        var span = arr.AsSpan();
-        for (int i = 0; i < span.Length; i++)
-            span[i] = i * 1.5;
-        for (int i = 0; i < span.Length; i++)
-            Assert.AreEqual(i * 1.5, span[i]);
+        for (int i = 0; i < arr.Length; i++)
+            arr[i] = i * 1.5;
+        for (int i = 0; i < arr.Length; i++)
+            Assert.AreEqual(i * 1.5, arr[i]);
     }
 
     [Test]
     public void ManagedArray_TermInfo_BasicOperations()
     {
         using var arr = new ManagedArray<TermInfo>(5);
-        var span = arr.AsSpan();
-        for (int i = 0; i < span.Length; i++)
-            span[i] = new TermInfo { docFreq = i, freqPointer = i * 10, proxPointer = i * 100, skipOffset = i * 1000 };
-        for (int i = 0; i < span.Length; i++)
+        for (int i = 0; i < arr.Length; i++)
+            arr[i] = new TermInfo { docFreq = i, freqPointer = i * 10, proxPointer = i * 100, skipOffset = i * 1000 };
+        for (int i = 0; i < arr.Length; i++)
         {
-            Assert.AreEqual(i, span[i].docFreq);
-            Assert.AreEqual(i * 10, span[i].freqPointer);
-            Assert.AreEqual(i * 100, span[i].proxPointer);
-            Assert.AreEqual(i * 1000, span[i].skipOffset);
+            Assert.AreEqual(i, arr[i].docFreq);
+            Assert.AreEqual(i * 10, arr[i].freqPointer);
+            Assert.AreEqual(i * 100, arr[i].proxPointer);
+            Assert.AreEqual(i * 1000, arr[i].skipOffset);
         }
     }
 
@@ -101,15 +94,14 @@ public class UnmanagedArrayTests
     public void UnmanagedArray_TermInfo_BasicOperations()
     {
         using var arr = new UnmanagedArray<TermInfo>(5, UnmanagedStringArray.Type.Sorting);
-        var span = arr.AsSpan();
-        for (int i = 0; i < span.Length; i++)
-            span[i] = new TermInfo { docFreq = i, freqPointer = i * 10, proxPointer = i * 100, skipOffset = i * 1000 };
-        for (int i = 0; i < span.Length; i++)
+        for (int i = 0; i < arr.Length; i++)
+            arr[i] = new TermInfo { docFreq = i, freqPointer = i * 10, proxPointer = i * 100, skipOffset = i * 1000 };
+        for (int i = 0; i < arr.Length; i++)
         {
-            Assert.AreEqual(i, span[i].docFreq);
-            Assert.AreEqual(i * 10, span[i].freqPointer);
-            Assert.AreEqual(i * 100, span[i].proxPointer);
-            Assert.AreEqual(i * 1000, span[i].skipOffset);
+            Assert.AreEqual(i, arr[i].docFreq);
+            Assert.AreEqual(i * 10, arr[i].freqPointer);
+            Assert.AreEqual(i * 100, arr[i].proxPointer);
+            Assert.AreEqual(i * 1000, arr[i].skipOffset);
         }
     }
 
@@ -117,11 +109,10 @@ public class UnmanagedArrayTests
     public unsafe void ManagedArray_UnmanagedString_BasicOperations()
     {
         using var arr = new ManagedArray<UnmanagedString>(3);
-        var span = arr.AsSpan();
-        for (int i = 0; i < span.Length; i++)
-            span[i] = new UnmanagedString { Start = (byte*)i };
-        for (int i = 0; i < span.Length; i++)
-            Assert.AreEqual((long)i, (long)span[i].Start);
+        for (int i = 0; i < arr.Length; i++)
+            arr[i] = new UnmanagedString { Start = (byte*)i };
+        for (int i = 0; i < arr.Length; i++)
+            Assert.AreEqual((long)i, (long)arr[i].Start);
     }
 
     [Test]
@@ -129,35 +120,30 @@ public class UnmanagedArrayTests
     {
         using var arr = new UnmanagedArray<UnmanagedString>(3, UnmanagedStringArray.Type.Sorting);
 
-        var span = arr.AsSpan();
-        for (int i = 0; i < span.Length; i++)
-            span[i] = new UnmanagedString { Start = (byte*)i };
-        for (int i = 0; i < span.Length; i++)
-            Assert.AreEqual((long)i, (long)span[i].Start);
+        for (int i = 0; i < arr.Length; i++)
+            arr[i] = new UnmanagedString { Start = (byte*)i };
+        for (int i = 0; i < arr.Length; i++)
+            Assert.AreEqual((long)i, (long)arr[i].Start);
     }
 
     [Test]
-    public void ManagedArray_Span_And_ReadOnlySpan_Consistency()
+    public void ManagedArray_arr_And_ReadOnlyarr_Consistency()
     {
         using var arr = new ManagedArray<int>(5);
-        var span = arr.AsSpan();
-        var roSpan = arr.AsSpanReadOnlySpan();
-        for (int i = 0; i < span.Length; i++)
-            span[i] = i * 7;
-        for (int i = 0; i < span.Length; i++)
-            Assert.AreEqual(span[i], roSpan[i]);
+        for (int i = 0; i < arr.Length; i++)
+            arr[i] = i * 7;
+        for (int i = 0; i < arr.Length; i++)
+            Assert.AreEqual(arr[i], arr[i]);
     }
 
     [Test]
-    public void UnmanagedArray_Span_And_ReadOnlySpan_Consistency()
+    public void UnmanagedArray_arr_And_ReadOnlyarr_Consistency()
     {
         using var arr = new UnmanagedArray<int>(5, UnmanagedStringArray.Type.Sorting);
-        var span = arr.AsSpan();
-        var roSpan = arr.AsSpanReadOnlySpan();
-        for (int i = 0; i < span.Length; i++)
-            span[i] = i * 9;
-        for (int i = 0; i < span.Length; i++)
-            Assert.AreEqual(span[i], roSpan[i]);
+        for (int i = 0; i < arr.Length; i++)
+            arr[i] = i * 9;
+        for (int i = 0; i < arr.Length; i++)
+            Assert.AreEqual(arr[i], arr[i]);
     }
 
     [Test]

@@ -82,12 +82,12 @@ namespace Lucene.Net.Search.Function
 			/*(non-Javadoc) <see cref="Lucene.Net.Search.Function.DocValues.floatVal(int) */
 			public override float FloatVal(int doc)
 			{
-				return (float) (end - arr.AsSpanReadOnlySpan()[doc]);
+				return (float) (end - arr[doc]);
 			}
 			/* (non-Javadoc) <see cref="Lucene.Net.Search.Function.DocValues.intVal(int) */
 			public override int IntVal(int doc)
 			{
-				return end - arr.AsSpanReadOnlySpan()[doc];
+				return end - arr[doc];
 			}
 			/* (non-Javadoc) <see cref="Lucene.Net.Search.Function.DocValues.strVal(int) */
 			public override System.String StrVal(int doc)

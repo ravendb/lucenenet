@@ -67,8 +67,8 @@ namespace Lucene.Net.Spatial.BBox
                 if (validMinX.Get(doc) && validMaxX.Get(doc))
                 {
                     rect.Reset(
-                        minX.AsSpanReadOnlySpan()[doc], maxX.AsSpanReadOnlySpan()[doc],
-                        minY.AsSpanReadOnlySpan()[doc], maxY.AsSpanReadOnlySpan()[doc]);
+                        minX[doc], maxX[doc],
+                        minY[doc], maxY[doc]);
                     return (float) _enclosingInstance.similarity.Score(rect, null);
                 }
                 else
@@ -83,8 +83,8 @@ namespace Lucene.Net.Spatial.BBox
 				if (validMinX.Get(doc) && validMaxX.Get(doc))
 				{
 					rect.Reset(
-						minX.AsSpanReadOnlySpan()[doc], maxX.AsSpanReadOnlySpan()[doc],
-						minY.AsSpanReadOnlySpan()[doc], maxY.AsSpanReadOnlySpan()[doc]);
+						minX[doc], maxX[doc],
+						minY[doc], maxY[doc]);
 					var exp = new Explanation();
 					_enclosingInstance.similarity.Score(rect, exp);
 					return exp;

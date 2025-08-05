@@ -9,30 +9,30 @@ namespace Lucene.Net.Index
     {
         private readonly Directory _directory;
         private readonly string _name;
-        private readonly IArray<long> _longArray;
-        private readonly IArray<TermInfo> _termInfoArray;
+        private readonly IArray<long> _indexPointers;
+        private readonly IArray<TermInfo> _termInfos;
         private readonly UnmanagedIndexTerms _unmanagedIndexTerms;
 
         private int _usages;
         private long _managedAllocations;
 
-        public Span<long> LongArray => _longArray.AsSpan();
-        public Span<TermInfo> InfoArray => _termInfoArray.AsSpan();
+        public IArray<long> IndexPointers => _indexPointers;
+        public IArray<TermInfo> TermInfos => _termInfos;
         public UnmanagedIndexTerms UnmanagedIndexTerms => _unmanagedIndexTerms;
 
         public static Action<long> OnArrayHolderCreated;
 
         public static Action<long> OnArrayHolderDisposed;
 
-        public long TotalManagedAllocations => _longArray.TotalManagedAllocations + _termInfoArray.TotalManagedAllocations + _unmanagedIndexTerms.TotalManagedAllocations;
+        public long TotalManagedAllocations => _indexPointers.TotalManagedAllocations + _termInfos.TotalManagedAllocations + _unmanagedIndexTerms.TotalManagedAllocations;
 
         public ArrayHolder(int size, Directory directory, string name, FieldInfos fieldInfos)
         {
             _directory = directory;
             _name = name;
 
-            _longArray = HybridArray.Create<long>(size, UnmanagedStringArray.Type.TermCache);
-            _termInfoArray = HybridArray.Create<TermInfo>(size, UnmanagedStringArray.Type.TermCache);
+            _indexPointers = HybridArray.Create<long>(size, UnmanagedStringArray.Type.TermCache);
+            _termInfos = HybridArray.Create<TermInfo>(size, UnmanagedStringArray.Type.TermCache);
 
             _unmanagedIndexTerms = new UnmanagedIndexTerms(size, fieldInfos);
         }
@@ -57,14 +57,12 @@ namespace Lucene.Net.Index
                 int indexSize = 1 + ((int)indexEnum.size - 1) / indexDivisor; // otherwise read index
 
                 var holder = new ArrayHolder(indexSize, directory, name, fieldInfos);
-                var infoArraySpan = holder.InfoArray;
-                var longArraySpan = holder.LongArray;
 
                 for (int i = 0; indexEnum.Next(state); i++)
                 {
                     holder.UnmanagedIndexTerms.Add(i, indexEnum.FieldNumber, indexEnum.TextAsSpan);
-                    infoArraySpan[i] = indexEnum.TermInfo();
-                    longArraySpan[i] = indexEnum.indexPointer;
+                    holder.TermInfos[i] = indexEnum.TermInfo();
+                    holder.IndexPointers[i] = indexEnum.indexPointer;
 
                     for (int j = 1; j < indexDivisor; j++)
                         if (!indexEnum.Next(state))
@@ -90,8 +88,8 @@ namespace Lucene.Net.Index
             GC.SuppressFinalize(this);
 
             using (_unmanagedIndexTerms)
-            using (_longArray)
-            using (_termInfoArray)
+            using (_indexPointers)
+            using (_termInfos)
             {
                 OnArrayHolderDisposed?.Invoke(_managedAllocations);
             }

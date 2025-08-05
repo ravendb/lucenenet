@@ -77,7 +77,7 @@ namespace Lucene.Net.Spatial.Vector
 				if (validX.Get(doc))
 				{
 				    Debug.Assert(validY.Get(doc));
-					return calculator.Distance(from, ptX.AsSpanReadOnlySpan()[doc], ptY.AsSpanReadOnlySpan()[doc]);
+					return calculator.Distance(from, ptX[doc], ptY[doc]);
 				}
 				return nullValue;
 			}
