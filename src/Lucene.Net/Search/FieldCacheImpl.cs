@@ -607,24 +607,24 @@ namespace Lucene.Net.Search
         
         
         
-        public virtual IArray<long> GetLongs(IndexReader reader, System.String field, IState state)
+        public virtual HybridArray<long> GetLongs(IndexReader reader, System.String field, IState state)
         {
             return GetLongs(reader, field, null, state);
         }
         
         // inherit javadocs
-        public virtual IArray<long> GetLongs(IndexReader reader, System.String field, Lucene.Net.Search.LongParser parser, IState state)
+        public virtual HybridArray<long> GetLongs(IndexReader reader, System.String field, Lucene.Net.Search.LongParser parser, IState state)
         {
             return _longCache.Get(reader, new Entry(field, parser), state);
         }
         
-        internal sealed class LongCache : Cache<IArray<long>>, IDisposable
+        internal sealed class LongCache : Cache<HybridArray<long>>, IDisposable
         {
             internal LongCache(FieldCache wrapper):base(wrapper)
             {
             }
             
-            protected internal override IArray<long> CreateValue(IndexReader reader, Entry entryKey, IState state)
+            protected internal override HybridArray<long> CreateValue(IndexReader reader, Entry entryKey, IState state)
             {
                 Entry entry = entryKey;
                 System.String field = entry.field;
@@ -641,7 +641,7 @@ namespace Lucene.Net.Search
                     }
                 }
 
-                var retArray = HybridArray.Create<long>(reader.MaxDoc, UnmanagedStringArray.Type.Sorting);
+                var retArray = new HybridArray<long>(reader.MaxDoc, UnmanagedStringArray.Type.Sorting);
                 TermDocs termDocs = reader.TermDocs(state);
                 TermEnum termEnum = reader.Terms(new Term(field), state);
 
@@ -679,7 +679,7 @@ namespace Lucene.Net.Search
                 {
                     foreach (var keyValuePair in keyValue.Value)
                     {
-                        if (keyValuePair.Value is IArray<long> array)
+                        if (keyValuePair.Value is HybridArray<long> array)
                         {
                             array.Dispose();
                         }
@@ -690,24 +690,24 @@ namespace Lucene.Net.Search
         
         
         // inherit javadocs
-        public virtual IArray<double> GetDoubles(IndexReader reader, System.String field, IState state)
+        public virtual HybridArray<double> GetDoubles(IndexReader reader, System.String field, IState state)
         {
             return GetDoubles(reader, field, null, state);
         }
         
         // inherit javadocs
-        public virtual IArray<double> GetDoubles(IndexReader reader, System.String field, Lucene.Net.Search.DoubleParser parser, IState state)
+        public virtual HybridArray<double> GetDoubles(IndexReader reader, System.String field, Lucene.Net.Search.DoubleParser parser, IState state)
         {
             return _doubleCache.Get(reader, new Entry(field, parser), state);
         }
         
-        internal sealed class DoubleCache : Cache<IArray<double>>, IDisposable
+        internal sealed class DoubleCache : Cache<HybridArray<double>>, IDisposable
         {
             internal DoubleCache(FieldCache wrapper):base(wrapper)
             {
             }
             
-            protected internal override IArray<double> CreateValue(IndexReader reader, Entry entryKey, IState state)
+            protected internal override HybridArray<double> CreateValue(IndexReader reader, Entry entryKey, IState state)
             {
                 Entry entry = entryKey;
                 System.String field = entry.field;
@@ -724,7 +724,7 @@ namespace Lucene.Net.Search
                     }
                 }
 
-                var retArray = HybridArray.Create<double>(reader.MaxDoc, UnmanagedStringArray.Type.Sorting);
+                var retArray = new HybridArray<double>(reader.MaxDoc, UnmanagedStringArray.Type.Sorting);
                 TermDocs termDocs = reader.TermDocs(state);
                 TermEnum termEnum = reader.Terms(new Term(field), state);
 
@@ -762,7 +762,7 @@ namespace Lucene.Net.Search
                 {
                     foreach (var keyValuePair in keyValue.Value)
                     {
-                        if (keyValuePair.Value is IArray<double> array)
+                        if (keyValuePair.Value is HybridArray<double> array)
                         {
                             array.Dispose();
                         }
@@ -831,7 +831,7 @@ namespace Lucene.Net.Search
             protected internal override StringIndex CreateValue(IndexReader reader, Entry entryKey, IState state)
             {
                 System.String field = StringHelper.Intern(entryKey.field);
-                var retArray = HybridArray.Create<int>(reader.MaxDoc, UnmanagedStringArray.Type.Sorting);
+                var retArray = new HybridArray<int>(reader.MaxDoc, UnmanagedStringArray.Type.Sorting);
 
                 var length = reader.MaxDoc + 1;
                 UnmanagedStringArray mterms = new UnmanagedStringArray(length, 1, UnmanagedStringArray.Type.Sorting);

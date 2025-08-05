@@ -101,7 +101,7 @@ namespace Lucene.Net.Util
 			FieldCache cache = Lucene.Net.Search.FieldCache_Fields.DEFAULT;
 			cache.PurgeAllCaches();
 			
-			IArray<double> doubles;
+			HybridArray<double> doubles;
 			int[] ints;
 			
 			doubles = cache.GetDoubles(readerA, "theDouble", null);

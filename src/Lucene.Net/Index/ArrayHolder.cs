@@ -9,15 +9,15 @@ namespace Lucene.Net.Index
     {
         private readonly Directory _directory;
         private readonly string _name;
-        private readonly IArray<long> _indexPointers;
-        private readonly IArray<TermInfo> _termInfos;
+        private readonly HybridArray<long> _indexPointers;
+        private readonly HybridArray<TermInfo> _termInfos;
         private readonly UnmanagedIndexTerms _unmanagedIndexTerms;
 
         private int _usages;
         private long _managedAllocations;
 
-        public IArray<long> IndexPointers => _indexPointers;
-        public IArray<TermInfo> TermInfos => _termInfos;
+        public HybridArray<long> IndexPointers => _indexPointers;
+        public HybridArray<TermInfo> TermInfos => _termInfos;
         public UnmanagedIndexTerms UnmanagedIndexTerms => _unmanagedIndexTerms;
 
         public static Action<long> OnArrayHolderCreated;
@@ -31,8 +31,8 @@ namespace Lucene.Net.Index
             _directory = directory;
             _name = name;
 
-            _indexPointers = HybridArray.Create<long>(size, UnmanagedStringArray.Type.TermCache);
-            _termInfos = HybridArray.Create<TermInfo>(size, UnmanagedStringArray.Type.TermCache);
+            _indexPointers = new HybridArray<long>(size, UnmanagedStringArray.Type.TermCache);
+            _termInfos = new HybridArray<TermInfo>(size, UnmanagedStringArray.Type.TermCache);
 
             _unmanagedIndexTerms = new UnmanagedIndexTerms(size, fieldInfos);
         }

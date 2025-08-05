@@ -90,10 +90,10 @@ namespace Lucene.Net.Search
         public UnmanagedStringArray lookup;
 
         /// <summary>For each document, an index into the lookup array. </summary>
-        public IArray<int> order;
+        public HybridArray<int> order;
 
         /// <summary>Creates one of these objects </summary>
-        public StringIndex(IArray<int> values, UnmanagedStringArray lookup)
+        public StringIndex(HybridArray<int> values, UnmanagedStringArray lookup)
         {
             this.order = values;
             this.lookup = lookup;
@@ -544,7 +544,7 @@ namespace Lucene.Net.Search
         /// <returns> The values in the given field for each document.
         /// </returns>
         /// <throws>  java.io.IOException If any error occurs. </throws>
-        IArray<long> GetLongs(IndexReader reader, System.String field, IState state);
+        HybridArray<long> GetLongs(IndexReader reader, System.String field, IState state);
 
         /// <summary> Checks the internal cache for an appropriate entry, and if none is found,
         /// reads the terms in <c>field</c> as longs and returns an array of
@@ -561,7 +561,7 @@ namespace Lucene.Net.Search
         /// <returns> The values in the given field for each document.
         /// </returns>
         /// <throws>  IOException If any error occurs. </throws>
-        IArray<long> GetLongs(IndexReader reader, System.String field, LongParser parser, IState state);
+        HybridArray<long> GetLongs(IndexReader reader, System.String field, LongParser parser, IState state);
 
 
         /// <summary> Checks the internal cache for an appropriate entry, and if none is
@@ -577,7 +577,7 @@ namespace Lucene.Net.Search
         /// <returns> The values in the given field for each document.
         /// </returns>
         /// <throws>  IOException If any error occurs. </throws>
-        IArray<double> GetDoubles(IndexReader reader, System.String field, IState state);
+        HybridArray<double> GetDoubles(IndexReader reader, System.String field, IState state);
 
         /// <summary> Checks the internal cache for an appropriate entry, and if none is found,
         /// reads the terms in <c>field</c> as doubles and returns an array of
@@ -594,7 +594,7 @@ namespace Lucene.Net.Search
         /// <returns> The values in the given field for each document.
         /// </returns>
         /// <throws>  IOException If any error occurs. </throws>
-        IArray<double> GetDoubles(IndexReader reader, System.String field, DoubleParser parser, IState state);
+        HybridArray<double> GetDoubles(IndexReader reader, System.String field, DoubleParser parser, IState state);
 
         /// <summary>Checks the internal cache for an appropriate entry, and if none
         /// is found, reads the term values in <c>field</c> and returns an array

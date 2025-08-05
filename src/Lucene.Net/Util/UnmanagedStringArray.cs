@@ -211,7 +211,7 @@ namespace Lucene.Net.Util
             }
         }
 
-        private IArray<UnmanagedString> _strings;
+        private HybridArray<UnmanagedString> _strings;
         private List<Segment> _segments = new List<Segment>();
 
         public int Length => _index;
@@ -222,7 +222,7 @@ namespace Lucene.Net.Util
 
         public UnmanagedStringArray(int size, int startIndex, Type type)
         {
-            _strings = HybridArray.Create<UnmanagedString>(size, type);
+            _strings = new HybridArray<UnmanagedString>(size, type);
             _index = startIndex;
             _type = type;
         }

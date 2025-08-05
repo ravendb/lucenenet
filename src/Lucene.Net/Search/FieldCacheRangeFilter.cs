@@ -388,14 +388,14 @@ namespace Lucene.Net.Search
         {
             private class AnonymousClassFieldCacheDocIdSet : FieldCacheDocIdSet
             {
-                private void InitBlock(IArray<long> values, long inclusiveLowerPoint, long inclusiveUpperPoint, FieldCacheRangeFilter<long?> enclosingInstance)
+                private void InitBlock(HybridArray<long> values, long inclusiveLowerPoint, long inclusiveUpperPoint, FieldCacheRangeFilter<long?> enclosingInstance)
                 {
                     this.values = values;
                     this.inclusiveLowerPoint = inclusiveLowerPoint;
                     this.inclusiveUpperPoint = inclusiveUpperPoint;
                     this.enclosingInstance = enclosingInstance;
                 }
-                private IArray<long> values;
+                private HybridArray<long> values;
                 private long inclusiveLowerPoint;
                 private long inclusiveUpperPoint;
                 private FieldCacheRangeFilter<long?> enclosingInstance;
@@ -407,7 +407,7 @@ namespace Lucene.Net.Search
                     }
 
                 }
-                internal AnonymousClassFieldCacheDocIdSet(IArray<long> values, long inclusiveLowerPoint, long inclusiveUpperPoint, FieldCacheRangeFilter<long?> enclosingInstance, Lucene.Net.Index.IndexReader Param1, bool Param2)
+                internal AnonymousClassFieldCacheDocIdSet(HybridArray<long> values, long inclusiveLowerPoint, long inclusiveUpperPoint, FieldCacheRangeFilter<long?> enclosingInstance, Lucene.Net.Index.IndexReader Param1, bool Param2)
                     : base(Param1, Param2)
                 {
                     InitBlock(values, inclusiveLowerPoint, inclusiveUpperPoint, enclosingInstance);
@@ -451,7 +451,7 @@ namespace Lucene.Net.Search
                 if (inclusiveLowerPoint > inclusiveUpperPoint)
                     return DocIdSet.EMPTY_DOCIDSET;
 
-                IArray<long> values = Lucene.Net.Search.FieldCache_Fields.DEFAULT.GetLongs(reader, field, (Lucene.Net.Search.LongParser)parser, state);
+                HybridArray<long> values = Lucene.Net.Search.FieldCache_Fields.DEFAULT.GetLongs(reader, field, (Lucene.Net.Search.LongParser)parser, state);
                 // we only request the usage of termDocs, if the range contains 0
                 return new AnonymousClassFieldCacheDocIdSet(values, inclusiveLowerPoint, inclusiveUpperPoint, this, reader, (inclusiveLowerPoint <= 0L && inclusiveUpperPoint >= 0L));
             }
@@ -542,14 +542,14 @@ namespace Lucene.Net.Search
         {
             private class AnonymousClassFieldCacheDocIdSet : FieldCacheDocIdSet
             {
-                private void InitBlock(IArray<double> values, double inclusiveLowerPoint, double inclusiveUpperPoint, FieldCacheRangeFilter<double?> enclosingInstance)
+                private void InitBlock(HybridArray<double> values, double inclusiveLowerPoint, double inclusiveUpperPoint, FieldCacheRangeFilter<double?> enclosingInstance)
                 {
                     this.values = values;
                     this.inclusiveLowerPoint = inclusiveLowerPoint;
                     this.inclusiveUpperPoint = inclusiveUpperPoint;
                     this.enclosingInstance = enclosingInstance;
                 }
-                private IArray<double> values;
+                private HybridArray<double> values;
                 private double inclusiveLowerPoint;
                 private double inclusiveUpperPoint;
                 private FieldCacheRangeFilter<double?> enclosingInstance;
@@ -561,7 +561,7 @@ namespace Lucene.Net.Search
                     }
 
                 }
-                internal AnonymousClassFieldCacheDocIdSet(IArray<double> values, double inclusiveLowerPoint, double inclusiveUpperPoint, FieldCacheRangeFilter<double?> enclosingInstance, Lucene.Net.Index.IndexReader Param1, bool Param2)
+                internal AnonymousClassFieldCacheDocIdSet(HybridArray<double> values, double inclusiveLowerPoint, double inclusiveUpperPoint, FieldCacheRangeFilter<double?> enclosingInstance, Lucene.Net.Index.IndexReader Param1, bool Param2)
                     : base(Param1, Param2)
                 {
                     InitBlock(values, inclusiveLowerPoint, inclusiveUpperPoint, enclosingInstance);
@@ -609,7 +609,7 @@ namespace Lucene.Net.Search
                 if (inclusiveLowerPoint > inclusiveUpperPoint)
                     return DocIdSet.EMPTY_DOCIDSET;
 
-                IArray<double> values = Lucene.Net.Search.FieldCache_Fields.DEFAULT.GetDoubles(reader, field, (Lucene.Net.Search.DoubleParser)parser, state);
+                HybridArray<double> values = Lucene.Net.Search.FieldCache_Fields.DEFAULT.GetDoubles(reader, field, (Lucene.Net.Search.DoubleParser)parser, state);
                 // we only request the usage of termDocs, if the range contains 0
                 return new AnonymousClassFieldCacheDocIdSet(values, inclusiveLowerPoint, inclusiveUpperPoint, this, reader, (inclusiveLowerPoint <= 0.0 && inclusiveUpperPoint >= 0.0));
             }

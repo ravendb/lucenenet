@@ -58,18 +58,18 @@ namespace Lucene.Net.Search.Function
 	{
 		private class AnonymousClassDocValues:DocValues
 		{
-			public AnonymousClassDocValues(int end, IArray<int> arr, ReverseOrdFieldSource enclosingInstance)
+			public AnonymousClassDocValues(int end, HybridArray<int> arr, ReverseOrdFieldSource enclosingInstance)
 			{
 				InitBlock(end, arr, enclosingInstance);
 			}
-			private void  InitBlock(int end, IArray<int> arr, ReverseOrdFieldSource enclosingInstance)
+			private void  InitBlock(int end, HybridArray<int> arr, ReverseOrdFieldSource enclosingInstance)
 			{
 				this.end = end;
 				this.arr = arr;
 				this.enclosingInstance = enclosingInstance;
 			}
 			private int end;
-			private IArray<int> arr;
+			private HybridArray<int> arr;
 			private ReverseOrdFieldSource enclosingInstance;
 			public ReverseOrdFieldSource Enclosing_Instance
 			{

@@ -6,7 +6,7 @@ namespace Lucene.Net.Index
     public class UnmanagedIndexTerms : IDisposable
     {
         private readonly FieldInfos _fieldInfos;
-        private readonly IArray<int> _fieldNumber;
+        private readonly HybridArray<int> _fieldNumber;
         private readonly UnmanagedStringArray _text;
 
         public int Length => _text.Length;
@@ -16,7 +16,7 @@ namespace Lucene.Net.Index
         public UnmanagedIndexTerms(int size, FieldInfos fieldInfos)
         {
             _fieldInfos = fieldInfos;
-            _fieldNumber = HybridArray.Create<int>(size, UnmanagedStringArray.Type.TermCache);
+            _fieldNumber = new HybridArray<int>(size, UnmanagedStringArray.Type.TermCache);
             _text = new UnmanagedStringArray(size, 0, UnmanagedStringArray.Type.TermCache);
         }
 

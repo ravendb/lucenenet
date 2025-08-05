@@ -40,10 +40,10 @@ namespace Lucene.Net.Spatial.BBox
 		{
 			private readonly BBoxSimilarityValueSource _enclosingInstance;
 		    private readonly IRectangle rect;
-		    private readonly IArray<double> minX;
-			private readonly IArray<double> minY;
-			private readonly IArray<double> maxX;
-			private readonly IArray<double> maxY;
+		    private readonly HybridArray<double> minX;
+			private readonly HybridArray<double> minY;
+			private readonly HybridArray<double> maxX;
+			private readonly HybridArray<double> maxY;
 
 			private readonly IBits validMinX, validMaxX;
 
