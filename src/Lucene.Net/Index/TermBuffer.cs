@@ -28,7 +28,7 @@ namespace Lucene.Net.Index
 	{
 		
 		private System.String field;
-		private int fieldNumber;
+		private int fieldNumber = -1;
 		private Term term; // cached
 		private bool preUTF8Strings; // true if strings are stored in modified UTF8 encoding (LUCENE-510)
 		private bool dirty; // true if text was set externally (ie not read via UTF8 bytes)
@@ -73,7 +73,7 @@ namespace Lucene.Net.Index
 			preUTF8Strings = true;
 		}
 		
-		public void  Read(IndexInput input, FieldInfos fieldInfos, IState state)
+		public void Read(IndexInput input, FieldInfos fieldInfos, IState state)
 		{
             this.term = null; // invalidate cache
 			int start = input.ReadVInt(state);
@@ -105,11 +105,11 @@ namespace Lucene.Net.Index
 				}
 			}
 
-            this.fieldNumber = input.ReadVInt(state);
-            this.field = fieldInfos.FieldName(fieldNumber);
+			this.fieldNumber = input.ReadVInt(state);
+			this.field = fieldInfos.FieldName(fieldNumber);
         }
 		
-		public void  Set(Term term)
+		public void Set(Term term)
 		{
 			if (term == null)
 			{
@@ -125,17 +125,19 @@ namespace Lucene.Net.Index
 			this.term = term;
 		}
 		
-		public void  Set(TermBuffer other)
+		public void Set(TermBuffer other)
 		{
 			text.CopyText(other.text);
 			dirty = true;
 			field = other.field;
+            fieldNumber = other.fieldNumber;
 			term = other.term;
 		}
 		
 		public void  Reset()
 		{
 			field = null;
+            fieldNumber = -1;
 			text.SetLength(0);
             term = null;
 			dirty = true;
