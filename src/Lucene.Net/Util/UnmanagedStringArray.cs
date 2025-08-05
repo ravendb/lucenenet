@@ -298,7 +298,7 @@ namespace Lucene.Net.Util
                 *((int*)pos) = str.Length << 1 | 0; // 0 flag for chars
             }
 
-            _strings.AsSpan()[_index].Start = pos;
+            _strings[_index].Start = pos;
             _index++;
         }
 
@@ -313,13 +313,13 @@ namespace Lucene.Net.Util
                 return;
             }
 
-            _strings.AsSpan()[_index].Start = _strings.AsSpanReadOnlySpan()[_index - 1].Start;
+            _strings[_index].Start = _strings[_index - 1].Start;
             _index++;
         }
 
         public UnmanagedString this[int position]
         {
-            get => _strings.AsSpanReadOnlySpan()[position];
+            get => _strings[position];
         }
 
         public void Dispose()

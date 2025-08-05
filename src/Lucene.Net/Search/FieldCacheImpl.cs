@@ -642,7 +642,6 @@ namespace Lucene.Net.Search
                 }
 
                 var retArray = HybridArray.Create<long>(reader.MaxDoc, UnmanagedStringArray.Type.Sorting);
-                var span = retArray.AsSpan();
                 TermDocs termDocs = reader.TermDocs(state);
                 TermEnum termEnum = reader.Terms(new Term(field), state);
 
@@ -657,7 +656,7 @@ namespace Lucene.Net.Search
                         termDocs.Seek(termEnum, state);
                         while (termDocs.Next(state))
                         {
-                            span[termDocs.Doc] = termval;
+                            retArray[termDocs.Doc] = termval;
                         }
                     }
                     while (termEnum.Next(state));
@@ -740,7 +739,7 @@ namespace Lucene.Net.Search
                         termDocs.Seek(termEnum, state);
                         while (termDocs.Next(state))
                         {
-                            retArray.AsSpan()[termDocs.Doc] = termval;
+                            retArray[termDocs.Doc] = termval;
                         }
                     }
                     while (termEnum.Next(state));
@@ -847,8 +846,6 @@ namespace Lucene.Net.Search
                 // needs to change as well.
                 termNumber++;
 
-                var span = retArray.AsSpan();
-
                 try
                 {
                     do 
@@ -861,7 +858,7 @@ namespace Lucene.Net.Search
                         while (termDocs.Next(state))
                         {
                             canAdd = true;
-                            span[termDocs.Doc] = termNumber;
+                            retArray[termDocs.Doc] = termNumber;
                         }
 
                         if (canAdd)

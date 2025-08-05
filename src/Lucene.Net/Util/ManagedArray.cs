@@ -13,21 +13,22 @@ public class ManagedArray<T> : IArray<T> where T : unmanaged
     {
         _length = length;
         _array = ArrayPool<T>.Shared.Rent(_length);
-        _array.AsSpan().Clear();
+        _array.AsSpan(0, _length).Clear();
     }
 
     public int Length => _length;
 
     public int TotalManagedAllocations => _array.Length * Marshal.SizeOf<T>();
 
-    public Span<T> AsSpan()
+    public ref T this[int index]
     {
-        return _array.AsSpan(0, _length);
-    }
+        get
+        {
+            if (index >= _length)
+                throw new IndexOutOfRangeException();
 
-    public ReadOnlySpan<T> AsSpanReadOnlySpan()
-    {
-        return _array.AsSpan(0, _length);
+            return ref _array[index];
+        }
     }
 
     public void Dispose()

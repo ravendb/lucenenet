@@ -90,7 +90,7 @@ namespace Lucene.Net.Search
                 }
                 internal override bool MatchDoc(int doc)
                 {
-                    return fcsi.order.AsSpanReadOnlySpan()[doc] >= inclusiveLowerPoint && fcsi.order.AsSpanReadOnlySpan()[doc] <= inclusiveUpperPoint;
+                    return fcsi.order[doc] >= inclusiveLowerPoint && fcsi.order[doc] <= inclusiveUpperPoint;
                 }
             }
             internal AnonymousClassFieldCacheRangeFilter(string field, Lucene.Net.Search.Parser parser, string lowerVal, string upperVal, bool includeLower, bool includeUpper)
@@ -414,7 +414,7 @@ namespace Lucene.Net.Search
                 }
                 internal override bool MatchDoc(int doc)
                 {
-                    return values.AsSpanReadOnlySpan()[doc] >= inclusiveLowerPoint && values.AsSpanReadOnlySpan()[doc] <= inclusiveUpperPoint;
+                    return values[doc] >= inclusiveLowerPoint && values[doc] <= inclusiveUpperPoint;
                 }
             }
             internal AnonymousClassFieldCacheRangeFilter4(string field, Lucene.Net.Search.Parser parser, long? lowerVal, long? upperVal, bool includeLower, bool includeUpper)
@@ -568,7 +568,7 @@ namespace Lucene.Net.Search
                 }
                 internal override bool MatchDoc(int doc)
                 {
-                    return values.AsSpanReadOnlySpan()[doc] >= inclusiveLowerPoint && values.AsSpanReadOnlySpan()[doc] <= inclusiveUpperPoint;
+                    return values[doc] >= inclusiveLowerPoint && values[doc] <= inclusiveUpperPoint;
                 }
             }
             internal AnonymousClassFieldCacheRangeFilter6(string field, Lucene.Net.Search.Parser parser, double? lowerVal, double? upperVal, bool includeLower, bool includeUpper)

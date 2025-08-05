@@ -21,21 +21,22 @@ public unsafe class UnmanagedArray<T> : IArray<T> where T : unmanaged
         _ptr = UnmanagedStringArray.Segment.AllocateMemory(_elementSize * _length, type);
 
         // initialize all elements to default
-        AsSpan().Clear();
+        new Span<T>(_ptr, _length).Clear();
     }
 
     public int Length => _length;
 
     public int TotalManagedAllocations => 0;
 
-    public Span<T> AsSpan()
+    public ref T this[int index]
     {
-        return new Span<T>(_ptr, _length);
-    }
+        get
+        {
+            if (index >= _length)
+                throw new IndexOutOfRangeException();
 
-    public ReadOnlySpan<T> AsSpanReadOnlySpan()
-    {
-        return new ReadOnlySpan<T>(_ptr, _length);
+            return ref ((T*)_ptr)[index];
+        }
     }
 
     public void Dispose()
