@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Buffers;
+using System.Runtime.ConstrainedExecution;
 using System.Runtime.InteropServices;
 
 namespace Lucene.Net.Util;
@@ -9,11 +10,13 @@ public class ManagedArray<T> : IArray<T> where T : unmanaged
     private readonly int _length;
     private T[] _array;
 
-    public ManagedArray(int length)
+    public ManagedArray(int length, bool clear)
     {
         _length = length;
         _array = ArrayPool<T>.Shared.Rent(_length);
-        _array.AsSpan(0, _length).Clear();
+
+        if (clear)
+            _array.AsSpan(0, _length).Clear();
     }
 
     public int Length => _length;
