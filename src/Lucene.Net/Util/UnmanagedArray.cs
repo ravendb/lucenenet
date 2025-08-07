@@ -9,7 +9,7 @@ public unsafe class UnmanagedArray<T> : IArray<T> where T : unmanaged
     private readonly int _elementSize;
     private byte* _ptr;
 
-    public UnmanagedArray(int length, UnmanagedStringArray.Type type)
+    public UnmanagedArray(int length, UnmanagedStringArray.Type type, bool clear)
     {
         if (length <= 0)
             throw new ArgumentOutOfRangeException(nameof(length));
@@ -21,7 +21,8 @@ public unsafe class UnmanagedArray<T> : IArray<T> where T : unmanaged
         _ptr = UnmanagedStringArray.Segment.AllocateMemory(_elementSize * _length, type);
 
         // initialize all elements to default
-        new Span<T>(_ptr, _length).Clear();
+        if (clear)
+            new Span<T>(_ptr, _length).Clear();
     }
 
     public int Length => _length;

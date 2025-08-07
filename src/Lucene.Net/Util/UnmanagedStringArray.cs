@@ -220,9 +220,9 @@ namespace Lucene.Net.Util
 
         public long TotalManagedAllocations => _strings.TotalManagedAllocations;
 
-        public UnmanagedStringArray(int size, int startIndex, Type type)
+        public UnmanagedStringArray(int size, int startIndex, Type type, bool clear = false)
         {
-            _strings = HybridArray.Create<UnmanagedString>(size, type);
+            _strings = HybridArray.Create<UnmanagedString>(size, type, clear);
             _index = startIndex;
             _type = type;
         }
@@ -300,6 +300,11 @@ namespace Lucene.Net.Util
 
             _strings[_index].Start = pos;
             _index++;
+        }
+
+        public void SetAsNull(int index)
+        {
+            _strings[index] = new UnmanagedString { Start = null };
         }
 
         public void AddDeleted(TermBuffer termBuffer)

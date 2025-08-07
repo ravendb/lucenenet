@@ -11,7 +11,7 @@ public class UnmanagedArrayTests
     [TestCase(1000)]
     public void ManagedArray_Int_BasicOperations(int length)
     {
-        using var arr = new ManagedArray<int>(length);
+        using var arr = new ManagedArray<int>(length, clear: false);
         Assert.AreEqual(length, arr.Length);
 
         for (int i = 0; i < arr.Length; i++)
@@ -25,7 +25,7 @@ public class UnmanagedArrayTests
     [TestCase(1000)]
     public void UnmanagedArray_Int_BasicOperations(int length)
     {
-        using var arr = new UnmanagedArray<int>(length, UnmanagedStringArray.Type.Sorting);
+        using var arr = new UnmanagedArray<int>(length, UnmanagedStringArray.Type.Sorting, clear: false);
         Assert.AreEqual(length, arr.Length);
 
         for (int i = 0; i < arr.Length; i++)
@@ -38,7 +38,7 @@ public class UnmanagedArrayTests
     [TestCase(10)]
     public void ManagedArray_Long_BasicOperations(int length)
     {
-        using var arr = new ManagedArray<long>(length);
+        using var arr = new ManagedArray<long>(length, clear: false);
         for (int i = 0; i < arr.Length; i++)
             arr[i] = 100L + i;
         for (int i = 0; i < arr.Length; i++)
@@ -48,7 +48,7 @@ public class UnmanagedArrayTests
     [TestCase(10)]
     public void UnmanagedArray_Long_BasicOperations(int length)
     {
-        using var arr = new UnmanagedArray<long>(length, UnmanagedStringArray.Type.Sorting);
+        using var arr = new UnmanagedArray<long>(length, UnmanagedStringArray.Type.Sorting, clear: false);
         for (int i = 0; i < arr.Length; i++)
             arr[i] = 200L + i;
         for (int i = 0; i < arr.Length; i++)
@@ -58,7 +58,7 @@ public class UnmanagedArrayTests
     [TestCase(10)]
     public void ManagedArray_Double_BasicOperations(int length)
     {
-        using var arr = new ManagedArray<double>(length);
+        using var arr = new ManagedArray<double>(length, clear: false);
         for (int i = 0; i < arr.Length; i++)
             arr[i] = i * 0.5;
         for (int i = 0; i < arr.Length; i++)
@@ -68,7 +68,7 @@ public class UnmanagedArrayTests
     [TestCase(10)]
     public void UnmanagedArray_Double_BasicOperations(int length)
     {
-        using var arr = new UnmanagedArray<double>(length, UnmanagedStringArray.Type.Sorting);
+        using var arr = new UnmanagedArray<double>(length, UnmanagedStringArray.Type.Sorting, clear: false);
         for (int i = 0; i < arr.Length; i++)
             arr[i] = i * 1.5;
         for (int i = 0; i < arr.Length; i++)
@@ -78,7 +78,7 @@ public class UnmanagedArrayTests
     [Test]
     public void ManagedArray_TermInfo_BasicOperations()
     {
-        using var arr = new ManagedArray<TermInfo>(5);
+        using var arr = new ManagedArray<TermInfo>(5, clear: false);
         for (int i = 0; i < arr.Length; i++)
             arr[i] = new TermInfo { docFreq = i, freqPointer = i * 10, proxPointer = i * 100, skipOffset = i * 1000 };
         for (int i = 0; i < arr.Length; i++)
@@ -93,7 +93,7 @@ public class UnmanagedArrayTests
     [Test]
     public void UnmanagedArray_TermInfo_BasicOperations()
     {
-        using var arr = new UnmanagedArray<TermInfo>(5, UnmanagedStringArray.Type.Sorting);
+        using var arr = new UnmanagedArray<TermInfo>(5, UnmanagedStringArray.Type.Sorting, clear: false);
         for (int i = 0; i < arr.Length; i++)
             arr[i] = new TermInfo { docFreq = i, freqPointer = i * 10, proxPointer = i * 100, skipOffset = i * 1000 };
         for (int i = 0; i < arr.Length; i++)
@@ -108,7 +108,7 @@ public class UnmanagedArrayTests
     [Test]
     public unsafe void ManagedArray_UnmanagedString_BasicOperations()
     {
-        using var arr = new ManagedArray<UnmanagedString>(3);
+        using var arr = new ManagedArray<UnmanagedString>(3, clear: false);
         for (int i = 0; i < arr.Length; i++)
             arr[i] = new UnmanagedString { Start = (byte*)i };
         for (int i = 0; i < arr.Length; i++)
@@ -118,7 +118,7 @@ public class UnmanagedArrayTests
     [Test]
     public unsafe void UnmanagedArray_UnmanagedString_BasicOperations()
     {
-        using var arr = new UnmanagedArray<UnmanagedString>(3, UnmanagedStringArray.Type.Sorting);
+        using var arr = new UnmanagedArray<UnmanagedString>(3, UnmanagedStringArray.Type.Sorting, clear: false);
 
         for (int i = 0; i < arr.Length; i++)
             arr[i] = new UnmanagedString { Start = (byte*)i };
@@ -129,7 +129,7 @@ public class UnmanagedArrayTests
     [Test]
     public void ManagedArray_arr_And_ReadOnlyarr_Consistency()
     {
-        using var arr = new ManagedArray<int>(5);
+        using var arr = new ManagedArray<int>(5, clear: false);
         for (int i = 0; i < arr.Length; i++)
             arr[i] = i * 7;
         for (int i = 0; i < arr.Length; i++)
@@ -139,7 +139,7 @@ public class UnmanagedArrayTests
     [Test]
     public void UnmanagedArray_arr_And_ReadOnlyarr_Consistency()
     {
-        using var arr = new UnmanagedArray<int>(5, UnmanagedStringArray.Type.Sorting);
+        using var arr = new UnmanagedArray<int>(5, UnmanagedStringArray.Type.Sorting, clear: false);
         for (int i = 0; i < arr.Length; i++)
             arr[i] = i * 9;
         for (int i = 0; i < arr.Length; i++)
