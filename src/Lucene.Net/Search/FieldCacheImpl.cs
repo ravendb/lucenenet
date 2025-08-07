@@ -641,7 +641,7 @@ namespace Lucene.Net.Search
                     }
                 }
 
-                var retArray = new HybridArray<long>(reader.MaxDoc, UnmanagedStringArray.Type.Sorting);
+                var retArray = new HybridArray<long>(reader.MaxDoc, UnmanagedStringArray.Type.Sorting, clear: true);
                 TermDocs termDocs = reader.TermDocs(state);
                 TermEnum termEnum = reader.Terms(new Term(field), state);
 
@@ -724,7 +724,7 @@ namespace Lucene.Net.Search
                     }
                 }
 
-                var retArray = new HybridArray<double>(reader.MaxDoc, UnmanagedStringArray.Type.Sorting);
+                var retArray = new HybridArray<double>(reader.MaxDoc, UnmanagedStringArray.Type.Sorting, clear: true);
                 TermDocs termDocs = reader.TermDocs(state);
                 TermEnum termEnum = reader.Terms(new Term(field), state);
 
@@ -831,10 +831,12 @@ namespace Lucene.Net.Search
             protected internal override StringIndex CreateValue(IndexReader reader, Entry entryKey, IState state)
             {
                 System.String field = StringHelper.Intern(entryKey.field);
-                var retArray = new HybridArray<int>(reader.MaxDoc, UnmanagedStringArray.Type.Sorting);
+                var retArray = new HybridArray<int>(reader.MaxDoc, UnmanagedStringArray.Type.Sorting, clear: true);
 
                 var length = reader.MaxDoc + 1;
                 UnmanagedStringArray mterms = new UnmanagedStringArray(length, 1, UnmanagedStringArray.Type.Sorting);
+                mterms.SetAsNull(0);
+
                 TermDocs termDocs = reader.TermDocs(state);
                 
                 SegmentTermEnum termEnum = (SegmentTermEnum)reader.Terms(new Term(field), state);

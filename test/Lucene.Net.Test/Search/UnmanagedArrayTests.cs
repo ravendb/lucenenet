@@ -13,7 +13,7 @@ public class HybridArrayTests
     [TestCase(100_000)] // This will test unmanaged path
     public void HybridArray_Int_BasicOperations(int length)
     {
-        using var arr = new HybridArray<int>(length, UnmanagedStringArray.Type.Sorting);
+        using var arr = new HybridArray<int>(length, UnmanagedStringArray.Type.Sorting, clear: false);
         Assert.AreEqual(length, arr.Length);
 
         for (int i = 0; i < arr.Length; i++)
@@ -28,7 +28,7 @@ public class HybridArrayTests
     [TestCase(100_000)] // This will test unmanaged path
     public void HybridArray_Long_BasicOperations(int length)
     {
-        using var arr = new HybridArray<long>(length, UnmanagedStringArray.Type.Sorting);
+        using var arr = new HybridArray<long>(length, UnmanagedStringArray.Type.Sorting, clear: false);
         Assert.AreEqual(length, arr.Length);
 
         for (int i = 0; i < arr.Length; i++)
@@ -43,7 +43,7 @@ public class HybridArrayTests
     [TestCase(100_000)] // This will test unmanaged path
     public void HybridArray_Double_BasicOperations(int length)
     {
-        using var arr = new HybridArray<double>(length, UnmanagedStringArray.Type.Sorting);
+        using var arr = new HybridArray<double>(length, UnmanagedStringArray.Type.Sorting, clear: false);
         Assert.AreEqual(length, arr.Length);
 
         for (int i = 0; i < arr.Length; i++)
@@ -57,7 +57,7 @@ public class HybridArrayTests
     [TestCase(20_000)] // This will test unmanaged path for TermInfo
     public void HybridArray_TermInfo_BasicOperations(int length)
     {
-        using var arr = new HybridArray<TermInfo>(length, UnmanagedStringArray.Type.Sorting);
+        using var arr = new HybridArray<TermInfo>(length, UnmanagedStringArray.Type.Sorting, clear: false);
         Assert.AreEqual(length, arr.Length);
 
         for (int i = 0; i < arr.Length; i++)
@@ -75,7 +75,7 @@ public class HybridArrayTests
     [Test]
     public unsafe void HybridArray_UnmanagedString_BasicOperations()
     {
-        using var arr = new HybridArray<UnmanagedString>(3, UnmanagedStringArray.Type.Sorting);
+        using var arr = new HybridArray<UnmanagedString>(3, UnmanagedStringArray.Type.Sorting, clear: false);
         Assert.AreEqual(3, arr.Length);
 
         for (int i = 0; i < arr.Length; i++)
@@ -88,7 +88,7 @@ public class HybridArrayTests
     [Test]
     public unsafe void HybridArray_UnmanagedString_LargeArray_BasicOperations()
     {
-        using var arr = new HybridArray<UnmanagedString>(100_000, UnmanagedStringArray.Type.Sorting);
+        using var arr = new HybridArray<UnmanagedString>(100_000, UnmanagedStringArray.Type.Sorting, clear: false);
         Assert.AreEqual(100_000, arr.Length);
 
         // Test a subset for performance
@@ -102,7 +102,7 @@ public class HybridArrayTests
     [Test]
     public void HybridArray_IndexConsistency()
     {
-        using var arr = new HybridArray<int>(5, UnmanagedStringArray.Type.Sorting);
+        using var arr = new HybridArray<int>(5, UnmanagedStringArray.Type.Sorting, clear: false);
 
         for (int i = 0; i < arr.Length; i++)
             arr[i] = i * 7;
@@ -114,7 +114,7 @@ public class HybridArrayTests
     [Test]
     public void HybridArray_LargeArray_IndexConsistency()
     {
-        using var arr = new HybridArray<int>(100_000, UnmanagedStringArray.Type.Sorting);
+        using var arr = new HybridArray<int>(100_000, UnmanagedStringArray.Type.Sorting, clear: false);
 
         // Test a subset for performance
         for (int i = 0; i < 100; i++)
@@ -127,7 +127,7 @@ public class HybridArrayTests
     [Test]
     public void HybridArray_SmallArray_UsesManagedMemory()
     {
-        using var small = new HybridArray<int>(10, UnmanagedStringArray.Type.Sorting);
+        using var small = new HybridArray<int>(10, UnmanagedStringArray.Type.Sorting, clear: false);
 
         // For small arrays, TotalManagedAllocations should be > 0
         Assert.Greater(small.TotalManagedAllocations, 0, "Small arrays should use managed memory");
@@ -136,7 +136,7 @@ public class HybridArrayTests
     [Test]
     public void HybridArray_LargeArray_UsesUnmanagedMemory()
     {
-        using var large = new HybridArray<int>(100_000, UnmanagedStringArray.Type.Sorting);
+        using var large = new HybridArray<int>(100_000, UnmanagedStringArray.Type.Sorting, clear: false);
 
         // For large arrays, TotalManagedAllocations should be 0
         Assert.AreEqual(0, large.TotalManagedAllocations, "Large arrays should use unmanaged memory");
@@ -150,19 +150,19 @@ public class HybridArrayTests
 
         // Just under threshold (should use managed)
         int smallLength = (threshold / sizeof(int)) - 1;
-        using var small = new HybridArray<int>(smallLength, UnmanagedStringArray.Type.Sorting);
+        using var small = new HybridArray<int>(smallLength, UnmanagedStringArray.Type.Sorting, clear: false);
         Assert.Greater(small.TotalManagedAllocations, 0, "Array just under threshold should use managed memory");
 
         // Just over threshold (should use unmanaged)
         int largeLength = (threshold / sizeof(int)) + 1;
-        using var large = new HybridArray<int>(largeLength, UnmanagedStringArray.Type.Sorting);
+        using var large = new HybridArray<int>(largeLength, UnmanagedStringArray.Type.Sorting, clear: false);
         Assert.AreEqual(0, large.TotalManagedAllocations, "Array just over threshold should use unmanaged memory");
     }
 
     [Test]
     public void HybridArray_IndexOutOfRange_ThrowsException()
     {
-        using var arr = new HybridArray<int>(5, UnmanagedStringArray.Type.Sorting);
+        using var arr = new HybridArray<int>(5, UnmanagedStringArray.Type.Sorting, clear: false);
 
         Assert.Throws<IndexOutOfRangeException>(() => { var x = arr[-1]; });
         Assert.Throws<IndexOutOfRangeException>(() => { var x = arr[5]; });
@@ -174,20 +174,20 @@ public class HybridArrayTests
     public void HybridArray_NegativeLength_ThrowsException()
     {
         Assert.Throws<ArgumentOutOfRangeException>(() =>
-            new HybridArray<int>(-1, UnmanagedStringArray.Type.Sorting));
+            new HybridArray<int>(-1, UnmanagedStringArray.Type.Sorting, clear: false));
     }
 
     [Test]
     public void HybridArray_ZeroLength_Works()
     {
-        using var arr = new HybridArray<int>(0, UnmanagedStringArray.Type.Sorting);
+        using var arr = new HybridArray<int>(0, UnmanagedStringArray.Type.Sorting, clear: false);
         Assert.AreEqual(0, arr.Length);
     }
 
     [Test]
     public void HybridArray_MultipleDispose_IsSafe()
     {
-        var arr = new HybridArray<int>(10, UnmanagedStringArray.Type.Sorting);
+        var arr = new HybridArray<int>(10, UnmanagedStringArray.Type.Sorting, clear: false);
         arr.Dispose();
         arr.Dispose(); // Should not throw
     }

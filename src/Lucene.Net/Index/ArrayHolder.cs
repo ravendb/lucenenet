@@ -31,8 +31,8 @@ namespace Lucene.Net.Index
             _directory = directory;
             _name = name;
 
-            _indexPointers = new HybridArray<long>(size, UnmanagedStringArray.Type.TermCache);
-            _termInfos = new HybridArray<TermInfo>(size, UnmanagedStringArray.Type.TermCache);
+            _indexPointers = new HybridArray<long>(size, UnmanagedStringArray.Type.TermCache, clear: false);
+            _termInfos = new HybridArray<TermInfo>(size, UnmanagedStringArray.Type.TermCache, clear: false);
 
             _unmanagedIndexTerms = new UnmanagedIndexTerms(size, fieldInfos);
         }

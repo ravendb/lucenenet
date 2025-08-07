@@ -14,7 +14,7 @@ public unsafe class HybridArray<T> : IDisposable where T : unmanaged
     private byte* _ptr;
     private T[] _array;
 
-    public HybridArray(int length, UnmanagedStringArray.Type type)
+    public HybridArray(int length, UnmanagedStringArray.Type type, bool clear = false)
     {
         if (length < 0)
             throw new ArgumentOutOfRangeException(nameof(length));
@@ -27,13 +27,15 @@ public unsafe class HybridArray<T> : IDisposable where T : unmanaged
         {
             _ptr = UnmanagedStringArray.Segment.AllocateMemory(_elementSize * _length, type);
 
-            // initialize all elements to default
-            new Span<T>(_ptr, _length).Clear();
+            if (clear)
+                new Span<T>(_ptr, _length).Clear();
         }
         else
         {
             _array = ArrayPool<T>.Shared.Rent(_length);
-            _array.AsSpan(0, _length).Clear();
+
+            if (clear)
+                _array.AsSpan(0, _length).Clear();
         }
     }
 

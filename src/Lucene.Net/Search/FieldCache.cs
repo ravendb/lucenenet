@@ -33,7 +33,7 @@ using Single = Lucene.Net.Support.Single;
 namespace Lucene.Net.Search
 {
     /// <summary>Expert: Stores term text values and document ordering data. </summary>
-    public class StringIndex
+    public class StringIndex : IDisposable
     {
         public virtual unsafe int BinarySearchLookup(System.String key)
         {
@@ -97,6 +97,21 @@ namespace Lucene.Net.Search
         {
             this.order = values;
             this.lookup = lookup;
+        }
+
+        public void Dispose()
+        {
+            GC.SuppressFinalize(this);
+
+            using (lookup)
+            using (order)
+            {
+            }
+        }
+
+        ~StringIndex()
+        {
+            Dispose();
         }
     }
 

@@ -16,8 +16,8 @@ namespace Lucene.Net.Index
         public UnmanagedIndexTerms(int size, FieldInfos fieldInfos)
         {
             _fieldInfos = fieldInfos;
-            _fieldNumber = new HybridArray<int>(size, UnmanagedStringArray.Type.TermCache);
-            _text = new UnmanagedStringArray(size, 0, UnmanagedStringArray.Type.TermCache);
+            _fieldNumber = new HybridArray<int>(size, UnmanagedStringArray.Type.TermCache, clear: false);
+            _text = new UnmanagedStringArray(size, 0, UnmanagedStringArray.Type.TermCache, clear: false);
         }
 
         public void Add(int index, int fieldNumber, Span<char> textAsSpan)
