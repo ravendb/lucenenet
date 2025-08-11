@@ -57,10 +57,8 @@ public unsafe class HybridArray<T> : IDisposable where T : unmanaged
         }
     }
 
-    public void Dispose()
+    public virtual void Dispose()
     {
-        GC.SuppressFinalize(this);
-
         if (_array != null)
         {
             ArrayPool<T>.Shared.Return(_array);
@@ -71,10 +69,5 @@ public unsafe class HybridArray<T> : IDisposable where T : unmanaged
             UnmanagedStringArray.Segment.FreeMemory(_ptr, _elementSize * _length, _type);
             _ptr = null;
         }
-    }
-
-    ~HybridArray()
-    {
-        Dispose();
     }
 }

@@ -641,7 +641,7 @@ namespace Lucene.Net.Search
                     }
                 }
 
-                var retArray = new HybridArray<long>(reader.MaxDoc, UnmanagedStringArray.Type.Sorting, clear: true);
+                var retArray = new HybridArrayWithFinalizer<long>(reader.MaxDoc, UnmanagedStringArray.Type.Sorting, clear: true);
                 TermDocs termDocs = reader.TermDocs(state);
                 TermEnum termEnum = reader.Terms(new Term(field), state);
 
@@ -679,7 +679,7 @@ namespace Lucene.Net.Search
                 {
                     foreach (var keyValuePair in keyValue.Value)
                     {
-                        if (keyValuePair.Value is HybridArray<long> array)
+                        if (keyValuePair.Value is HybridArrayWithFinalizer<long> array)
                         {
                             array.Dispose();
                         }
@@ -724,7 +724,7 @@ namespace Lucene.Net.Search
                     }
                 }
 
-                var retArray = new HybridArray<double>(reader.MaxDoc, UnmanagedStringArray.Type.Sorting, clear: true);
+                var retArray = new HybridArrayWithFinalizer<double>(reader.MaxDoc, UnmanagedStringArray.Type.Sorting, clear: true);
                 TermDocs termDocs = reader.TermDocs(state);
                 TermEnum termEnum = reader.Terms(new Term(field), state);
 
@@ -762,7 +762,7 @@ namespace Lucene.Net.Search
                 {
                     foreach (var keyValuePair in keyValue.Value)
                     {
-                        if (keyValuePair.Value is HybridArray<double> array)
+                        if (keyValuePair.Value is HybridArrayWithFinalizer<double> array)
                         {
                             array.Dispose();
                         }
@@ -831,7 +831,7 @@ namespace Lucene.Net.Search
             protected internal override StringIndex CreateValue(IndexReader reader, Entry entryKey, IState state)
             {
                 System.String field = StringHelper.Intern(entryKey.field);
-                var retArray = new HybridArray<int>(reader.MaxDoc, UnmanagedStringArray.Type.Sorting, clear: true);
+                var retArray = new HybridArrayWithFinalizer<int>(reader.MaxDoc, UnmanagedStringArray.Type.Sorting, clear: true);
 
                 var length = reader.MaxDoc + 1;
                 UnmanagedStringArray mterms = new UnmanagedStringArray(length, 1, UnmanagedStringArray.Type.Sorting);
@@ -896,8 +896,11 @@ namespace Lucene.Net.Search
                     {
                         if (keyValuePair.Value is StringIndex si)
                         {
-                            si.lookup.Dispose();
-                            si.order.Dispose();
+                            using (si.lookup)
+                            using (si.order)
+                            {
+
+                            }
                         }
                     }
                 }
