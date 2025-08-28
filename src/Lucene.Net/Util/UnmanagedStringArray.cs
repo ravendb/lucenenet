@@ -317,9 +317,9 @@ namespace Lucene.Net.Util
             _index++;
         }
 
-        public void SetAsNull(int i)
+        public void SetAsNull(int index)
         {
-            _strings[i] = new UnmanagedString { Start = null };
+            _strings[index] = new UnmanagedString { Start = null };
         }
 
         public UnmanagedString this[int position]

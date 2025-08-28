@@ -835,7 +835,7 @@ namespace Lucene.Net.Search
 
                 var length = reader.MaxDoc + 1;
                 UnmanagedStringArray mterms = new UnmanagedStringArray(length, 1, UnmanagedStringArray.Type.Sorting);
-                mterms.SetAsNull(0);
+                mterms.SetAsNull(index: 0);
 
                 TermDocs termDocs = reader.TermDocs(state);
                 
