@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Buffers;
-using System.Runtime.ConstrainedExecution;
 using System.Runtime.InteropServices;
 
 namespace Lucene.Net.Util;
@@ -36,10 +35,17 @@ public class ManagedArray<T> : IArray<T> where T : unmanaged
 
     public void Dispose()
     {
+        GC.SuppressFinalize(this);
+
         if (_array != null)
         {
             ArrayPool<T>.Shared.Return(_array);
             _array = null;
         }
+    }
+
+    ~ManagedArray()
+    {
+        Dispose();
     }
 }
