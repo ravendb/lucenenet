@@ -4,7 +4,7 @@ using System.Runtime.InteropServices;
 
 namespace Lucene.Net.Util;
 
-public class ManagedArray<T> : IArray<T> where T : unmanaged
+public sealed class ManagedArray<T> : IArray<T> where T : unmanaged
 {
     private readonly int _length;
     private T[] _array;
