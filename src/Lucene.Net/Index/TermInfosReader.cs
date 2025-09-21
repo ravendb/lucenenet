@@ -235,12 +235,12 @@ namespace Lucene.Net.Index
             }
         }
 
-        private static int CompareTerms(string field, Span<byte> stringAsBytes, ReadOnlySpan<char> stringAsChar, UnmanagedTerm unmanagedTerm)
+        private static int CompareTerms(string field, Span<byte> stringAsBytes, ReadOnlySpan<char> stringAsChar, (string Field, UnmanagedString Text) tuple)
         {
-            if (ReferenceEquals(field, unmanagedTerm.Field))
-                return UnmanagedString.CompareOrdinal(stringAsBytes, stringAsChar, unmanagedTerm.Text);
+            if (ReferenceEquals(field, tuple.Field))
+                return UnmanagedString.CompareOrdinal(stringAsBytes, stringAsChar, tuple.Text);
 
-            return String.CompareOrdinal(field, unmanagedTerm.Field);
+            return String.CompareOrdinal(field, tuple.Field);
         }
 		
 	    internal static Term DeepCopyOf(Term other)
@@ -251,8 +251,9 @@ namespace Lucene.Net.Index
 	    }
 
         private void SeekEnum(SegmentTermEnum enumerator, int indexOffset, IState state)
-		{
-			enumerator.Seek(_termsIndexCache.IndexPointers[indexOffset], ((long)indexOffset * totalIndexInterval) - 1, _termsIndexCache.UnmanagedIndexTerms[indexOffset].ToTerm(), _termsIndexCache.TermInfos[indexOffset], state);
+        {
+            var tuple = _termsIndexCache.UnmanagedIndexTerms[indexOffset];
+            enumerator.Seek(_termsIndexCache.IndexPointers[indexOffset], ((long)indexOffset * totalIndexInterval) - 1, new Term(tuple.Field, tuple.Text.ToString()), _termsIndexCache.TermInfos[indexOffset], state);
 		}
 		
 		/// <summary>Returns the TermInfo for a Term in the set, or null. </summary>

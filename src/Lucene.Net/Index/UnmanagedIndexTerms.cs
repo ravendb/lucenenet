@@ -26,9 +26,9 @@ namespace Lucene.Net.Index
             _text.Add(textAsSpan);
         }
 
-        public UnmanagedTerm this[int position]
+        public (string Field, UnmanagedStringArray.UnmanagedString Text) this[int position]
         {
-            get => new UnmanagedTerm(_fieldInfos.FieldName(_fieldNumber[position]), _text[position]);
+            get => (_fieldInfos.FieldName(_fieldNumber[position]), _text[position]);
         }
 
         public void Dispose()
