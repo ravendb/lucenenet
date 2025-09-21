@@ -2,7 +2,7 @@
 
 namespace Lucene.Net.Util;
 
-public unsafe class UnmanagedArray<T> : IArray<T> where T : unmanaged
+public sealed unsafe class UnmanagedArray<T> : IArray<T> where T : unmanaged
 {
     private readonly int _length;
     private readonly UnmanagedStringArray.Type _type;
