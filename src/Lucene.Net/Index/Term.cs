@@ -17,6 +17,7 @@
 
 using System;
 using System.Runtime.CompilerServices;
+using Lucene.Net.Util;
 using StringHelper = Lucene.Net.Util.StringHelper;
 
 namespace Lucene.Net.Index
@@ -141,12 +142,12 @@ namespace Lucene.Net.Index
 		}
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public int CompareTo(UnmanagedTerm other)
+        public int CompareTo((string Field, UnmanagedStringArray.UnmanagedString Text) tuple)
         {
-            if (ReferenceEquals(field, other.Field))
-                return -other.Text.CompareTo(text);
+            if (ReferenceEquals(field, tuple.Field))
+                return -tuple.Text.CompareTo(text);
 
-            return String.CompareOrdinal(field, other.Field);
+            return String.CompareOrdinal(field, tuple.Field);
         }
 
         ///// <summary>Resets the field and text of a Term. </summary>
