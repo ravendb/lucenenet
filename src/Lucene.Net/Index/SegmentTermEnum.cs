@@ -125,11 +125,11 @@ namespace Lucene.Net.Index
 			return clone;
 		}
 		
-		internal void  Seek(long pointer, long p, Term t, TermInfo ti, IState state)
+		internal void Seek(long pointer, long p, (string Field, UnmanagedStringArray.UnmanagedString Text) tuple, TermInfo ti, IState state)
 		{
 			input.Seek(pointer, state);
 			position = p;
-			termBuffer.Set(t);
+			termBuffer.Set(tuple);
 			prevBuffer.Reset();
 			termInfo.Set(ti);
 		}
