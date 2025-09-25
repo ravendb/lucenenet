@@ -15,9 +15,10 @@
  * limitations under the License.
  */
 
-using System;
 using Lucene.Net.Store;
 using Lucene.Net.Support;
+using Lucene.Net.Util;
+using System;
 using IndexInput = Lucene.Net.Store.IndexInput;
 using UnicodeUtil = Lucene.Net.Util.UnicodeUtil;
 
@@ -125,6 +126,15 @@ namespace Lucene.Net.Index
 			this.term = term;
 		}
 		
+        public void Set((string Field, UnmanagedStringArray.UnmanagedString Text) tuple)
+        {
+            text.SetLength(tuple.Text.Size);
+            TextSupport.GetCharsFromUnmanagedString(tuple.Text, text.result);
+            dirty = true;
+            field = tuple.Field;
+            term = null;
+        }
+        
 		public void Set(TermBuffer other)
 		{
 			text.CopyText(other.text);
