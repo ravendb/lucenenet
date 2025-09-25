@@ -252,8 +252,7 @@ namespace Lucene.Net.Index
 
         private void SeekEnum(SegmentTermEnum enumerator, int indexOffset, IState state)
         {
-            var tuple = _termsIndexCache.UnmanagedIndexTerms[indexOffset];
-            enumerator.Seek(_termsIndexCache.IndexPointers[indexOffset], ((long)indexOffset * totalIndexInterval) - 1, new Term(tuple.Field, tuple.Text.ToString()), _termsIndexCache.TermInfos[indexOffset], state);
+            enumerator.Seek(_termsIndexCache.IndexPointers[indexOffset], ((long)indexOffset * totalIndexInterval) - 1, _termsIndexCache.UnmanagedIndexTerms[indexOffset], _termsIndexCache.TermInfos[indexOffset], state);
 		}
 		
 		/// <summary>Returns the TermInfo for a Term in the set, or null. </summary>
