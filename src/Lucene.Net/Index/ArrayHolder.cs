@@ -91,8 +91,9 @@ namespace Lucene.Net.Index
             using (_indexPointers)
             using (_termInfos)
             {
-                OnArrayHolderDisposed?.Invoke(_managedAllocations);
             }
+
+            OnArrayHolderDisposed?.Invoke(_managedAllocations);
         }
 
         ~ArrayHolder()
