@@ -1,9 +1,9 @@
-﻿using System;
+﻿using Lucene.Net.Index;
+using System;
 using System.Buffers;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Text;
-using Lucene.Net.Index;
 
 namespace Lucene.Net.Util
 {
@@ -211,16 +211,18 @@ namespace Lucene.Net.Util
             }
         }
 
-        private UnmanagedString[] _strings;
+        private IArray<UnmanagedString> _strings;
         private List<Segment> _segments = new List<Segment>();
 
         public int Length => _index;
         public int _index;
         private readonly Type _type;
 
-        public UnmanagedStringArray(int size, int startIndex, Type type)
+        public long TotalManagedAllocations => _strings.TotalManagedAllocations;
+
+        public UnmanagedStringArray(int size, int startIndex, Type type, bool clear = false)
         {
-            _strings = new UnmanagedString[size];
+            _strings = HybridArray.Create<UnmanagedString>(size, type, clear);
             _index = startIndex;
             _type = type;
         }
@@ -300,6 +302,11 @@ namespace Lucene.Net.Util
             _index++;
         }
 
+        public void SetAsNull(int index)
+        {
+            _strings[index] = new UnmanagedString { Start = null };
+        }
+
         public void AddDeleted(TermBuffer termBuffer)
         {
             // since we are doing a binary search, we must keep the order of the terms
@@ -318,17 +325,19 @@ namespace Lucene.Net.Util
         public UnmanagedString this[int position]
         {
             get => _strings[position];
-            set => _strings[position] = value;
         }
 
         public void Dispose()
         {
-            foreach (var segment in _segments)
+            using (_strings)
             {
-                segment.Dispose();
-            }
+                foreach (var segment in _segments)
+                {
+                    segment.Dispose();
+                }
 
-            _segments.Clear();
+                _segments.Clear();
+            }
         }
     }
 }
