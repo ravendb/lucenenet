@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Buffers;
+using System.Diagnostics.CodeAnalysis;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace Lucene.Net.Util;
@@ -27,10 +29,17 @@ public sealed class ManagedArray<T> : IArray<T> where T : unmanaged
         get
         {
             if (index >= _length)
-                throw new IndexOutOfRangeException();
+                ThrowArgumentOutOfRangeIndexException();
 
             return ref _array[index];
         }
+    }
+
+    [DoesNotReturn]
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static void ThrowArgumentOutOfRangeIndexException()
+    {
+        throw new IndexOutOfRangeException();
     }
 
     public void Dispose()
