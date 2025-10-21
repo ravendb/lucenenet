@@ -76,14 +76,7 @@ namespace Lucene.Net.Search
                 // When the GC will run, the finalizer of the Segments will be executed and release the unmanaged memory.
                 // We'll return the old StringIndexCache and let the caller decide if he wants to dispose it sooner
 
-                var disposable = new DisposableAction(() =>
-                {
-                    using (_stringIndexCache)
-                    using (_longCache)
-                    using (_doubleCache)
-                    {
-                    }
-                });
+                var disposable = new DisposableAction(_stringIndexCache, _longCache, _doubleCache);
 
                 Init();
 
@@ -91,25 +84,15 @@ namespace Lucene.Net.Search
             }
         }
 
-        private sealed class DisposableAction : IDisposable
+        private sealed class DisposableAction(StringIndexCache stringIndexCache, LongCache longCache, DoubleCache doubleCache) : IDisposable
         {
-            private readonly Action _action;
-
-            /// <summary>
-            /// Initializes a new instance of the <see cref="DisposableAction"/> class.
-            /// </summary>
-            /// <param name="action">The action.</param>
-            public DisposableAction(Action action)
-            {
-                _action = action;
-            }
-
-            /// <summary>
-            /// Execute the relevant actions
-            /// </summary>
             public void Dispose()
             {
-                _action();
+                using (stringIndexCache)
+                using (longCache)
+                using (doubleCache)
+                {
+                }
             }
         }
 
