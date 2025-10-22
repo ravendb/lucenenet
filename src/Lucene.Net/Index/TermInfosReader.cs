@@ -36,17 +36,12 @@ namespace Lucene.Net.Index
 	{
 		private readonly Directory directory;
 		private readonly String segment;
-		private readonly FieldInfos fieldInfos;
 
         private bool isDisposed;
 
 		private readonly LightWeightThreadLocal<ThreadResources> threadResources = new LightWeightThreadLocal<ThreadResources>();
 		private readonly SegmentTermEnum origEnum;
 		private readonly long size;
-		
-		private UnmanagedIndexTerms unmanagedIndexTerms => _termsIndexCache.UnmanagedIndexTerms;
-		private Span<TermInfo> indexInfos => _termsIndexCache.InfoArray;
-		private Span<long> indexPointers =>_termsIndexCache.LongArray;
 		
 		private readonly int totalIndexInterval;
 		
@@ -101,16 +96,15 @@ namespace Lucene.Net.Index
 			{
 				directory = dir;
 				segment = seg;
-				fieldInfos = fis;
 				
-				origEnum = new SegmentTermEnum(directory.OpenInput(segment + "." + IndexFileNames.TERMS_EXTENSION, readBufferSize, state), fieldInfos, false, state);
+				origEnum = new SegmentTermEnum(directory.OpenInput(segment + "." + IndexFileNames.TERMS_EXTENSION, readBufferSize, state), fis, false, state);
 				size = origEnum.size;
 
 				if (indexDivisor != - 1)
 				{
 					// Load terms index
 					totalIndexInterval = origEnum.indexInterval * indexDivisor;
-                    _termsIndexCache = directory.GetCache(segment + "." + IndexFileNames.TERMS_INDEX_EXTENSION, fieldInfos, readBufferSize, indexDivisor, state);
+                    _termsIndexCache = directory.GetCache(segment + "." + IndexFileNames.TERMS_INDEX_EXTENSION, fis, readBufferSize, indexDivisor, state);
 					_termsIndexCache.AddRef();
                 }
 				else
@@ -197,7 +191,7 @@ namespace Lucene.Net.Index
         private unsafe int GetIndexOffset(Term term)
         {
             int lo = 0; // binary search unmanagedIndexTerms[]
-            int hi = unmanagedIndexTerms.Length - 1;
+            int hi = _termsIndexCache.UnmanagedIndexTerms.Length - 1;
 
             byte[] arr = null;
             Span<byte> stringAsBytes;
@@ -223,7 +217,7 @@ namespace Lucene.Net.Index
                 while (hi >= lo)
                 {
                     int mid = Number.URShift((lo + hi), 1);
-                    int delta = CompareTerms(term.Field, stringAsBytes, stringAsSpan, unmanagedIndexTerms[mid]);
+                    int delta = CompareTerms(term.Field, stringAsBytes, stringAsSpan, _termsIndexCache.UnmanagedIndexTerms[mid]);
                     if (delta < 0)
                         hi = mid - 1;
                     else if (delta > 0)
@@ -241,12 +235,12 @@ namespace Lucene.Net.Index
             }
         }
 
-        private static int CompareTerms(string field, Span<byte> stringAsBytes, ReadOnlySpan<char> stringAsChar, UnmanagedTerm unmanagedTerm)
+        private static int CompareTerms(string field, Span<byte> stringAsBytes, ReadOnlySpan<char> stringAsChar, (string Field, UnmanagedString Text) tuple)
         {
-            if (ReferenceEquals(field, unmanagedTerm.Field))
-                return UnmanagedString.CompareOrdinal(stringAsBytes, stringAsChar, unmanagedTerm.Text);
+            if (ReferenceEquals(field, tuple.Field))
+                return UnmanagedString.CompareOrdinal(stringAsBytes, stringAsChar, tuple.Text);
 
-            return String.CompareOrdinal(field, unmanagedTerm.Field);
+            return String.CompareOrdinal(field, tuple.Field);
         }
 		
 	    internal static Term DeepCopyOf(Term other)
@@ -257,8 +251,8 @@ namespace Lucene.Net.Index
 	    }
 
         private void SeekEnum(SegmentTermEnum enumerator, int indexOffset, IState state)
-		{
-			enumerator.Seek(indexPointers[indexOffset], ((long)indexOffset * totalIndexInterval) - 1, unmanagedIndexTerms[indexOffset].ToTerm(), indexInfos[indexOffset], state);
+        {
+            enumerator.Seek(_termsIndexCache.IndexPointers[indexOffset], ((long)indexOffset * totalIndexInterval) - 1, _termsIndexCache.UnmanagedIndexTerms[indexOffset], _termsIndexCache.TermInfos[indexOffset], state);
 		}
 		
 		/// <summary>Returns the TermInfo for a Term in the set, or null. </summary>
@@ -295,7 +289,7 @@ namespace Lucene.Net.Index
 			if (enumerator.Term != null && ((enumerator.Prev() != null && term.CompareTo(enumerator.Prev()) > 0) || term.CompareTo(enumerator.Term) >= 0))
 			{
 				int enumOffset = (int) (enumerator.position / totalIndexInterval) + 1;
-				if (unmanagedIndexTerms.Length == enumOffset || term.CompareTo(unmanagedIndexTerms[enumOffset]) < 0)
+				if (_termsIndexCache.UnmanagedIndexTerms.Length == enumOffset || term.CompareTo(_termsIndexCache.UnmanagedIndexTerms[enumOffset]) < 0)
 				{
 					// no need to seek
 					
@@ -340,9 +334,9 @@ namespace Lucene.Net.Index
 			return ti;
 		}
 						
-		private void  EnsureIndexIsRead()
+		private void EnsureIndexIsRead()
 		{
-			if (unmanagedIndexTerms == null)
+			if (_termsIndexCache.UnmanagedIndexTerms == null)
 			{
 				throw new SystemException("terms index was not loaded when this reader was created");
 			}

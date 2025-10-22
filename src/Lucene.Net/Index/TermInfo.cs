@@ -21,8 +21,6 @@ namespace Lucene.Net.Index
 	
 	public struct TermInfo
 	{
-		public static int SizeOf = sizeof(int) + sizeof(long) + sizeof(long) + sizeof(int);
-
 		/// <summary>The number of documents which contain the term. </summary>
 		internal int docFreq;
 		

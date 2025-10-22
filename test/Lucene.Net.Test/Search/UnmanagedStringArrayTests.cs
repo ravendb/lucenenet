@@ -15,6 +15,8 @@ namespace Lucene.Net.Search
         {
             using (var terms = new UnmanagedStringArray(11, startIndex: 1, UnmanagedStringArray.Type.Sorting))
             {
+                terms.SetAsNull(0);
+
                 for (var letter = 'a'; letter <= 'j'; letter++)
                 {
                     terms.Add(new Span<char>(letter.ToString().ToCharArray()));
@@ -34,6 +36,8 @@ namespace Lucene.Net.Search
         public void Should_Find_With_Missing_Terms()
         {
             var terms = new UnmanagedStringArray(11, startIndex: 1, UnmanagedStringArray.Type.Sorting);
+            terms.SetAsNull(0);
+
             var count = 0;
             for (var letter = 'a'; letter <= 'j'; letter++)
             {
@@ -63,6 +67,7 @@ namespace Lucene.Net.Search
             VerifyNonExistingTerms(terms);
 
             terms = new UnmanagedStringArray(11, startIndex: 1, UnmanagedStringArray.Type.Sorting);
+            terms.SetAsNull(0);
 
             for (var letter = 'a'; letter <= 'j'; letter++)
             {
@@ -90,6 +95,7 @@ namespace Lucene.Net.Search
             VerifyNonExistingTerms(terms);
 
             terms = new UnmanagedStringArray(11, startIndex: 1, UnmanagedStringArray.Type.Sorting);
+            terms.SetAsNull(0);
 
             for (var letter = 'a'; letter <= 'j'; letter++)
             {

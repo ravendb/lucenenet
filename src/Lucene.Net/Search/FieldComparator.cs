@@ -275,7 +275,7 @@ namespace Lucene.Net.Search
 		public sealed class DoubleComparator:FieldComparator
 		{
 			private double[] values;
-			private double[] currentReaderValues;
+			private IArray<double> currentReaderValues;
 			private System.String field;
 			private DoubleParser parser;
 			private double bottom;
@@ -509,7 +509,7 @@ namespace Lucene.Net.Search
 		public sealed class LongComparator:FieldComparator
 		{
 			private long[] values;
-			private long[] currentReaderValues;
+			private IArray<long> currentReaderValues;
 			private System.String field;
 			private LongParser parser;
 			private long bottom;
@@ -784,7 +784,7 @@ namespace Lucene.Net.Search
 			
 			private int currentReaderGen = - 1;
 			private UnmanagedStringArray lookup;
-			private int[] order;
+			private IArray<int> order;
 			private System.String field;
 			
 			private int bottomSlot = - 1;
