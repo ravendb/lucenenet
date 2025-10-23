@@ -15,9 +15,10 @@
  * limitations under the License.
  */
 
-using System;
 using Lucene.Net.Store;
 using Lucene.Net.Support;
+using Lucene.Net.Util;
+using System;
 using IndexInput = Lucene.Net.Store.IndexInput;
 using UnicodeUtil = Lucene.Net.Util.UnicodeUtil;
 
@@ -28,6 +29,7 @@ namespace Lucene.Net.Index
 	{
 		
 		private System.String field;
+		private int fieldNumber = -1;
 		private Term term; // cached
 		private bool preUTF8Strings; // true if strings are stored in modified UTF8 encoding (LUCENE-510)
 		private bool dirty; // true if text was set externally (ie not read via UTF8 bytes)
@@ -37,6 +39,7 @@ namespace Lucene.Net.Index
 
         public Span<char> TextAsSpan => new Span<char>(text.result, 0, text.length);
         public string Field => field;
+        public int FieldNumber => fieldNumber;
 
 		public int CompareTo(TermBuffer other)
 		{
@@ -71,7 +74,7 @@ namespace Lucene.Net.Index
 			preUTF8Strings = true;
 		}
 		
-		public void  Read(IndexInput input, FieldInfos fieldInfos, IState state)
+		public void Read(IndexInput input, FieldInfos fieldInfos, IState state)
 		{
             this.term = null; // invalidate cache
 			int start = input.ReadVInt(state);
@@ -102,10 +105,12 @@ namespace Lucene.Net.Index
 					UnicodeUtil.UTF8toUTF16(bytes.result, start, length, text);
 				}
 			}
-			this.field = fieldInfos.FieldName(input.ReadVInt(state));
-		}
+
+			this.fieldNumber = input.ReadVInt(state);
+			this.field = fieldInfos.FieldName(fieldNumber);
+        }
 		
-		public void  Set(Term term)
+		public void Set(Term term)
 		{
 			if (term == null)
 			{
@@ -121,17 +126,28 @@ namespace Lucene.Net.Index
 			this.term = term;
 		}
 		
-		public void  Set(TermBuffer other)
+        public void Set((string Field, UnmanagedStringArray.UnmanagedString Text) tuple)
+        {
+            text.SetLength(tuple.Text.Size);
+            TextSupport.GetCharsFromUnmanagedString(tuple.Text, text.result);
+            dirty = true;
+            field = tuple.Field;
+            term = null;
+        }
+        
+		public void Set(TermBuffer other)
 		{
 			text.CopyText(other.text);
 			dirty = true;
 			field = other.field;
+            fieldNumber = other.fieldNumber;
 			term = other.term;
 		}
 		
 		public void  Reset()
 		{
 			field = null;
+            fieldNumber = -1;
 			text.SetLength(0);
             term = null;
 			dirty = true;

@@ -20,6 +20,7 @@ using Lucene.Net.Search;
 using Lucene.Net.Search.Function;
 using Lucene.Net.Spatial.Util;
 using Lucene.Net.Store;
+using Lucene.Net.Util;
 using Spatial4n.Shapes;
 
 namespace Lucene.Net.Spatial.BBox
@@ -39,10 +40,10 @@ namespace Lucene.Net.Spatial.BBox
 		{
 			private readonly BBoxSimilarityValueSource _enclosingInstance;
 		    private readonly IRectangle rect;
-		    private readonly double[] minX;
-			private readonly double[] minY;
-			private readonly double[] maxX;
-			private readonly double[] maxY;
+		    private readonly IArray<double> minX;
+			private readonly IArray<double> minY;
+			private readonly IArray<double> maxX;
+			private readonly IArray<double> maxY;
 
 			private readonly IBits validMinX, validMaxX;
 

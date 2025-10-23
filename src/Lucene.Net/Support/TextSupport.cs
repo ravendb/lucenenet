@@ -19,6 +19,9 @@
  *
 */
 
+using Lucene.Net.Util;
+using System;
+
 namespace Lucene.Net.Support
 {
     public class TextSupport
@@ -43,6 +46,27 @@ namespace Lucene.Net.Support
                 destinationArray[destinationCounter] = (char)sourceString[sourceCounter];
                 sourceCounter++;
                 destinationCounter++;
+            }
+        }
+
+        public static void GetCharsFromUnmanagedString(UnmanagedStringArray.UnmanagedString sourceString, char[] destinationArray)
+        {
+            if (sourceString.IsNull)
+                return;
+
+            if (sourceString.StoredAsAscii)
+            {
+                // string is stored as ASCII bytes, convert to chars
+                var stringAsBytes = sourceString.StringAsBytes;
+
+                for (int i = 0; i < stringAsBytes.Length; i++)
+                {
+                    destinationArray[i] = (char)stringAsBytes[i];
+                }
+            }
+            else
+            {
+                sourceString.StringAsChars.CopyTo(destinationArray);
             }
         }
     }

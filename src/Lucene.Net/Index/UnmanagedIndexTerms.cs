@@ -1,43 +1,42 @@
-using System;
-using System.Buffers;
 using Lucene.Net.Util;
+using System;
 
 namespace Lucene.Net.Index
 {
     public class UnmanagedIndexTerms : IDisposable
     {
-        private readonly int _size;
-        private readonly string[] _fields; // fields are interned
+        private readonly FieldInfos _fieldInfos;
+        private readonly IArray<int> _fieldNumber;
         private readonly UnmanagedStringArray _text;
 
         public int Length => _text.Length;
 
-        public UnmanagedIndexTerms(int size)
+        public long TotalManagedAllocations => _text.TotalManagedAllocations + _fieldNumber.TotalManagedAllocations;
+
+        public UnmanagedIndexTerms(int size, FieldInfos fieldInfos)
         {
-            _size = size;
-            _fields = size > ArrayHolder.ArrayPoolThreshold ? new string[size] : ArrayPool<string>.Shared.Rent(size);
-            _text = new UnmanagedStringArray(size, 0, UnmanagedStringArray.Type.TermCache);
+            _fieldInfos = fieldInfos;
+            _fieldNumber = HybridArray.Create<int>(size, UnmanagedStringArray.Type.TermCache, clear: false);
+            _text = new UnmanagedStringArray(size, 0, UnmanagedStringArray.Type.TermCache, clear: false);
         }
 
-        public void Add(int index, string field, Span<char> textAsSpan)
+        public void Add(int index, int fieldNumber, Span<char> textAsSpan)
         {
-            _fields[index] = field;
+            _fieldNumber[index] = fieldNumber;
             _text.Add(textAsSpan);
         }
 
-        public UnmanagedTerm this[int position]
+        public (string Field, UnmanagedStringArray.UnmanagedString Text) this[int position]
         {
-            get => new UnmanagedTerm(_fields[position], _text[position]);
+            get => (_fieldInfos.FieldName(_fieldNumber[position]), _text[position]);
         }
 
         public void Dispose()
         {
-            _text?.Dispose();
-
-            if (_size > ArrayHolder.ArrayPoolThreshold || _fields == null)
-                return;
-
-            ArrayPool<string>.Shared.Return(_fields, clearArray: true);
+            using (_fieldNumber)
+            using (_text)
+            {
+            }
         }
     }
 }

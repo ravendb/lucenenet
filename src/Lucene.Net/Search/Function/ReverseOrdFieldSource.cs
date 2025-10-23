@@ -15,10 +15,10 @@
  * limitations under the License.
  */
 
-using System;
 using Lucene.Net.Store;
+using Lucene.Net.Util;
+using System;
 using IndexReader = Lucene.Net.Index.IndexReader;
-using FieldCache = Lucene.Net.Search.FieldCache;
 
 namespace Lucene.Net.Search.Function
 {
@@ -58,18 +58,18 @@ namespace Lucene.Net.Search.Function
 	{
 		private class AnonymousClassDocValues:DocValues
 		{
-			public AnonymousClassDocValues(int end, int[] arr, ReverseOrdFieldSource enclosingInstance)
+			public AnonymousClassDocValues(int end, IArray<int> arr, ReverseOrdFieldSource enclosingInstance)
 			{
 				InitBlock(end, arr, enclosingInstance);
 			}
-			private void  InitBlock(int end, int[] arr, ReverseOrdFieldSource enclosingInstance)
+			private void  InitBlock(int end, IArray<int> arr, ReverseOrdFieldSource enclosingInstance)
 			{
 				this.end = end;
 				this.arr = arr;
 				this.enclosingInstance = enclosingInstance;
 			}
 			private int end;
-			private int[] arr;
+			private IArray<int> arr;
 			private ReverseOrdFieldSource enclosingInstance;
 			public ReverseOrdFieldSource Enclosing_Instance
 			{
@@ -128,7 +128,7 @@ namespace Lucene.Net.Search.Function
 		{
 			Lucene.Net.Search.StringIndex sindex = Lucene.Net.Search.FieldCache_Fields.DEFAULT.GetStringIndex(reader, field, state);
 			
-			int[] arr = sindex.order;
+			var arr = sindex.order;
 			int end = sindex.lookup.Length;
 			
 			return new AnonymousClassDocValues(end, arr, this);
