@@ -15,8 +15,8 @@
  * limitations under the License.
  */
 
-using System;
 using Lucene.Net.Store;
+using Lucene.Net.Util;
 using IndexReader = Lucene.Net.Index.IndexReader;
 
 namespace Lucene.Net.Search
@@ -136,9 +136,9 @@ namespace Lucene.Net.Search
 			pqTop = pq.Top();
 		}
 		
-		public /*protected internal*/ override TopDocs NewTopDocs(ScoreDoc[] results, int start)
+		public /*protected internal*/ override TopDocs NewTopDocs(ManagedScoreDocArray scoreDocArray, int start)
 		{
-			if (results == null)
+			if (scoreDocArray == null)
 			{
 				return EMPTY_TOPDOCS;
 			}
@@ -150,7 +150,7 @@ namespace Lucene.Net.Search
 			float maxScore = System.Single.NaN;
 			if (start == 0)
 			{
-				maxScore = results[0].Score;
+				maxScore = scoreDocArray[0].Score;
 			}
 			else
 			{
@@ -161,7 +161,7 @@ namespace Lucene.Net.Search
 				maxScore = pq.Pop().Score;
 			}
 			
-			return new TopDocs(internalTotalHits, results, maxScore);
+			return new TopDocs(internalTotalHits, maxScore, scoreDocArray);
 		}
 		
 		public override void SetNextReader(IndexReader reader, int base_Renamed, IState state)

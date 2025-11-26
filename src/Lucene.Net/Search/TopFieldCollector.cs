@@ -15,7 +15,6 @@
  * limitations under the License.
  */
 
-using System;
 using Lucene.Net.Store;
 using Lucene.Net.Util;
 using IndexReader = Lucene.Net.Index.IndexReader;
@@ -946,12 +945,14 @@ namespace Lucene.Net.Search
 		        get { return true; }
 		    }
 		}
-		
-		private static readonly ScoreDoc[] EMPTY_SCOREDOCS = new ScoreDoc[0];
+
+        private static readonly ManagedScoreDocArray EMPTY_SCOREDOCS = new();
 		
 		private bool fillFields;
-		
-		/*
+
+        public override bool FillFields => fillFields;
+
+        /*
 		* Stores the maximum score value encountered, needed for normalizing. If
 		* document scores are not tracked, this value is initialized to NaN.
 		*/
@@ -1096,38 +1097,38 @@ namespace Lucene.Net.Search
 		* topDocs(int, int) calls them to return the results.
 		*/
 		
-		protected internal override void  PopulateResults(ScoreDoc[] results, int howMany)
+		protected internal override void PopulateResults(ManagedScoreDocArray.BackwardsWriter writer, int howMany)
 		{
 			if (fillFields)
 			{
 				// avoid casting if unnecessary.
 				FieldValueHitQueue queue = (FieldValueHitQueue) pq;
-				for (int i = howMany - 1; i >= 0; i--)
+				for (var i = howMany - 1; i >= 0; i--)
 				{
-					results[i] = queue.FillFields(queue.Pop());
+                    writer.Write(i, queue.FillFields(queue.Pop()));
 				}
 			}
 			else
 			{
-				for (int i = howMany - 1; i >= 0; i--)
+				for (var i = howMany - 1; i >= 0; i--)
 				{
-					Entry entry = pq.Pop();
-					results[i] = new FieldDoc(entry.Doc, entry.Score);
+					var entry = pq.Pop();
+					writer.Write(entry.Doc, entry.Score);
 				}
 			}
 		}
 		
-		public /*protected internal*/ override TopDocs NewTopDocs(ScoreDoc[] results, int start)
+		public /*protected internal*/ override TopDocs NewTopDocs(ManagedScoreDocArray scoreDocArray, int start)
 		{
-			if (results == null)
+			if (scoreDocArray == null)
 			{
-				results = EMPTY_SCOREDOCS;
+                scoreDocArray = EMPTY_SCOREDOCS;
 				// Set maxScore to NaN, in case this is a maxScore tracking collector.
 				maxScore = System.Single.NaN;
 			}
 			
 			// If this is a maxScoring tracking collector and there were no results, 
-			return new TopFieldDocs(internalTotalHits, results, ((FieldValueHitQueue) pq).GetFields(), maxScore);
+			return new TopFieldDocs(internalTotalHits, scoreDocArray, ((FieldValueHitQueue) pq).GetFields(), maxScore);
 		}
 
 	    public override bool AcceptsDocsOutOfOrder

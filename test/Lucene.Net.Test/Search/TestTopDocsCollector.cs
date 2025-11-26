@@ -17,6 +17,7 @@
 
 using System;
 using Lucene.Net.Store;
+using Lucene.Net.Util;
 using NUnit.Framework;
 
 using KeywordAnalyzer = Lucene.Net.Analysis.KeywordAnalyzer;
@@ -45,9 +46,9 @@ namespace Lucene.Net.Search
 			{
 			}
 			
-			public /*protected internal*/ override TopDocs NewTopDocs(ScoreDoc[] results, int start)
+			public /*protected internal*/ override TopDocs NewTopDocs(ManagedScoreDocArray scoreDocArray, int start)
 			{
-				if (results == null)
+				if (scoreDocArray == null)
 				{
 					return EMPTY_TOPDOCS;
 				}
@@ -55,7 +56,7 @@ namespace Lucene.Net.Search
 				float maxScore = System.Single.NaN;
 				if (start == 0)
 				{
-					maxScore = results[0].Score;
+					maxScore = scoreDocArray[0].Score;
 				}
 				else
 				{
@@ -66,7 +67,7 @@ namespace Lucene.Net.Search
 					maxScore = pq.Pop().Score;
 				}
 				
-				return new TopDocs(internalTotalHits, results, maxScore);
+				return new TopDocs(internalTotalHits, maxScore, scoreDocArray);
 			}
 			
 			public override void  Collect(int doc, IState state)

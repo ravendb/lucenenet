@@ -272,15 +272,19 @@ namespace Lucene.Net.Search
                 TopDocs docs = MultiSearcherCallableNoSort(ThreadLock.NullLock, lockObj, searchables[i], weight, filter, nDocs, hq, i, starts, state);
 				totalHits += docs.TotalHits; // update totalHits
 			}
+
+            var scoreDocArray = new ManagedScoreDocArray(hq.Size(), fillFields: false);
+            var writer = scoreDocArray.GetBackwardsWriter();
+
+            for (int i = hq.Size() - 1; i >= 0; i--)
+            {
+				var scoreDoc = hq.Pop();
+                writer.Write(scoreDoc.Doc, scoreDoc.Score);
+            }
+
+            float maxScore = (totalHits == 0) ? System.Single.NegativeInfinity : scoreDocArray[0].Score;
 			
-			ScoreDoc[] scoreDocs2 = new ScoreDoc[hq.Size()];
-			for (int i = hq.Size() - 1; i >= 0; i--)
-			// put docs in array
-				scoreDocs2[i] = hq.Pop();
-			
-			float maxScore = (totalHits == 0)?System.Single.NegativeInfinity:scoreDocs2[0].Score;
-			
-			return new TopDocs(totalHits, scoreDocs2, maxScore);
+			return new TopDocs(totalHits, maxScore, scoreDocArray);
 		}
 		
 		public override TopFieldDocs Search(Weight weight, Filter filter, int n, Sort sort, IState state)
@@ -300,17 +304,21 @@ namespace Lucene.Net.Search
 			    totalHits += docs.TotalHits;
 				maxScore = System.Math.Max(maxScore, docs.MaxScore);
 			}
+
+            var scoreDocArray = new ManagedScoreDocArray(hq.Size(), fillFields: true);
+            var writer = scoreDocArray.GetBackwardsWriter();
+
+            for (int i = hq.Size() - 1; i >= 0; i--)
+            {
+				var fieldDoc = hq.Pop();
+                writer.Write(i, (fieldDoc.Doc, fieldDoc.Score, fieldDoc.fields));
+            }
 			
-			ScoreDoc[] scoreDocs2 = new ScoreDoc[hq.Size()];
-			for (int i = hq.Size() - 1; i >= 0; i--)
-			// put docs in array
-				scoreDocs2[i] = hq.Pop();
-			
-			return new TopFieldDocs(totalHits, scoreDocs2, hq.GetFields(), maxScore);
+			return new TopFieldDocs(totalHits, scoreDocArray, hq.GetFields(), maxScore);
 		}
 		
 		///<inheritdoc />
-		public override void  Search(Weight weight, Filter filter, Collector collector, IState state)
+		public override void Search(Weight weight, Filter filter, Collector collector, IState state)
 		{
 			for (int i = 0; i < searchables.Length; i++)
 			{
@@ -390,12 +398,14 @@ namespace Lucene.Net.Search
 	        (threadLock, lockObj, searchable, weight, filter, nDocs, hq, i, starts, state) =>
 	            {
 	                TopDocs docs = searchable.Search(weight, filter, nDocs, state);
-	                ScoreDoc[] scoreDocs = docs.ScoreDocs;
-                    for(int j = 0; j < scoreDocs.Length; j++) // merge scoreDocs into hq
+                    var reader = docs.ScoreDocArray.GetReader(start: 0);
+
+                    while (reader.Read(out int doc, out float score))
                     {
-                        ScoreDoc scoreDoc = scoreDocs[j];
+                        ScoreDoc scoreDoc = new ScoreDoc(doc, score);
                         scoreDoc.Doc += starts[i]; //convert doc
                         //it would be so nice if we had a thread-safe insert
+
                         try
                         {
                             threadLock.Enter(lockObj);
@@ -407,6 +417,7 @@ namespace Lucene.Net.Search
                             threadLock.Exit(lockObj);
                         }
                     }
+
 	                return docs;
 	            };
 
@@ -422,10 +433,11 @@ namespace Lucene.Net.Search
                                                         if (docs.fields.Array[j + docs.fields.Offset].Type == SortField.DOC)
                                                         {
                                                             // iterate over the score docs and change their fields value
-                                                            for (int j2 = 0; j2 < docs.ScoreDocs.Length; j2++)
+
+                                                            for (int j2 = 0; j2 < docs.ScoreDocArray.Length; j2++)
                                                             {
-                                                                FieldDoc fd = (FieldDoc) docs.ScoreDocs[j2];
-                                                                fd.fields[j] = (int)fd.fields[j] + starts[i];
+                                                                var comparableFor = docs.ScoreDocArray.Fields[j2];
+                                                                comparableFor[j] = (int)comparableFor[j] + starts[i];
                                                             }
                                                             break;
                                                         }
@@ -440,10 +452,13 @@ namespace Lucene.Net.Search
                                                         threadLock.Exit(lockObj);
 	                                                }
 
-	                                                ScoreDoc[] scoreDocs = docs.ScoreDocs;
-                                                    for (int j = 0; j < scoreDocs.Length; j++) // merge scoreDocs into hq
+                                                    var reader = docs.ScoreDocArray.GetReader(start: 0);
+                                                    var index = 0;
+
+                                                    while (reader.Read(out int doc, out float score))
                                                     {
-                                                        FieldDoc fieldDoc = (FieldDoc) scoreDocs[j];
+                                                        var fields = docs.ScoreDocArray.Fields[index];
+                                                        var fieldDoc = new FieldDoc(doc, score, fields);
                                                         fieldDoc.Doc += starts[i]; //convert doc
                                                         //it would be so nice if we had a thread-safe insert
                                                         lock (lockObj)
@@ -453,6 +468,7 @@ namespace Lucene.Net.Search
 
                                                         }
                                                     }
+
 	                                                return docs;
 	                                            };
 	}

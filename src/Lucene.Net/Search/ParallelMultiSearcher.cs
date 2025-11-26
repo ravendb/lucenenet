@@ -18,7 +18,6 @@
 #if !NET35
 
 using System;
-using System.Threading;
 using System.Threading.Tasks;
 using System.Linq;
 using Lucene.Net.Store;
@@ -136,11 +135,17 @@ namespace Lucene.Net.Search
                 maxScore = Math.Max(maxScore, topDocs.MaxScore);
             }
 
-            ScoreDoc[] scoreDocs = new ScoreDoc[hq.Size()];
-            for (int i = hq.Size() - 1; i >= 0; i--) // put docs in array
-                scoreDocs[i] = hq.Pop();
+            var scoreDocArray = new ManagedScoreDocArray(hq.Size(), fillFields: false);
 
-		    return new TopDocs(totalHits, scoreDocs, maxScore);
+            var writer = scoreDocArray.GetBackwardsWriter();
+
+            for (int i = hq.Size() - 1; i >= 0; i--)
+            {
+                var scoreDoc = hq.Pop();
+                writer.Write(scoreDoc.Doc, scoreDoc.Score);
+            }
+
+		    return new TopDocs(totalHits, maxScore, scoreDocArray);
 		}
 		
 		/// <summary> A search implementation allowing sorting which spans a new thread for each
@@ -174,11 +179,16 @@ namespace Lucene.Net.Search
                 maxScore = Math.Max(maxScore, topFieldDocs.MaxScore);
             }
 
-            ScoreDoc[] scoreDocs = new ScoreDoc[hq.Size()];
-            for (int i = hq.Size() - 1; i >= 0; i--)
-                scoreDocs[i] = hq.Pop();
+            var scoreDocArray = new ManagedScoreDocArray(hq.Size(), fillFields: true);
+            var writer = scoreDocArray.GetBackwardsWriter();
 
-		    return new TopFieldDocs(totalHits, scoreDocs, hq.GetFields(), maxScore);
+            for (int i = hq.Size() - 1; i >= 0; i--)
+            {
+				var fieldDoc = hq.Pop();
+                writer.Write(i, (fieldDoc.Doc, fieldDoc.Score, fieldDoc.fields));
+
+            }
+		    return new TopFieldDocs(totalHits, scoreDocArray, hq.GetFields(), maxScore);
 		}
 		
 		/// <summary>Lower-level search API.

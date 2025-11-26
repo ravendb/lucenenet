@@ -214,7 +214,7 @@ namespace Lucene.Net.Search
 		/// </returns>
 		/// <seealso cref="Searchable.Search(Weight,Filter,int,Sort)">
 		/// </seealso>
-		internal virtual FieldDoc FillFields(Entry entry)
+		internal virtual (int Doc, float Score, IComparable[] fields) FillFields(Entry entry)
 		{
 			int n = comparators.Length;
 			System.IComparable[] fields = new System.IComparable[n];
@@ -223,7 +223,7 @@ namespace Lucene.Net.Search
 				fields[i] = comparators[i][entry.slot];
 			}
 			//if (maxscore > 1.0f) doc.score /= maxscore;   // normalize scores
-			return new FieldDoc(entry.Doc, entry.Score, fields);
+			return (entry.Doc, entry.Score, fields);
 		}
 		
 		/// <summary>Returns the SortFields being used by this hit queue. </summary>
