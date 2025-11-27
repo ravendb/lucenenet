@@ -63,19 +63,12 @@ namespace Lucene.Net.Search
             ScoreDocArray = scoreDocArray;
         }
 
-        public (int Doc, float Score) GetRawValues(int index)
-        {
-            var cds = ScoreDocArray[index];
-            return (cds.Doc, cds.Score);
-        }
-
         /// <summary>The top hits for the query. </summary>
         /// <remarks>
         /// <para>**WARNING:** This property materializes the entire ScoreDoc collection 
         /// into a standard array, which can be **inefficient and memory-intensive** /// for large result sets. **Do not use this property in production code.**</para>
         /// <para>This property is intended only for **testing and debugging** /// or when working with small, verified result sets.</para>
         /// <para>For production use, utilize the efficient <see cref="ScoreDocArray"/> 
-        /// property and its associated reader methods (like <see cref="GetRawValues(int)"/>)
         /// to access the scores without full materialization.</para>
         /// </remarks>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1819:PropertiesShouldNotReturnArrays")]
