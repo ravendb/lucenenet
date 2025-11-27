@@ -266,12 +266,12 @@ namespace Lucene.Net.Search
 
             var lockObj = new object();
 			for (int i = 0; i < searchables.Length; i++)
-			{
+            {
                 // search each searcher
-                // use NullLock, we don't care about synchronization for these
-                TopDocs docs = MultiSearcherCallableNoSort(ThreadLock.NullLock, lockObj, searchables[i], weight, filter, nDocs, hq, i, starts, state);
-				totalHits += docs.TotalHits; // update totalHits
-			}
+				// use NullLock, we don't care about synchronization for these
+                using var docs = MultiSearcherCallableNoSort(ThreadLock.NullLock, lockObj, searchables[i], weight, filter, nDocs, hq, i, starts, state);
+                totalHits += docs.TotalHits; // update totalHits
+            }
 
             var scoreDocArray = new ManagedScoreDocArray(hq.Size(), fillFields: false);
             var writer = scoreDocArray.GetBackwardsWriter();
@@ -296,14 +296,16 @@ namespace Lucene.Net.Search
 
 		    var lockObj = new object();
 			for (int i = 0; i < searchables.Length; i++)
-			{
-				// search each searcher
-                // use NullLock, we don't care about synchronization for these
-                TopFieldDocs docs = MultiSearcherCallableWithSort(ThreadLock.NullLock, lockObj, searchables[i], weight, filter, n, hq, sort,
-			                                          i, starts, state);
-			    totalHits += docs.TotalHits;
-				maxScore = System.Math.Max(maxScore, docs.MaxScore);
-			}
+            {
+                // search each searcher
+				// use NullLock, we don't care about synchronization for these
+                using TopFieldDocs docs = MultiSearcherCallableWithSort(ThreadLock.NullLock, lockObj, searchables[i],
+                    weight, filter, n, hq, sort,
+                    i, starts, state);
+
+                totalHits += docs.TotalHits;
+                maxScore = System.Math.Max(maxScore, docs.MaxScore);
+            }
 
             var scoreDocArray = new ManagedScoreDocArray(hq.Size(), fillFields: true);
             var writer = scoreDocArray.GetBackwardsWriter();
@@ -460,6 +462,8 @@ namespace Lucene.Net.Search
                                                         var fields = docs.ScoreDocArray.Fields[index];
                                                         var fieldDoc = new FieldDoc(doc, score, fields);
                                                         fieldDoc.Doc += starts[i]; //convert doc
+                                                        index++;
+
                                                         //it would be so nice if we had a thread-safe insert
                                                         lock (lockObj)
                                                         {
