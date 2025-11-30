@@ -40,29 +40,22 @@ public class ManagedScoreDocArray : IDisposable
     private int _currentSegmentCapacity;
 
     private int _length;
-    private IComparable[][] _fields;
-
     public int Length => _length;
-
-    public IComparable[][] Fields => _fields;
 
     public ManagedScoreDocArray()
     {
     }
 
-    public ManagedScoreDocArray(int totalItems, bool fillFields)
+    public ManagedScoreDocArray(int totalItems, bool hasFields)
     {
         _length = totalItems;
-
-        if (fillFields)
-            _fields = new IComparable[totalItems][];
 
         int remainingToAllocate = totalItems;
         int currentSize = InitialItems;
 
         while (_segments.Count < StablePhaseSegmentStartIndex && remainingToAllocate > 0)
         {
-            AllocateSegment(currentSize);
+            AllocateSegment(currentSize, hasFields);
             remainingToAllocate -= currentSize;
             currentSize *= 2;
         }
@@ -73,7 +66,7 @@ public class ManagedScoreDocArray : IDisposable
 
             for (int i = 0; i < stableSegmentsNeeded; i++)
             {
-                AllocateSegment(MaxItemsPerSegment);
+                AllocateSegment(MaxItemsPerSegment, hasFields);
             }
         }
 
@@ -109,18 +102,23 @@ public class ManagedScoreDocArray : IDisposable
         }
     }
 
-    private void AllocateSegment(int size)
+    private void AllocateSegment(int size, bool hasFields)
     {
         var docs = ArrayPool<int>.Shared.Rent(size);
         var scores = ArrayPool<float>.Shared.Rent(size);
 
-        _segments.Add(new Segment
+        var segment = new Segment
         {
             Docs = docs,
             Scores = scores,
             Capacity = size,
             Used = size // default to full, we fix the last one in the constructor
-        });
+        };
+
+        if (hasFields)
+            segment.Fields = ArrayPool<IComparable[]>.Shared.Rent(size);
+
+        _segments.Add(segment);
     }
 
     public void Add(int doc, float score)
@@ -229,6 +227,9 @@ public class ManagedScoreDocArray : IDisposable
         {
             ArrayPool<int>.Shared.Return(seg.Docs);
             ArrayPool<float>.Shared.Return(seg.Scores);
+
+            if (seg.Fields != null)
+                ArrayPool<IComparable[]>.Shared.Return(seg.Fields);
         }
 
         _segments.Clear();
@@ -248,6 +249,7 @@ public class ManagedScoreDocArray : IDisposable
     {
         public int[] Docs;
         public float[] Scores;
+        public IComparable[][] Fields;
         public int Used;
         public int Capacity;
     }
@@ -266,6 +268,7 @@ public class ManagedScoreDocArray : IDisposable
 
         private int[] _currentDocs;
         private float[] _currentScores;
+        private IComparable[][] _currentFields;
 
         private int _segIndex;
         private int _indexInSegment;
@@ -295,10 +298,11 @@ public class ManagedScoreDocArray : IDisposable
             var seg = _parent._segments[_segIndex];
             _currentDocs = seg.Docs;
             _currentScores = seg.Scores;
+            _currentFields = seg.Fields;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Write(int doc, float score)
+        public void Write(int doc, float score, IComparable[] fields = null)
         {
             if (_parent.Length == 0)
                 ThrowOnEmptyArray();
@@ -314,24 +318,28 @@ public class ManagedScoreDocArray : IDisposable
                 Unsafe.Add(ref docsRef, _indexInSegment) = doc;
                 Unsafe.Add(ref scoresRef, _indexInSegment) = score;
 
+                if (fields != null)
+                {
+                    ref IComparable[] fieldsRef = ref MemoryMarshal.GetArrayDataReference(_currentFields);
+                    Unsafe.Add(ref fieldsRef, _indexInSegment) = fields;
+                }
+
                 _indexInSegment--;
                 return;
             }
 
             // SLOW PATH: we crossed a boundary, switch to previous segment
-            SwitchToPreviousSegment(doc, score);
+            SwitchToPreviousSegment(doc, score, fields);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Write(int index, (int Doc, float Score, IComparable[] fields) fieldDoc)
         {
-            Write(fieldDoc.Doc, fieldDoc.Score);
-
-            _parent._fields[index] = fieldDoc.fields;
-    }
+            Write(fieldDoc.Doc, fieldDoc.Score, fieldDoc.fields);
+        }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
-        private void SwitchToPreviousSegment(int doc, float score)
+        private void SwitchToPreviousSegment(int doc, float score, IComparable[] fields = null)
         {
             _segIndex--;
 
@@ -341,11 +349,15 @@ public class ManagedScoreDocArray : IDisposable
             var seg = _parent._segments[_segIndex];
             _currentDocs = seg.Docs;
             _currentScores = seg.Scores;
+            _currentFields = seg.Fields;
 
             _indexInSegment = seg.Capacity - 1;
 
             _currentDocs[_indexInSegment] = doc;
             _currentScores[_indexInSegment] = score;
+
+            if (fields != null)
+                _currentFields[_indexInSegment] = fields;
 
             _indexInSegment--;
         }
@@ -371,6 +383,7 @@ public class ManagedScoreDocArray : IDisposable
         private readonly ManagedScoreDocArray _managedParent;
         private int[] _currentDocs;
         private float[] _currentScores;
+        private IComparable[][] _currentFields;
         private int _currentSegUsedCount;
 
         private int _segIndex;
@@ -398,6 +411,7 @@ public class ManagedScoreDocArray : IDisposable
                 var seg = parent._segments[_segIndex];
                 _currentDocs = seg.Docs;
                 _currentScores = seg.Scores;
+                _currentFields = seg.Fields;
 
                 _currentSegUsedCount = (_segIndex == parent._segments.Count - 1)
                     ? parent._currentSegmentUsed
@@ -407,6 +421,7 @@ public class ManagedScoreDocArray : IDisposable
             {
                 _currentDocs = null;
                 _currentScores = null;
+                _currentFields = null;
                 _currentSegUsedCount = 0;
             }
         }
@@ -462,6 +477,66 @@ public class ManagedScoreDocArray : IDisposable
 
             doc = 0;
             score = 0;
+            return false;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool Read(out int doc, out float score, out IComparable[] fields)
+        {
+            // FAST PATH: We are inside the boundaries of the current segment
+            if (_indexInSegment < _currentSegUsedCount)
+            {
+                // OPTIMIZATION: Unsafe ref arithmetic
+                ref int docsStart = ref MemoryMarshal.GetArrayDataReference(_currentDocs);
+                ref float scoresStart = ref MemoryMarshal.GetArrayDataReference(_currentScores);
+                ref IComparable[] fieldsStart = ref MemoryMarshal.GetArrayDataReference(_currentFields);
+
+                doc = Unsafe.Add(ref docsStart, _indexInSegment);
+                score = Unsafe.Add(ref scoresStart, _indexInSegment);
+                fields = Unsafe.Add(ref fieldsStart, _indexInSegment);
+
+                _indexInSegment++;
+                return true;
+            }
+
+            return ReadNextManagedSegment(out doc, out score, out fields);
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private bool ReadNextManagedSegment(out int doc, out float score, out IComparable[] fields)
+        {
+            _segIndex++;
+            _indexInSegment = 0;
+
+            if (_managedParent == null || _segIndex >= _managedParent._segments.Count)
+            {
+                doc = 0;
+                score = 0;
+                fields = null;
+                return false;
+            }
+
+            var seg = _managedParent._segments[_segIndex];
+            _currentDocs = seg.Docs;
+            _currentScores = seg.Scores;
+            _currentFields = seg.Fields;
+
+            _currentSegUsedCount = (_segIndex == _managedParent._segments.Count - 1)
+                ? _managedParent._currentSegmentUsed
+                : seg.Used;
+
+            if (_indexInSegment < _currentSegUsedCount)
+            {
+                doc = _currentDocs[_indexInSegment];
+                score = _currentScores[_indexInSegment];
+                fields = _currentFields[_indexInSegment];
+                _indexInSegment++;
+                return true;
+            }
+
+            doc = 0;
+            score = 0;
+            fields = null;
             return false;
         }
     }

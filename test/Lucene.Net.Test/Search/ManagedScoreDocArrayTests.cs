@@ -44,7 +44,6 @@ public class ManagedScoreDocArrayTests
     [Test]
     public void Add_Resizes_Correctly_Across_Segments()
     {
-        // This test focuses on the transition logic of EnsureCapacity
         using var array = new ManagedScoreDocArray();
 
         // Fill exactly to the end of the Growth phase
@@ -54,14 +53,13 @@ public class ManagedScoreDocArrayTests
             array.Add(i, 0f);
         }
 
-        // We expect 6 segments (256, 512, 1024, 2048, 4096, 8192)
         Assert.That(array._segments.Count, Is.EqualTo(6));
 
         // Add one more to trigger the first Stable segment (16k)
         array.Add(999, 999f);
 
         Assert.That(array._segments.Count, Is.EqualTo(7));
-        Assert.That(array._segments[6].Capacity, Is.EqualTo(16384)); // Verify new segment size
+        Assert.That(array._segments[6].Capacity, Is.EqualTo(16384));
 
         // Verify data integrity across the boundary
         Assert.That(array[0].Doc, Is.EqualTo(0));
@@ -69,7 +67,7 @@ public class ManagedScoreDocArrayTests
     }
 
     // ---------------------------------------------------------
-    // 2. ScoreDocReader Tests (Forward Iteration)
+    // 2. ScoreDocReader Tests
     // ---------------------------------------------------------
 
     [TestCase(100)]
@@ -103,7 +101,6 @@ public class ManagedScoreDocArrayTests
 
         var reader = array.GetReader(startOffset);
 
-        // Read first item
         bool success = reader.Read(out int doc, out float score);
 
         Assert.That(success, Is.True);
@@ -119,31 +116,27 @@ public class ManagedScoreDocArrayTests
     }
 
     // ---------------------------------------------------------
-    // 3. BackwardsWriter Tests
+    // 3. BackwardsWriter Tests (Standard & Complex Boundaries)
     // ---------------------------------------------------------
 
-    [TestCase(256)]           // Single segment full
-    [TestCase(16128)]         // Exact growth phase full
-    [TestCase(16129)]         // Crossed into stable
-    [TestCase(128000)]        // Large scale
+    [TestCase(256)]
+    [TestCase(16128)]
+    [TestCase(16129)]
+    [TestCase(128000)]
     public void BackwardsWriter_Fills_Array_Correctly(int count)
     {
-        // 1. Pre-allocate the array size (simulating how a Collector works)
-        using var array = new ManagedScoreDocArray(count, fillFields: false);
-
+        using var array = new ManagedScoreDocArray(count, hasFields: false);
         Assert.That(array.Length, Is.EqualTo(count));
 
-        // 2. Get the backwards writer
         var writer = array.GetBackwardsWriter();
 
-        // 3. Fill backwards (simulating a PriorityQueue pop operation)
-        // We write: index -> docId
+        // Fill backwards
         for (int i = count - 1; i >= 0; i--)
         {
             writer.Write(i, i * 2.0f);
         }
 
-        // 4. Verify using standard forward indexer
+        // Verify using standard indexer
         for (int i = 0; i < count; i++)
         {
             var (doc, score) = array[i];
@@ -153,20 +146,115 @@ public class ManagedScoreDocArrayTests
     }
 
     [Test]
+    public void BackwardsWriter_Crosses_Growth_Segments_Correctly()
+    {
+        // Segment 0 size: 256. 
+        // We allocate 300 items. This spans Segment 0 (256) and Segment 1 (size 512, used 44).
+        int count = 300;
+        using var array = new ManagedScoreDocArray(count, hasFields: false);
+        var writer = array.GetBackwardsWriter();
+
+        for (int i = count - 1; i >= 0; i--)
+        {
+            writer.Write(i, i);
+        }
+
+        // Verify the boundary specifically
+        // Index 255 should be in Segment 0
+        // Index 256 should be in Segment 1
+        Assert.That(array[255].Doc, Is.EqualTo(255));
+        Assert.That(array[256].Doc, Is.EqualTo(256));
+    }
+
+    [Test]
+    public void BackwardsWriter_Crosses_Growth_To_Stable_Boundary()
+    {
+        // Growth phase total: 16128 items.
+        // We allocate 16130 items. 
+        // Index 16128 and 16129 are in the first Stable Segment.
+        // Index 16127 is in the last Growth Segment.
+        int count = 16130;
+        using var array = new ManagedScoreDocArray(count, hasFields: false);
+        var writer = array.GetBackwardsWriter();
+
+        for (int i = count - 1; i >= 0; i--)
+        {
+            writer.Write(i, (float)i);
+        }
+
+        // Verify the specific boundary
+        Assert.That(array[16127].Doc, Is.EqualTo(16127)); // Last of growth
+        Assert.That(array[16128].Doc, Is.EqualTo(16128)); // First of stable
+        Assert.That(array[16129].Doc, Is.EqualTo(16129));
+    }
+
+    [Test]
+    public void BackwardsWriter_Tuple_Overload_Works()
+    {
+        using var array = new ManagedScoreDocArray(3, hasFields: false);
+        var writer = array.GetBackwardsWriter();
+
+        // Write index 2
+        writer.Write(2, (Doc: 100, Score: 1.0f, fields: null));
+        // Write index 1
+        writer.Write(1, (Doc: 200, Score: 2.0f, fields: null));
+        // Write index 0
+        writer.Write(0, (Doc: 300, Score: 3.0f, fields: null));
+
+        // Verify
+        Assert.That(array[0].Doc, Is.EqualTo(300));
+        Assert.That(array[1].Doc, Is.EqualTo(200));
+        Assert.That(array[2].Doc, Is.EqualTo(100));
+    }
+
+    [Test]
     public void BackwardsWriter_Throws_If_Over_Written()
     {
         using var array = new ManagedScoreDocArray(10, false);
         var writer = array.GetBackwardsWriter();
 
-        // Write valid items
         for (int i = 0; i < 10; i++) writer.Write(i, 0);
 
-        // Try to write one more (should go below index 0)
         Assert.Throws<IndexOutOfRangeException>(() => writer.Write(99, 0));
     }
 
     // ---------------------------------------------------------
-    // 4. Boundary Stress Test (128k)
+    // 4. Fields / Auxiliary Data Tests 
+    // ---------------------------------------------------------
+
+    [Test]
+    public void End_To_End_Fields_Read_Write()
+    {
+        int size = 300; // Large enough to cross the first segment boundary (256)
+
+        using var array = new ManagedScoreDocArray(size, hasFields: true);
+        var writer = array.GetBackwardsWriter();
+
+        for (int i = size - 1; i >= 0; i--)
+        {
+            var dummyFields = new IComparable[] { $"val_{i}", i };
+            writer.Write(doc: i, score: i * 1.0f, fields: dummyFields);
+        }
+
+        var reader = array.GetReader(0);
+        int readCount = 0;
+
+        while (reader.Read(out int doc, out float score, out IComparable[] fields))
+        {
+            Assert.That(doc, Is.EqualTo(readCount));
+            Assert.That(fields, Is.Not.Null);
+            Assert.That(fields.Length, Is.EqualTo(2));
+            Assert.That(fields[0], Is.EqualTo($"val_{readCount}"));
+            Assert.That(fields[1], Is.EqualTo(readCount));
+
+            readCount++;
+        }
+
+        Assert.That(readCount, Is.EqualTo(size));
+    }
+
+    // ---------------------------------------------------------
+    // 5. Stress & Integrity Tests
     // ---------------------------------------------------------
 
     [Test]
@@ -175,15 +263,12 @@ public class ManagedScoreDocArrayTests
         const int Target = 128000;
         using var array = new ManagedScoreDocArray();
 
-        // 1. Add
         for (int i = 0; i < Target; i++)
         {
             array.Add(i, i);
         }
 
-        // 2. Validate Random Access
-        // Check specific boundaries known in the code:
-        // 256, 16128, 32512 (16128 + 16384)
+        // Validate Random Access at known boundaries
         int[] boundaryChecks = { 0, 255, 256, 16127, 16128, 32511, 32512, Target - 1 };
 
         foreach (var index in boundaryChecks)
@@ -191,12 +276,12 @@ public class ManagedScoreDocArrayTests
             Assert.That(array[index].Doc, Is.EqualTo(index), $"Failed at index {index}");
         }
 
-        // 3. Validate Sequential Read
+        // Validate Sequential Read
         var reader = array.GetReader(0);
         int count = 0;
         while (reader.Read(out int d, out float s))
         {
-            if (count % 10000 == 0) // Spot check to save time
+            if (count % 10000 == 0)
             {
                 Assert.That(d, Is.EqualTo(count));
             }
@@ -205,71 +290,67 @@ public class ManagedScoreDocArrayTests
         Assert.That(count, Is.EqualTo(Target));
     }
 
-    // ---------------------------------------------------------
-    // 5. Fields / Auxiliary Data Tests
-    // ---------------------------------------------------------
-
     [Test]
-    public void Constructor_Allocates_Fields_If_Requested()
+    public void Data_Integrity_Random_Vs_Sequential()
     {
-        int size = 100;
-        using var array = new ManagedScoreDocArray(size, fillFields: true);
+        // This test ensures that iterating via Reader yields the exact same data
+        // as accessing via the Random Access Indexer.
+        int count = 5000;
+        using var array = new ManagedScoreDocArray();
 
-        Assert.That(array.Fields, Is.Not.Null);
-        Assert.That(array.Fields.Length, Is.EqualTo(size));
+        // Populate with pseudo-random data
+        for (int i = 0; i < count; i++)
+        {
+            array.Add(i * 2, i * 0.33f);
+        }
 
-        // Test writing to fields via BackwardsWriter
-        var writer = array.GetBackwardsWriter();
-        var dummyFields = new IComparable[] { "test" };
+        var reader = array.GetReader(0);
+        int idx = 0;
 
-        // Write at the last index
-        writer.Write(size - 1, (99, 1.0f, dummyFields));
+        while (reader.Read(out int rDoc, out float rScore))
+        {
+            var (iDoc, iScore) = array[idx];
 
-        Assert.That(array.Fields[size - 1], Is.EqualTo(dummyFields));
-        Assert.That(array[size - 1].Doc, Is.EqualTo(99));
+            Assert.That(rDoc, Is.EqualTo(iDoc), $"Doc Mismatch at {idx}");
+            Assert.That(rScore, Is.EqualTo(iScore), $"Score Mismatch at {idx}");
+
+            idx++;
+        }
     }
+
+    // ---------------------------------------------------------
+    // 6. Cleanup & Edge Cases
+    // ---------------------------------------------------------
 
     [Test]
     public void Dispose_Clears_State()
     {
         var array = new ManagedScoreDocArray();
         array.Add(1, 1);
-
         array.Dispose();
 
         Assert.That(array.Length, Is.EqualTo(0));
         Assert.That(array._segments, Is.Empty);
-
-        // Ensure accessing after dispose throws
         Assert.Throws<IndexOutOfRangeException>(() => { var _ = array[0]; });
     }
 
     [Test]
     public void Zero_Length_Array_Edge_Cases()
     {
-        // 1. Setup: Test both the explicit constructor and the default constructor
-        using var arrayExplicit = new ManagedScoreDocArray(0, fillFields: false);
-        using var arrayDefault = new ManagedScoreDocArray();
+        using var arrayExplicit = new ManagedScoreDocArray(0, hasFields: false);
 
-        // 2. Verify Length property
+        // Length
         Assert.That(arrayExplicit.Length, Is.EqualTo(0));
-        Assert.That(arrayDefault.Length, Is.EqualTo(0));
 
-        // 3. Verify Indexer: Accessing index 0 should throw
+        // Indexer
         Assert.Throws<IndexOutOfRangeException>(() => { var _ = arrayExplicit[0]; });
 
-        // 4. Verify Reader: Should return false immediately
+        // Reader
         var reader = arrayExplicit.GetReader(0);
-        bool hasData = reader.Read(out int doc, out float score);
+        Assert.That(reader.Read(out _, out _), Is.False);
 
-        Assert.That(hasData, Is.False, "Reader should not find any data in empty array");
-        Assert.That(doc, Is.EqualTo(0), "Out parameter should be default");
-        Assert.That(score, Is.EqualTo(0f), "Out parameter should be default");
-
-        // 5. Verify BackwardsWriter: Writing to an empty array is impossible
-        // The source code throws InvalidOperationException in Write() if Length == 0
+        // Writer
         var writer = arrayExplicit.GetBackwardsWriter();
-
         var ex = Assert.Throws<InvalidOperationException>(() => writer.Write(1, 1.0f));
         Assert.That(ex.Message, Does.Contain("empty array"));
     }

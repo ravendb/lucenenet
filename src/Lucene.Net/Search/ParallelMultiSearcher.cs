@@ -135,7 +135,7 @@ namespace Lucene.Net.Search
                 maxScore = Math.Max(maxScore, topDocs.MaxScore);
             }
 
-            var scoreDocArray = new ManagedScoreDocArray(hq.Size(), fillFields: false);
+            var scoreDocArray = new ManagedScoreDocArray(hq.Size(), hasFields: false);
 
             var writer = scoreDocArray.GetBackwardsWriter();
 
@@ -179,7 +179,7 @@ namespace Lucene.Net.Search
                 maxScore = Math.Max(maxScore, topFieldDocs.MaxScore);
             }
 
-            var scoreDocArray = new ManagedScoreDocArray(hq.Size(), fillFields: true);
+            var scoreDocArray = new ManagedScoreDocArray(hq.Size(), hasFields: true);
             var writer = scoreDocArray.GetBackwardsWriter();
 
             for (int i = hq.Size() - 1; i >= 0; i--)

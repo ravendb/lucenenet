@@ -273,7 +273,7 @@ namespace Lucene.Net.Search
                 totalHits += docs.TotalHits; // update totalHits
             }
 
-            var scoreDocArray = new ManagedScoreDocArray(hq.Size(), fillFields: false);
+            var scoreDocArray = new ManagedScoreDocArray(hq.Size(), hasFields: false);
             var writer = scoreDocArray.GetBackwardsWriter();
 
             for (int i = hq.Size() - 1; i >= 0; i--)
@@ -307,7 +307,7 @@ namespace Lucene.Net.Search
                 maxScore = System.Math.Max(maxScore, docs.MaxScore);
             }
 
-            var scoreDocArray = new ManagedScoreDocArray(hq.Size(), fillFields: true);
+            var scoreDocArray = new ManagedScoreDocArray(hq.Size(), hasFields: true);
             var writer = scoreDocArray.GetBackwardsWriter();
 
             for (int i = hq.Size() - 1; i >= 0; i--)
@@ -435,11 +435,11 @@ namespace Lucene.Net.Search
                                                         if (docs.fields.Array[j + docs.fields.Offset].Type == SortField.DOC)
                                                         {
                                                             // iterate over the score docs and change their fields value
+                                                            var fieldsReader = docs.ScoreDocArray.GetReader(start: 0);
 
-                                                            for (int j2 = 0; j2 < docs.ScoreDocArray.Length; j2++)
+                                                            while (fieldsReader.Read(out _, out _, out var fields))
                                                             {
-                                                                var comparableFor = docs.ScoreDocArray.Fields[j2];
-                                                                comparableFor[j] = (int)comparableFor[j] + starts[i];
+                                                                fields[j] = (int)fields[j] + starts[i];
                                                             }
                                                             break;
                                                         }
@@ -457,9 +457,8 @@ namespace Lucene.Net.Search
                                                     var reader = docs.ScoreDocArray.GetReader(start: 0);
                                                     var index = 0;
 
-                                                    while (reader.Read(out int doc, out float score))
+                                                    while (reader.Read(out int doc, out float score, out IComparable[] fields))
                                                     {
-                                                        var fields = docs.ScoreDocArray.Fields[index];
                                                         var fieldDoc = new FieldDoc(doc, score, fields);
                                                         fieldDoc.Doc += starts[i]; //convert doc
                                                         index++;
