@@ -185,7 +185,7 @@ namespace Lucene.Net.Search
             for (int i = hq.Size() - 1; i >= 0; i--)
             {
 				var fieldDoc = hq.Pop();
-                writer.Write(i, (fieldDoc.Doc, fieldDoc.Score, fieldDoc.fields));
+                writer.Write(fieldDoc.Doc, fieldDoc.Score, fieldDoc.fields);
 
             }
 		    return new TopFieldDocs(totalHits, scoreDocArray, hq.GetFields(), maxScore);

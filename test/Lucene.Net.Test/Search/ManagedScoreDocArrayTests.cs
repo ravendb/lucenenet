@@ -194,12 +194,9 @@ public class ManagedScoreDocArrayTests
         using var array = new ManagedScoreDocArray(3, hasFields: false);
         var writer = array.GetBackwardsWriter();
 
-        // Write index 2
-        writer.Write(2, (Doc: 100, Score: 1.0f, fields: null));
-        // Write index 1
-        writer.Write(1, (Doc: 200, Score: 2.0f, fields: null));
-        // Write index 0
-        writer.Write(0, (Doc: 300, Score: 3.0f, fields: null));
+        writer.Write(100, 1.0f);
+        writer.Write(200, 2.0f);
+        writer.Write(300, 3.0f);
 
         // Verify
         Assert.That(array[0].Doc, Is.EqualTo(300));

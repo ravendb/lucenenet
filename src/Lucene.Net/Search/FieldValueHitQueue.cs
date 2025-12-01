@@ -214,16 +214,16 @@ namespace Lucene.Net.Search
 		/// </returns>
 		/// <seealso cref="Searchable.Search(Weight,Filter,int,Sort)">
 		/// </seealso>
-		internal virtual (int Doc, float Score, IComparable[] fields) FillFields(Entry entry)
+		internal virtual IComparable[] GetFields(int slot)
 		{
 			int n = comparators.Length;
 			System.IComparable[] fields = new System.IComparable[n];
 			for (int i = 0; i < n; ++i)
 			{
-				fields[i] = comparators[i][entry.slot];
+				fields[i] = comparators[i][slot];
 			}
 			//if (maxscore > 1.0f) doc.score /= maxscore;   // normalize scores
-			return (entry.Doc, entry.Score, fields);
+			return fields;
 		}
 		
 		/// <summary>Returns the SortFields being used by this hit queue. </summary>

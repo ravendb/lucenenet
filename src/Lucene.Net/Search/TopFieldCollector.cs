@@ -946,8 +946,6 @@ namespace Lucene.Net.Search
 		    }
 		}
 
-        private static readonly ManagedScoreDocArray EMPTY_SCOREDOCS = new();
-		
 		private bool fillFields;
 
         public override bool FillFields => fillFields;
@@ -1104,8 +1102,9 @@ namespace Lucene.Net.Search
 				// avoid casting if unnecessary.
 				FieldValueHitQueue queue = (FieldValueHitQueue) pq;
 				for (var i = howMany - 1; i >= 0; i--)
-				{
-                    writer.Write(i, queue.FillFields(queue.Pop()));
+                {
+                    var entry = queue.Pop();
+                    writer.Write(entry.Doc, entry.Score, queue.GetFields(entry.slot));
 				}
 			}
 			else
@@ -1122,7 +1121,7 @@ namespace Lucene.Net.Search
 		{
 			if (scoreDocArray == null)
 			{
-                scoreDocArray = EMPTY_SCOREDOCS;
+                scoreDocArray = ManagedScoreDocArray.Empty;
 				// Set maxScore to NaN, in case this is a maxScore tracking collector.
 				maxScore = System.Single.NaN;
 			}

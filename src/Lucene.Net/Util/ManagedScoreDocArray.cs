@@ -9,7 +9,7 @@ namespace Lucene.Net.Util;
 
 public class ManagedScoreDocArray : IDisposable
 {
-    public static ManagedScoreDocArray Empty = new();
+    public static readonly ManagedScoreDocArray Empty = new();
 
     private const int SingleItemSize = sizeof(int);
     private const int MaxItemsPerSegment = 64 * 1024 / SingleItemSize; // 16,384 items - 64KB limit to avoid LOH
@@ -330,12 +330,6 @@ public class ManagedScoreDocArray : IDisposable
 
             // SLOW PATH: we crossed a boundary, switch to previous segment
             SwitchToPreviousSegment(doc, score, fields);
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Write(int index, (int Doc, float Score, IComparable[] fields) fieldDoc)
-        {
-            Write(fieldDoc.Doc, fieldDoc.Score, fieldDoc.fields);
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]

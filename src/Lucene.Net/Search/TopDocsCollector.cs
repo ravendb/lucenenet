@@ -31,7 +31,7 @@ namespace Lucene.Net.Search
 		
 		// This is used in case topDocs() is called with illegal parameters, or there
 		// simply aren't (enough) results.
-		protected internal static readonly TopDocs EMPTY_TOPDOCS = new TopDocs(0, System.Single.NaN, new ManagedScoreDocArray());
+		protected internal static readonly TopDocs EMPTY_TOPDOCS = new TopDocs(0, System.Single.NaN, ManagedScoreDocArray.Empty);
 		
 		/// <summary> The priority queue which holds the top documents. Note that different
 		/// implementations of PriorityQueue give different meaning to 'top documents'.
