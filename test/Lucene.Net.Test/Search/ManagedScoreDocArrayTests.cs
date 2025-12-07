@@ -315,6 +315,56 @@ public class ManagedScoreDocArrayTests
         }
     }
 
+    [Test]
+    public void Fields_With_Multiple_Sort_Criteria_Persist_Correctly()
+    {
+        // Arrange
+        // Use enough items to cross the first segment boundary (256 items) to ensure 
+        // the parallel field arrays are managed correctly across segments.
+        int count = 300;
+        using var array = new ManagedScoreDocArray(count, hasFields: true);
+        var writer = array.GetBackwardsWriter();
+
+        // Act: Write data backwards (typical TopDocs collector behavior)
+        for (int i = count - 1; i >= 0; i--)
+        {
+            // Simulate 3 sort fields:
+            // 0: String (e.g., Category)
+            // 1: Int (e.g., Price - creating a descending sort simulation)
+            // 2: Float (e.g., Relevance/Score)
+            var multiFields = new IComparable[]
+            {
+                $"Category_{i % 10}", // String
+                i * 100,              // Int
+                (float)i / 0.5f       // Float
+            };
+
+            writer.Write(i, i * 1.0f, multiFields);
+        }
+
+        // Assert: Read forwards
+        var reader = array.GetReader(0);
+        int readCount = 0;
+
+        while (reader.Read(out int doc, out float score, out IComparable[] fields))
+        {
+            Assert.That(doc, Is.EqualTo(readCount));
+
+            // Verify structure
+            Assert.That(fields, Is.Not.Null);
+            Assert.That(fields.Length, Is.EqualTo(3), "Should hold exactly 3 field values");
+
+            // Verify specific values for all 3 fields
+            Assert.That(fields[0], Is.EqualTo($"Category_{readCount % 10}"));
+            Assert.That(fields[1], Is.EqualTo(readCount * 100));
+            Assert.That(fields[2], Is.EqualTo((float)readCount / 0.5f));
+
+            readCount++;
+        }
+
+        Assert.That(readCount, Is.EqualTo(count));
+    }
+
     // ---------------------------------------------------------
     // 6. Cleanup & Edge Cases
     // ---------------------------------------------------------
