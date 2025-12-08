@@ -221,7 +221,16 @@ namespace Lucene.Net.Search
                     {
                         if (progress.IsValueCreated == false)
                         {
-                            innerCache[key] = progress.Value;
+                            try
+                            {
+                                innerCache[key] = progress.Value;
+                            }
+                            catch
+                            {
+                                // remove the failed entry from cache so next call can retry
+                                innerCache.TryRemove(key, out _);
+                                throw;
+                            }
 
                             // Only check if key.custom (the parser) is
                             // non-null; else, we check twice for a single
