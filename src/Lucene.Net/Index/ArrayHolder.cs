@@ -52,11 +52,12 @@ namespace Lucene.Net.Index
         {
             var indexEnum = new SegmentTermEnum(directory.OpenInput(name, readBufferSize, state), fieldInfos, true, state);
 
+            ArrayHolder holder = null;
+
             try
             {
                 int indexSize = 1 + ((int)indexEnum.size - 1) / indexDivisor; // otherwise read index
-
-                var holder = new ArrayHolder(indexSize, directory, name, fieldInfos);
+                holder = new ArrayHolder(indexSize, directory, name, fieldInfos);
 
                 for (int i = 0; indexEnum.Next(state); i++)
                 {
@@ -76,9 +77,14 @@ namespace Lucene.Net.Index
                 return holder;
 
             }
+            catch
+            {
+                // although we have finalizers, we can release the resources earlier
+                holder?.Dispose();
+                throw;
+            }
             finally
             {
-
                 indexEnum?.Close();
             }
         }
