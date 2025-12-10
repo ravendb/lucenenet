@@ -228,6 +228,19 @@ namespace Lucene.Net.Search
                             catch
                             {
                                 // remove the failed entry from cache so next call can retry
+
+                                // The code's internal mechanism can be a bit misleading.
+                                //
+                                // The definition of the inner cache is `ConcurrentDictionary<Entry, object>`.
+                                //
+                                // 1. Insertion: We first insert the un-materialized `Lazy<T>` object.
+                                //
+                                // 2. Materialization (Replacement): After a successful call to `Lazy<T>.Value` (which executes `CreateValue`), 
+                                //    we attempt to replace the placeholder in the dictionary with the fully materialized value (`T`).
+                                //
+                                // 3. Subsequent Access: The next call will then directly retrieve and use the materialized `T`, 
+                                //    bypassing the `Lazy<T>` logic entirely.
+
                                 innerCache.TryRemove(key, out _);
                                 throw;
                             }
