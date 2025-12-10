@@ -115,7 +115,16 @@ namespace Lucene.Net.Store
             var lazyArrayHolder = _termsIndexCachePerSegment.GetOrAdd(name,
                 new Lazy<ArrayHolder>(() => ArrayHolder.GenerateArrayHolder(directory, name, fieldInfos, readBufferSize, indexDivisor, state)));
 
-            return lazyArrayHolder.Value;
+            try
+            {
+                return lazyArrayHolder.Value;
+            }
+            catch
+            {
+                // remove the failed entry from cache so next call can retry
+                _termsIndexCachePerSegment.TryRemove(name, out _);
+                throw;
+            }
         }
 
         public virtual void RemoveFromTermsIndexCache(string name)
@@ -162,7 +171,14 @@ namespace Lucene.Net.Store
         {
             foreach ((_, Lazy<ArrayHolder> cacheLazy) in _termsIndexCachePerSegment)
             {
-                cacheLazy.Value.Dispose();
+                try
+                {
+                    cacheLazy.Value.Dispose();
+                }
+                catch
+                {
+                    // noop
+                }
             }
         }
 
