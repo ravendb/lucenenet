@@ -226,7 +226,7 @@ namespace Lucene.Net.Index
 		
 		/// <summary> Not implemented.</summary>
 		/// <throws>  UnsupportedOperationException </throws>
-		public virtual int Read(int[] arg0, int[] arg1, IState state)
+		public virtual int Read(Span<int> arg0, Span<int> arg1, IState state)
 		{
 			throw new System.NotSupportedException();
 		}

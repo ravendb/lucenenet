@@ -185,7 +185,7 @@ namespace Lucene.Net.Index
 		}
 		
 		/// <summary>Optimized implementation. </summary>
-		public virtual int Read(int[] docs, int[] freqs, IState state)
+		public virtual int Read(Span<int> docs, Span<int> freqs, IState state)
 		{
 			int length = docs.Length;
 			if (currentFieldOmitTermFreqAndPositions)
@@ -219,7 +219,7 @@ namespace Lucene.Net.Index
 			}
 		}
 		
-		private int ReadNoTf(int[] docs, int[] freqs, int length, IState state)
+		private int ReadNoTf(Span<int> docs, Span<int> freqs, int length, IState state)
 		{
 			int i = 0;
 			while (i < length && count < df)

@@ -1394,7 +1394,7 @@ namespace Lucene.Net.Index
             }
             
             /// <summary>Optimized implementation. </summary>
-            public virtual int Read(int[] docs, int[] freqs, IState state)
+            public virtual int Read(Span<int> docs, Span<int> freqs, IState state)
             {
                 while (true)
                 {

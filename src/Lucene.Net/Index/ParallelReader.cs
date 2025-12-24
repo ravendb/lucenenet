@@ -723,7 +723,7 @@ namespace Lucene.Net.Index
 				return termDocs.Next(state);
 			}
 			
-			public virtual int Read(int[] docs, int[] freqs, IState state)
+			public virtual int Read(Span<int> docs, Span<int> freqs, IState state)
 			{
 				if (termDocs == null)
 					return 0;

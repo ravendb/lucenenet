@@ -69,7 +69,7 @@ namespace Lucene.Net.Index
 			{
 				return in_Renamed.Next(state);
 			}
-			public virtual int Read(int[] docs, int[] freqs, IState state)
+			public virtual int Read(Span<int> docs, Span<int> freqs, IState state)
 			{
 				return in_Renamed.Read(docs, freqs, state);
 			}
