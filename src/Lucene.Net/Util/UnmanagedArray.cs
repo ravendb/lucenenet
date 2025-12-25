@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Diagnostics.CodeAnalysis;
-using System.Runtime.CompilerServices;
 
 namespace Lucene.Net.Util;
 
@@ -36,17 +34,10 @@ public sealed unsafe class UnmanagedArray<T> : IArray<T> where T : unmanaged
         get
         {
             if (index >= _length)
-                ThrowArgumentOutOfRangeIndexException();
+                ThrowHelper.ThrowArgumentOutOfRangeIndexException(index, _length);
 
             return ref ((T*)_ptr)[index];
         }
-    }
-
-    [DoesNotReturn]
-    [MethodImpl(MethodImplOptions.NoInlining)]
-    private static void ThrowArgumentOutOfRangeIndexException()
-    {
-        throw new IndexOutOfRangeException();
     }
 
     public void Dispose()
