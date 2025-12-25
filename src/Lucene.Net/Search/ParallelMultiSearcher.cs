@@ -152,7 +152,7 @@ namespace Lucene.Net.Search
 		/// Searchable, waits for each search to complete and merges
 		/// the results back together.
 		/// </summary>
-		public override TopFieldDocs Search(Weight weight, Filter filter, int nDocs, Sort sort, IState state)
+		public override TopFieldDocs Search(Weight weight, Filter filter, int nDocs, Sort sort, bool fillFields, IState state)
 		{
             if (sort == null) throw new ArgumentNullException("sort");
 

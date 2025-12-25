@@ -165,7 +165,7 @@ namespace Lucene.Net.Search
 				throw new System.NotSupportedException();
 			}
 			
-			public override TopFieldDocs Search(Weight weight, Filter filter, int n, Sort sort, IState state)
+			public override TopFieldDocs Search(Weight weight, Filter filter, int n, Sort sort, bool fillFields, IState state)
 			{
 				throw new System.NotSupportedException();
 			}
@@ -287,7 +287,7 @@ namespace Lucene.Net.Search
 			return new TopDocs(totalHits, maxScore, scoreDocArray);
 		}
 		
-		public override TopFieldDocs Search(Weight weight, Filter filter, int n, Sort sort, IState state)
+		public override TopFieldDocs Search(Weight weight, Filter filter, int n, Sort sort, bool fillFields, IState state)
 		{
 			var hq = new FieldDocSortedHitQueue(n);
 			int totalHits = 0;
@@ -426,7 +426,7 @@ namespace Lucene.Net.Search
         internal Func<ThreadLock, object, Searchable, Weight, Filter, int, FieldDocSortedHitQueue, Sort, int, int[], IState, TopFieldDocs>
             MultiSearcherCallableWithSort = (threadLock, lockObj, searchable, weight, filter, nDocs, hq, sort, i, starts, state) =>
 	                                            {
-	                                                TopFieldDocs docs = searchable.Search(weight, filter, nDocs, sort, state);
+	                                                TopFieldDocs docs = searchable.Search(weight, filter, nDocs, sort, fillFields: true, state);
                                                     // if one of the Sort fields is FIELD_DOC, need to fix its values, so that
                                                     // it will break ties by doc Id properly.  Otherwise, it will compare to
                                                     // 'relative' doc Ids, that belong to two different searchables.

@@ -133,7 +133,7 @@ namespace Lucene.Net.Search
 				throw new System.NotSupportedException(Lucene.Net.Search.JustCompileSearch.UNSUPPORTED_MSG);
 			}
 			
-			public override TopFieldDocs Search(Weight weight, Filter filter, int n, Sort sort, IState state)
+			public override TopFieldDocs Search(Weight weight, Filter filter, int n, Sort sort, bool fillFields, IState state)
 			{
 				throw new System.NotSupportedException(Lucene.Net.Search.JustCompileSearch.UNSUPPORTED_MSG);
 			}
