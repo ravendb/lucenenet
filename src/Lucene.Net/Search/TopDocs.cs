@@ -51,11 +51,6 @@ namespace Lucene.Net.Search
             set { _maxScore = value; }
         }
 
-        public TopDocs()
-        {
-            ScoreDocArray = new ManagedScoreDocArray();
-        }
-
         public TopDocs(int totalHits, float maxScore, ManagedScoreDocArray scoreDocArray)
         {
             TotalHits = totalHits;
