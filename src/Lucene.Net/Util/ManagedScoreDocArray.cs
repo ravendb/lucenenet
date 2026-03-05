@@ -229,6 +229,10 @@ public class ManagedScoreDocArray : IDisposable
 
     public void Dispose()
     {
+        // never dispose the static Empty instance
+        if (ReferenceEquals(this, Empty))
+            return;
+
         GC.SuppressFinalize(this);
 
         foreach (var seg in _segments)
