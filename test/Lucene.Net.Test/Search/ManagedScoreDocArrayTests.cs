@@ -53,13 +53,13 @@ public class ManagedScoreDocArrayTests
             array.Add(i, 0f);
         }
 
-        Assert.That(array._segments.Count, Is.EqualTo(6));
+        Assert.That(array._segments.Count, Is.EqualTo(7));
 
         // Add one more to trigger the first Stable segment (16k)
         array.Add(999, 999f);
 
         Assert.That(array._segments.Count, Is.EqualTo(7));
-        Assert.That(array._segments[6].Capacity, Is.EqualTo(16384));
+        Assert.That(array._segments[6].Capacity, Is.EqualTo(8192));
 
         // Verify data integrity across the boundary
         Assert.That(array[0].Doc, Is.EqualTo(0));

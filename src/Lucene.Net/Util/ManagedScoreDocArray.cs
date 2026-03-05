@@ -11,31 +11,35 @@ public class ManagedScoreDocArray : IDisposable
 {
     public static readonly ManagedScoreDocArray Empty = new();
 
-    private const int SingleItemSize = sizeof(int);
-    private const int MaxItemsPerSegment = 64 * 1024 / SingleItemSize; // 16,384 items - 64KB limit to avoid LOH
-    private const int InitialItems = 1 * 1024 / SingleItemSize; // 256 items - 1KB
+    // size of a single packed item (int doc + float score) = 8 bytes
+    private const int SingleItemSize = sizeof(long);
 
-    // math constants for the "Stable" phase
-    // log2(16384) = 14. we can use bit shifting instead of division.
-    private const int MaxItemsLog2 = 14;
+    // 8,192 items * 8 bytes = 64KB. 
+    // we keep a single array under the 85KB LOH threshold.
+    private const int MaxItemsPerSegment = 64 * 1024 / SingleItemSize;
 
-    // sequence: 256 -> 512 -> 1024 -> 2048 -> 4096 -> 8192
-    // the next one (16384) is the start of stable phase.
-    // sum = 256 + 512 + ... + 8192 = 16128 items.
-    private const int GrowthPhaseTotalItems = 16128;
+    // 128 items * 8 bytes = 1KB
+    private const int InitialItems = 1 * 1024 / SingleItemSize;
 
-    // there are 6 segments in the growth phase (0 to 5)
-    // segment 6 is the first "Stable" (max Size) segment.
+    // Log2(8192) = 13
+    private const int MaxItemsLog2 = 13;
+
+    // Sequence: 128 -> 256 -> 512 -> 1024 -> 2048 -> 4096
+    // The next one (8192) is the start of stable phase.
+    // Sum = 128 + 256 + ... + 4096 = 8064 items.
+    private const int GrowthPhaseTotalItems = 8064;
+
+    // There are 6 segments in the growth phase (0 to 5)
+    // Segment 6 is the first "Stable" (max Size) segment.
     private const int StablePhaseSegmentStartIndex = 6;
 
-    // used to shift indexes for the Log2 calculation in the growth phase
-    private const int GrowthPhaseShift = 8;
+    // Log2(128) = 7. Used for shifting in growth phase.
+    private const int GrowthPhaseShift = 7;
 
     public readonly List<Segment> _segments = new();
 
-    // hot path caching
-    private int[] _currentDocs;
-    private float[] _currentScores;
+    // Hot path caching - points to the packed long array
+    private long[] _currentPacked;
     public int _currentSegmentUsed;
     private int _currentSegmentCapacity;
 
@@ -70,15 +74,12 @@ public class ManagedScoreDocArray : IDisposable
             }
         }
 
-        // we must point _currentDocs to the last segment and calculate exactly 
-        // how many items are used in that last segment.
         if (_segments.Count > 0)
         {
             var lastIndex = _segments.Count - 1;
             var lastSeg = _segments[lastIndex];
 
-            _currentDocs = lastSeg.Docs;
-            _currentScores = lastSeg.Scores;
+            _currentPacked = lastSeg.PackedDocsAndScores;
             _currentSegmentCapacity = lastSeg.Capacity;
 
             int itemsInPreviousSegments = 0;
@@ -88,15 +89,11 @@ public class ManagedScoreDocArray : IDisposable
             }
 
             _currentSegmentUsed = totalItems - itemsInPreviousSegments;
-
-            // update the struct in the list so readers see the correct limit
             lastSeg.Used = _currentSegmentUsed;
         }
         else
         {
-            // totalItems was 0
-            _currentDocs = null;
-            _currentScores = null;
+            _currentPacked = null;
             _currentSegmentCapacity = 0;
             _currentSegmentUsed = 0;
         }
@@ -104,15 +101,13 @@ public class ManagedScoreDocArray : IDisposable
 
     private void AllocateSegment(int size, bool hasFields)
     {
-        var docs = ArrayPool<int>.Shared.Rent(size);
-        var scores = ArrayPool<float>.Shared.Rent(size);
+        var packed = ArrayPool<long>.Shared.Rent(size);
 
         var segment = new Segment
         {
-            Docs = docs,
-            Scores = scores,
+            PackedDocsAndScores = packed,
             Capacity = size,
-            Used = size // default to full, we fix the last one in the constructor
+            Used = size
         };
 
         if (hasFields)
@@ -121,6 +116,7 @@ public class ManagedScoreDocArray : IDisposable
         _segments.Add(segment);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Add(int doc, float score)
     {
         if (_currentSegmentUsed == _currentSegmentCapacity)
@@ -128,12 +124,22 @@ public class ManagedScoreDocArray : IDisposable
             EnsureCapacity();
         }
 
-        // OPTIMIZATION: Unsafe ref arithmetic
-        ref int docsRef = ref MemoryMarshal.GetArrayDataReference(_currentDocs);
-        ref float scoresRef = ref MemoryMarshal.GetArrayDataReference(_currentScores);
+        // OPTIMIZATION: Ref aliasing
+        // 1. Get reference to the start of the long[] array
+        ref long longStart = ref MemoryMarshal.GetArrayDataReference(_currentPacked);
 
-        Unsafe.Add(ref docsRef, _currentSegmentUsed) = doc;
-        Unsafe.Add(ref scoresRef, _currentSegmentUsed) = score;
+        // 2. Reinterpret that memory as int[]
+        ref int intStart = ref Unsafe.As<long, int>(ref longStart);
+
+        // 3. Calculate offset: each "Item" is 2 ints long (8 bytes)
+        //    Offset for Doc = index * 2
+        //    Offset for Score = index * 2 + 1
+        int offset = _currentSegmentUsed * 2;
+
+        Unsafe.Add(ref intStart, offset) = doc;
+
+        // 4. Reinterpret the specific slot for score as float and write
+        Unsafe.Add(ref Unsafe.As<int, float>(ref intStart), offset + 1) = score;
 
         _currentSegmentUsed++;
         _length++;
@@ -144,9 +150,6 @@ public class ManagedScoreDocArray : IDisposable
     {
         if (_segments.Count > 0)
         {
-            // if we have an active segment, update its 'Used' count before switching
-            // we have to copy the value type back into the list because Segment is a struct,
-            // and we modified the local field _currentSegmentUsed
             var lastSeg = _segments[^1];
             lastSeg.Used = _currentSegmentUsed;
         }
@@ -163,22 +166,18 @@ public class ManagedScoreDocArray : IDisposable
                 : Math.Min(_currentSegmentCapacity * 2, MaxItemsPerSegment);
         }
 
-        var docs = ArrayPool<int>.Shared.Rent(newSize);
-        var scores = ArrayPool<float>.Shared.Rent(newSize);
+        var packed = ArrayPool<long>.Shared.Rent(newSize);
 
         var newSegment = new Segment
         {
-            Docs = docs,
-            Scores = scores,
+            PackedDocsAndScores = packed,
             Used = 0,
             Capacity = newSize
         };
 
         _segments.Add(newSegment);
 
-        // update hot-path cache
-        _currentDocs = docs;
-        _currentScores = scores;
+        _currentPacked = packed;
         _currentSegmentCapacity = newSize;
         _currentSegmentUsed = 0;
     }
@@ -191,20 +190,16 @@ public class ManagedScoreDocArray : IDisposable
             if ((uint)index >= (uint)_length)
                 ThrowIndexOutOfRangeException();
 
-            // stable region (index >= 16128)
             if (index >= GrowthPhaseTotalItems)
             {
                 int relativeIndex = index - GrowthPhaseTotalItems;
-
                 int segmentOffset = relativeIndex >> MaxItemsLog2;
                 int indexInSegment = relativeIndex & (MaxItemsPerSegment - 1);
 
-                // offset by the number of growth segments (6 segments: 256..8192)
                 var seg = _segments[StablePhaseSegmentStartIndex + segmentOffset];
-                return (seg.Docs[indexInSegment], seg.Scores[indexInSegment]);
+                return GetPackedValue(seg.PackedDocsAndScores, indexInSegment);
             }
 
-            // growth region
             return GetFromGrowthSegment(index);
         }
     }
@@ -216,7 +211,20 @@ public class ManagedScoreDocArray : IDisposable
         int segmentStart = InitialItems * ((1 << segIndex) - 1);
         int indexInSegment = index - segmentStart;
         var seg = _segments[segIndex];
-        return (seg.Docs[indexInSegment], seg.Scores[indexInSegment]);
+        return GetPackedValue(seg.PackedDocsAndScores, indexInSegment);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static (int, float) GetPackedValue(long[] packed, int index)
+    {
+        ref long longStart = ref MemoryMarshal.GetArrayDataReference(packed);
+        ref int intStart = ref Unsafe.As<long, int>(ref longStart);
+        int offset = index * 2;
+
+        int doc = Unsafe.Add(ref intStart, offset);
+        float score = Unsafe.Add(ref Unsafe.As<int, float>(ref intStart), offset + 1);
+
+        return (doc, score);
     }
 
     public void Dispose()
@@ -225,16 +233,14 @@ public class ManagedScoreDocArray : IDisposable
 
         foreach (var seg in _segments)
         {
-            ArrayPool<int>.Shared.Return(seg.Docs);
-            ArrayPool<float>.Shared.Return(seg.Scores);
+            ArrayPool<long>.Shared.Return(seg.PackedDocsAndScores);
 
             if (seg.Fields != null)
                 ArrayPool<IComparable[]>.Shared.Return(seg.Fields);
         }
 
         _segments.Clear();
-        _currentDocs = null;
-        _currentScores = null;
+        _currentPacked = null;
         _length = _currentSegmentUsed = _currentSegmentCapacity = 0;
     }
 
@@ -247,27 +253,18 @@ public class ManagedScoreDocArray : IDisposable
 
     public class Segment
     {
-        public int[] Docs;
-        public float[] Scores;
+        public long[] PackedDocsAndScores;
         public IComparable[][] Fields;
         public int Used;
         public int Capacity;
     }
 
-    /// <summary>
-    /// Returns a writer optimized for filling the array backwards from (length - 1) down to 0.
-    /// </summary>
-    public BackwardsWriter GetBackwardsWriter()
-    {
-        return new BackwardsWriter(this);
-    }
+    public BackwardsWriter GetBackwardsWriter() => new(this);
 
     public struct BackwardsWriter
     {
         private readonly ManagedScoreDocArray _parent;
-
-        private int[] _currentDocs;
-        private float[] _currentScores;
+        private long[] _currentPacked;
         private IComparable[][] _currentFields;
 
         private int _segIndex;
@@ -296,8 +293,7 @@ public class ManagedScoreDocArray : IDisposable
             }
 
             var seg = _parent._segments[_segIndex];
-            _currentDocs = seg.Docs;
-            _currentScores = seg.Scores;
+            _currentPacked = seg.PackedDocsAndScores;
             _currentFields = seg.Fields;
         }
 
@@ -307,16 +303,14 @@ public class ManagedScoreDocArray : IDisposable
             if (_parent.Length == 0)
                 ThrowOnEmptyArray();
 
-            // FAST PATH: we are still inside the current segment
-            // we use '>= 0' because we are moving backwards
             if (_indexInSegment >= 0)
             {
-                // OPTIMIZATION: Unsafe ref arithmetic
-                ref int docsRef = ref MemoryMarshal.GetArrayDataReference(_currentDocs);
-                ref float scoresRef = ref MemoryMarshal.GetArrayDataReference(_currentScores);
+                ref long longStart = ref MemoryMarshal.GetArrayDataReference(_currentPacked);
+                ref int intStart = ref Unsafe.As<long, int>(ref longStart);
 
-                Unsafe.Add(ref docsRef, _indexInSegment) = doc;
-                Unsafe.Add(ref scoresRef, _indexInSegment) = score;
+                int offset = _indexInSegment * 2;
+                Unsafe.Add(ref intStart, offset) = doc;
+                Unsafe.Add(ref Unsafe.As<int, float>(ref intStart), offset + 1) = score;
 
                 if (fields != null)
                 {
@@ -328,7 +322,6 @@ public class ManagedScoreDocArray : IDisposable
                 return;
             }
 
-            // SLOW PATH: we crossed a boundary, switch to previous segment
             SwitchToPreviousSegment(doc, score, fields);
         }
 
@@ -336,47 +329,26 @@ public class ManagedScoreDocArray : IDisposable
         private void SwitchToPreviousSegment(int doc, float score, IComparable[] fields = null)
         {
             _segIndex--;
-
-            if (_segIndex < 0)
-                ThrowWriterOutOfRange();
+            if (_segIndex < 0) ThrowWriterOutOfRange();
 
             var seg = _parent._segments[_segIndex];
-            _currentDocs = seg.Docs;
-            _currentScores = seg.Scores;
+            _currentPacked = seg.PackedDocsAndScores;
             _currentFields = seg.Fields;
-
             _indexInSegment = seg.Capacity - 1;
 
-            _currentDocs[_indexInSegment] = doc;
-            _currentScores[_indexInSegment] = score;
-
-            if (fields != null)
-                _currentFields[_indexInSegment] = fields;
-
-            _indexInSegment--;
+            Write(doc, score, fields); // Recursively call Write to hit the fast path
         }
 
-        private static void ThrowOnEmptyArray()
-        {
-            throw new InvalidOperationException("Cannot write to an empty array");
-        }
-
-        private static void ThrowWriterOutOfRange()
-        {
-            throw new IndexOutOfRangeException("Writer went below index 0");
-        }
+        private static void ThrowOnEmptyArray() => throw new InvalidOperationException("Cannot write to an empty array");
+        private static void ThrowWriterOutOfRange() => throw new IndexOutOfRangeException("Writer went below index 0");
     }
 
-    public ScoreDocReader GetReader(int start)
-    {
-        return new ScoreDocReader(this, start);
-    }
+    public ScoreDocReader GetReader(int start) => new(this, start);
 
     public struct ScoreDocReader
     {
         private readonly ManagedScoreDocArray _managedParent;
-        private int[] _currentDocs;
-        private float[] _currentScores;
+        private long[] _currentPacked;
         private IComparable[][] _currentFields;
         private int _currentSegUsedCount;
 
@@ -403,18 +375,13 @@ public class ManagedScoreDocArray : IDisposable
             if (_segIndex < parent._segments.Count)
             {
                 var seg = parent._segments[_segIndex];
-                _currentDocs = seg.Docs;
-                _currentScores = seg.Scores;
+                _currentPacked = seg.PackedDocsAndScores;
                 _currentFields = seg.Fields;
-
-                _currentSegUsedCount = (_segIndex == parent._segments.Count - 1)
-                    ? parent._currentSegmentUsed
-                    : seg.Used;
+                _currentSegUsedCount = (_segIndex == parent._segments.Count - 1) ? parent._currentSegmentUsed : seg.Used;
             }
             else
             {
-                _currentDocs = null;
-                _currentScores = null;
+                _currentPacked = null;
                 _currentFields = null;
                 _currentSegUsedCount = 0;
             }
@@ -423,15 +390,14 @@ public class ManagedScoreDocArray : IDisposable
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool Read(out int doc, out float score)
         {
-            // FAST PATH: We are inside the boundaries of the current segment
             if (_indexInSegment < _currentSegUsedCount)
             {
-                // OPTIMIZATION: Unsafe ref arithmetic
-                ref int docsStart = ref MemoryMarshal.GetArrayDataReference(_currentDocs);
-                ref float scoresStart = ref MemoryMarshal.GetArrayDataReference(_currentScores);
+                ref long longStart = ref MemoryMarshal.GetArrayDataReference(_currentPacked);
+                ref int intStart = ref Unsafe.As<long, int>(ref longStart);
+                int offset = _indexInSegment * 2;
 
-                doc = Unsafe.Add(ref docsStart, _indexInSegment);
-                score = Unsafe.Add(ref scoresStart, _indexInSegment);
+                doc = Unsafe.Add(ref intStart, offset);
+                score = Unsafe.Add(ref Unsafe.As<int, float>(ref intStart), offset + 1);
 
                 _indexInSegment++;
                 return true;
@@ -454,17 +420,18 @@ public class ManagedScoreDocArray : IDisposable
             }
 
             var seg = _managedParent._segments[_segIndex];
-            _currentDocs = seg.Docs;
-            _currentScores = seg.Scores;
-
-            _currentSegUsedCount = (_segIndex == _managedParent._segments.Count - 1)
-                ? _managedParent._currentSegmentUsed
-                : seg.Used;
+            _currentPacked = seg.PackedDocsAndScores;
+            _currentSegUsedCount = (_segIndex == _managedParent._segments.Count - 1) ? _managedParent._currentSegmentUsed : seg.Used;
 
             if (_indexInSegment < _currentSegUsedCount)
             {
-                doc = _currentDocs[_indexInSegment];
-                score = _currentScores[_indexInSegment];
+                ref long longStart = ref MemoryMarshal.GetArrayDataReference(_currentPacked);
+                ref int intStart = ref Unsafe.As<long, int>(ref longStart);
+                int offset = _indexInSegment * 2;
+
+                doc = Unsafe.Add(ref intStart, offset);
+                score = Unsafe.Add(ref Unsafe.As<int, float>(ref intStart), offset + 1);
+
                 _indexInSegment++;
                 return true;
             }
@@ -477,22 +444,22 @@ public class ManagedScoreDocArray : IDisposable
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool Read(out int doc, out float score, out IComparable[] fields)
         {
-            // FAST PATH: We are inside the boundaries of the current segment
+            // Fast path logic duplicated to allow inlining of the "with fields" variant
             if (_indexInSegment < _currentSegUsedCount)
             {
-                // OPTIMIZATION: Unsafe ref arithmetic
-                ref int docsStart = ref MemoryMarshal.GetArrayDataReference(_currentDocs);
-                ref float scoresStart = ref MemoryMarshal.GetArrayDataReference(_currentScores);
+                ref long longStart = ref MemoryMarshal.GetArrayDataReference(_currentPacked);
+                ref int intStart = ref Unsafe.As<long, int>(ref longStart);
                 ref IComparable[] fieldsStart = ref MemoryMarshal.GetArrayDataReference(_currentFields);
 
-                doc = Unsafe.Add(ref docsStart, _indexInSegment);
-                score = Unsafe.Add(ref scoresStart, _indexInSegment);
+                int offset = _indexInSegment * 2;
+
+                doc = Unsafe.Add(ref intStart, offset);
+                score = Unsafe.Add(ref Unsafe.As<int, float>(ref intStart), offset + 1);
                 fields = Unsafe.Add(ref fieldsStart, _indexInSegment);
 
                 _indexInSegment++;
                 return true;
             }
-
             return ReadNextManagedSegment(out doc, out score, out fields);
         }
 
@@ -511,19 +478,20 @@ public class ManagedScoreDocArray : IDisposable
             }
 
             var seg = _managedParent._segments[_segIndex];
-            _currentDocs = seg.Docs;
-            _currentScores = seg.Scores;
+            _currentPacked = seg.PackedDocsAndScores;
             _currentFields = seg.Fields;
-
-            _currentSegUsedCount = (_segIndex == _managedParent._segments.Count - 1)
-                ? _managedParent._currentSegmentUsed
-                : seg.Used;
+            _currentSegUsedCount = (_segIndex == _managedParent._segments.Count - 1) ? _managedParent._currentSegmentUsed : seg.Used;
 
             if (_indexInSegment < _currentSegUsedCount)
             {
-                doc = _currentDocs[_indexInSegment];
-                score = _currentScores[_indexInSegment];
+                ref long longStart = ref MemoryMarshal.GetArrayDataReference(_currentPacked);
+                ref int intStart = ref Unsafe.As<long, int>(ref longStart);
+
+                int offset = _indexInSegment * 2;
+                doc = Unsafe.Add(ref intStart, offset);
+                score = Unsafe.Add(ref Unsafe.As<int, float>(ref intStart), offset + 1);
                 fields = _currentFields[_indexInSegment];
+
                 _indexInSegment++;
                 return true;
             }
