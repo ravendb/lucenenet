@@ -11,6 +11,9 @@ public class ManagedScoreDocArray : IDisposable
 {
     public static readonly ManagedScoreDocArray Empty = new();
 
+    public static ArrayPool<long> LongArrayPool = ArrayPool<long>.Shared;
+    public static ArrayPool<IComparable[]> FieldsArrayPool = ArrayPool<IComparable[]>.Shared;
+
     // size of a single packed item (int doc + float score) = 8 bytes
     private const int SingleItemSize = sizeof(long);
 
@@ -50,7 +53,7 @@ public class ManagedScoreDocArray : IDisposable
     {
     }
 
-    public ManagedScoreDocArray(int totalItems, bool hasFields)
+    public ManagedScoreDocArray(int totalItems, bool hasFields) : this()
     {
         _length = totalItems;
 
@@ -101,7 +104,7 @@ public class ManagedScoreDocArray : IDisposable
 
     private void AllocateSegment(int size, bool hasFields)
     {
-        var packed = ArrayPool<long>.Shared.Rent(size);
+        var packed = LongArrayPool.Rent(size);
 
         var segment = new Segment
         {
@@ -111,7 +114,7 @@ public class ManagedScoreDocArray : IDisposable
         };
 
         if (hasFields)
-            segment.Fields = ArrayPool<IComparable[]>.Shared.Rent(size);
+            segment.Fields = FieldsArrayPool.Rent(size);
 
         _segments.Add(segment);
     }
@@ -166,7 +169,7 @@ public class ManagedScoreDocArray : IDisposable
                 : Math.Min(_currentSegmentCapacity * 2, MaxItemsPerSegment);
         }
 
-        var packed = ArrayPool<long>.Shared.Rent(newSize);
+        var packed = LongArrayPool.Rent(newSize);
 
         var newSegment = new Segment
         {
@@ -237,10 +240,10 @@ public class ManagedScoreDocArray : IDisposable
 
         foreach (var seg in _segments)
         {
-            ArrayPool<long>.Shared.Return(seg.PackedDocsAndScores);
+            LongArrayPool.Return(seg.PackedDocsAndScores);
 
             if (seg.Fields != null)
-                ArrayPool<IComparable[]>.Shared.Return(seg.Fields);
+                FieldsArrayPool.Return(seg.Fields);
         }
 
         _segments.Clear();
