@@ -7,6 +7,75 @@ using System.Runtime.InteropServices;
 
 namespace Lucene.Net.Util;
 
+// =========================================================================
+// SEGMENT ARCHITECTURE — Two-Phase Segmented Array
+// =========================================================================
+//
+// This data structure stores packed (doc, score) pairs as long values in a
+// segmented array. Each item is 8 bytes: 4 bytes for doc (int) + 4 bytes for
+// score (float), packed into a single long via Unsafe reinterpretation.
+//
+// The array is split into segments to avoid Large Object Heap (LOH) allocations.
+// Any single array >= 85,000 bytes goes on the LOH, causing GC pressure.
+// We cap each segment at 64KB (8,192 items × 8 bytes), staying well under.
+//
+// Two growth phases ensure both small and large collections are efficient:
+//
+// ── PHASE 1: Growth Phase (Segments 0–5) ──────────────────────────────────
+//
+// Segment sizes double each time, starting from InitialItems (128):
+//
+//   Seg Index │ Capacity │ Bytes  │ Cumulative Items │ Global Index Range
+//   ──────────┼──────────┼────────┼──────────────────┼────────────────────
+//       0     │    128   │   1 KB │        128       │ [0 .. 127]
+//       1     │    256   │   2 KB │        384       │ [128 .. 383]
+//       2     │    512   │   4 KB │        896       │ [384 .. 895]
+//       3     │  1,024   │   8 KB │      1,920       │ [896 .. 1,919]
+//       4     │  2,048   │  16 KB │      3,968       │ [1,920 .. 3,967]
+//       5     │  4,096   │  32 KB │      8,064       │ [3,968 .. 8,063]
+//             │          │        │                  │
+//             │  Total:  │  63 KB │  8,064 items     │
+//
+// This doubling strategy means small result sets (common case: top-10, top-100)
+// waste minimal memory, while still scaling up quickly.
+//
+// O(1) random access in the growth phase uses bit tricks:
+//   segIndex     = Log2((globalIndex >> 7) + 1)
+//   segmentStart = 128 * ((1 << segIndex) - 1)       // geometric sum
+//   localIndex   = globalIndex - segmentStart
+//
+// ── PHASE 2: Stable Phase (Segments 6+) ───────────────────────────────────
+//
+// Once the growth phase is exhausted (after 8,064 items), all subsequent
+// segments are fixed at MaxItemsPerSegment (8,192 items = 64KB each).
+//
+//   Seg Index │ Capacity │ Bytes  │ Cumulative Items │ Global Index Range
+//   ──────────┼──────────┼────────┼──────────────────┼────────────────────
+//       6     │  8,192   │  64 KB │     16,256       │ [8,064 .. 16,255]
+//       7     │  8,192   │  64 KB │     24,448       │ [16,256 .. 24,447]
+//       8     │  8,192   │  64 KB │     32,640       │ [24,448 .. 32,639]
+//      ...    │   ...    │  ...   │       ...        │       ...
+//
+// O(1) random access in the stable phase is simple division/modulo via shifts:
+//   relativeIndex = globalIndex - GrowthPhaseTotalItems (8,064)
+//   segIndex      = StablePhaseSegmentStartIndex + (relativeIndex >> 13)
+//   localIndex    = relativeIndex & (8,191)             // mask = 8192-1
+//
+// ── WHY NOT JUST USE ONE BIG ARRAY? ───────────────────────────────────────
+//
+// A single array for 128K items = 1MB → LOH → Gen2 GC pressure.
+// With segments: max 64KB per array → always SOH → collected cheaply in Gen0/1.
+// Arrays are rented from ArrayPool, so repeated searches reuse buffers.
+//
+// ── MEMORY LAYOUT PER ITEM ────────────────────────────────────────────────
+//
+//   long[i] = | int doc (4 bytes) | float score (4 bytes) |
+//
+// Accessed via Unsafe.As reinterpretation: the long[] is treated as an int[]
+// of twice the length. Item N is at int offset N*2 (doc) and N*2+1 (score).
+//
+// =========================================================================
+
 public class ManagedScoreDocArray : IDisposable
 {
     public static readonly ManagedScoreDocArray Empty = new();
@@ -14,29 +83,29 @@ public class ManagedScoreDocArray : IDisposable
     public static ArrayPool<long> LongArrayPool = ArrayPool<long>.Shared;
     public static ArrayPool<IComparable[]> FieldsArrayPool = ArrayPool<IComparable[]>.Shared;
 
-    // size of a single packed item (int doc + float score) = 8 bytes
+    // Each packed item is one long: int doc (4 bytes) + float score (4 bytes) = 8 bytes.
     private const int SingleItemSize = sizeof(long);
 
-    // 8,192 items * 8 bytes = 64KB. 
-    // we keep a single array under the 85KB LOH threshold.
+    // Max segment size: 8,192 items × 8 bytes = 64KB. Stays under the 85KB LOH threshold.
     private const int MaxItemsPerSegment = 64 * 1024 / SingleItemSize;
 
-    // 128 items * 8 bytes = 1KB
+    // Initial segment size: 128 items × 8 bytes = 1KB. Small enough for top-10/top-100 results.
     private const int InitialItems = 1 * 1024 / SingleItemSize;
 
-    // Log2(8192) = 13
+    // Log2(MaxItemsPerSegment) = Log2(8192) = 13. Used for bit-shift division in the stable phase.
     private const int MaxItemsLog2 = 13;
 
-    // Sequence: 128 -> 256 -> 512 -> 1024 -> 2048 -> 4096
-    // The next one (8192) is the start of stable phase.
-    // Sum = 128 + 256 + ... + 4096 = 8064 items.
+    // Growth phase segment sizes: 128, 256, 512, 1024, 2048, 4096 (6 segments, indices 0–5).
+    // Total items in growth phase = 128 + 256 + 512 + 1024 + 2048 + 4096 = 8,064.
+    // Any global index < 8,064 falls in the growth phase; >= 8,064 falls in the stable phase.
     private const int GrowthPhaseTotalItems = 8064;
 
-    // There are 6 segments in the growth phase (0 to 5)
-    // Segment 6 is the first "Stable" (max Size) segment.
+    // The stable phase begins at segment index 6 (the 7th segment).
+    // Segments 0–5 are growth phase (doubling sizes), segments 6+ are all 8,192 items each.
     private const int StablePhaseSegmentStartIndex = 6;
 
-    // Log2(128) = 7. Used for shifting in growth phase.
+    // Log2(InitialItems) = Log2(128) = 7. Used in the growth phase O(1) index calculation:
+    //   segIndex = Log2((globalIndex >> GrowthPhaseShift) + 1)
     private const int GrowthPhaseShift = 7;
 
     public readonly List<Segment> _segments = new();
