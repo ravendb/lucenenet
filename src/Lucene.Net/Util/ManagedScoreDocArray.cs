@@ -268,11 +268,12 @@ public class ManagedScoreDocArray : IDisposable
 
     public BackwardsWriter GetBackwardsWriter() => new(this);
 
-    public struct BackwardsWriter
+    public ref struct BackwardsWriter
     {
         private readonly ManagedScoreDocArray _parent;
-        private long[] _currentPacked;
-        private IComparable[][] _currentFields;
+        private ref int _intStart;
+        private ref IComparable[] _fieldsStart;
+        private bool _hasFields;
 
         private int _segIndex;
         private int _indexInSegment;
@@ -280,9 +281,14 @@ public class ManagedScoreDocArray : IDisposable
         public BackwardsWriter(ManagedScoreDocArray parent)
         {
             _parent = parent;
+            _hasFields = false;
 
             if (_parent.Length == 0)
+            {
+                _intStart = ref Unsafe.NullRef<int>();
+                _fieldsStart = ref Unsafe.NullRef<IComparable[]>();
                 return;
+            }
 
             int startIndex = parent._length - 1;
 
@@ -300,8 +306,17 @@ public class ManagedScoreDocArray : IDisposable
             }
 
             var seg = _parent._segments[_segIndex];
-            _currentPacked = seg.PackedDocsAndScores;
-            _currentFields = seg.Fields;
+            _intStart = ref Unsafe.As<long, int>(ref MemoryMarshal.GetArrayDataReference(seg.PackedDocsAndScores));
+
+            if (seg.Fields != null)
+            {
+                _fieldsStart = ref MemoryMarshal.GetArrayDataReference(seg.Fields);
+                _hasFields = true;
+            }
+            else
+            {
+                _fieldsStart = ref Unsafe.NullRef<IComparable[]>();
+            }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -312,17 +327,13 @@ public class ManagedScoreDocArray : IDisposable
 
             if (_indexInSegment >= 0)
             {
-                ref long longStart = ref MemoryMarshal.GetArrayDataReference(_currentPacked);
-                ref int intStart = ref Unsafe.As<long, int>(ref longStart);
-
                 int offset = _indexInSegment * 2;
-                Unsafe.Add(ref intStart, offset) = doc;
-                Unsafe.Add(ref Unsafe.As<int, float>(ref intStart), offset + 1) = score;
+                Unsafe.Add(ref _intStart, offset) = doc;
+                Unsafe.Add(ref Unsafe.As<int, float>(ref _intStart), offset + 1) = score;
 
                 if (fields != null)
                 {
-                    ref IComparable[] fieldsRef = ref MemoryMarshal.GetArrayDataReference(_currentFields);
-                    Unsafe.Add(ref fieldsRef, _indexInSegment) = fields;
+                    Unsafe.Add(ref _fieldsStart, _indexInSegment) = fields;
                 }
 
                 _indexInSegment--;
@@ -339,8 +350,13 @@ public class ManagedScoreDocArray : IDisposable
             if (_segIndex < 0) ThrowWriterOutOfRange();
 
             var seg = _parent._segments[_segIndex];
-            _currentPacked = seg.PackedDocsAndScores;
-            _currentFields = seg.Fields;
+            _intStart = ref Unsafe.As<long, int>(ref MemoryMarshal.GetArrayDataReference(seg.PackedDocsAndScores));
+
+            if (seg.Fields != null)
+            {
+                _fieldsStart = ref MemoryMarshal.GetArrayDataReference(seg.Fields);
+            }
+
             _indexInSegment = seg.Capacity - 1;
 
             Write(doc, score, fields); // Recursively call Write to hit the fast path

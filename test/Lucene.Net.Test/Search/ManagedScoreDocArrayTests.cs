@@ -212,7 +212,15 @@ public class ManagedScoreDocArrayTests
 
         for (int i = 0; i < 10; i++) writer.Write(i, 0);
 
-        Assert.Throws<IndexOutOfRangeException>(() => writer.Write(99, 0));
+        try
+        {
+            writer.Write(99, 0);
+            Assert.Fail("Expected IndexOutOfRangeException");
+        }
+        catch (IndexOutOfRangeException)
+        {
+            // expected
+        }
     }
 
     // ---------------------------------------------------------
@@ -390,7 +398,15 @@ public class ManagedScoreDocArrayTests
         Assert.That(arrayExplicit.Length, Is.EqualTo(0));
 
         // Indexer
-        Assert.Throws<IndexOutOfRangeException>(() => { var _ = arrayExplicit[0]; });
+        try
+        {
+            var _ = arrayExplicit[0];
+            Assert.Fail("Expected IndexOutOfRangeException");
+        }
+        catch (IndexOutOfRangeException)
+        {
+            // expected
+        }
 
         // Reader
         var reader = arrayExplicit.GetReader(0);
@@ -398,7 +414,14 @@ public class ManagedScoreDocArrayTests
 
         // Writer
         var writer = arrayExplicit.GetBackwardsWriter();
-        var ex = Assert.Throws<InvalidOperationException>(() => writer.Write(1, 1.0f));
-        Assert.That(ex.Message, Does.Contain("empty array"));
+        try
+        {
+            writer.Write(1, 1.0f);
+            Assert.Fail("Expected InvalidOperationException");
+        }
+        catch (InvalidOperationException ex)
+        {
+            Assert.That(ex.Message, Does.Contain("empty array"));
+        }
     }
 }
