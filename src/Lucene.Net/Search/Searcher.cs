@@ -59,13 +59,17 @@ namespace Lucene.Net.Search
 		{
 			return Search(CreateWeight(query, state), filter, n, sort, fillFields: true, state);
 		}
-		
+
         /// <summary>Search implementation with arbitrary sorting.  Finds
         /// the top <c>n</c> hits for <c>query</c>, applying
         /// <c>filter</c> if non-null, and sorting the hits by the criteria in
         /// <c>sort</c>.
-        /// <c>fillFields</c>.
-        /// 
+        /// If <paramref name="fillFields"/> is <c>true</c>, the returned
+        /// <see cref="TopFieldDocs"/> will have the sort field values filled in for each hit
+        /// (in the corresponding <see cref="FieldDoc"/> instances); if <c>false</c>, these
+        /// per-hit sort values are not computed, which can save time and memory when you
+        /// do not need access to the sort values.
+        ///  
         /// <p/>NOTE: this does not compute scores by default; use
         /// <see cref="IndexSearcher.SetDefaultFieldSortScoring(bool,bool)" /> to enable scoring.
         /// 
