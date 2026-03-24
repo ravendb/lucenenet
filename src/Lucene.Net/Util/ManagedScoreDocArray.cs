@@ -108,15 +108,23 @@ public class ManagedScoreDocArray : IDisposable
     //   segIndex = Log2((globalIndex >> GrowthPhaseShift) + 1)
     private const int GrowthPhaseShift = 7;
 
-    public readonly List<Segment> _segments = new();
+    private readonly List<Segment> _segments = new();
 
     // Hot path caching - points to the packed long array
     private long[] _currentPacked;
-    public int _currentSegmentUsed;
+    private int _currentSegmentUsed;
     private int _currentSegmentCapacity;
 
     private int _length;
+
+    /// <summary>Gets the length of the array</summary>
     public int Length => _length;
+
+    /// <summary>Gets the number of allocated segments.</summary>
+    public int SegmentCount => _segments.Count;
+
+    /// <summary>Gets the segment capacity</summary>
+    public int SegmentCapacity(int num) => _segments[num].Capacity;
 
     public ManagedScoreDocArray()
     {

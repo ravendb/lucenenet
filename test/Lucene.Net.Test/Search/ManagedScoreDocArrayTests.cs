@@ -13,10 +13,10 @@ public class ManagedScoreDocArrayTests
 
     [TestCase(0)]
     [TestCase(1)]
-    [TestCase(256)]          // End of first segment
-    [TestCase(257)]          // Start of second segment
-    [TestCase(16128)]        // End of Growth Phase (Sum of 256..8192)
-    [TestCase(16129)]        // Start of Stable Phase (First 16k segment)
+    [TestCase(128)]          // End of first segment (Segment 0 = 128 items)
+    [TestCase(129)]          // Start of second segment
+    [TestCase(8064)]         // End of Growth Phase (Sum of 128+256+512+1024+2048+4096)
+    [TestCase(8065)]         // Start of Stable Phase (First 8192-item segment)
     [TestCase(50000)]        // Mid-range
     [TestCase(128000)]       // Target upper bound
     public void Add_And_Indexer_Work_For_Various_Lengths(int count)
@@ -47,23 +47,26 @@ public class ManagedScoreDocArrayTests
         using var array = new ManagedScoreDocArray();
 
         // Fill exactly to the end of the Growth phase
-        int growthLimit = 16128;
+        // Growth segments: 128 + 256 + 512 + 1024 + 2048 + 4096 = 8064
+        int growthLimit = 8064;
         for (int i = 0; i < growthLimit; i++)
         {
             array.Add(i, 0f);
         }
 
-        Assert.That(array._segments.Count, Is.EqualTo(7));
+        // 6 growth segments (indices 0–5)
+        Assert.That(array.SegmentCount, Is.EqualTo(6));
 
-        // Add one more to trigger the first Stable segment (16k)
+        // Add one more to trigger the first Stable segment (8192 items)
         array.Add(999, 999f);
 
-        Assert.That(array._segments.Count, Is.EqualTo(7));
-        Assert.That(array._segments[6].Capacity, Is.EqualTo(8192));
+        // Now we have 7 segments: 6 growth + 1 stable
+        Assert.That(array.SegmentCount, Is.EqualTo(7));
+        Assert.That(array.SegmentCapacity(6), Is.EqualTo(8192));
 
         // Verify data integrity across the boundary
         Assert.That(array[0].Doc, Is.EqualTo(0));
-        Assert.That(array[16128].Doc, Is.EqualTo(999));
+        Assert.That(array[8064].Doc, Is.EqualTo(999));
     }
 
     // ---------------------------------------------------------
@@ -71,7 +74,7 @@ public class ManagedScoreDocArrayTests
     // ---------------------------------------------------------
 
     [TestCase(100)]
-    [TestCase(16128)] // Boundary
+    [TestCase(8064)]  // Growth phase boundary
     [TestCase(35000)]
     public void Reader_Iterates_Correctly(int count)
     {
@@ -120,8 +123,8 @@ public class ManagedScoreDocArrayTests
     // ---------------------------------------------------------
 
     [TestCase(256)]
-    [TestCase(16128)]
-    [TestCase(16129)]
+    [TestCase(8064)]
+    [TestCase(8065)]
     [TestCase(128000)]
     public void BackwardsWriter_Fills_Array_Correctly(int count)
     {
@@ -148,9 +151,9 @@ public class ManagedScoreDocArrayTests
     [Test]
     public void BackwardsWriter_Crosses_Growth_Segments_Correctly()
     {
-        // Segment 0 size: 256. 
-        // We allocate 300 items. This spans Segment 0 (256) and Segment 1 (size 512, used 44).
-        int count = 300;
+        // Segment 0 size: 128, Segment 1 size: 256.
+        // We allocate 200 items. This spans Segment 0 (128) and Segment 1 (size 256, used 72).
+        int count = 200;
         using var array = new ManagedScoreDocArray(count, hasFields: false);
         var writer = array.GetBackwardsWriter();
 
@@ -160,20 +163,20 @@ public class ManagedScoreDocArrayTests
         }
 
         // Verify the boundary specifically
-        // Index 255 should be in Segment 0
-        // Index 256 should be in Segment 1
-        Assert.That(array[255].Doc, Is.EqualTo(255));
-        Assert.That(array[256].Doc, Is.EqualTo(256));
+        // Index 127 should be in Segment 0
+        // Index 128 should be in Segment 1
+        Assert.That(array[127].Doc, Is.EqualTo(127));
+        Assert.That(array[128].Doc, Is.EqualTo(128));
     }
 
     [Test]
     public void BackwardsWriter_Crosses_Growth_To_Stable_Boundary()
     {
-        // Growth phase total: 16128 items.
-        // We allocate 16130 items. 
-        // Index 16128 and 16129 are in the first Stable Segment.
-        // Index 16127 is in the last Growth Segment.
-        int count = 16130;
+        // Growth phase total: 8064 items (segments 0–5).
+        // We allocate 8066 items. 
+        // Index 8064 and 8065 are in the first Stable Segment (segment 6).
+        // Index 8063 is in the last Growth Segment (segment 5).
+        int count = 8066;
         using var array = new ManagedScoreDocArray(count, hasFields: false);
         var writer = array.GetBackwardsWriter();
 
@@ -183,9 +186,9 @@ public class ManagedScoreDocArrayTests
         }
 
         // Verify the specific boundary
-        Assert.That(array[16127].Doc, Is.EqualTo(16127)); // Last of growth
-        Assert.That(array[16128].Doc, Is.EqualTo(16128)); // First of stable
-        Assert.That(array[16129].Doc, Is.EqualTo(16129));
+        Assert.That(array[8063].Doc, Is.EqualTo(8063)); // Last of growth
+        Assert.That(array[8064].Doc, Is.EqualTo(8064)); // First of stable
+        Assert.That(array[8065].Doc, Is.EqualTo(8065));
     }
 
     [Test]
@@ -274,7 +277,8 @@ public class ManagedScoreDocArrayTests
         }
 
         // Validate Random Access at known boundaries
-        int[] boundaryChecks = { 0, 255, 256, 16127, 16128, 32511, 32512, Target - 1 };
+        // Growth phase: [0..8063], Stable segments: [8064..16255], [16256..24447], ...
+        int[] boundaryChecks = { 0, 127, 128, 8063, 8064, 16255, 16256, Target - 1 };
 
         foreach (var index in boundaryChecks)
         {
@@ -385,7 +389,7 @@ public class ManagedScoreDocArrayTests
         array.Dispose();
 
         Assert.That(array.Length, Is.EqualTo(0));
-        Assert.That(array._segments, Is.Empty);
+        Assert.AreEqual(0, array.SegmentCount);
         Assert.Throws<IndexOutOfRangeException>(() => { var _ = array[0]; });
     }
 
