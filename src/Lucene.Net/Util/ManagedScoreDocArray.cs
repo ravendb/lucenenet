@@ -320,7 +320,7 @@ public class ManagedScoreDocArray : IDisposable
             LongArrayPool.Return(seg.PackedDocsAndScores);
 
             if (seg.Fields != null)
-                FieldsArrayPool.Return(seg.Fields);
+                FieldsArrayPool.Return(seg.Fields, clearArray: true);
         }
 
         _segments.Clear();
