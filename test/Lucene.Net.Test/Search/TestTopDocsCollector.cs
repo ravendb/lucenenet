@@ -46,7 +46,7 @@ namespace Lucene.Net.Search
 			{
 			}
 			
-			public /*protected internal*/ override TopDocs NewTopDocs(ManagedScoreDocArray scoreDocArray, int start)
+			public override TopDocs NewTopDocs(ManagedScoreDocArray scoreDocArray, int start)
 			{
 				if (scoreDocArray == null)
 				{

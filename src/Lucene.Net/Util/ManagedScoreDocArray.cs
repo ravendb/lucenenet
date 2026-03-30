@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Buffers;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -83,6 +84,9 @@ public class ManagedScoreDocArray : IDisposable
     public static ArrayPool<long> LongArrayPool = ArrayPool<long>.Shared;
     public static ArrayPool<IComparable[]> FieldsArrayPool = ArrayPool<IComparable[]>.Shared;
 
+    private ArrayPool<long> _longArrayPool;
+    private ArrayPool<IComparable[]> _fieldsArrayPool;
+
     // Each packed item is one long: int doc (4 bytes) + float score (4 bytes) = 8 bytes.
     private const int SingleItemSize = sizeof(long);
 
@@ -126,8 +130,10 @@ public class ManagedScoreDocArray : IDisposable
     /// <summary>Gets the segment capacity</summary>
     public int SegmentCapacity(int num) => _segments[num].Capacity;
 
-    public ManagedScoreDocArray()
+    public ManagedScoreDocArray(ArrayPool<long> longArrayPool = null, ArrayPool<IComparable[]> fieldsArrayPool = null)
     {
+        _longArrayPool = longArrayPool ?? LongArrayPool;
+        _fieldsArrayPool = fieldsArrayPool ?? FieldsArrayPool;
     }
 
     public ManagedScoreDocArray(int totalItems, bool hasFields) : this()
@@ -181,7 +187,7 @@ public class ManagedScoreDocArray : IDisposable
 
     private void AllocateSegment(int size, bool hasFields)
     {
-        var packed = LongArrayPool.Rent(size);
+        var packed = _longArrayPool.Rent(size);
 
         var segment = new Segment
         {
@@ -191,7 +197,7 @@ public class ManagedScoreDocArray : IDisposable
         };
 
         if (hasFields)
-            segment.Fields = FieldsArrayPool.Rent(size);
+            segment.Fields = _fieldsArrayPool.Rent(size);
 
         _segments.Add(segment);
     }
@@ -246,7 +252,7 @@ public class ManagedScoreDocArray : IDisposable
                 : Math.Min(_currentSegmentCapacity * 2, MaxItemsPerSegment);
         }
 
-        var packed = LongArrayPool.Rent(newSize);
+        var packed = _longArrayPool.Rent(newSize);
 
         var newSegment = new Segment
         {
@@ -317,10 +323,10 @@ public class ManagedScoreDocArray : IDisposable
 
         foreach (var seg in _segments)
         {
-            LongArrayPool.Return(seg.PackedDocsAndScores);
+            _longArrayPool.Return(seg.PackedDocsAndScores);
 
             if (seg.Fields != null)
-                FieldsArrayPool.Return(seg.Fields, clearArray: true);
+                _fieldsArrayPool.Return(seg.Fields, clearArray: true);
         }
 
         _segments.Clear();
@@ -439,7 +445,10 @@ public class ManagedScoreDocArray : IDisposable
             Write(doc, score, fields); // Recursively call Write to hit the fast path
         }
 
+        [DoesNotReturn]
         private static void ThrowOnEmptyArray() => throw new InvalidOperationException("Cannot write to an empty array");
+        
+        [DoesNotReturn]
         private static void ThrowWriterOutOfRange() => throw new IndexOutOfRangeException("Writer went below index 0");
     }
 

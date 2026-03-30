@@ -136,7 +136,7 @@ namespace Lucene.Net.Search
 			pqTop = pq.Top();
 		}
 		
-		public /*protected internal*/ override TopDocs NewTopDocs(ManagedScoreDocArray scoreDocArray, int start)
+		public override TopDocs NewTopDocs(ManagedScoreDocArray scoreDocArray, int start)
 		{
 			if (scoreDocArray == null)
 			{

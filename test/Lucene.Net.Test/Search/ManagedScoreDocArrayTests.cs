@@ -259,6 +259,17 @@ public class ManagedScoreDocArrayTests
         }
 
         Assert.That(readCount, Is.EqualTo(size));
+
+        reader = array.GetReader(0);
+        readCount = 0;
+
+        while (reader.Read(out int doc, out float score))
+        {
+            Assert.That(doc, Is.EqualTo(readCount));
+            readCount++;
+        }
+
+        Assert.That(readCount, Is.EqualTo(size));
     }
 
     // ---------------------------------------------------------
