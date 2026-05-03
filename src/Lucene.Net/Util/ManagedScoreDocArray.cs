@@ -356,7 +356,6 @@ public class ManagedScoreDocArray : IDisposable
         private readonly ManagedScoreDocArray _parent;
         private ref int _intStart;
         private ref IComparable[] _fieldsStart;
-        private bool _hasFields;
 
         private int _segIndex;
         private int _indexInSegment;
@@ -364,7 +363,6 @@ public class ManagedScoreDocArray : IDisposable
         public BackwardsWriter(ManagedScoreDocArray parent)
         {
             _parent = parent;
-            _hasFields = false;
 
             if (_parent.Length == 0)
             {
@@ -394,7 +392,6 @@ public class ManagedScoreDocArray : IDisposable
             if (seg.Fields != null)
             {
                 _fieldsStart = ref MemoryMarshal.GetArrayDataReference(seg.Fields);
-                _hasFields = true;
             }
             else
             {
