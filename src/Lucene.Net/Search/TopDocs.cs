@@ -16,34 +16,29 @@
  */
 
 using System;
+using System.Collections.Generic;
+using Lucene.Net.Util;
 
 namespace Lucene.Net.Search
 {
-
     /// <summary> Represents hits returned by <see cref="Searcher.Search(Query,Filter,int)" />
     /// and <see cref="Searcher.Search(Query,int)" />
     /// </summary>
 
-        [Serializable]
-    public class TopDocs
-	{
-		private int _totalHits;
+    [Serializable]
+    public class TopDocs : IDisposable
+    {
+        private int _totalHits;
         private ScoreDoc[] _scoreDocs;
         private float _maxScore;
+
+        public ManagedScoreDocArray ScoreDocArray { get; }
 
         /// <summary>The total number of hits for the query.</summary>
         public int TotalHits
         {
             get { return _totalHits; }
             set { _totalHits = value; }
-        }
-
-        /// <summary>The top hits for the query. </summary>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1819:PropertiesShouldNotReturnArrays")]
-        public ScoreDoc[] ScoreDocs
-        {
-            get { return _scoreDocs; }
-            set { _scoreDocs = value; }
         }
 
         /// <summary>
@@ -55,18 +50,47 @@ namespace Lucene.Net.Search
             get { return _maxScore; }
             set { _maxScore = value; }
         }
-		
-		/// <summary>Constructs a TopDocs with a default maxScore=Float.NaN. </summary>
-		internal TopDocs(int totalHits, ScoreDoc[] scoreDocs):this(totalHits, scoreDocs, float.NaN)
-		{
-		}
-		
-		/// <summary></summary>
-		public TopDocs(int totalHits, ScoreDoc[] scoreDocs, float maxScore)
-		{
-			this.TotalHits = totalHits;
-			this.ScoreDocs = scoreDocs;
-			this.MaxScore = maxScore;
-		}
-	}
+
+        public TopDocs(int totalHits, float maxScore, ManagedScoreDocArray scoreDocArray)
+        {
+            TotalHits = totalHits;
+            MaxScore = maxScore;
+            ScoreDocArray = scoreDocArray;
+        }
+
+        /// <summary>The top hits for the query. </summary>
+        /// <remarks>
+        /// <para>**WARNING:** This property materializes the entire ScoreDoc collection 
+        /// into a standard array, which can be **inefficient and memory-intensive** /// for large result sets. **Do not use this property in production code.**</para>
+        /// <para>This property is intended only for **testing and debugging** /// or when working with small, verified result sets.</para>
+        /// <para>For production use, utilize the efficient <see cref="ScoreDocArray"/> 
+        /// to access the scores without full materialization.</para>
+        /// </remarks>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1819:PropertiesShouldNotReturnArrays")]
+        [Obsolete("This property is for testing/debugging ONLY and should not be used in production due to potential memory/performance issues. Use the ScoreDocArray property instead.", error: false)]
+        public ScoreDoc[] ScoreDocs
+        {
+            get
+            {
+                if (_scoreDocs == null)
+                {
+                    var reader = ScoreDocArray.GetReader(0);
+                    var list = new List<ScoreDoc>();
+
+                    while (reader.Read(out var doc, out var score))
+                    {
+                        list.Add(new ScoreDoc(doc, score));
+                    }
+
+                    _scoreDocs = list.ToArray();
+                }
+                return _scoreDocs;
+            }
+        }
+
+        public void Dispose()
+        {
+            ScoreDocArray?.Dispose();
+        }
+    }
 }

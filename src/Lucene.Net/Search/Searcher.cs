@@ -57,9 +57,29 @@ namespace Lucene.Net.Search
 		/// <throws>  BooleanQuery.TooManyClauses </throws>
 		public virtual TopFieldDocs Search(Query query, Filter filter, int n, Sort sort, IState state)
 		{
-			return Search(CreateWeight(query, state), filter, n, sort, state);
+			return Search(CreateWeight(query, state), filter, n, sort, fillFields: true, state);
 		}
-		
+
+        /// <summary>Search implementation with arbitrary sorting.  Finds
+        /// the top <c>n</c> hits for <c>query</c>, applying
+        /// <c>filter</c> if non-null, and sorting the hits by the criteria in
+        /// <c>sort</c>.
+        /// If <paramref name="fillFields"/> is <c>true</c>, the returned
+        /// <see cref="TopFieldDocs"/> will have the sort field values filled in for each hit
+        /// (in the corresponding <see cref="FieldDoc"/> instances); if <c>false</c>, these
+        /// per-hit sort values are not computed, which can save time and memory when you
+        /// do not need access to the sort values.
+        ///  
+        /// <p/>NOTE: this does not compute scores by default; use
+        /// <see cref="IndexSearcher.SetDefaultFieldSortScoring(bool,bool)" /> to enable scoring.
+        /// 
+        /// </summary>
+        /// <throws>  BooleanQuery.TooManyClauses </throws>
+        public TopFieldDocs Search(Query query, Filter filter, int n, Sort sort, bool fillFields, IState state)
+        {
+            return Search(CreateWeight(query, state), filter, n, sort, fillFields, state);
+        }
+
 		/// <summary>Lower-level search API.
 		/// 
 		/// <p/><see cref="Collector.Collect(int)" /> is called for every matching document.
@@ -230,7 +250,7 @@ namespace Lucene.Net.Search
 	    public abstract Document Doc(int docid, FieldSelector fieldSelector, IState state);
 		public abstract Query Rewrite(Query query, IState state);
 		public abstract Explanation Explain(Weight weight, int doc, IState state);
-		public abstract TopFieldDocs Search(Weight weight, Filter filter, int n, Sort sort, IState state);
+		public abstract TopFieldDocs Search(Weight weight, Filter filter, int n, Sort sort, bool fillFields, IState state);
 		/* End patch for GCJ bug #15411. */
 	}
 }

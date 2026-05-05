@@ -15,7 +15,6 @@
  * limitations under the License.
  */
 
-using System;
 using Lucene.Net.Util;
 
 namespace Lucene.Net.Search
@@ -32,7 +31,7 @@ namespace Lucene.Net.Search
 		
 		// This is used in case topDocs() is called with illegal parameters, or there
 		// simply aren't (enough) results.
-		protected internal static readonly TopDocs EMPTY_TOPDOCS = new TopDocs(0, new ScoreDoc[0], System.Single.NaN);
+		protected internal static readonly TopDocs EMPTY_TOPDOCS = new TopDocs(0, System.Single.NaN, ManagedScoreDocArray.Empty);
 		
 		/// <summary> The priority queue which holds the top documents. Note that different
 		/// implementations of PriorityQueue give different meaning to 'top documents'.
@@ -52,12 +51,13 @@ namespace Lucene.Net.Search
 		/// <summary> Populates the results array with the ScoreDoc instaces. This can be
 		/// overridden in case a different ScoreDoc type should be returned.
 		/// </summary>
-		protected internal virtual void  PopulateResults(ScoreDoc[] results, int howMany)
+		protected internal virtual void PopulateResults(ManagedScoreDocArray.BackwardsWriter writer, int howMany)
 		{
-			for (int i = howMany - 1; i >= 0; i--)
-			{
-				results[i] = pq.Pop();
-			}
+			for (var i = howMany - 1; i >= 0; i--)
+            {
+                var scoreDoc = pq.Pop();
+                writer.Write(scoreDoc.Doc, scoreDoc.Score);
+            }
 		}
 
         /// <summary> Returns a <see cref="Lucene.Net.Search.TopDocs" /> instance containing the given results. If
@@ -65,10 +65,10 @@ namespace Lucene.Net.Search
 		/// either because there were 0 calls to collect() or because the arguments to
 		/// topDocs were invalid.
 		/// </summary>
-		public /*protected internal*/ virtual TopDocs NewTopDocs(ScoreDoc[] results, int start)
-		{
-			return results == null?EMPTY_TOPDOCS:new TopDocs(internalTotalHits, results);
-		}
+		public /*protected internal*/ virtual TopDocs NewTopDocs(ManagedScoreDocArray scoreDocArray, int start)
+        {
+            return scoreDocArray == null ? EMPTY_TOPDOCS : new TopDocs(internalTotalHits, maxScore: float.NaN, scoreDocArray);
+        }
 
 	    /// <summary>The total number of documents that matched this query. </summary>
 	    public virtual int TotalHits
@@ -76,8 +76,10 @@ namespace Lucene.Net.Search
 	        get { return internalTotalHits; }
 	    }
 
-	    /// <summary>Returns the top docs that were collected by this collector. </summary>
-		public TopDocs TopDocs()
+        public virtual bool FillFields => false;
+
+        /// <summary>Returns the top docs that were collected by this collector. </summary>
+        public TopDocs TopDocs()
 		{
 			// In case pq was populated with sentinel values, there might be less
 			// results than pq.size(). Therefore return all results until either
@@ -134,7 +136,7 @@ namespace Lucene.Net.Search
 			
 			// We know that start < pqsize, so just fix howMany. 
 			howMany = System.Math.Min(size - start, howMany);
-			ScoreDoc[] results = new ScoreDoc[howMany];
+            var managedArray = new ManagedScoreDocArray(howMany, FillFields);
 			
 			// pq's pop() returns the 'least' element in the queue, therefore need
 			// to discard the first ones, until we reach the requested range.
@@ -145,11 +147,13 @@ namespace Lucene.Net.Search
 			{
 				pq.Pop();
 			}
+
+            var writer = managedArray.GetBackwardsWriter();
+
+            // Get the requested results from pq.
+            PopulateResults(writer, howMany);
 			
-			// Get the requested results from pq.
-			PopulateResults(results, howMany);
-			
-			return NewTopDocs(results, start);
+			return NewTopDocs(managedArray, start);
 		}
 	}
 }

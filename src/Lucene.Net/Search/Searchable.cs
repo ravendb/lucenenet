@@ -165,6 +165,6 @@ namespace Lucene.Net.Search
 		/// 
 		/// </summary>
 		/// <throws>  BooleanQuery.TooManyClauses </throws>
-		TopFieldDocs Search(Weight weight, Filter filter, int n, Sort sort, IState state);
+		TopFieldDocs Search(Weight weight, Filter filter, int n, Sort sort, bool fillFields, IState state);
 	}
 }

@@ -165,7 +165,7 @@ namespace Lucene.Net.Search
 				throw new System.NotSupportedException();
 			}
 			
-			public override TopFieldDocs Search(Weight weight, Filter filter, int n, Sort sort, IState state)
+			public override TopFieldDocs Search(Weight weight, Filter filter, int n, Sort sort, bool fillFields, IState state)
 			{
 				throw new System.NotSupportedException();
 			}
@@ -266,24 +266,28 @@ namespace Lucene.Net.Search
 
             var lockObj = new object();
 			for (int i = 0; i < searchables.Length; i++)
-			{
+            {
                 // search each searcher
-                // use NullLock, we don't care about synchronization for these
-                TopDocs docs = MultiSearcherCallableNoSort(ThreadLock.NullLock, lockObj, searchables[i], weight, filter, nDocs, hq, i, starts, state);
-				totalHits += docs.TotalHits; // update totalHits
-			}
+				// use NullLock, we don't care about synchronization for these
+                using var docs = MultiSearcherCallableNoSort(ThreadLock.NullLock, lockObj, searchables[i], weight, filter, nDocs, hq, i, starts, state);
+                totalHits += docs.TotalHits; // update totalHits
+            }
+
+            var scoreDocArray = new ManagedScoreDocArray(hq.Size(), hasFields: false);
+            var writer = scoreDocArray.GetBackwardsWriter();
+
+            for (int i = hq.Size() - 1; i >= 0; i--)
+            {
+				var scoreDoc = hq.Pop();
+                writer.Write(scoreDoc.Doc, scoreDoc.Score);
+            }
+
+            float maxScore = (totalHits == 0) ? System.Single.NegativeInfinity : scoreDocArray[0].Score;
 			
-			ScoreDoc[] scoreDocs2 = new ScoreDoc[hq.Size()];
-			for (int i = hq.Size() - 1; i >= 0; i--)
-			// put docs in array
-				scoreDocs2[i] = hq.Pop();
-			
-			float maxScore = (totalHits == 0)?System.Single.NegativeInfinity:scoreDocs2[0].Score;
-			
-			return new TopDocs(totalHits, scoreDocs2, maxScore);
+			return new TopDocs(totalHits, maxScore, scoreDocArray);
 		}
 		
-		public override TopFieldDocs Search(Weight weight, Filter filter, int n, Sort sort, IState state)
+		public override TopFieldDocs Search(Weight weight, Filter filter, int n, Sort sort, bool fillFields, IState state)
 		{
 			var hq = new FieldDocSortedHitQueue(n);
 			int totalHits = 0;
@@ -292,25 +296,31 @@ namespace Lucene.Net.Search
 
 		    var lockObj = new object();
 			for (int i = 0; i < searchables.Length; i++)
-			{
-				// search each searcher
-                // use NullLock, we don't care about synchronization for these
-                TopFieldDocs docs = MultiSearcherCallableWithSort(ThreadLock.NullLock, lockObj, searchables[i], weight, filter, n, hq, sort,
-			                                          i, starts, state);
-			    totalHits += docs.TotalHits;
-				maxScore = System.Math.Max(maxScore, docs.MaxScore);
-			}
+            {
+                // search each searcher
+				// use NullLock, we don't care about synchronization for these
+                using TopFieldDocs docs = MultiSearcherCallableWithSort(ThreadLock.NullLock, lockObj, searchables[i],
+                    weight, filter, n, hq, sort,
+                    i, starts, state);
+
+                totalHits += docs.TotalHits;
+                maxScore = System.Math.Max(maxScore, docs.MaxScore);
+            }
+
+            var scoreDocArray = new ManagedScoreDocArray(hq.Size(), hasFields: true);
+            var writer = scoreDocArray.GetBackwardsWriter();
+
+            for (int i = hq.Size() - 1; i >= 0; i--)
+            {
+				var fieldDoc = hq.Pop();
+                writer.Write(fieldDoc.Doc, fieldDoc.Score, fieldDoc.fields);
+            }
 			
-			ScoreDoc[] scoreDocs2 = new ScoreDoc[hq.Size()];
-			for (int i = hq.Size() - 1; i >= 0; i--)
-			// put docs in array
-				scoreDocs2[i] = hq.Pop();
-			
-			return new TopFieldDocs(totalHits, scoreDocs2, hq.GetFields(), maxScore);
+			return new TopFieldDocs(totalHits, scoreDocArray, hq.GetFields(), maxScore);
 		}
 		
 		///<inheritdoc />
-		public override void  Search(Weight weight, Filter filter, Collector collector, IState state)
+		public override void Search(Weight weight, Filter filter, Collector collector, IState state)
 		{
 			for (int i = 0; i < searchables.Length; i++)
 			{
@@ -390,12 +400,14 @@ namespace Lucene.Net.Search
 	        (threadLock, lockObj, searchable, weight, filter, nDocs, hq, i, starts, state) =>
 	            {
 	                TopDocs docs = searchable.Search(weight, filter, nDocs, state);
-	                ScoreDoc[] scoreDocs = docs.ScoreDocs;
-                    for(int j = 0; j < scoreDocs.Length; j++) // merge scoreDocs into hq
+                    var reader = docs.ScoreDocArray.GetReader(start: 0);
+
+                    while (reader.Read(out int doc, out float score))
                     {
-                        ScoreDoc scoreDoc = scoreDocs[j];
+                        ScoreDoc scoreDoc = new ScoreDoc(doc, score);
                         scoreDoc.Doc += starts[i]; //convert doc
                         //it would be so nice if we had a thread-safe insert
+
                         try
                         {
                             threadLock.Enter(lockObj);
@@ -407,13 +419,14 @@ namespace Lucene.Net.Search
                             threadLock.Exit(lockObj);
                         }
                     }
+
 	                return docs;
 	            };
 
         internal Func<ThreadLock, object, Searchable, Weight, Filter, int, FieldDocSortedHitQueue, Sort, int, int[], IState, TopFieldDocs>
             MultiSearcherCallableWithSort = (threadLock, lockObj, searchable, weight, filter, nDocs, hq, sort, i, starts, state) =>
 	                                            {
-	                                                TopFieldDocs docs = searchable.Search(weight, filter, nDocs, sort, state);
+	                                                TopFieldDocs docs = searchable.Search(weight, filter, nDocs, sort, fillFields: true, state);
                                                     // if one of the Sort fields is FIELD_DOC, need to fix its values, so that
                                                     // it will break ties by doc Id properly.  Otherwise, it will compare to
                                                     // 'relative' doc Ids, that belong to two different searchables.
@@ -422,10 +435,11 @@ namespace Lucene.Net.Search
                                                         if (docs.fields.Array[j + docs.fields.Offset].Type == SortField.DOC)
                                                         {
                                                             // iterate over the score docs and change their fields value
-                                                            for (int j2 = 0; j2 < docs.ScoreDocs.Length; j2++)
+                                                            var fieldsReader = docs.ScoreDocArray.GetReader(start: 0);
+
+                                                            while (fieldsReader.Read(out _, out _, out var fields))
                                                             {
-                                                                FieldDoc fd = (FieldDoc) docs.ScoreDocs[j2];
-                                                                fd.fields[j] = (int)fd.fields[j] + starts[i];
+                                                                fields[j] = (int)fields[j] + starts[i];
                                                             }
                                                             break;
                                                         }
@@ -440,11 +454,15 @@ namespace Lucene.Net.Search
                                                         threadLock.Exit(lockObj);
 	                                                }
 
-	                                                ScoreDoc[] scoreDocs = docs.ScoreDocs;
-                                                    for (int j = 0; j < scoreDocs.Length; j++) // merge scoreDocs into hq
+                                                    var reader = docs.ScoreDocArray.GetReader(start: 0);
+                                                    var index = 0;
+
+                                                    while (reader.Read(out int doc, out float score, out IComparable[] fields))
                                                     {
-                                                        FieldDoc fieldDoc = (FieldDoc) scoreDocs[j];
+                                                        var fieldDoc = new FieldDoc(doc, score, fields);
                                                         fieldDoc.Doc += starts[i]; //convert doc
+                                                        index++;
+
                                                         //it would be so nice if we had a thread-safe insert
                                                         lock (lockObj)
                                                         {
@@ -453,6 +471,7 @@ namespace Lucene.Net.Search
 
                                                         }
                                                     }
+
 	                                                return docs;
 	                                            };
 	}

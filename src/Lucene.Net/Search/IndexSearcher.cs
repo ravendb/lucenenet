@@ -191,11 +191,6 @@ namespace Lucene.Net.Search
 			return collector.TopDocs();
 		}
 		
-		public override TopFieldDocs Search(Weight weight, Filter filter, int nDocs, Sort sort, IState state)
-		{
-			return Search(weight, filter, nDocs, sort, true, state);
-		}
-		
 		/// <summary> Just like <see cref="Search(Weight, Filter, int, Sort)" />, but you choose
 		/// whether or not the fields in the returned <see cref="FieldDoc" /> instances
 		/// should be set by specifying fillFields.
@@ -206,15 +201,16 @@ namespace Lucene.Net.Search
 		/// <see cref="Search(Weight, Filter, Collector)" />.
 		/// <p/>
 		/// </summary>
-		public virtual TopFieldDocs Search(Weight weight, Filter filter, int nDocs, Sort sort, bool fillFields, IState state)
+		public override TopFieldDocs Search(Weight weight, Filter filter, int nDocs, Sort sort, bool fillFields, IState state)
 		{
             nDocs = Math.Min(nDocs, reader.MaxDoc);
 
-			TopFieldCollector collector2 = TopFieldCollector.Create(sort, nDocs, fillFields, fieldSortDoTrackScores, fieldSortDoMaxScore, !weight.GetScoresDocsOutOfOrder());
+			TopFieldCollector collector2 = TopFieldCollector.Create(sort, nDocs, fillFields, fieldSortDoTrackScores,
+                fieldSortDoMaxScore, !weight.GetScoresDocsOutOfOrder());
 			Search(weight, filter, collector2, state);
 			return (TopFieldDocs) collector2.TopDocs();
 		}
-		
+
 		public override void  Search(Weight weight, Filter filter, Collector collector, IState state)
 		{
 			

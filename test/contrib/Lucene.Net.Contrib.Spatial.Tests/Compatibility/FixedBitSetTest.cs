@@ -104,7 +104,7 @@ namespace Lucene.Net.Contrib.Spatial.Test.Compatibility
 
             TopDocs topDocs = indexSearcher.Search(booleanQuery, 10, null);
 
-            Assert.GreaterOrEqual(topDocs.ScoreDocs.Length, 1); //Search area is centered on a doc so at least one doc should be returned
+            Assert.GreaterOrEqual(topDocs.ScoreDocArray.Length, 1); //Search area is centered on a doc so at least one doc should be returned
         }
 
 
