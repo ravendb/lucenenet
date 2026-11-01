@@ -977,8 +977,8 @@ namespace Lucene.Net.Search
 		/// arguments.
 		/// 
 		/// <p/><b>NOTE</b>: The instances returned by this method
-		/// pre-allocate a full array of length
-		/// <c>numHits</c>.
+		/// rent their storage for <c>numHits</c> hits from a pool and
+		/// must be disposed to return it.
 		/// 
 		/// </summary>
 		/// <param name="sort">the sort criteria (SortFields).

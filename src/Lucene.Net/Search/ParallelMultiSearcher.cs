@@ -111,7 +111,7 @@ namespace Lucene.Net.Search
 		/// </summary>
 		public override TopDocs Search(Weight weight, Filter filter, int nDocs, IState state)
 		{
-		    HitQueue hq = new HitQueue(nDocs, false);
+		    HitQueue hq = new HitQueue(nDocs);
             object lockObj = new object();
 
             Task<TopDocs>[] tasks = new Task<TopDocs>[searchables.Length];

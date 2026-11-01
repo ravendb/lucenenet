@@ -53,6 +53,12 @@ namespace Lucene.Net.Search
                 System.Diagnostics.Debug.Assert(!float.IsNaN(score));
 
 				internalTotalHits++;
+				if (queueFull == false)
+				{
+					// Startup transient: the queue has not gathered numHits yet, so every hit is competitive
+					Add(doc + docBase, score);
+					return ;
+				}
 				if (score <= pqTop.Score)
 				{
 					// Since docs are returned in-order (i.e., increasing doc Id), a document
@@ -87,6 +93,12 @@ namespace Lucene.Net.Search
 
 				internalTotalHits++;
 				doc += docBase;
+				if (queueFull == false)
+				{
+					// Startup transient: the queue has not gathered numHits yet, so every hit is competitive
+					Add(doc, score);
+					return ;
+				}
 				if (score < pqTop.Score || (score == pqTop.Score && doc > pqTop.Doc))
 				{
 					return ;
@@ -107,9 +119,8 @@ namespace Lucene.Net.Search
 		/// <see cref="Scorer" /> to <see cref="SetScorer(Scorer)" />.
 		/// 
 		/// <p/><b>NOTE</b>: The instances returned by this method
-		/// pre-allocate a full array of length
-		/// <c>numHits</c>, and fill the array with sentinel
-		/// objects.
+		/// rent their storage for <c>numHits</c> hits from a pool and
+		/// must be disposed to return it.
 		/// </summary>
 		public static TopScoreDocCollector Create(int numHits, bool docsScoredInOrder)
 		{
@@ -127,13 +138,23 @@ namespace Lucene.Net.Search
 		internal ScoreDoc pqTop;
 		internal int docBase = 0;
 		internal Scorer scorer;
+		internal readonly int numHits;
+		internal bool queueFull;
 		
 		// prevents instantiation
-		private TopScoreDocCollector(int numHits):base(new HitQueue(numHits, true))
+		private TopScoreDocCollector(int numHits):base(new HitQueue(numHits))
 		{
-			// HitQueue implements getSentinelObject to return a ScoreDoc, so we know
-			// that at this point top() is already initialized.
-			pqTop = pq.Top();
+			this.numHits = numHits;
+		}
+
+		/// <summary> Adds a hit while the queue is still filling up. Once it holds numHits, hits compete against the top instead. </summary>
+		private void Add(int doc, float score)
+		{
+			if (numHits == 0)
+				return ; // nothing to keep, the collector only counts
+
+			pqTop = pq.Add(new ScoreDoc(doc, score));
+			queueFull = pq.Size() == numHits;
 		}
 		
 		public override TopDocs NewTopDocs(ManagedScoreDocArray scoreDocArray, int start)

@@ -16,6 +16,7 @@
  */
 
 using System;
+using System.Buffers;
 using Lucene.Net.Support;
 
 namespace Lucene.Net.Util
@@ -33,10 +34,11 @@ namespace Lucene.Net.Util
     //       I only see a non-nullable type used in PriorityQueue in the tests.  may be possible to re-write tests to
     //       use an IComparable class, and this can be changed back to constraining on class, to return null, or should
     //       we leave as is?
-	public abstract class PriorityQueue<T> //where T : class
+	public abstract class PriorityQueue<T> : System.IDisposable //where T : class
 	{
 		private int size;
 		private int maxSize;
+		private bool pooled;
 		protected internal T[] heap;
 		
 		/// <summary>Determines the ordering of objects in this priority queue.  Subclasses
@@ -144,6 +146,33 @@ namespace Lucene.Net.Util
 			heap[size] = element;
 			UpHeap();
 			return heap[1];
+		}
+
+		/// <summary> Like <see cref="Initialize(int)"/>, but the heap is rented from a pool instead of being allocated,
+		/// and goes back to it when the queue is disposed. Use it for queues that are created per search and sized by
+		/// the number of hits the search may return, so one search after another reuses the same buffers instead of
+		/// allocating and discarding a large array each time. Sentinel objects are not supported in this mode.
+		/// </summary>
+		protected internal void InitializePooled(int maxSize)
+		{
+			size = 0;
+			this.maxSize = maxSize;
+			pooled = true;
+			// the heap is 1-based, so holding maxSize elements takes maxSize + 1 slots; guard the int.MaxValue bound
+			heap = ArrayPool<T>.Shared.Rent(maxSize == System.Int32.MaxValue ? System.Int32.MaxValue : maxSize + 1);
+		}
+
+		/// <summary> Returns a pooled heap to its pool. A heap allocated by <see cref="Initialize(int)"/> has nothing to release. </summary>
+		public virtual void Dispose()
+		{
+			if (pooled == false || heap == null)
+				return;
+
+			// only slots 1..size can still hold references (Pop clears the slot it vacates and Add writes at size):
+			// clear them so nothing stays alive through the pool, and only them, so returning a large heap stays cheap
+			Array.Clear(heap, 0, Math.Min(size + 1, heap.Length));
+			ArrayPool<T>.Shared.Return(heap);
+			heap = null;
 		}
 
         /// <summary> Adds an Object to a PriorityQueue in log(size) time.

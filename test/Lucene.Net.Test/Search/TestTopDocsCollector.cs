@@ -42,7 +42,7 @@ namespace Lucene.Net.Search
 			private int idx = 0;
 			private int base_Renamed = 0;
 			
-			public MyTopsDocCollector(int size):base(new HitQueue(size, false))
+			public MyTopsDocCollector(int size):base(new HitQueue(size))
 			{
 			}
 			

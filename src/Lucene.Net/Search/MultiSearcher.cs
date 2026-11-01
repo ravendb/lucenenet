@@ -261,7 +261,7 @@ namespace Lucene.Net.Search
 
 	    public override TopDocs Search(Weight weight, Filter filter, int nDocs, IState state)
 		{
-			HitQueue hq = new HitQueue(nDocs, false);
+			HitQueue hq = new HitQueue(nDocs);
 			int totalHits = 0;
 
             var lockObj = new object();

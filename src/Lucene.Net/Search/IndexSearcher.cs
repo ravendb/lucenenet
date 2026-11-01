@@ -185,10 +185,11 @@ namespace Lucene.Net.Search
 				throw new System.ArgumentException("nDocs must be > 0");
 			}
             nDocs = Math.Min(nDocs, reader.MaxDoc);
-
-			TopScoreDocCollector collector = TopScoreDocCollector.Create(nDocs, !weight.GetScoresDocsOutOfOrder());
-			Search(weight, filter, collector, state);
-			return collector.TopDocs();
+			using (TopScoreDocCollector collector = TopScoreDocCollector.Create(nDocs, !weight.GetScoresDocsOutOfOrder()))
+			{
+				Search(weight, filter, collector, state);
+				return collector.TopDocs();
+			}
 		}
 		
 		/// <summary> Just like <see cref="Search(Weight, Filter, int, Sort)" />, but you choose
@@ -204,11 +205,12 @@ namespace Lucene.Net.Search
 		public override TopFieldDocs Search(Weight weight, Filter filter, int nDocs, Sort sort, bool fillFields, IState state)
 		{
             nDocs = Math.Min(nDocs, reader.MaxDoc);
-
-			TopFieldCollector collector2 = TopFieldCollector.Create(sort, nDocs, fillFields, fieldSortDoTrackScores,
-                fieldSortDoMaxScore, !weight.GetScoresDocsOutOfOrder());
-			Search(weight, filter, collector2, state);
-			return (TopFieldDocs) collector2.TopDocs();
+			using (TopFieldCollector collector2 = TopFieldCollector.Create(sort, nDocs, fillFields, fieldSortDoTrackScores,
+				fieldSortDoMaxScore, !weight.GetScoresDocsOutOfOrder()))
+			{
+				Search(weight, filter, collector2, state);
+				return (TopFieldDocs) collector2.TopDocs();
+			}
 		}
 
 		public override void  Search(Weight weight, Filter filter, Collector collector, IState state)

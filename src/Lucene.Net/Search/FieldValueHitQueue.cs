@@ -74,7 +74,7 @@ namespace Lucene.Net.Search
 				comparators[0] = comparator;
 				reverseMul[0] = oneReverseMul;
 				
-				Initialize(size);
+				InitializePooled(size);
 			}
 			
 			/// <summary> Returns whether <c>a</c> is less relevant than <c>b</c>.</summary>
@@ -115,7 +115,7 @@ namespace Lucene.Net.Search
 					comparators[i] = field.GetComparator(size, i);
 				}
 				
-				Initialize(size);
+				InitializePooled(size);
 			}
 
             public override bool LessThan(Entry hitA, Entry hitB)
@@ -156,8 +156,9 @@ namespace Lucene.Net.Search
 		
 		/// <summary> Creates a hit queue sorted by the given list of fields.
 		/// 
-		/// <p/><b>NOTE</b>: The instances returned by this method
-		/// pre-allocate a full array of length <c>numHits</c>.
+		/// <p/><b>NOTE</b>: The instances returned by this method rent their
+		/// storage for <c>size</c> hits from a pool and must be disposed to
+		/// return it.
 		/// 
 		/// </summary>
 		/// <param name="fields">SortField array we are sorting by in priority order (highest
@@ -192,6 +193,18 @@ namespace Lucene.Net.Search
 		internal virtual int[] GetReverseMul()
 		{
 			return reverseMul;
+		}
+
+		/// <summary> Releases the comparators' slot arrays and the heap back to their pools. </summary>
+		public override void Dispose()
+		{
+			if (comparators != null)
+			{
+				foreach (var comparator in comparators)
+					comparator?.Dispose();
+			}
+
+			base.Dispose();
 		}
 		
 		/// <summary>Stores the sort criteria being used. </summary>

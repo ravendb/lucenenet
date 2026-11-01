@@ -26,7 +26,7 @@ namespace Lucene.Net.Search
 	/// Extending classes can override <see cref="TopDocs(int, int)" /> and
 	/// <see cref="TotalHits" /> in order to provide their own implementation.
 	/// </summary>
-	public abstract class TopDocsCollector<T> : Collector where T : ScoreDoc
+	public abstract class TopDocsCollector<T> : Collector, System.IDisposable where T : ScoreDoc
 	{
 		
 		// This is used in case topDocs() is called with illegal parameters, or there
@@ -46,6 +46,13 @@ namespace Lucene.Net.Search
 		protected internal TopDocsCollector(PriorityQueue<T> pq)
 		{
 			this.pq = pq;
+		}
+
+		/// <summary> Returns the queue's storage (and whatever the queue owns, such as comparator slot arrays) to
+		/// its pools. Call it once the results have been read out with <see cref="TopDocs()"/>. </summary>
+		public virtual void Dispose()
+		{
+			pq?.Dispose();
 		}
 		
 		/// <summary> Populates the results array with the ScoreDoc instaces. This can be
